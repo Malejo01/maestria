@@ -237,12 +237,35 @@ export function FeedbackButton() {
         aria-controls={panelId}
         aria-label={open ? 'Cerrar el formulario de reporte' : 'Reportar un problema'}
         className={cn(
-          'flex h-12 items-center gap-2 rounded-full border border-border/60 bg-card px-4 text-sm font-semibold text-foreground shadow-lg transition-colors hover:bg-secondary',
+          // px-3.5 no es arbitrario: 14 + 20 (ícono) + 14 = 48 = h-12, así que
+          // colapsado el botón es un círculo exacto y no un óvalo.
+          'group flex h-12 items-center rounded-full border border-border/60 bg-card px-3.5 text-sm font-semibold text-foreground shadow-lg transition-colors hover:bg-secondary',
           open && 'bg-secondary'
         )}
       >
-        <MessageSquareWarning className="h-5 w-5 text-primary" />
-        <span className="hidden sm:inline">Reportar problema</span>
+        <MessageSquareWarning className="h-5 w-5 shrink-0 text-primary" />
+        {/* El texto vive colapsado y se despliega en hover o foco de teclado.
+            Es un botón global que flota sobre todas las vistas: en reposo tiene
+            que ocupar lo mínimo y no aparecer en cada captura de pantalla del
+            producto. El margen se anima junto con el ancho porque un `gap` del
+            flex se aplicaría igual con el span en max-w-0 y dejaría al círculo
+            8px descentrado.
+
+            No hace falta que lo lea un lector de pantalla: el nombre accesible
+            sale del aria-label del botón, que ya dice lo mismo y no depende de
+            si está desplegado. */}
+        <span
+          aria-hidden="true"
+          className={cn(
+            'ml-0 max-w-0 overflow-hidden whitespace-nowrap opacity-0',
+            'transition-[max-width,opacity,margin] duration-200 ease-out motion-reduce:transition-none',
+            'group-hover:ml-2 group-hover:max-w-[10rem] group-hover:opacity-100',
+            'group-focus-visible:ml-2 group-focus-visible:max-w-[10rem] group-focus-visible:opacity-100',
+            open && 'ml-2 max-w-[10rem] opacity-100'
+          )}
+        >
+          Reportar problema
+        </span>
       </motion.button>
     </div>
   )
