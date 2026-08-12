@@ -111,10 +111,18 @@ export function normalizeAnswerText(raw: string): string {
     // final que el alumno nunca tipeó a propósito.
     .replace(/\s+/g, ' ')
     .trim()
-    // Puntuación de cierre que no cambia el significado. El '?' queda fuera a
-    // propósito: en una respuesta corta un signo de pregunta suele indicar que
-    // el alumno no está seguro, y eso no es lo mismo que afirmarlo.
-    .replace(/[.,;:!]+$/, '')
+    // Puntuación de apertura y de cierre que no cambia el significado.
+    //
+    // El '?' entra en la lista, y la decisión tiene historia: la primera versión
+    // lo dejaba afuera razonando que un signo de pregunta señala que el alumno
+    // no está seguro, y que eso no es lo mismo que afirmar. El contraargumento
+    // que ganó es de dónde salen estas respuestas — un teclado de celular, con
+    // el '?' pegado a la tecla de enviar. Es más probable que sea ruido de
+    // tipeo que una duda deliberada, y el costo de los dos errores no es
+    // simétrico: descartar una respuesta correcta por un carácter que el alumno
+    // no quiso poner es peor que aceptar una que escribió dudando y acertó.
+    .replace(/^[¿¡]+/, '')
+    .replace(/[.,;:!?]+$/, '')
     .trim()
 
   return value

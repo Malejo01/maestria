@@ -123,8 +123,21 @@ describe('normalizeAnswerText', () => {
     expect(normalizeAnswerText('9,')).toBe('9')
     expect(normalizeAnswerText('conmutativa;')).toBe('conmutativa')
     expect(normalizeAnswerText('conmutativa:')).toBe('conmutativa')
-    expect(normalizeAnswerText('¡Conmutativa!')).toBe('¡conmutativa')
     expect(matchesAcceptedAnswer('Parábola.', ['Parabola'])).toBe(true)
+  })
+
+  it('saca el signo de pregunta: en un teclado de celular es ruido, no duda', () => {
+    expect(normalizeAnswerText('conmutativa?')).toBe('conmutativa')
+    expect(normalizeAnswerText('¿conmutativa?')).toBe('conmutativa')
+    expect(matchesAcceptedAnswer('Parábola?', ['Parabola'])).toBe(true)
+    expect(matchesAcceptedAnswer('9?', ['9'])).toBe(true)
+    // Y sigue sin acercar respuestas distintas: sacar el signo no es parecerse.
+    expect(matchesAcceptedAnswer('12?', ['13'])).toBe(false)
+  })
+
+  it('saca los signos de apertura, por la misma razón que los de cierre', () => {
+    expect(normalizeAnswerText('¡Conmutativa!')).toBe('conmutativa')
+    expect(matchesAcceptedAnswer('¡9!', ['9'])).toBe(true)
   })
 
   it('NO saca la puntuación interna: "1,5" no puede volverse "15"', () => {
