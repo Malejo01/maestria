@@ -21,6 +21,15 @@ interface ReportContext {
 }
 
 /**
+ * Alto que le suponemos a la barra de acción del quiz mientras no la medimos:
+ * 88px = `p-4` arriba y abajo + un botón `h-14`. Es el caso del alumno, el más
+ * común, y funciona como piso para que el botón no aparezca encima de
+ * "Siguiente" ni siquiera en el primer frame, antes de que el ResizeObserver
+ * entregue la primera medición.
+ */
+const QUIZ_ACTION_BAR_FALLBACK_PX = 88
+
+/**
  * Botón flotante para reportar un problema, montado una sola vez en
  * `components/app-guards.tsx` — que envuelve tanto el grupo `(app)` como
  * `(focus)`, así que con un montaje queda disponible para docente, alumno e
@@ -30,6 +39,16 @@ interface ReportContext {
  * tapado justo cuando más se usa) y por debajo de los portales de Radix (z-50,
  * si no taparía los diálogos que sí son modales). El contrato de capas completo
  * está documentado en `components/quiz-overlay.tsx`.
+ *
+ * Ese contrato es el correcto y no se toca. Pero ganar el z-index no es
+ * gratis: durante el quiz este botón (bottom-4 right-4, h-12 → del píxel 16 al
+ * 64) caía entero adentro de la banda de la barra de acción del quiz (fixed
+ * bottom-0, botones h-14 → del 0 al ~88, todo el ancho), y con z-[45] contra
+ * z-20 se quedaba con el click. En una prueba con 30 alumnos, tocar
+ * "Siguiente" abría el formulario de reporte y no se podía avanzar. El z-index
+ * no era el problema; el problema era que dos elementos fijos se repartían el
+ * mismo pedazo de pantalla. Por eso, durante el quiz, el botón se apoya arriba
+ * de la barra en vez de flotar encima — ver `--feedback-bottom` más abajo.
  *
  * No hay notificación de ningún tipo: los reportes se leen a mano desde la
  * tabla `feedback_reports` (migración 019).
@@ -56,6 +75,55 @@ export function FeedbackButton() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const open = context !== null
+  const isQuizView = activeView === 'quiz'
+
+  // Alto real de la barra de acción del quiz, para poder apoyarnos encima.
+  //
+  // Por qué medirla en lugar de subir el botón un número fijo: la barra no
+  // tiene un solo alto. Para el alumno es una fila (~88px), en la vista previa
+  // del docente son dos (Verificar arriba, Anterior/Siguiente abajo) y además
+  // crece cuando aparecen "Revancha" / "Explicar con IA". Un offset elegido a
+  // ojo acierta en la pantalla donde lo probamos y vuelve a tapar "Siguiente"
+  // en la que no — que es literalmente cómo este bug llegó a los alumnos.
+  // Derivarlo del alto medido hace que el botón no pueda volver a quedar
+  // encima de un control de navegación aunque la barra cambie de forma.
+  //
+  // La alternativa era mover el trigger adentro del header sticky del quiz. Se
+  // descartó por dos motivos concretos: el header es una fila flex (X +
+  // progreso + contador) y el label que se despliega en hover le empujaría la
+  // barra de progreso en cada pasada del mouse; y el panel tendría que abrirse
+  // hacia abajo, perdiendo el `origin-bottom-right` con el que está animado.
+  const [quizBarHeight, setQuizBarHeight] = useState(QUIZ_ACTION_BAR_FALLBACK_PX)
+
+  useEffect(() => {
+    if (!isQuizView) return
+
+    // El atributo lo pone `components/quiz-engine.tsx`. QuizEngine y este botón
+    // se renderizan en el mismo commit (los dos leen `activeView` del store),
+    // así que cuando corre este efecto la barra ya está en el DOM; si no está,
+    // nos quedamos con el fallback, que es el caso del alumno.
+    const bar = document.querySelector<HTMLElement>('[data-quiz-action-bar]')
+    if (!bar) return
+
+    // offsetHeight y no `contentRect`: el padding inferior de la barra lleva el
+    // env(safe-area-inset-bottom), y contentRect lo dejaría afuera justo en los
+    // teléfonos donde ese margen importa.
+    const measure = () => setQuizBarHeight(bar.offsetHeight)
+    measure()
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(bar)
+    return () => observer.disconnect()
+  }, [isQuizView])
+
+  // `--feedback-bottom` es la distancia del botón al borde inferior. Es una
+  // variable y no un `bottom` suelto porque la leen dos cosas: la posición del
+  // contenedor y el techo del panel, que tiene que descontarla para no
+  // escaparse por arriba de la pantalla. Fuera del quiz la definen las clases
+  // (con su breakpoint sm:); acá sólo la pisamos mientras dura el quiz.
+  const quizOffsetStyle = isQuizView
+    ? ({ '--feedback-bottom': `calc(${quizBarHeight}px + 0.75rem)` } as React.CSSProperties)
+    : undefined
 
   const close = useCallback(() => {
     setContext(null)
@@ -146,18 +214,39 @@ export function FeedbackButton() {
       }
 
   return (
-    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[45] flex flex-col items-end gap-3 print:hidden">
+    <div
+      style={quizOffsetStyle}
+      className={cn(
+        'fixed right-4 sm:right-6 z-[45] flex flex-col items-end gap-3 print:hidden',
+        // Los guiones bajos son espacios: dentro de calc(), el `+` necesita
+        // espacio a los lados o el valor entero es inválido.
+        '[--feedback-bottom:calc(1rem_+_env(safe-area-inset-bottom))]',
+        'sm:[--feedback-bottom:calc(1.5rem_+_env(safe-area-inset-bottom))]',
+        // env(safe-area-inset-bottom) es 0px en un monitor y ~34px en un
+        // teléfono con barra de gestos: sin esto el botón queda debajo de la
+        // barrita de "home" en iPhone y en los Android de gestos.
+        'bottom-[var(--feedback-bottom)]'
+      )}
+    >
       <AnimatePresence>
         {open && (
+          // El techo del panel no es decorativo: sin él, en un teléfono
+          // horizontal ocupaba la pantalla entera y "Enviar reporte" quedaba
+          // abajo de todo, sin scroll con el que llegar. Se descuenta
+          // --feedback-bottom porque el panel crece hacia arriba desde el botón
+          // (las 5rem son el botón h-12 + el gap-3 + aire), así que un 80dvh
+          // pelado se escaparía por arriba del viewport y se comería el título.
+          // El scroll vive adentro y no en este div, para que el encabezado con
+          // la X de cerrar quede siempre a la vista.
           <motion.div
             {...panelMotion}
             transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.16, 1, 0.3, 1] }}
             id={panelId}
             role="dialog"
             aria-label="Reportar un problema"
-            className="w-[calc(100vw-2rem)] sm:w-[22rem] origin-bottom-right rounded-3xl border border-border/60 bg-card shadow-2xl"
+            className="flex max-h-[min(80dvh,calc(100dvh_-_var(--feedback-bottom)_-_5rem))] w-[calc(100vw_-_2rem)] flex-col overflow-hidden sm:w-[22rem] origin-bottom-right rounded-3xl border border-border/60 bg-card shadow-2xl"
           >
-            <div className="flex items-start justify-between gap-3 px-5 pt-4">
+            <div className="flex shrink-0 items-start justify-between gap-3 px-5 pt-4">
               <div>
                 <h2 className="text-sm font-bold text-foreground">Reportar un problema</h2>
                 <p className="text-xs text-muted-foreground">Lo leemos a mano. No hace falta que des detalles técnicos.</p>
@@ -173,7 +262,7 @@ export function FeedbackButton() {
             </div>
 
             {status === 'sent' ? (
-              <div className="flex flex-col items-center gap-3 px-5 py-8 text-center">
+              <div className="flex min-h-0 flex-col items-center gap-3 overflow-y-auto px-5 py-8 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
@@ -190,7 +279,7 @@ export function FeedbackButton() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-3 px-5 pb-5 pt-3">
+              <form onSubmit={handleSubmit} className="min-h-0 space-y-3 overflow-y-auto px-5 pb-5 pt-3">
                 <Textarea
                   ref={textareaRef}
                   value={description}

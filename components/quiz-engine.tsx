@@ -421,7 +421,11 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       </header>
 
       {/* Question Content */}
-      <main className="flex-1 px-4 py-6 pb-36 overflow-y-auto">
+      {/* El padding inferior reserva la barra de acción (~88px) más el botón
+          de reporte que ahora se apoya encima (h-12 + separación), más el
+          safe-area: si no, la última opción de la pregunta termina abajo de
+          uno de los dos cuando el contenido llega al final del scroll. */}
+      <main className="flex-1 px-4 py-6 pb-[calc(11rem_+_env(safe-area-inset-bottom))] overflow-y-auto">
         <div className="space-y-5">
           {/* Question */}
           <Card className="p-6 border-2 border-border bg-card/90 backdrop-blur-sm shadow-lg">
@@ -576,7 +580,19 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       </main>
 
       {/* Fixed Action Button */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-card/95 backdrop-blur-xl border-t-2 border-border z-20">
+      {/* `data-quiz-action-bar` es el enganche que usa
+          components/feedback-button.tsx para medir esta barra y apoyarse
+          encima en vez de flotar sobre "Siguiente" — no lo saques sin leer el
+          comentario de cabecera de ese archivo.
+
+          El padding inferior lleva env(safe-area-inset-bottom) porque un `p-4`
+          seco no sabe nada de la barra de gestos: en un teléfono moderno los
+          botones quedaban pegados a la barrita de "home", que se come el
+          toque. */}
+      <div
+        data-quiz-action-bar=""
+        className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))] bg-card/95 backdrop-blur-xl border-t-2 border-border z-20"
+      >
         <div className={cn(isPreviewMode ? 'flex flex-col gap-2.5' : 'flex gap-2.5')}>
           {isPreviewMode ? (
             <>

@@ -157,7 +157,18 @@ async function run() {
     // which is the app telling us they are disposable cache — so staging has no
     // claim on them, and dropping them keeps the branch small.
     const uploads = (await sql`DELETE FROM teacher_program_uploads RETURNING 1`) as unknown[]
-    console.log(`  ✔ verification_tokens vaciada · teacher_program_uploads: ${uploads.length} archivo(s) borrado(s)`)
+
+    // Texto libre escrito por alumnos y docentes reales. No tiene columna de
+    // email, pero es dato personal de hecho: quien reporta un problema escribe
+    // lo que se le ocurre, incluido su nombre o el de su docente. No se
+    // anonimiza fila por fila porque no hay nada que preservar acá — un reporte
+    // sirve para volver a preguntarle a quien lo escribió, y en staging no hay
+    // a quién preguntarle.
+    const reports = (await sql`DELETE FROM feedback_reports RETURNING 1`) as unknown[]
+    console.log(
+      `  ✔ verification_tokens vaciada · teacher_program_uploads: ${uploads.length} archivo(s) borrado(s)` +
+        ` · feedback_reports: ${reports.length} reporte(s) borrado(s)`,
+    )
   } finally {
     // ─── 5. Put the schema back ─────────────────────────────────────────────
     // In `finally` so a failure mid-anonymization still restores the original

@@ -83,9 +83,24 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    // Skip Next.js internals and static assets
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
+    // Se saltea los internos de Next y los assets estáticos.
+    //
+    // `api/auth` queda afuera A PROPÓSITO, y es el arreglo de las 305 fallas de
+    // login del 2026-08-10. El wrapper `auth()` de arriba corre una instancia
+    // completa de Auth.js por request y emite su propia cookie
+    // `__Host-authjs.csrf-token`; sobre las rutas del propio NextAuth eso
+    // duplica la cookie y puede pisar el token que el cliente acaba de recibir
+    // por `GET /api/auth/csrf`, con lo que el POST de signin muere con
+    // MissingCSRF. Diagnóstico completo en docs/investigacion-login-10-08.md.
+    //
+    // No se pierde protección: `/api/auth` ya está en PUBLIC_PATHS, así que el
+    // middleware nunca hizo nada por esas rutas más que duplicar la cookie.
+    //
+    // El patrón `/(api|trpc)(.*)` que había acá abajo se borró: hacía que
+    // `/api/auth/*` volviera a entrar por la ventana aunque el primero lo
+    // excluyera, y además era redundante — `/api/*` ya cae dentro del primer
+    // patrón, que sólo excluye `_next` y extensiones estáticas. Eso está
+    // verificado con casos, no de memoria: tests/middleware-matcher.test.ts.
+    '/((?!api/auth|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
   ],
 }

@@ -550,6 +550,38 @@ El arreglo es una línea (`DELETE FROM feedback_reports`) junto a las otras dos.
 hacer a propósito: tocar el script de anonimización es tocar el procedimiento de refresco de
 branch, y eso no entraba en el alcance del commit que agregó el botón.
 
+> **Cerrado el 2026-08-12.** La migración 019 se corrió contra producción (era la causa de
+> `NeonDbError: relation "feedback_reports" does not exist`, MAESTRIA-Z: el botón de reportes
+> devolvía 500 y se perdía todo lo que escribían los alumnos). Con la tabla ya existiendo, el
+> riesgo dejó de ser latente, así que el `DELETE FROM feedback_reports` se agregó en el mismo
+> movimiento. Contexto completo en [plan-prueba-de-fuego.md](plan-prueba-de-fuego.md).
+
+### Los worktrees de agentes se crean desde el commit base de la sesión, no desde HEAD
+
+Relevado el **2026-08-12** trabajando el plan de la prueba de fuego. No es deuda del proyecto
+sino del harness, pero muerde acá y conviene tenerlo escrito antes de la próxima tanda.
+
+Cuando se lanza un agente con aislamiento por worktree, el worktree nuevo **no parte del HEAD
+actual de la rama de trabajo**: parte del commit en el que estaba la sesión cuando arrancó.
+Verificado sobre cinco worktrees de agentes: los cinco tenían como padre `a3bb055`, el commit
+base de la sesión, aunque la rama ya estaba en `d8df17b`.
+
+Es inofensivo mientras cada agente escriba archivos nuevos — cuatro de los cinco lo eran y las
+cuatro ramas mergearon limpio. Se vuelve peligroso en el único caso que importa: un agente que
+tiene que **modificar** un archivo que cambió después del inicio de la sesión. Ahí trabaja sobre
+la versión vieja y, al integrar, o hay conflicto textual o —peor— revierte en silencio el trabajo
+intermedio.
+
+Pasó exactamente eso con el agente de layout móvil, y **no rompió nada porque el brief le pedía
+verificar una precondición**: "confirmá que este marcador está en el archivo; si no está, PARÁ y
+reportá". Paró sin escribir una línea. La lección no es sobre este bug puntual sino sobre la
+forma del brief: a un agente que va a modificar código existente hay que darle **cómo verificar
+que partió de la base correcta**, no sólo qué cambiar.
+
+La remediación es una línea al principio del brief (`git merge --ff-only <sha>` dentro del
+worktree, más la verificación), y así se lanzó el reintento. Mientras el harness siga
+comportándose así, cualquier agente que modifique archivos existentes necesita ese paso cero.
+
 ---
 
 ## Prioridades abiertas
