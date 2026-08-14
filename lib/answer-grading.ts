@@ -13,6 +13,7 @@
  * numerador y también del denominador — no es un error, y tampoco un acierto.
  */
 import type { Answer, MultipleChoiceQuestion, NumericQuestion, TrueFalseQuestion } from './types'
+import { isNumericallyEquivalent } from './numeric-answer'
 
 // ─── Corrección en el proceso, por tipo ──────────────────────────────────────
 // Estos tres se resuelven sin salir del browser, así que nunca quedan sin
@@ -27,9 +28,21 @@ export function isCorrectTrueFalse(question: TrueFalseQuestion, selected: boolea
   return selected === question.correctAnswer
 }
 
+/**
+ * Delega en `isNumericallyEquivalent`, que aplica la `tolerance` explícita de la
+ * pregunta si la hay y `defaultToleranceFor` si no.
+ *
+ * Antes el fallback era `?? 0`, o sea igualdad exacta en punto flotante. Para
+ * un entero da lo mismo —`defaultToleranceFor` también devuelve 0— así que
+ * ninguna pregunta de resultado entero cambia de veredicto. Lo que cambia es el
+ * caso no entero: la respuesta exacta suele ser periódica o irracional y el
+ * alumno la escribe redondeada, y con tolerancia 0 un `0,33` contra `1/3`
+ * quedaba mal. Peor todavía, `7/4` calculado como división podía fallar contra
+ * `1.75` por un error de representación de 1e-17, imposible de explicarle a
+ * nadie.
+ */
 export function isCorrectNumeric(question: NumericQuestion, selected: number): boolean {
-  const tolerance = question.tolerance ?? 0
-  return Math.abs(selected - question.correctAnswer) <= tolerance
+  return isNumericallyEquivalent(selected, question.correctAnswer, question.tolerance)
 }
 
 // ─── Conteo para la nota ─────────────────────────────────────────────────────

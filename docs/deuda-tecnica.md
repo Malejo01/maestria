@@ -526,21 +526,29 @@ La razón es más simple: en ese examen las respuestas numéricas o coincidían 
 `0`, `12` contra `13`). No apareció ni una donde la equivalencia numérica fuera lo que
 decidía.
 
-### Lo que sí está roto: `type="number"` en `numeric-input.tsx`
+### `type="number"` en `numeric-input.tsx` — **resuelto el 2026-08-14**
 
-Otro asunto, y este es un bug con consecuencia directa.
-[numeric-input.tsx:20](../components/quiz-answer-inputs/numeric-input.tsx#L20) usa
-`type="number"`, que en la mayoría de los navegadores **descarta la coma decimal**: un alumno
-en es-AR que escribe `3,5` obtiene un valor vacío o truncado. Afecta al tipo de pregunta
-`numeric`, no a `short_answer`.
+Era un bug con consecuencia directa: `numeric-input.tsx` usaba `type="number"`, que en la
+mayoría de los navegadores **descarta la coma decimal**. Un alumno en es-AR que escribía
+`3,5` obtenía un valor vacío, y el botón "Verificar" quedaba deshabilitado sin decir por qué.
+Afectaba al tipo de pregunta `numeric`, no a `short_answer` (ese input siempre fue un
+`<textarea>`).
 
-El arreglo es `type="text"` con `inputMode="decimal"` y parsear con `parseNumericAnswer`, que
-ya entiende coma, fracción, LaTeX y porcentaje — o sea que el módulo que hace falta ya está
-escrito y sin usar en ese camino también.
+Ahora es `type="text"` con `inputMode="decimal"`, interpretado con `parseNumericAnswer`
+—coma, punto, fracción, LaTeX, porcentaje—, y con las dos mitades que hacían falta para que
+aceptar más formas sirva de algo: le devuelve al alumno qué entendió ("Leímos: 3,5", con
+`formatNumericAnswer`) y le avisa **antes** de enviar cuando no puede interpretar.
 
-**Cuando eso se arregle, volver a correr el reporte**: recién ahí `numeric-answer` va a
-empezar a recibir las formas equivalentes que hoy el input no deja escribir, y va a haber
-datos reales con los cuales validarlo.
+`isCorrectNumeric` pasó a delegar en `isNumericallyEquivalent`. El fallback era `?? 0`, o sea
+igualdad exacta en punto flotante; ahora sin `tolerance` explícita aplica
+`defaultToleranceFor`. **Ninguna pregunta de resultado entero cambia de veredicto** —para
+enteros esa función también devuelve 0—; lo que cambia es el caso no entero, donde `0,33`
+contra `1/3` ahora acierta y un `7/4` calculado por división ya no puede fallar contra `1.75`
+por un error de representación de 1e-17.
+
+**Queda pendiente volver a correr el reporte** cuando haya un examen nuevo: recién con datos
+posteriores a este arreglo `numeric-answer` va a recibir las formas equivalentes que el input
+viejo no dejaba escribir, y va a haber con qué validarlo contra producción.
 
 ---
 
