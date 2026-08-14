@@ -23,6 +23,11 @@ coverage/
 # clerk configuration (can include secrets)
 /.clerk/
 
+# Backups de scripts/fix-perfiles-*.ts. Contienen ids de usuarios reales y son
+# el punto de restauración de una corrida puntual: no tienen valor en el repo y
+# sí lo tienen en la máquina donde se corrió el script.
+scripts/backups/
+
 # Volcados de `gh run view --log`. Son artefactos de diagnóstico de CI:
 # pesados, en UTF-16 y sin valor histórico una vez leídos.
 run.log

@@ -1,11 +1,12 @@
 import { generateObject, generateText, type RepairTextFunction } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
-import { buildEducationSystemPrompt } from '@/lib/education-context'
+import { buildEducationSystemPrompt, type ContextoProfesionalCarrera } from '@/lib/education-context'
 import { guardAiCall } from '@/lib/ai-guard'
 import { captureAiSchemaFailure, captureRouteFailure } from '@/lib/observability'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { normalizeQuestionText, numericSignature } from '@/lib/question-dedup'
+import { sql } from '@/lib/db'
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -263,6 +264,7 @@ async function generateQuizBatchWithFallback({
   difficulty,
   nivel,
   grado,
+  contextoProfesional,
   questionTypes,
   onUsage,
 }: {
@@ -277,6 +279,7 @@ async function generateQuizBatchWithFallback({
   difficulty: string
   nivel?: string
   grado?: string
+  contextoProfesional?: ContextoProfesionalCarrera
   questionTypes: QuestionType[]
   /**
    * Se invoca por CADA llamada al modelo, incluidas las del camino de fallback.
@@ -290,6 +293,7 @@ async function generateQuizBatchWithFallback({
     grado,
     materia: subject,
     difficulty,
+    contextoProfesional,
   })
 
   const systemPrompt = `${educationPrompt}
@@ -480,6 +484,7 @@ async function generateQuizBatch({
   difficulty,
   nivel,
   grado,
+  contextoProfesional,
   questionTypes,
   onUsage,
 }: {
@@ -494,6 +499,7 @@ async function generateQuizBatch({
   difficulty: string
   nivel?: string
   grado?: string
+  contextoProfesional?: ContextoProfesionalCarrera
   questionTypes: QuestionType[]
   onUsage?: (usage: AiSdkUsage | undefined) => void
 }) {
@@ -509,6 +515,7 @@ async function generateQuizBatch({
     difficulty,
     nivel,
     grado,
+    contextoProfesional,
     questionTypes,
     onUsage,
   })
@@ -571,6 +578,71 @@ function getSpecialistRole(subject: string): string {
 }
 
 
+/**
+ * Trae de `curriculum` la aplicación profesional de las unidades elegidas.
+ *
+ * Devuelve `undefined` —y no un objeto vacío— cuando no aplica, para que
+ * `buildEducationSystemPrompt` omita la sección entera en vez de inyectar un
+ * encabezado sin contenido. No aplica en tres casos: nivel distinto de Superior,
+ * carrera ausente (el flujo de "subí tu programa" no tiene fila en curriculum),
+ * o un programa que no declara contexto en ninguna de sus unidades.
+ *
+ * Una falla de base acá no puede tumbar la generación: sin contexto profesional
+ * el cuestionario sale genérico, que es exactamente el comportamiento previo.
+ */
+async function loadContextoProfesional({
+  nivel,
+  grado,
+  materia,
+  carrera,
+  ejes,
+}: {
+  nivel?: string
+  grado?: string
+  materia: string
+  carrera: string
+  ejes: string[]
+}): Promise<ContextoProfesionalCarrera | undefined> {
+  if (nivel !== 'Superior' || !carrera || !grado || ejes.length === 0) return undefined
+
+  try {
+    const rows = (await sql`
+      SELECT eje, contexto_profesional
+      FROM curriculum
+      WHERE nivel   = 'Superior'
+        AND carrera = ${carrera}
+        AND grado   = ${grado}
+        AND materia = ${materia}
+        AND eje     = ANY(${ejes})
+        AND contexto_profesional IS NOT NULL
+      ORDER BY id
+    `) as { eje: string; contexto_profesional: unknown }[]
+
+    const unidades = rows.flatMap((row) => {
+      const value = row.contexto_profesional
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) return []
+
+      const record = value as Record<string, unknown>
+      const aplicacion = typeof record.aplicacion === 'string' ? record.aplicacion.trim() : ''
+      if (!aplicacion) return []
+
+      const herramientas = Array.isArray(record.herramientas)
+        ? record.herramientas.filter((item): item is string => typeof item === 'string')
+        : []
+
+      return [{ eje: row.eje, aplicacion, herramientas }]
+    })
+
+    return unidades.length > 0 ? { carrera, unidades } : undefined
+  } catch (error) {
+    captureRouteFailure(error instanceof Error ? error : new Error(String(error)), {
+      endpoint: '/api/generate-quiz',
+      operation: 'loadContextoProfesional',
+    })
+    return undefined
+  }
+}
+
 export async function POST(req: Request) {
   const {
     subject,
@@ -583,6 +655,7 @@ export async function POST(req: Request) {
     questionCount: rawQuestionCount,
     nivel: rawNivel,
     grado: rawGrado,
+    carrera: rawCarrera,
     difficulty: rawDifficulty,
     questionTypes: rawQuestionTypes,
   } = await req.json()
@@ -655,6 +728,23 @@ export async function POST(req: Request) {
   const curriculum = buildCurriculumFromUnits(subject, subjectUnits)
   const specialistRole = getSpecialistRole(subject)
 
+  // Contexto profesional de la carrera (migración 022). Se lee del servidor y no
+  // se acepta del body a propósito: es texto que entra al system prompt, y el
+  // cliente ya puede influir bastante vía `pedagogyContext`. Leyéndolo de
+  // `curriculum` queda garantizado que lo que dice el prompt es lo que declara
+  // el programa de cátedra, y no se desactualiza si el programa cambia.
+  const contextoProfesional = await loadContextoProfesional({
+    nivel,
+    grado,
+    materia: subject,
+    carrera: typeof rawCarrera === 'string' ? rawCarrera.trim() : '',
+    ejes: Array.isArray(subjectUnits)
+      ? subjectUnits
+          .map((unit: { name?: unknown }) => (typeof unit?.name === 'string' ? unit.name : ''))
+          .filter((name: string) => name.length > 0)
+      : [],
+  })
+
   const modeDescription = mode === 'teorico'
     ? 'MODO TEÓRICO: Preguntas conceptuales sobre definiciones, teoremas y propiedades. Sin cálculos numéricos complejos.'
     : mode === 'practico'
@@ -726,6 +816,7 @@ situaciones diferentes.`
             difficulty,
             nivel,
             grado,
+            contextoProfesional,
             questionTypes: finalQuestionTypes,
             onUsage: collectUsage,
           })
@@ -752,6 +843,7 @@ situaciones diferentes.`
             difficulty,
             nivel,
             grado,
+            contextoProfesional,
             questionTypes: finalQuestionTypes,
             onUsage: collectUsage,
           })
@@ -795,6 +887,7 @@ situaciones diferentes.`
         difficulty,
         nivel,
         grado,
+        contextoProfesional,
         questionTypes: finalQuestionTypes,
         onUsage: collectUsage,
       })
