@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
@@ -84,7 +84,6 @@ describe('matcher del middleware', () => {
     expect(matches('/api/authorize')).toBe(false)
 
     const apiDir = join(process.cwd(), 'app', 'api')
-    const { readdirSync } = require('node:fs') as typeof import('node:fs')
     const rutas = readdirSync(apiDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)

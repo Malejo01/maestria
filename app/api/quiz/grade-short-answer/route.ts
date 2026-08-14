@@ -5,6 +5,7 @@ import { getEducationContext } from '@/lib/education-context'
 import { guardAiCall } from '@/lib/ai-guard'
 import { captureAiSchemaFailure } from '@/lib/observability'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
+import { gradeShortAnswerLocally } from '@/lib/short-answer-autograde'
 
 const gradeSchema = z.object({
   isCorrect: z.boolean(),
@@ -84,6 +85,28 @@ export async function POST(req: Request) {
 
   if (typeof question !== 'string' || !Array.isArray(acceptedAnswers) || typeof studentAnswer !== 'string') {
     return Response.json({ error: 'Parametros invalidos' }, { status: 400 })
+  }
+
+  // Corrección determinista ANTES del guard, y por lo tanto antes de abrir la
+  // fila de `ai_usage_log`: si se resuelve acá no hubo llamada al modelo, así
+  // que tampoco tiene que haber registro de uso ni consumo de rate limit.
+  //
+  // El cliente ya hace este mismo chequeo antes del `fetch` —ahí está el valor
+  // real, porque le permite corregir sin red—, de modo que en el flujo normal
+  // esta rama casi no se ejecuta. Existe para cualquier otro llamador de la
+  // ruta, que no tiene por qué saber que hay un paso previo. Es la misma
+  // función, no una copia.
+  const local = gradeShortAnswerLocally(studentAnswer, acceptedAnswers)
+  if (local.resolved) {
+    return Response.json({
+      isCorrect: true,
+      category: 'Excelente',
+      scorePercent: 100,
+      feedback:
+        local.via === 'numeric'
+          ? 'Correcto: tu respuesta equivale a la esperada.'
+          : 'Correcto.',
+    })
   }
 
   const guard = await guardAiCall({ bucket: 'grading', nivel })

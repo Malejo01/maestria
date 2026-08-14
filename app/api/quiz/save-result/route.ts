@@ -67,6 +67,7 @@ export async function POST(req: Request) {
       topics,
       totalQuestions,
       correctAnswers,
+      ungradedAnswers: rawUngradedAnswers,
       score,
       answers
     } = body
@@ -119,7 +120,18 @@ export async function POST(req: Request) {
     }
 
     // 2. Calcular incorrect_answers y passed
-    const incorrectAnswers = totalQuestions - correctAnswers
+    // Las sin calificar se restan explícitamente: `total - correctas` las
+    // contaría como errores, que es exactamente el bug que la migración 021
+    // viene a cerrar. El cliente manda la cifra; se recuenta igual desde
+    // `answers` porque este endpoint no puede confiar en que el número que le
+    // llega sea coherente con el detalle que le llega al lado.
+    const ungradedFromAnswers = Array.isArray(answers)
+      ? answers.filter((a: { gradingStatus?: string }) => a?.gradingStatus === 'ungraded').length
+      : 0
+    const ungradedAnswers = Number.isFinite(Number(rawUngradedAnswers))
+      ? Math.max(Number(rawUngradedAnswers), ungradedFromAnswers)
+      : ungradedFromAnswers
+    const incorrectAnswers = totalQuestions - correctAnswers - ungradedAnswers
     const passed = score >= 6
 
     // Map topics to a clean array of strings (names) for the quiz_attempts table
@@ -132,13 +144,13 @@ export async function POST(req: Request) {
     const quizAttempt = await sql`
       INSERT INTO quiz_attempts (
         user_id, subject, mode, topics, total_questions,
-        correct_answers, incorrect_answers, score, passed,
+        correct_answers, incorrect_answers, ungraded_answers, score, passed,
         classroom_id, assignment_id, attempt_number,
         started_at, completed_at
       )
       VALUES (
         ${userId}, ${cleanSubject}, ${mode}, ${topicsStrings}, ${totalQuestions},
-        ${correctAnswers}, ${incorrectAnswers}, ${score}, ${passed},
+        ${correctAnswers}, ${incorrectAnswers}, ${ungradedAnswers}, ${score}, ${passed},
         ${classroomId}, ${assignmentId}, ${attemptNumber},
         NOW(), NOW()
       )
@@ -166,8 +178,21 @@ export async function POST(req: Request) {
       } else if (questionType === 'numeric') {
         answerPayload = JSON.stringify({ selectedValue: answer.selectedValue, correctAnswer: answer.correctAnswer, tolerance: answer.tolerance ?? null })
       } else if (questionType === 'short_answer') {
-        answerPayload = JSON.stringify({ selectedText: answer.selectedText, acceptedAnswers: answer.acceptedAnswers })
+        answerPayload = JSON.stringify({
+          selectedText: answer.selectedText,
+          acceptedAnswers: answer.acceptedAnswers,
+          // Sólo se escribe cuando NO se pudo corregir: la ausencia del campo
+          // es "corregida", que es lo que son todas las filas anteriores.
+          ...(answer.gradingStatus === 'ungraded'
+            ? { gradingStatus: 'ungraded', gradingReason: 'ai_unavailable' }
+            : {}),
+        })
       }
+
+      // NULL, no false: en SQL es "desconocido", que es exactamente el caso.
+      // Un `WHERE NOT is_correct` futuro las excluye en vez de contarlas como
+      // errores — ver el porqué en scripts/021-ungraded-answers.sql.
+      const isCorrectColumn = answer.gradingStatus === 'ungraded' ? null : answer.isCorrect
 
       await sql`
         INSERT INTO quiz_answers (
@@ -194,7 +219,7 @@ export async function POST(req: Request) {
           ${selectedAnswerColumn},
           ${correctAnswerColumn},
           ${answerPayload},
-          ${answer.isCorrect},
+          ${isCorrectColumn},
           ${answer.explanation || ''},
           ${answer.topicName || ''},
           NOW()

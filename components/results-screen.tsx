@@ -11,6 +11,7 @@ import { Home, RotateCcw, TrendingUp, TrendingDown, Sparkles, XCircle, CheckCirc
 import { cn } from '@/lib/utils'
 import confetti from 'canvas-confetti'
 import type { Answer } from '@/lib/types'
+import { countsAsCorrect, countsAsIncorrect, isGraded, scoreOutOfTen, tallyAnswers } from '@/lib/answer-grading'
 import { QuizModeDialog } from './quiz-mode-dialog'
 import { ExplanationModal } from './explanation-modal'
 import { answerRecapLine } from './answer-recap'
@@ -33,15 +34,31 @@ export function ResultsScreen() {
   const router = useRouter()
 
   const results = useMemo(() => {
-    const correctAnswers = answers.filter(a => a.isCorrect)
-    const incorrectAnswers = answers.filter(a => !a.isCorrect)
-    const correct = correctAnswers.length
+    // Mismo criterio que `finishQuiz`: lo que no se pudo corregir no cuenta
+    // como error. La nota sale sobre `tally.graded`, no sobre la cantidad de
+    // preguntas — ver lib/answer-grading.ts.
+    const correctAnswers = answers.filter(countsAsCorrect)
+    const incorrectAnswers = answers.filter(countsAsIncorrect)
+    const ungradedAnswers = answers.filter(a => !isGraded(a))
+    const tally = tallyAnswers(answers)
+    const correct = tally.correct
     const total = questions.length
-    const score = Number(((correct / total) * 10).toFixed(2))
-    const percentage = (correct / total) * 100
-    const passed = score >= 6
+    const score = scoreOutOfTen(tally) ?? 0
+    const percentage = tally.graded === 0 ? 0 : (correct / tally.graded) * 100
+    const passed = tally.graded > 0 && score >= 6
 
-    return { correct, total, score, percentage, passed, correctAnswers, incorrectAnswers }
+    return {
+      correct,
+      total,
+      score,
+      percentage,
+      passed,
+      correctAnswers,
+      incorrectAnswers,
+      ungradedAnswers,
+      /** Denominador real de la nota. Distinto de `total` si algo quedó sin calificar. */
+      graded: tally.graded,
+    }
   }, [answers, questions])
 
   // Save quiz result to database
@@ -66,6 +83,10 @@ export function ResultsScreen() {
             topics: config.topics,
             totalQuestions: questions.length,
             correctAnswers: results.correct,
+            // El server necesita las tres cifras por separado: con sólo
+            // `total - correct` volvería a contar las sin calificar como
+            // errores, que es el bug que estamos sacando.
+            ungradedAnswers: results.ungradedAnswers.length,
             score: results.score,
             classroomId: config.classroomId ?? null,
             assignmentId: config.assignmentId ?? null,

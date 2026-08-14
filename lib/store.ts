@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { normalizeQuestions } from './normalize-questions'
+import { countsAsCorrect, countsAsIncorrect, isGraded, scoreOutOfTen, tallyAnswers } from './answer-grading'
 import type {
   UserProgress,
   QuizConfig,
@@ -159,12 +160,20 @@ export const useAppStore = create<AppState>()(
         activeView: 'quiz'
       }),
       
-      answerQuestion: (answer) => set((state) => ({
-        currentQuiz: {
-          ...state.currentQuiz,
-          answers: [...state.currentQuiz.answers, answer]
-        }
-      })),
+      // Reemplaza si la pregunta ya tenía respuesta, en vez de apilar otra.
+      // Antes siempre agregaba, lo que alcanzaba mientras cada pregunta se
+      // contestaba una sola vez; con el reintento de corrección de respuesta
+      // corta dejó de ser cierto, y una segunda fila para la misma pregunta
+      // inflaría el total y contaría dos veces en la nota.
+      answerQuestion: (answer) => set((state) => {
+        const previous = state.currentQuiz.answers
+        const index = previous.findIndex((a) => a.questionId === answer.questionId)
+        const answers = index === -1
+          ? [...previous, answer]
+          : previous.map((a, i) => (i === index ? answer : a))
+
+        return { currentQuiz: { ...state.currentQuiz, answers } }
+      }),
       
       nextQuestion: () => set((state) => ({
         currentQuiz: {
@@ -183,38 +192,49 @@ export const useAppStore = create<AppState>()(
       finishQuiz: () => {
         const state = get()
         const { answers, questions, config } = state.currentQuiz
-        const correctAnswers = answers.filter(a => a.isCorrect)
-        const incorrectAnswers = answers.filter(a => !a.isCorrect)
-        const correct = correctAnswers.length
+        // Las sin calificar no son errores: salen del numerador Y del
+        // denominador. Antes esto era `!a.isCorrect`, que le cobraba al alumno
+        // cada falla de la API de corrección. Ver lib/answer-grading.ts.
+        const correctAnswers = answers.filter(countsAsCorrect)
+        const incorrectAnswers = answers.filter(countsAsIncorrect)
+        const ungradedAnswers = answers.filter(a => !isGraded(a))
+        const tally = tallyAnswers(answers)
+        const correct = tally.correct
         const total = questions.length
-        const score = Number(((correct / total) * 10).toFixed(2))
-        
+        // `null` sólo si NADA se pudo corregir. El 0 de fallback existe para no
+        // romper la firma de QuizResult; quien muestre el resultado tiene que
+        // mirar `ungraded` antes de tratarlo como una nota real.
+        const score = scoreOutOfTen(tally) ?? 0
+
         const incorrectTopics = [...new Set(incorrectAnswers.map(a => a.topic))]
-        
+
         // Update streak
         const passed = score >= 6
         get().updateStreak(passed)
-        
+
         // Add weak points for incorrect answers
         if (config) {
           get().updateSubjectAverage(config.subject, score)
 
+          // Sólo los errores confirmados alimentan los puntos débiles: un tema
+          // que no se pudo corregir no es evidencia de que el alumno falle ahí.
           incorrectAnswers.forEach(a => {
             get().addWeakPoint(a.topic, a.topicName, config.subject)
           })
         }
-        
+
         // Store used question IDs
         get().addUsedQuestionIds(questions.map(q => q.id))
-        
+
         return {
           score,
           total,
-          percentage: (correct / total) * 100,
+          percentage: tally.graded === 0 ? 0 : (correct / tally.graded) * 100,
           incorrectTopics,
           answers,
           correctAnswers,
-          incorrectAnswers
+          incorrectAnswers,
+          ungradedAnswers
         }
       },
       

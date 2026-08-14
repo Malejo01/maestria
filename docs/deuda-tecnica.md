@@ -502,6 +502,48 @@ releases con nombre de commit de rama en el panel.
 
 ---
 
+## 6. `numeric-answer` sin validación contra datos reales
+
+Al enchufar la corrección determinista de respuestas cortas (2026-08-14) se validaron los dos
+módulos contra las 238 respuestas `short_answer` de producción, con
+[scripts/report-short-answer-regrade.ts](../scripts/report-short-answer-regrade.ts). El
+resultado fue bueno para uno solo de los dos:
+
+| | validación contra producción |
+|---|---|
+| `lib/short-answer-grading.ts` | **15 recuperadas, 0 falsos positivos** sobre 225 incorrectas |
+| `lib/numeric-answer.ts` | **ningún caso**. El camino numérico no se ejecutó ni una vez |
+
+Sigue respaldado sólo por sus 22 tests unitarios. No es bloqueante —su riesgo de falso
+positivo es bajo: tolerancia 0 para enteros y `PLAIN_NUMBER` valida la cadena entera, así que
+`"3n+2"` no se lee como 3— pero conviene no decir que está probado contra producción, porque
+no lo está.
+
+**Por qué no hubo casos.** No es que la coma estuviera bloqueada: `short-answer-input.tsx` es
+un `<textarea>` y el examen tiene respuestas con coma (`"8,4"`, `"-4,0"`, `"3,14 < 22/7"`).
+La razón es más simple: en ese examen las respuestas numéricas o coincidían literalmente
+—el `1/3` de una alumna entró por texto, no por el parser— o estaban derecho mal (`4` contra
+`0`, `12` contra `13`). No apareció ni una donde la equivalencia numérica fuera lo que
+decidía.
+
+### Lo que sí está roto: `type="number"` en `numeric-input.tsx`
+
+Otro asunto, y este es un bug con consecuencia directa.
+[numeric-input.tsx:20](../components/quiz-answer-inputs/numeric-input.tsx#L20) usa
+`type="number"`, que en la mayoría de los navegadores **descarta la coma decimal**: un alumno
+en es-AR que escribe `3,5` obtiene un valor vacío o truncado. Afecta al tipo de pregunta
+`numeric`, no a `short_answer`.
+
+El arreglo es `type="text"` con `inputMode="decimal"` y parsear con `parseNumericAnswer`, que
+ya entiende coma, fracción, LaTeX y porcentaje — o sea que el módulo que hace falta ya está
+escrito y sin usar en ese camino también.
+
+**Cuando eso se arregle, volver a correr el reporte**: recién ahí `numeric-answer` va a
+empezar a recibir las formas equivalentes que hoy el input no deja escribir, y va a haber
+datos reales con los cuales validarlo.
+
+---
+
 ## Riesgos latentes
 
 Cosas que hoy no molestan y que van a morder si cambia una condición. No son tareas: son

@@ -95,6 +95,24 @@ interface BaseAnswer {
   topic: string
   topicName: string
   explanation: string
+  /**
+   * Tercer estado, además de correcta e incorrecta: **no se pudo corregir**.
+   *
+   * Ausente o `'graded'` significa que la corrección corrió y `isCorrect` vale.
+   * `'ungraded'` significa que no corrió — hoy sólo pasa en `short_answer`,
+   * cuando `/api/quiz/grade-short-answer` no contesta. En ese caso `isCorrect`
+   * queda en `false` por el tipo, pero **no significa incorrecta**: significa
+   * "no sabemos", y ningún cálculo de nota puede leerlo como un error.
+   *
+   * Es opcional a propósito. Los otros tres tipos de pregunta se corrigen en el
+   * proceso y nunca quedan sin calificar, y las respuestas ya guardadas no
+   * traen el campo — las dos cosas se leen como `'graded'`, que es lo que eran.
+   *
+   * NO leer este campo a mano: usar `countsAsCorrect` / `countsAsIncorrect` de
+   * `lib/answer-grading.ts`. El bug original fue exactamente un `!a.isCorrect`
+   * suelto contando como error algo que nadie había corregido.
+   */
+  gradingStatus?: 'graded' | 'ungraded'
 }
 
 export interface MultipleChoiceAnswer extends BaseAnswer {
@@ -126,13 +144,24 @@ export interface NumericAnswer extends BaseAnswer {
 export type Answer = MultipleChoiceAnswer | ShortAnswerAnswer | TrueFalseAnswer | NumericAnswer
 
 export interface QuizResult {
+  /**
+   * Nota de 0 a 10 sobre las respuestas **corregidas**. Las que quedaron sin
+   * calificar no entran ni en el numerador ni en el denominador, así que un
+   * cuestionario de 10 con 2 sin calificar se puntúa sobre 8.
+   */
   score: number
+  /** Preguntas del cuestionario. NO es el denominador de `score`. */
   total: number
   percentage: number
   incorrectTopics: string[]
   answers: Answer[]
   correctAnswers: Answer[]
   incorrectAnswers: Answer[]
+  /**
+   * Las que no se pudieron corregir. Si viene con elementos, `score` está
+   * calculado sobre menos preguntas que `total` y hay que decírselo al alumno.
+   */
+  ungradedAnswers: Answer[]
 }
 
 export interface StudentTip {

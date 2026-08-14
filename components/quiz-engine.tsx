@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { X, ChevronRight, ChevronLeft, Check, Loader2, Pencil, Sparkles, Eye, Zap } from 'lucide-react'
+import { X, ChevronRight, ChevronLeft, Check, Loader2, Pencil, Sparkles, Eye, Zap, AlertCircle, RotateCcw } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { LaTeXRenderer } from './latex-renderer'
 import { MathBackground } from './math-background'
@@ -12,8 +12,9 @@ import { ExplanationModal } from './explanation-modal'
 import { AnswerInput, emptySelectionFor, type AnswerSelection } from './quiz-answer-inputs'
 import { AnswerRecap, answerRecapLine } from './answer-recap'
 import { isCorrectMultipleChoice, isCorrectNumeric, isCorrectTrueFalse } from '@/lib/answer-grading'
+import { gradeShortAnswerLocally } from '@/lib/short-answer-autograde'
 import { cn } from '@/lib/utils'
-import type { Answer, Question } from '@/lib/types'
+import type { Answer, Question, ShortAnswerQuestion } from '@/lib/types'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,11 @@ import {
 type AnswerState = {
   selection: AnswerSelection
   submitted: boolean
+  /**
+   * `true`/`false` cuando se corrigió; `null` mientras no se envió **o** cuando
+   * la corrección no pudo correr. Para distinguir esos dos `null` está
+   * `submitted`: enviada y `isCorrect === null` es "sin calificar".
+   */
   isCorrect: boolean | null
 }
 
@@ -166,8 +172,20 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     setAnswerState(prev => ({ ...prev, selection }))
   }, [answerState.submitted, isEditingQuestion])
 
-  /** Builds the typed Answer that gets persisted/recapped, given the current question + selection. */
-  const buildAnswer = useCallback((question: Question, selection: AnswerSelection, isCorrect: boolean): Answer => {
+  /**
+   * Builds the typed Answer that gets persisted/recapped, given the current
+   * question + selection.
+   *
+   * `gradingStatus` sólo lo manda `short_answer` cuando la corrección no pudo
+   * correr. En ese caso `isCorrect` va en `false` porque el tipo lo exige, pero
+   * el que manda es `gradingStatus` — ver el comentario en `BaseAnswer`.
+   */
+  const buildAnswer = useCallback((
+    question: Question,
+    selection: AnswerSelection,
+    isCorrect: boolean,
+    gradingStatus?: 'graded' | 'ungraded',
+  ): Answer => {
     const base = {
       questionId: question.id,
       questionText: question.question,
@@ -175,6 +193,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       topic: question.topic,
       topicName: question.topicName,
       explanation: question.explanation,
+      ...(gradingStatus === 'ungraded' ? { gradingStatus } : {}),
     }
     if (question.type === 'multiple_choice' && selection.type === 'multiple_choice') {
       return { ...base, type: 'multiple_choice', options: question.options, selectedAnswer: selection.value ?? -1, correctAnswer: question.correctAnswer }
@@ -190,6 +209,102 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     }
     throw new Error('Selection type does not match question type')
   }, [])
+
+  /**
+   * Corrección de una respuesta corta, en dos etapas.
+   *
+   * **Etapa 1, determinista y local.** Si `gradeShortAnswerLocally` resuelve, se
+   * termina acá: no se llama a Gemini. Es lo que hace que un "13" idéntico al
+   * esperado se corrija bien aunque la API esté caída — el escenario exacto del
+   * 2026-08-10, donde el endpoint falló ~224 veces y 15 respuestas correctas
+   * quedaron marcadas mal. Como efecto secundario, cada resolución local es una
+   * fila menos en `ai_usage_log` y una llamada menos facturada.
+   *
+   * **Etapa 2, la IA.** Sólo para lo que el determinista no puede afirmar. Y
+   * acá está el otro arreglo: un 500 **no lanza** —`fetch` sólo rechaza por
+   * fallo de red— así que sin mirar `response.ok` la respuesta de error entraba
+   * por el camino feliz, `data.isCorrect` daba `undefined`, `Boolean(undefined)`
+   * daba `false` y el alumno quedaba con una respuesta marcada incorrecta y sin
+   * un solo aviso de que nadie la había corregido.
+   *
+   * Lo que no se pudo corregir queda `ungraded`: ni acierto ni error.
+   */
+  const gradeShortAnswer = useCallback(async (
+    question: ShortAnswerQuestion,
+    selection: Extract<AnswerSelection, { type: 'short_answer' }>,
+  ) => {
+    const markUngraded = (mensaje: string) => {
+      setShortAnswerFeedback(mensaje)
+      setAnswerState(prev => ({ ...prev, submitted: true, isCorrect: null }))
+      answerQuestion(buildAnswer(question, selection, false, 'ungraded'))
+    }
+
+    // ─── Etapa 1: determinista ───────────────────────────────────────────────
+    const local = gradeShortAnswerLocally(selection.value, question.acceptedAnswers)
+    if (local.resolved) {
+      setShortAnswerFeedback(
+        local.via === 'numeric'
+          ? '¡Correcto! Tu respuesta equivale a la esperada.'
+          : '¡Correcto!'
+      )
+      setAnswerState(prev => ({ ...prev, submitted: true, isCorrect: true }))
+      answerQuestion(buildAnswer(question, selection, true))
+      return
+    }
+
+    // ─── Etapa 2: IA ─────────────────────────────────────────────────────────
+    setIsGradingShortAnswer(true)
+    try {
+      const response = await fetch('/api/quiz/grade-short-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: question.question,
+          acceptedAnswers: question.acceptedAnswers,
+          studentAnswer: selection.value,
+          nivel: config?.nivel,
+          grado: config?.grado,
+        }),
+      })
+
+      // Los mensajes dicen sólo la CAUSA: la consecuencia ("no cuenta como
+      // error") la agrega el panel, para no repetirla dos veces en pantalla.
+      if (!response.ok) {
+        markUngraded('No pudimos corregir esta respuesta.')
+        return
+      }
+
+      const data = await response.json()
+
+      // Un 200 con un cuerpo que no trae un booleano es tan poco una
+      // corrección como un 500. Se exige el tipo en vez de coercionar.
+      if (typeof data?.isCorrect !== 'boolean') {
+        markUngraded('No pudimos corregir esta respuesta.')
+        return
+      }
+
+      setShortAnswerFeedback(typeof data.feedback === 'string' ? data.feedback : null)
+      setAnswerState(prev => ({ ...prev, submitted: true, isCorrect: data.isCorrect }))
+      answerQuestion(buildAnswer(question, selection, data.isCorrect))
+    } catch {
+      markUngraded('No pudimos conectarnos para corregir.')
+    } finally {
+      setIsGradingShortAnswer(false)
+    }
+  }, [answerQuestion, buildAnswer, config])
+
+  /** Reintento manual de la corrección, desde el aviso de "sin calificar". */
+  const retryShortAnswerGrading = useCallback(async () => {
+    if (currentQuestion.type !== 'short_answer') return
+    const selection = answerState.selection
+    if (selection.type !== 'short_answer') return
+
+    // Volver a "sin enviar" para que el reintento pase por el mismo camino y
+    // pueda terminar en cualquiera de los tres estados, no sólo en el actual.
+    setAnswerState(prev => ({ ...prev, submitted: false, isCorrect: null }))
+    setShortAnswerFeedback(null)
+    await gradeShortAnswer(currentQuestion, selection)
+  }, [currentQuestion, answerState.selection, gradeShortAnswer])
 
   const handleSubmit = useCallback(async () => {
     if (isEditingQuestion) return
@@ -221,34 +336,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
 
     if (currentQuestion.type === 'short_answer' && selection.type === 'short_answer') {
       if (selection.value.trim().length === 0) return
-      setIsGradingShortAnswer(true)
-      try {
-        const response = await fetch('/api/quiz/grade-short-answer', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            question: currentQuestion.question,
-            acceptedAnswers: currentQuestion.acceptedAnswers,
-            studentAnswer: selection.value,
-            nivel: config?.nivel,
-            grado: config?.grado,
-          }),
-        })
-        const data = await response.json()
-        const isCorrect = Boolean(data.isCorrect)
-        setShortAnswerFeedback(typeof data.feedback === 'string' ? data.feedback : null)
-        setAnswerState(prev => ({ ...prev, submitted: true, isCorrect }))
-        answerQuestion(buildAnswer(currentQuestion, selection, isCorrect))
-      } catch {
-        // Grading failed — mark as submitted but ungraded rather than leaving the student stuck.
-        setShortAnswerFeedback('No se pudo corregir automáticamente. Revisa la respuesta esperada abajo.')
-        setAnswerState(prev => ({ ...prev, submitted: true, isCorrect: false }))
-        answerQuestion(buildAnswer(currentQuestion, selection, false))
-      } finally {
-        setIsGradingShortAnswer(false)
-      }
+      await gradeShortAnswer(currentQuestion, selection)
     }
-  }, [answerState.selection, currentQuestion, answerQuestion, isEditingQuestion, buildAnswer, config])
+  }, [answerState.selection, currentQuestion, answerQuestion, isEditingQuestion, buildAnswer, gradeShortAnswer])
 
   const handleNext = useCallback(() => {
     if (isPreviewMode) {
@@ -520,8 +610,50 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
             </Card>
           )}
 
+          {/* Feedback after answer - sin calificar.
+              Va ANTES del panel de incorrecta y es un estado propio: ni verde ni
+              rojo. `isCorrect === null` con `submitted` en true significa que la
+              corrección no pudo correr, no que el alumno se haya equivocado. */}
+          {answerState.submitted && answerState.isCorrect === null && (
+            <Card className="p-4 sm:p-5 border-2 border-amber-400/40 bg-amber-50/60 animate-in fade-in-50 slide-in-from-bottom-4 space-y-4 max-w-full overflow-hidden min-w-0">
+              <div className="flex items-start gap-3 min-w-0 max-w-full overflow-hidden">
+                <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5 text-white" strokeWidth={3} />
+                </div>
+                <div className="flex-1 min-w-0 space-y-3 max-w-full overflow-hidden">
+                  <h3 className="font-bold text-amber-700 text-lg">Sin calificar</h3>
+
+                  <p className="text-sm text-foreground/80 leading-relaxed">
+                    {shortAnswerFeedback ?? 'No pudimos corregir esta respuesta.'}{' '}
+                    <strong>No cuenta como error en tu nota.</strong>
+                  </p>
+
+                  {/* La respuesta esperada igual se muestra: que la corrección
+                      haya fallado no es razón para que el alumno se quede sin
+                      saber cuál era. */}
+                  <div className="text-sm text-foreground/80 leading-relaxed pt-1 break-words min-w-0 max-w-full overflow-hidden">
+                    <LaTeXRenderer content={currentQuestion.explanation} />
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={retryShortAnswerGrading}
+                    disabled={isGradingShortAnswer}
+                    className="h-11 rounded-xl border-amber-500/50 text-amber-700 hover:bg-amber-100 font-bold gap-2"
+                  >
+                    {isGradingShortAnswer
+                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      : <RotateCcw className="w-4 h-4" />}
+                    Reintentar la corrección
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Feedback after answer - incorrect */}
-          {answerState.submitted && !answerState.isCorrect && (
+          {answerState.submitted && answerState.isCorrect === false && (
             <Card className="p-4 sm:p-5 border-2 border-destructive/30 bg-destructive/5 animate-in fade-in-50 slide-in-from-bottom-4 space-y-4 max-w-full overflow-hidden min-w-0">
               <div className="flex items-start gap-3 min-w-0 max-w-full overflow-hidden">
                 <div className="w-10 h-10 rounded-xl bg-destructive flex items-center justify-center shrink-0">
@@ -648,7 +780,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
             </>
           ) : (
             <>
-          {answerState.submitted && !answerState.isCorrect && (
+          {answerState.submitted && answerState.isCorrect === false && (
             <>
               {currentQuestion.type === 'multiple_choice' && (
                 <Button
