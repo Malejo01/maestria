@@ -6,6 +6,14 @@ import { guardAiCall } from '@/lib/ai-guard'
 import { captureAiSchemaFailure, captureRouteFailure } from '@/lib/observability'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { normalizeQuestionText, numericSignature } from '@/lib/question-dedup'
+import {
+  buildQuestionMixInstruction,
+  mergeQuestionTypeMixes,
+  parseQuestionTypeMix,
+  questionTypesFromMix,
+  restrictQuestionTypeMix,
+  type QuestionTypeMix,
+} from '@/lib/question-mix'
 import { sql } from '@/lib/db'
 
 const google = createGoogleGenerativeAI({
@@ -87,9 +95,18 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - tolerance: number opcional (margen de error aceptado, omitir si la respuesta debe ser exacta)`,
 }
 
-function buildTypeInstructions(questionTypes: QuestionType[]): string {
+function buildTypeInstructions(
+  questionTypes: QuestionType[],
+  questionMix: QuestionTypeMix | undefined,
+  questionCount: number
+): string {
   const blocks = questionTypes.map((type) => PROMPT_FIELD_BLOCKS[type]).join('\n\n')
   const typesList = questionTypes.join(', ')
+
+  // Con mezcla declarada, el reparto es numérico y explícito; sin ella queda el
+  // "de forma pareja" de siempre, que es lo que ve todo K-12.
+  const mixInstruction = buildQuestionMixInstruction(questionMix, questionCount)
+  const distribution = mixInstruction || 'Distribuí las preguntas de forma pareja entre los tipos solicitados.'
 
   return `CAMPOS COMUNES A TODA PREGUNTA (además de los específicos del tipo):
 - id: string (ej: "q1", "q2")
@@ -103,7 +120,7 @@ TIPOS DE PREGUNTA A GENERAR (usa el campo "type" con EXACTAMENTE uno de estos va
 ${blocks}
 ${questionTypes.length > 1
   ? `
-Distribuí las preguntas de forma pareja entre los tipos solicitados.
+${distribution}
 
 MUY IMPORTANTE — NO REPITAS EL MISMO EJERCICIO EN DOS FORMATOS:
 Dos preguntas son la MISMA aunque cambien de tipo o de redacción si se resuelven
@@ -266,6 +283,7 @@ async function generateQuizBatchWithFallback({
   grado,
   contextoProfesional,
   questionTypes,
+  questionMix,
   onUsage,
 }: {
   subject: string
@@ -281,6 +299,8 @@ async function generateQuizBatchWithFallback({
   grado?: string
   contextoProfesional?: ContextoProfesionalCarrera
   questionTypes: QuestionType[]
+  /** Reparto por tipo que declara el programa de cátedra (migración 023). */
+  questionMix?: QuestionTypeMix
   /**
    * Se invoca por CADA llamada al modelo, incluidas las del camino de fallback.
    * Una sola request puede gastar tres veces lo que sugiere su única fila de
@@ -313,7 +333,7 @@ FORMATO ESTRICTO PARA CONTENIDO MATEMÁTICO (si aplica):
 - Operadores lógicos: $p \\wedge q$ (y), $p \\vee q$ (o), $\\neg p$ (no), $p \\rightarrow q$ (si...entonces), $p \\leftrightarrow q$ (si y solo si)
 - Escapa backslashes: \\\\frac, \\\\sqrt, \\\\wedge (dos barras en JSON)
 
-${buildTypeInstructions(questionTypes)}`
+${buildTypeInstructions(questionTypes, questionMix, questionCount)}`
 
   const userPrompt = `Genera ${questionCount} preguntas para: ${subject}
 
@@ -486,6 +506,7 @@ async function generateQuizBatch({
   grado,
   contextoProfesional,
   questionTypes,
+  questionMix,
   onUsage,
 }: {
   subject: string
@@ -501,6 +522,8 @@ async function generateQuizBatch({
   grado?: string
   contextoProfesional?: ContextoProfesionalCarrera
   questionTypes: QuestionType[]
+  /** Reparto por tipo que declara el programa de cátedra (migración 023). */
+  questionMix?: QuestionTypeMix
   onUsage?: (usage: AiSdkUsage | undefined) => void
 }) {
   return generateQuizBatchWithFallback({
@@ -517,6 +540,7 @@ async function generateQuizBatch({
     grado,
     contextoProfesional,
     questionTypes,
+    questionMix,
     onUsage,
   })
 }
@@ -578,19 +602,33 @@ function getSpecialistRole(subject: string): string {
 }
 
 
+/** Lo que el programa de cátedra le aporta al prompt, en una sola consulta. */
+interface CurriculumPedagogy {
+  contextoProfesional?: ContextoProfesionalCarrera
+  /** Suma de las mezclas de las unidades elegidas. Ver lib/question-mix.ts. */
+  questionMix?: QuestionTypeMix
+}
+
 /**
- * Trae de `curriculum` la aplicación profesional de las unidades elegidas.
+ * Trae de `curriculum` lo que las unidades elegidas declaran sobre cómo evaluar:
+ * la aplicación profesional (migración 022) y la mezcla de tipos de pregunta
+ * (migración 023).
  *
- * Devuelve `undefined` —y no un objeto vacío— cuando no aplica, para que
- * `buildEducationSystemPrompt` omita la sección entera en vez de inyectar un
- * encabezado sin contenido. No aplica en tres casos: nivel distinto de Superior,
- * carrera ausente (el flujo de "subí tu programa" no tiene fila en curriculum),
- * o un programa que no declara contexto en ninguna de sus unidades.
+ * Cada campo devuelve `undefined` —y no un objeto vacío— cuando no aplica, para
+ * que el prompt omita la sección entera en vez de inyectar un encabezado sin
+ * contenido. No aplica nada en tres casos: nivel distinto de Superior, carrera
+ * ausente (el flujo de "subí tu programa" no tiene fila en curriculum), o un
+ * programa que no declara nada en ninguna de sus unidades.
  *
- * Una falla de base acá no puede tumbar la generación: sin contexto profesional
- * el cuestionario sale genérico, que es exactamente el comportamiento previo.
+ * Las dos cosas se leen del servidor y no se aceptan del body a propósito: son
+ * texto y proporciones que entran al system prompt, y leyéndolas de `curriculum`
+ * queda garantizado que lo que pide el prompt es lo que declara el programa de
+ * cátedra, sin desactualizarse cuando el programa cambia.
+ *
+ * Una falla de base acá no puede tumbar la generación: sin esto el cuestionario
+ * sale genérico y parejo, que es exactamente el comportamiento previo.
  */
-async function loadContextoProfesional({
+async function loadCurriculumPedagogy({
   nivel,
   grado,
   materia,
@@ -602,21 +640,21 @@ async function loadContextoProfesional({
   materia: string
   carrera: string
   ejes: string[]
-}): Promise<ContextoProfesionalCarrera | undefined> {
-  if (nivel !== 'Superior' || !carrera || !grado || ejes.length === 0) return undefined
+}): Promise<CurriculumPedagogy> {
+  if (nivel !== 'Superior' || !carrera || !grado || ejes.length === 0) return {}
 
   try {
     const rows = (await sql`
-      SELECT eje, contexto_profesional
+      SELECT eje, contexto_profesional, tipos_pregunta_sugeridos
       FROM curriculum
       WHERE nivel   = 'Superior'
         AND carrera = ${carrera}
         AND grado   = ${grado}
         AND materia = ${materia}
         AND eje     = ANY(${ejes})
-        AND contexto_profesional IS NOT NULL
+        AND (contexto_profesional IS NOT NULL OR tipos_pregunta_sugeridos IS NOT NULL)
       ORDER BY id
-    `) as { eje: string; contexto_profesional: unknown }[]
+    `) as { eje: string; contexto_profesional: unknown; tipos_pregunta_sugeridos: unknown }[]
 
     const unidades = rows.flatMap((row) => {
       const value = row.contexto_profesional
@@ -633,13 +671,20 @@ async function loadContextoProfesional({
       return [{ eje: row.eje, aplicacion, herramientas }]
     })
 
-    return unidades.length > 0 ? { carrera, unidades } : undefined
+    const mixes = rows
+      .map((row) => parseQuestionTypeMix(row.tipos_pregunta_sugeridos))
+      .filter((mix): mix is QuestionTypeMix => mix !== undefined)
+
+    return {
+      contextoProfesional: unidades.length > 0 ? { carrera, unidades } : undefined,
+      questionMix: mergeQuestionTypeMixes(mixes),
+    }
   } catch (error) {
     captureRouteFailure(error instanceof Error ? error : new Error(String(error)), {
       endpoint: '/api/generate-quiz',
-      operation: 'loadContextoProfesional',
+      operation: 'loadCurriculumPedagogy',
     })
-    return undefined
+    return {}
   }
 }
 
@@ -670,12 +715,11 @@ export async function POST(req: Request) {
     }, { status: 400 })
   }
 
-  // Defaults to multiple_choice-only — every existing caller that doesn't
-  // send questionTypes gets exactly today's behavior, unchanged.
-  const questionTypes: QuestionType[] = Array.isArray(rawQuestionTypes) && rawQuestionTypes.length > 0
+  // Lo que el llamador pidió explícitamente. Se resuelve contra la sugerencia
+  // del currículum más abajo, una vez leída — y le gana siempre.
+  const explicitQuestionTypes: QuestionType[] = Array.isArray(rawQuestionTypes)
     ? rawQuestionTypes.filter((t: unknown): t is QuestionType => QUESTION_TYPE_VALUES.includes(t as QuestionType))
-    : ['multiple_choice']
-  const finalQuestionTypes = questionTypes.length > 0 ? questionTypes : ['multiple_choice' as const]
+    : []
 
   let nivel = rawNivel
   let grado = rawGrado
@@ -728,12 +772,9 @@ export async function POST(req: Request) {
   const curriculum = buildCurriculumFromUnits(subject, subjectUnits)
   const specialistRole = getSpecialistRole(subject)
 
-  // Contexto profesional de la carrera (migración 022). Se lee del servidor y no
-  // se acepta del body a propósito: es texto que entra al system prompt, y el
-  // cliente ya puede influir bastante vía `pedagogyContext`. Leyéndolo de
-  // `curriculum` queda garantizado que lo que dice el prompt es lo que declara
-  // el programa de cátedra, y no se desactualiza si el programa cambia.
-  const contextoProfesional = await loadContextoProfesional({
+  // Lo que declara el programa de cátedra: contexto profesional (migración 022)
+  // y mezcla sugerida de tipos de pregunta (migración 023).
+  const { contextoProfesional, questionMix: suggestedMix } = await loadCurriculumPedagogy({
     nivel,
     grado,
     materia: subject,
@@ -744,6 +785,30 @@ export async function POST(req: Request) {
           .filter((name: string) => name.length > 0)
       : [],
   })
+
+  // `tipos_pregunta_sugeridos` es un DEFAULT, no un candado — la columna dice
+  // "sugeridos" y el comportamiento tiene que coincidir. La precedencia es:
+  //
+  //   1. Lo que el llamador pidió explícitamente (el alumno destildó tipos en el
+  //      selector, o el docente armó el cuestionario con los que quiso).
+  //   2. Lo que sugiere el programa de cátedra para las unidades elegidas.
+  //   3. multiple_choice, el default histórico para todo llamador sin nada de
+  //      lo anterior.
+  //
+  // El paso 2 es el que corrige a los llamadores que hoy caen al 3 sin haber
+  // elegido nada: sin él, un cuestionario de aula sigue saliendo 100% opción
+  // múltiple aunque el programa pida lo contrario.
+  const suggestedQuestionTypes = questionTypesFromMix(suggestedMix)
+  const finalQuestionTypes: QuestionType[] = explicitQuestionTypes.length > 0
+    ? explicitQuestionTypes
+    : suggestedQuestionTypes.length > 0
+      ? suggestedQuestionTypes
+      : ['multiple_choice']
+
+  // La mezcla se recorta a los tipos que finalmente se van a usar y se
+  // renormaliza. Un tipo que el usuario tildó y el programa no pondera entra
+  // igual; un tipo que el usuario destildó no vuelve por la ventana.
+  const questionMix = restrictQuestionTypeMix(suggestedMix, finalQuestionTypes)
 
   const modeDescription = mode === 'teorico'
     ? 'MODO TEÓRICO: Preguntas conceptuales sobre definiciones, teoremas y propiedades. Sin cálculos numéricos complejos.'
@@ -818,6 +883,7 @@ situaciones diferentes.`
             grado,
             contextoProfesional,
             questionTypes: finalQuestionTypes,
+            questionMix,
             onUsage: collectUsage,
           })
 
@@ -845,6 +911,7 @@ situaciones diferentes.`
             grado,
             contextoProfesional,
             questionTypes: finalQuestionTypes,
+            questionMix,
             onUsage: collectUsage,
           })
 
@@ -889,6 +956,7 @@ situaciones diferentes.`
         grado,
         contextoProfesional,
         questionTypes: finalQuestionTypes,
+        questionMix,
         onUsage: collectUsage,
       })
 
