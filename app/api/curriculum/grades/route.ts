@@ -11,6 +11,9 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const nivel = searchParams.get('nivel')?.trim()
   const jurisdiccion = searchParams.get('jurisdiccion')?.trim() || DEFAULT_JURISDICTION
+  // Ver el comentario equivalente en /api/curriculum/subjects: ausente = K-12,
+  // donde `carrera` es NULL, y `IS NOT DISTINCT FROM` cubre los dos casos.
+  const carrera = searchParams.get('carrera')?.trim() || null
 
   if (!nivel) {
     return NextResponse.json({ error: 'Parámetro nivel requerido' }, { status: 400 })
@@ -20,7 +23,9 @@ export async function GET(req: Request) {
     const rows = await sql`
       SELECT DISTINCT grado
       FROM curriculum
-      WHERE nivel = ${nivel} AND jurisdiccion = ${jurisdiccion}
+      WHERE nivel = ${nivel}
+        AND jurisdiccion = ${jurisdiccion}
+        AND carrera IS NOT DISTINCT FROM ${carrera}
       ORDER BY grado
     `
     const grades = rows.map((r: any) => r.grado)

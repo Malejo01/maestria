@@ -235,16 +235,73 @@ ${emojiInstruction}`
   }
 }
 
+/** Aplicación profesional de una unidad, tal como la declara el programa de cátedra. */
+export interface ContextoProfesionalUnidad {
+  eje: string
+  aplicacion: string
+  herramientas: string[]
+}
+
+/**
+ * Contexto profesional de una carrera terciaria, armado desde
+ * `curriculum.contexto_profesional` (migración 022).
+ *
+ * Existe porque el resto de este módulo deriva todo de (nivel, grado, materia),
+ * y eso alcanza para saber que hay que hablarle a un adulto con rigor formal
+ * pero no para saber que ese adulto estudia sistemas. Sin esto, "Funciones" en
+ * una tecnicatura en análisis de sistemas genera los mismos ejercicios que
+ * "Funciones" en un profesorado de educación física.
+ */
+export interface ContextoProfesionalCarrera {
+  carrera: string
+  unidades: ContextoProfesionalUnidad[]
+}
+
+/**
+ * Sección de prompt que sitúa los ejercicios en el dominio profesional.
+ *
+ * La regla es deliberadamente imperativa y cuantificada ("al menos la mitad").
+ * Una indicación blanda del tipo "podés contextualizar" se pierde entre las
+ * otras quince reglas del prompt y el modelo vuelve al ejercicio genérico, que
+ * es el default de cualquier corpus de matemática.
+ */
+function buildProfessionalContextSection(ctx: ContextoProfesionalCarrera | undefined): string {
+  if (!ctx || ctx.unidades.length === 0) return ''
+
+  const unidades = ctx.unidades
+    .map((u) => {
+      const herramientas = u.herramientas.length > 0
+        ? ` Herramientas de la cátedra: ${u.herramientas.join(', ')}.`
+        : ''
+      return `- ${u.eje}\n  Aplicación profesional: ${u.aplicacion}.${herramientas}`
+    })
+    .join('\n')
+
+  return `
+CONTEXTO PROFESIONAL DE LA CARRERA (OBLIGATORIO):
+Los estudiantes cursan ${ctx.carrera}. Esta no es una materia de matemática general: el programa de cátedra define para cada unidad una aplicación profesional concreta.
+
+${unidades}
+
+REGLAS DE CONTEXTUALIZACIÓN:
+1. Al menos la MITAD de las preguntas deben estar situadas en un problema real del dominio profesional listado arriba (por ejemplo: validar un algoritmo con tablas de verdad, modelar el crecimiento de usuarios de una aplicación, optimizar un inventario, consultar una base de datos con operaciones de conjuntos).
+2. Usá el vocabulario del dominio (usuarios, registros, consultas, procesos, inventario, costos, rendimiento) en los enunciados situados.
+3. El rigor matemático NO se relaja al contextualizar: el problema se sitúa, la exigencia formal se mantiene.
+4. Evitá el ejercicio descontextualizado ("resolvé la siguiente ecuación", "hallá el dominio de f(x)") cuando el tema admite una situación profesional. Reservalo sólo para lo puramente instrumental.`
+}
+
 export function buildEducationSystemPrompt({
   nivel,
   grado,
   materia,
   difficulty = 'intermedio',
+  contextoProfesional,
 }: {
   nivel?: string
   grado?: string
   materia: string
   difficulty?: string
+  contextoProfesional?: ContextoProfesionalCarrera
 }): string {
   const ctx = getEducationContext(nivel, grado, materia)
 
@@ -276,6 +333,7 @@ PÚBLICO OBJETIVO Y EDAD:
 
 DISCIPLINA Y MATERIA:
 ${ctx.estrategiaMateria}
+${buildProfessionalContextSection(contextoProfesional)}
 
 REGISTRO LINGÜÍSTICO Y FORMATO:
 ${ctx.registroLinguistico}

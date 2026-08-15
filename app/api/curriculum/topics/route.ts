@@ -16,6 +16,35 @@ export const dynamic = 'force-dynamic'
 interface AxisRow {
   eje: string
   temas: unknown
+  contexto_profesional: unknown
+}
+
+/**
+ * Aplicación profesional de una unidad, tal como la declara el programa de
+ * cátedra. Ver scripts/022-curriculum-carrera.sql.
+ */
+export interface ContextoProfesional {
+  aplicacion: string
+  herramientas: string[]
+}
+
+/**
+ * Mismo criterio que `toTopicList`: la columna es JSONB, así que Postgres
+ * garantiza JSON válido y nada más. Una unidad sin contexto declarado devuelve
+ * null y el prompt simplemente no incluye la sección.
+ */
+function toContextoProfesional(value: unknown): ContextoProfesional | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
+
+  const record = value as Record<string, unknown>
+  const aplicacion = typeof record.aplicacion === 'string' ? record.aplicacion.trim() : ''
+  if (!aplicacion) return null
+
+  const herramientas = Array.isArray(record.herramientas)
+    ? record.herramientas.filter((item): item is string => typeof item === 'string')
+    : []
+
+  return { aplicacion, herramientas }
 }
 
 /**
@@ -54,6 +83,8 @@ export async function GET(req: Request) {
   const grado   = searchParams.get('grado')?.trim()
   const materia = searchParams.get('materia')?.trim()
   const jurisdiccion = searchParams.get('jurisdiccion')?.trim() || DEFAULT_JURISDICTION
+  // Ver el comentario equivalente en /api/curriculum/subjects: ausente = K-12.
+  const carrera = searchParams.get('carrera')?.trim() || null
 
   if (!nivel || !grado || !materia) {
     return NextResponse.json({ error: 'Parámetros nivel, grado y materia requeridos' }, { status: 400 })
@@ -61,17 +92,19 @@ export async function GET(req: Request) {
 
   try {
     const rows = (await sql`
-      SELECT eje, temas
+      SELECT eje, temas, contexto_profesional
       FROM curriculum
       WHERE nivel   = ${nivel}
         AND grado   = ${grado}
         AND materia = ${materia}
         AND jurisdiccion = ${jurisdiccion}
+        AND carrera IS NOT DISTINCT FROM ${carrera}
       ORDER BY id
     `) as AxisRow[]
     const axes = rows.map((r) => ({
       eje:   r.eje,
       temas: toTopicList(r.temas),
+      contextoProfesional: toContextoProfesional(r.contexto_profesional),
     }))
     return NextResponse.json({ axes })
   } catch (error) {

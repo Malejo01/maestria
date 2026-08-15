@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
   ChevronRight, Loader2,
-  CheckSquare, Square, Minus, ArrowLeft, Settings2, Upload, FileText,
+  CheckSquare, Square, Minus, ArrowLeft, Settings2, Upload, FileText, GraduationCap,
 } from 'lucide-react'
 import { MathBackground } from '@/components/math-background'
 import { NIVEL_OPTIONS, type Nivel } from '@/lib/nivel-options'
@@ -31,6 +31,13 @@ export interface CurriculumSelection {
   nivel: Nivel
   grado: string
   materia: string
+  /**
+   * Carrera terciaria. Vacío en Primario y Secundario, que se organizan por
+   * grado. En Superior distingue el programa de una carrera del de otra: sin
+   * esto, "Matemática" de la tecnicatura en sistemas y "Matemática" de un
+   * profesorado serían la misma materia para el selector.
+   */
+  carrera: string
   selectedTopics: { id: string; name: string; eje: string }[]
   mode: QuizMode
   questionCount: number
@@ -53,15 +60,36 @@ interface CurriculumSelectorProps {
 export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initialGrado }: CurriculumSelectorProps) {
   const { data: session } = useSession()
   const isDocente = session?.user?.role === 'DOCENTE'
-  const hasPreseed = Boolean(initialNivel && initialGrado)
+  /**
+   * El atajo de "volver directo a materia" vale para K-12, donde (nivel, grado)
+   * identifican por completo el lugar del alumno en el currículum.
+   *
+   * En Superior NO alcanzan: falta la carrera, y saltear a 'materia' sin ella
+   * consulta la API con `carrera IS NULL`, que en Superior no matchea ninguna
+   * fila. El alumno cuyo perfil ya dice Superior/1er Año veía "No hay materias
+   * cargadas para este nivel todavía" — justo el caso de los 31 alumnos que
+   * motivaron esto. Por eso Superior arranca en su propio paso de carrera.
+   */
+  const isSuperiorPreseed = initialNivel === 'Superior'
+  const hasPreseed = Boolean(initialNivel && initialGrado) && !isSuperiorPreseed
 
   // Step machine: nivel → grado → materia → topics → params
-  // For Superior the step sequence is: nivel → superior-form → topics → params
+  //
+  // Superior tiene dos caminos y se bifurca en 'superior-carrera':
+  //   precargado: nivel → superior-carrera → grado → materia → topics → params
+  //   propio    : nivel → superior-carrera → superior-form → topics → params
+  // El segundo es el que existía antes de que hubiera currículos Superior
+  // cargados, y se conserva para quien no tiene su carrera en la lista.
+  //
   // When both initialNivel/initialGrado are provided, we start straight at 'materia'.
-  type Step = 'nivel' | 'grado' | 'materia' | 'topics' | 'params' | 'superior-form'
-  const [step, setStep] = useState<Step>(hasPreseed ? 'materia' : 'nivel')
+  type Step = 'nivel' | 'grado' | 'materia' | 'topics' | 'params' | 'superior-form' | 'superior-carrera'
+  const [step, setStep] = useState<Step>(
+    hasPreseed ? 'materia' : isSuperiorPreseed ? 'superior-carrera' : 'nivel'
+  )
 
-  const [nivel, setNivel] = useState<Nivel | null>(hasPreseed ? initialNivel! : null)
+  const [nivel, setNivel] = useState<Nivel | null>(
+    hasPreseed || isSuperiorPreseed ? initialNivel! : null
+  )
   const [grades, setGrades] = useState<string[]>([])
   const [grado, setGrado] = useState<string>(hasPreseed ? initialGrado! : '')
   const [subjects, setSubjects] = useState<string[]>([])
@@ -70,8 +98,16 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
   const [selected, setSelected] = useState<SelectedTopicMap>({})
   const [loadingData, setLoadingData] = useState(false)
 
-  // Superior custom flow state
+  // Superior flow state. `carrera` la comparten los dos caminos: en el
+  // precargado sale de la lista, en el propio la escribe el alumno.
+  const [careers, setCareers] = useState<string[]>([])
   const [carrera, setCarrera] = useState('')
+  /**
+   * Cuál de los dos caminos de Superior se tomó. No se deduce de otro estado a
+   * propósito: `materia` y `carrera` terminan con valor en ambos, así que
+   * inferirlo daría una navegación hacia atrás que a veces acierta.
+   */
+  const [superiorPath, setSuperiorPath] = useState<'precargado' | 'propio' | null>(null)
   const [anioCarrera, setAnioCarrera] = useState('')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [parsedUnits, setParsedUnits] = useState<{ id: string; name: string; topics: { id: string; name: string }[] }[]>([])
@@ -87,10 +123,32 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
 
   // ─── Data fetching ──────────────────────────────────────────────────────────
 
-  const fetchGrades = async (n: Nivel) => {
+  /**
+   * `carrera` viaja como query param sólo cuando tiene valor. Ausente, la API
+   * filtra por `carrera IS NULL`, que es lo correcto para Primario y Secundario
+   * y lo que evita que una materia de una tecnicatura aparezca en 4to año.
+   */
+  const carreraParam = (c: string) => (c ? `&carrera=${encodeURIComponent(c)}` : '')
+
+  const fetchCareers = async (n: Nivel) => {
     setLoadingData(true)
     try {
-      const res = await fetch(`/api/curriculum/grades?nivel=${encodeURIComponent(n)}`)
+      const res = await fetch(`/api/curriculum/careers?nivel=${encodeURIComponent(n)}`)
+      const data = await res.json()
+      return (data.careers ?? []) as string[]
+    } catch {
+      // Sin lista de carreras el alumno todavía puede subir su programa; que
+      // falle la consulta no puede dejarlo sin camino.
+      return []
+    } finally {
+      setLoadingData(false)
+    }
+  }
+
+  const fetchGrades = async (n: Nivel, c = '') => {
+    setLoadingData(true)
+    try {
+      const res = await fetch(`/api/curriculum/grades?nivel=${encodeURIComponent(n)}${carreraParam(c)}`)
       const data = await res.json()
       setGrades(data.grades ?? [])
     } finally {
@@ -98,10 +156,12 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     }
   }
 
-  const fetchSubjects = async (n: Nivel, g: string) => {
+  const fetchSubjects = async (n: Nivel, g: string, c = '') => {
     setLoadingData(true)
     try {
-      const res = await fetch(`/api/curriculum/subjects?nivel=${encodeURIComponent(n)}&grado=${encodeURIComponent(g)}`)
+      const res = await fetch(
+        `/api/curriculum/subjects?nivel=${encodeURIComponent(n)}&grado=${encodeURIComponent(g)}${carreraParam(c)}`
+      )
       const data = await res.json()
       setSubjects(data.subjects ?? [])
     } finally {
@@ -109,11 +169,11 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     }
   }
 
-  const fetchTopics = async (n: Nivel, g: string, m: string) => {
+  const fetchTopics = async (n: Nivel, g: string, m: string, c = '') => {
     setLoadingData(true)
     try {
       const res = await fetch(
-        `/api/curriculum/topics?nivel=${encodeURIComponent(n)}&grado=${encodeURIComponent(g)}&materia=${encodeURIComponent(m)}`
+        `/api/curriculum/topics?nivel=${encodeURIComponent(n)}&grado=${encodeURIComponent(g)}&materia=${encodeURIComponent(m)}${carreraParam(c)}`
       )
       const data = await res.json()
       setAxes(data.axes ?? [])
@@ -125,27 +185,56 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
 
   // Pre-seeded return visit: skip straight to materia, fetching subjects
   // for the saved nivel/grado immediately instead of waiting for a click.
+  // El alumno de Superior arranca en la carrera (ver `isSuperiorPreseed`), así
+  // que lo que se precarga ahí es la lista de carreras, no la de materias.
   useEffect(() => {
     if (hasPreseed) {
       fetchSubjects(initialNivel!, initialGrado!)
+      return
+    }
+    if (isSuperiorPreseed) {
+      fetchCareers('Superior').then((list) => {
+        setCareers(list)
+        setSuperiorPath(list.length > 0 ? null : 'propio')
+        if (list.length === 0) setStep('superior-form')
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ─── Step handlers ──────────────────────────────────────────────────────────
 
-  const handleNivel = (n: Nivel) => {
+  const handleNivel = async (n: Nivel) => {
     setNivel(n)
     setGrado('')
     setMateria('')
+    setCarrera('')
     setAxes([])
     setSelected({})
     if (n === 'Superior') {
-      setStep('superior-form')
+      const list = await fetchCareers(n)
+      setCareers(list)
+      setSuperiorPath(list.length > 0 ? null : 'propio')
+      // Sin ninguna carrera cargada, el paso intermedio no ofrecería más que un
+      // único botón: se saltea directo al flujo de subir el programa, que es
+      // exactamente el comportamiento anterior a la migración 022.
+      setStep(list.length > 0 ? 'superior-carrera' : 'superior-form')
     } else {
       fetchGrades(n)
       setStep('grado')
     }
+  }
+
+  /** Camino precargado: la carrera sale de `curriculum`, no la escribe el alumno. */
+  const handleCarrera = (c: string) => {
+    setSuperiorPath('precargado')
+    setCarrera(c)
+    setGrado('')
+    setMateria('')
+    setAxes([])
+    setSelected({})
+    fetchGrades('Superior', c)
+    setStep('grado')
   }
 
   const handleGrado = (g: string) => {
@@ -153,7 +242,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     setMateria('')
     setAxes([])
     setSelected({})
-    fetchSubjects(nivel!, g)
+    fetchSubjects(nivel!, g, carrera)
     setStep('materia')
   }
 
@@ -161,7 +250,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     setMateria(m)
     setAxes([])
     setSelected({})
-    fetchTopics(nivel!, grado, m)
+    fetchTopics(nivel!, grado, m, carrera)
     setStep('topics')
   }
 
@@ -198,6 +287,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
 
   const handleSuperiorContinue = () => {
     if (!carrera.trim()) return
+    setSuperiorPath('propio')
     setMateria(carrera)
     setGrado(anioCarrera || 'No especificado')
     setStep('topics')
@@ -255,6 +345,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
       nivel: nivel!,
       grado,
       materia,
+      carrera,
       selectedTopics: buildTopicList(),
       mode,
       questionCount,
@@ -263,22 +354,46 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     })
   }
 
+  /**
+   * Migas de los pasos finales. La carrera va acá y no en el nombre de la
+   * materia: es lo que le confirma al alumno que "Matemática" es la de SU
+   * carrera y no una materia suelta de nivel Superior.
+   */
+  const breadcrumb = [
+    nivel,
+    carrera || null,
+    nivel === 'Primario' ? grado.replace(/Año/gi, 'Grado') : grado,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
   // ─── Back navigation ─────────────────────────────────────────────────────────
 
   const goBack = () => {
-    if (step === 'grado') { setStep('nivel'); setGrades([]) }
+    if (step === 'grado') {
+      // En Superior el paso anterior a 'grado' es la carrera, no el nivel.
+      setStep(nivel === 'Superior' ? 'superior-carrera' : 'nivel')
+      setGrades([])
+    }
     else if (step === 'materia') {
       setStep('grado')
       setSubjects([])
       // If we skipped straight to 'materia' via a pre-seeded nivel/grado, the
       // 'grado' step never fetched its list — fetch it now so going back works.
-      if (grades.length === 0 && nivel) fetchGrades(nivel)
+      if (grades.length === 0 && nivel) fetchGrades(nivel, carrera)
     }
-    else if (step === 'superior-form') { setStep('nivel') }
-    else if (step === 'topics' && nivel !== 'Superior') { setStep('materia'); setAxes([]); setSelected({}) }
-    else if (step === 'topics' && nivel === 'Superior') { setStep('superior-form'); setAxes([]); setSelected({}) }
-    else if (step === 'params' && nivel !== 'Superior') { setStep('topics') }
-    else if (step === 'params' && nivel === 'Superior') { setStep('topics') }
+    else if (step === 'superior-carrera') { setStep('nivel'); setCareers([]) }
+    // Con carreras cargadas el paso anterior es la bifurcación; sin ellas se
+    // llegó salteándola, así que volver tiene que llevar al nivel.
+    else if (step === 'superior-form') { setStep(careers.length > 0 ? 'superior-carrera' : 'nivel') }
+    // 'topics' vuelve a donde se eligieron los temas, que difiere según el
+    // camino: la materia en el precargado, el formulario en el propio.
+    else if (step === 'topics') {
+      setStep(superiorPath === 'propio' ? 'superior-form' : 'materia')
+      setAxes([])
+      setSelected({})
+    }
+    else if (step === 'params') { setStep('topics') }
   }
 
   // ─── Render ──────────────────────────────────────────────────────────────────
@@ -337,10 +452,57 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
           </div>
         )}
 
+        {/* ── STEP: Carrera (Superior) ────────────────────────────────────── */}
+        {step === 'superior-carrera' && (
+          <div>
+            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Nivel Superior</p>
+            <h1 className="text-2xl font-bold text-foreground mb-1">¿Qué carrera cursás?</h1>
+            <p className="text-muted-foreground text-sm mb-8">
+              Elegí tu carrera para ver las materias de su plan de estudios.
+            </p>
+
+            {loadingData ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : (
+              <div className="grid gap-3">
+                {careers.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => handleCarrera(c)}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary hover:bg-primary/5 transition-all active:scale-95 text-left"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                      <GraduationCap className="w-5 h-5 text-white" />
+                    </div>
+                    <span className="flex-1 font-semibold text-sm text-foreground">{c}</span>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Escape hatch: el flujo que existía antes de que hubiera carreras
+                precargadas sigue disponible para quien no está en la lista. */}
+            <button
+              onClick={() => {
+                setSuperiorPath('propio')
+                setCarrera('')
+                setStep('superior-form')
+              }}
+              className="mt-6 w-full flex items-center justify-center gap-2 p-4 rounded-xl border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary transition-all"
+            >
+              <Upload className="w-4 h-4" />
+              Mi carrera no está en la lista — subir mi programa
+            </button>
+          </div>
+        )}
+
         {/* ── STEP: Grado ─────────────────────────────────────────────────── */}
         {step === 'grado' && (
           <div>
-            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">{nivel}</p>
+            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">
+              {nivel === 'Superior' && carrera ? `${nivel} · ${carrera}` : nivel}
+            </p>
             <h1 className="text-2xl font-bold text-foreground mb-1">
               {nivel === 'Primario' ? '¿Qué grado?' : '¿Qué año?'}
             </h1>
@@ -372,7 +534,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
         {step === 'materia' && (
           <div>
             <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">
-              {nivel} · {nivel === 'Primario' ? grado.replace(/Año/gi, 'Grado') : grado}
+              {breadcrumb}
             </p>
             <h1 className="text-2xl font-bold text-foreground mb-1">¿Qué materia?</h1>
             <p className="text-muted-foreground text-sm mb-8">Seleccioná la materia para ver los ejes y temas.</p>
@@ -402,7 +564,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
         {step === 'topics' && (
           <div>
             <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">
-              {nivel} · {nivel === 'Primario' ? grado.replace(/Año/gi, 'Grado') : grado} · {materia}
+              {breadcrumb} · {materia}
             </p>
             <h1 className="text-2xl font-bold text-foreground mb-1">Seleccioná los temas</h1>
             <p className="text-muted-foreground text-sm mb-6">Elegí uno o más temas. Podés seleccionar ejes completos.</p>

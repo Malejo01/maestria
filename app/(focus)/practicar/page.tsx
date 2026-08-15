@@ -46,6 +46,10 @@ export default function PracticarPage() {
         questionCount: selection.questionCount,
         nivel: selection.nivel,
         grado: selection.grado,
+        // La ruta la usa para leer el contexto profesional de la carrera desde
+        // `curriculum`; sin esto la generación no sabe que el alumno estudia
+        // sistemas y salen ejercicios de matemática genérica.
+        carrera: selection.carrera,
         difficulty: selection.difficulty,
         questionTypes: selection.questionTypes,
         pedagogyContext: [
