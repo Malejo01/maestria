@@ -8,9 +8,9 @@ import { join } from 'node:path'
  *
  * Contexto — por qué existe este script:
  *
- * De las 1.792 respuestas de ese día, 872 fueron sobre cónicas, sucesiones,
- * combinatoria y probabilidad: temas que no están en el programa de Matemática
- * de la Tecnicatura Superior en Análisis de Sistemas. La causa NO fue un
+ * De las 1.680 respuestas de ese día, buena parte fueron sobre cónicas,
+ * sucesiones, combinatoria y probabilidad: temas que no están en el programa de
+ * Matemática de la Tecnicatura Superior en Análisis de Sistemas. La causa NO fue un
  * currículum Superior genérico —no existía ninguna fila Superior en
  * `curriculum`— sino que estos alumnos están registrados como Secundario /
  * 4to Año. El selector hizo un lookup impecable contra un perfil equivocado y
