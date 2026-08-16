@@ -413,7 +413,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
 
   const handleExportPendingShare = () => {
     if (!pendingSharedQuiz) {
-      toast({ title: 'No hay cuestionario para exportar', description: 'Genera o selecciona un cuestionario primero.' })
+      toast({ title: 'No hay cuestionario para exportar', description: 'Generá o seleccioná un cuestionario primero.' })
       return
     }
 

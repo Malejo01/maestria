@@ -208,7 +208,7 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
       toast({
         variant: 'destructive',
         title: 'Error al guardar',
-        description: `No se pudo guardar el cuestionario: ${errMsg}. Por favor, intenta de nuevo.`,
+        description: `No se pudo guardar el cuestionario: ${errMsg}. Por favor, intentá de nuevo.`,
       })
     } finally {
       setSaving(false)

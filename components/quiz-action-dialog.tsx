@@ -28,9 +28,9 @@ export function QuizActionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md rounded-3xl border-2 p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-2 text-left">
-          <DialogTitle className="text-xl font-black text-foreground">Que quieres hacer?</DialogTitle>
+          <DialogTitle className="text-xl font-black text-foreground">¿Qué querés hacer?</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed">
-            Elige si quieres realizar ahora el cuestionario, guardarlo o dejarlo pendiente para compartir.
+            Elegí si querés realizar ahora el cuestionario, guardarlo o dejarlo pendiente para compartir.
           </DialogDescription>
         </DialogHeader>
 

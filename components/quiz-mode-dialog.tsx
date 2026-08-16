@@ -76,7 +76,7 @@ export function QuizModeDialog({
   onBack,
   isLoading = false,
   title = 'Elegir tipo de cuestionario',
-  description = 'Selecciona si quieres practicar con un examen teorico o practico.',
+  description = 'Seleccioná si querés practicar con un examen teórico o práctico.',
   showQuestionCountSelector = true,
   questionCountValue = '10',
   onQuestionCountValueChange,
