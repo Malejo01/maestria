@@ -50,7 +50,8 @@ npx tsx scripts/qa/calibrate.ts --max-usd=2
 - [x] Typecheck real — `ignoreBuildErrors` eliminado, de 31 errores a 0
 - [x] ESLint instalado y configurado
 - [x] Staging — branch de Neon anonimizada y verificada. Armada **a mano** (consola de Neon + `scripts/anonymize-staging.ts`), no por script. Verificado el 15/08/2026 contra `ep-blue-snow-amd743o6`: marcador `deployment_env` = `staging` con `origin_host` coincidente, 40 usuarios y los 40 con email `@staging.invalid`, cero tokens de Google vivos en `accounts`, `teacher_program_uploads` vacía.
-  - ⚠️ **`scripts/create-staging-branch.ts` y `branch-guard.ts` no existen.** Un agente los describió en detalle (try/finally, timeout, verificación independiente) y nunca los escribió. Ver "Lecciones operativas". Si se quiere el flujo automatizado, hay que escribirlo desde cero; el runbook manual está en `docs/staging.md`.
+  - ✅ **El flujo automatizado ya existe**, desde `e683395` (15/08/2026): `scripts/create-staging-branch.ts` encadena §2.1-§2.2 de `docs/staging.md` en un solo comando, apoyado en `scripts/lib/branch-guard.ts`, `staging-branch.ts` y `neon-api.ts`, con tests propios. La branch sobrevive si y sólo si los seis pasos salen bien; cualquier otro final la borra. El runbook manual sigue sirviendo como referencia.
+    - Esta entrada decía, hasta el 16/08/2026, que esos archivos **no existían**. Era cierto cuando se escribió y dejó de serlo con ese commit. Se corrige, pero la lección operativa de abajo queda: lo que la volvió falsa fue que alguien los escribiera, no que estuviera mal razonada.
 
 ### Pendiente de staging (no urgente)
 
@@ -78,7 +79,8 @@ Los 31 alumnos estaban registrados como **Secundario / 4to Año**. El sistema si
 - [x] Perfiles migrados a Superior / 1er Año (31 filas, con backup y `--revert`)
 - [x] Currículum de la carrera cargado (migración 022): `curriculum.carrera` + `curriculum.contexto_profesional`, 7 unidades del programa 2026
 - [x] **Contexto profesional en el prompt** — A/B verificado en Unidad 5: sin contexto 0/6 ejercicios situados, con contexto 4/6 (crecimiento de usuarios de una app, costo de licencias, tiempo de ejecución de un algoritmo)
-- [ ] **Sesgo de tipos de pregunta — NO implementado.** La idea: `tipos_pregunta_sugeridos` con pesos, no set; sugerido y no impuesto, la elección explícita del usuario gana. La última migración del repo es la **022**; no existe una 023 ni esa columna. Queda como pendiente, no como hecho.
+- [x] **Sesgo de tipos de pregunta** — implementado en `e053fc2`. Migración **023** (`023-curriculum-tipos-pregunta.sql` + su runner) agrega `curriculum.tipos_pregunta_sugeridos` como JSONB de **pesos relativos, no porcentajes**; `NULL` conserva el reparto parejo previo. La lógica vive en `lib/question-mix.ts`, que separa PRODUCCIÓN (`numeric`, `short_answer`, sin piso por azar) de RECONOCIMIENTO (`multiple_choice`, `true_false`) y sesga hacia la primera, con los números del 10/08 escritos en el módulo. `restrictQuestionTypeMix()` es lo que hace que sea sugerido y no impuesto: la elección explícita del usuario recorta la mezcla.
+  - Esta entrada decía "NO implementado, la última migración del repo es la 022 y no existe una 023". Quedó vieja al mergearse el PR #5 y avanzar `main`.
 
 **Pendiente de comunicación:** los alumnos tienen que cerrar sesión y volver a entrar para que el JWT refresque nivel/grado. Sin eso siguen viendo Secundario 4to.
 
@@ -193,7 +195,8 @@ Sin ORM · Cold starts de Neon · Corepack (inerte hoy)
 - **Agentes en paralelo solo con worktrees separados.** Ya se pagó dos veces: migración 016 duplicada, y `run-migration-016.ts` modificado en paralelo.
 - **`.env.local` con claves duplicadas** causó un run de backup fallido. Verificar con `(Select-String -Path .env.local -Pattern "^CLAVE=").Count`.
 - **No pegar salidas con connection strings en el chat.** Para chequeos, usar el conteo sin exponer el valor.
-- **Un agente puede describir en detalle algo que nunca escribió.** `create-staging-branch.ts` fue descrito con try/finally, timeout y verificación independiente — y no existía en ninguna rama. Verificar antes de asumir.
+- **Un agente puede describir en detalle algo que nunca escribió.** `create-staging-branch.ts` fue descrito con try/finally, timeout y verificación independiente — y no existía en ninguna rama. Verificar antes de asumir. (Ese caso puntual se cerró el 15/08/2026 con `e683395`, que efectivamente los escribió. Lo que se cerró es el caso, no la lección.)
+- **Este documento se lee desde la rama en la que estás parado.** El 16/08/2026 dos entradas estaban lisa y llanamente al revés de la realidad —`create-staging-branch.ts` y el sesgo de tipos de pregunta, las dos marcadas como inexistentes cuando ya estaban en `main`— y ninguna de las dos por mal razonamiento: el worktree estaba dos commits atrás y su remoto ya borrado tras mergear el PR. Si CLAUDE.md manda leer el roadmap al empezar la sesión, el paso previo es mirar contra qué base se lo está leyendo (`git log --oneline HEAD..main`).
 - **Los tests de caracterización van antes del refactor, no después.**
 - **PITR de Neon: 6 horas** (plan Free). El dump diario es la única red más allá del mismo día.
 
