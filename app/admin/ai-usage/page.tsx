@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 import { getAdminViewer } from '@/lib/auth-session'
 import { readAiUsageReport, type GroupedSpendRow } from '@/lib/ai-usage'
 
@@ -11,6 +13,11 @@ import { readAiUsageReport, type GroupedSpendRow } from '@/lib/ai-usage'
  *
  * Acceso por `ADMIN_EMAILS`. Quien no esté en la lista recibe un 404: si no es
  * para vos, la página no existe.
+ *
+ * La vuelta es un `<Link>` pelado y no la navbar, justamente para no perder eso:
+ * la navbar arrastraría el layout de (app) con sus guards. Hace falta porque
+ * estando fuera del grupo no hay ningún otro camino de salida — sin esto, la
+ * única forma de volver es editar la barra de direcciones.
  */
 export const dynamic = 'force-dynamic'
 
@@ -114,6 +121,14 @@ export default async function AiUsagePage() {
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
+      <Link
+        href="/"
+        className="mb-5 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Volver a la app
+      </Link>
+
       <header className="mb-6">
         <h1 className="text-2xl font-semibold">Costo de IA</h1>
         <p className="mt-1 text-sm text-muted-foreground">

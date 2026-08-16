@@ -33,8 +33,16 @@ async function run() {
   // a NULL: on a database where 017 already ran, re-running must not re-stamp
   // the row with the current host — that would make a staging clone look like
   // the original and defeat the whole clone-vs-production distinction.
+  //
+  // `updated_at` va acá también: la columna tiene DEFAULT NOW(), pero un DEFAULT
+  // sólo corre en el INSERT. Sin esto la fila queda diciendo que se escribió por
+  // última vez cuando se creó la tabla, aunque el origin_host se haya sellado
+  // después. El WHERE de arriba hace que no pise nada en una re-corrida: si
+  // origin_host ya está, no matchea ninguna fila y no hay bump.
   await target.sql`
-    UPDATE deployment_env SET origin_host = ${normalizeNeonHost(target.host)} WHERE id = true AND origin_host IS NULL
+    UPDATE deployment_env
+       SET origin_host = ${normalizeNeonHost(target.host)}, updated_at = NOW()
+     WHERE id = true AND origin_host IS NULL
   `
 
   const rows = (await target.sql`SELECT environment, origin_host FROM deployment_env WHERE id = true`) as {
