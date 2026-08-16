@@ -1,0 +1,244 @@
+{
+  "generado": "2026-08-16T01:18:53.389Z",
+  "fechaDiagnostico": "2026-08-10",
+  "host": "ep-blue-snow-amd743o6-pooler.c-5.us-east-1.aws.neon.tech",
+  "entorno": "staging",
+  "nota": "Casos del diagnóstico del 2026-08-10. Sólo la persona de Superior tiene evidencia real: las respuestas de ese día son todas de Matemática. Las otras cuatro personas necesitan casos sintéticos, que se miden pero no habilitan. (Decía '1.792 respuestas': ese número nunca existió — son 1.680, medidas contra producción el 16/08/2026 y consistentes por dos caminos. Ver docs/roadmap.md.)",
+  "cases": [
+    {
+      "id": "quiz_answers.291@superior-matematica-sistemas",
+      "provenance": "real",
+      "persona": "superior-matematica-sistemas",
+      "question": {
+        "id": "q2",
+        "topic": "Ecuación de la parábola",
+        "topicName": "Ecuación de la parábola",
+        "question": "Una parábola tiene su foco en el punto $(0, 3)$ y su directriz es la recta $y = -3$. ¿Cuál es la ecuación de esta parábola?",
+        "explanation": "Para encontrar la ecuación de una parábola, recordá que cada punto de la parábola equidista del foco y de la directriz. En este caso, como la directriz es horizontal y el foco está sobre el eje $y$, la parábola se abre verticalmente. La distancia del vértice al foco es $p$, y la ecuación será de la forma $x^2 = 4py$. El vértice está en el punto medio entre el foco y la directriz, que es $(0,0)$. La distancia $p$ es 3. Por lo tanto, la ecuación es $x^2 = 4(3)y$, que simplifica a $x^2 = 12y$.",
+        "type": "multiple_choice",
+        "options": [
+          "$x^2 = 6y$",
+          "$y^2 = 6x$",
+          "$x^2 = 12y$",
+          "$y^2 = 12x$"
+        ],
+        "correctAnswer": 2
+      },
+      "expected": {
+        "dimension": "adecuacion_programa",
+        "minSeverity": "critical"
+      },
+      "mustNotFlag": [
+        "correccion_disciplinar"
+      ],
+      "note": "Parábola por foco y directriz. Cónicas no está en ninguna de las 7 unidades de la Tecnicatura. La ecuación marcada ($x^2 = 12y$) es correcta."
+    },
+    {
+      "id": "quiz_answers.312@superior-matematica-sistemas",
+      "provenance": "real",
+      "persona": "superior-matematica-sistemas",
+      "question": {
+        "id": "q3",
+        "topic": "Ecuación de la parábola",
+        "topicName": "Ecuación de la parábola",
+        "question": "Si una parábola tiene su vértice en el origen $(0,0)$ y su foco en $(p,0)$, ¿cuál es la forma general de su ecuación?",
+        "explanation": "Cuando el foco está en $(p,0)$ y el vértice en el origen, la parábola se abre hacia la derecha o izquierda, y su eje de simetría es el eje $x$. Por eso, la variable $y$ es la que está elevada al cuadrado en la ecuación.",
+        "type": "multiple_choice",
+        "options": [
+          "$y^2 = 4px$",
+          "$(x-h)^2 + (y-k)^2 = r^2$",
+          "$x^2 = 4py$",
+          "$\\frac{x^2}{a^2} + \\frac{y^2}{b^2} = 1$"
+        ],
+        "correctAnswer": 0
+      },
+      "expected": {
+        "dimension": "adecuacion_programa",
+        "minSeverity": "critical"
+      },
+      "mustNotFlag": [
+        "correccion_disciplinar"
+      ],
+      "note": "Forma general de la parábola con vértice en el origen. Fuera de programa. La opción marcada ($y^2 = 4px$) es correcta."
+    },
+    {
+      "id": "quiz_answers.339@superior-matematica-sistemas",
+      "provenance": "real",
+      "persona": "superior-matematica-sistemas",
+      "question": {
+        "id": "q10",
+        "topic": "Ecuación de la parábola",
+        "topicName": "Ecuación de la parábola",
+        "question": "¿Cuál de las siguientes ecuaciones representa una parábola con vértice en el origen y que se abre hacia abajo?",
+        "explanation": "Una parábola que se abre hacia abajo tiene su eje de simetría en el eje $y$ y el término $x$ está al cuadrado. La forma general es $x^2 = -4py$, donde $p$ es una constante positiva que determina la 'apertura' de la parábola.",
+        "type": "multiple_choice",
+        "options": [
+          "$y^2 = -4px$",
+          "$x^2 = 4py$",
+          "$y^2 = 4px$",
+          "$x^2 = -4py$"
+        ],
+        "correctAnswer": 3
+      },
+      "expected": {
+        "dimension": "adecuacion_programa",
+        "minSeverity": "critical"
+      },
+      "mustNotFlag": [
+        "correccion_disciplinar"
+      ],
+      "note": "Parábola que abre hacia abajo. Fuera de programa. La opción marcada ($x^2 = -4py$) es correcta."
+    },
+    {
+      "id": "quiz_answers.303@superior-matematica-sistemas",
+      "provenance": "real",
+      "persona": "superior-matematica-sistemas",
+      "question": {
+        "id": "q14",
+        "topic": "Ecuación general de la circunferencia",
+        "topicName": "Ecuación general de la circunferencia",
+        "question": "Determina el radio de la circunferencia cuya ecuación general es $x^2 + y^2 - 6x + 8y - 11 = 0$.",
+        "explanation": "Para encontrar el radio, necesitamos transformar la ecuación general a la forma estándar completando cuadrados. Agrupamos términos de $x$ y $y$: $(x^2 - 6x) + (y^2 + 8y) = 11$. Completando cuadrados, sumamos $(6/2)^2 = 9$ y $(8/2)^2 = 16$ a ambos lados: $(x^2 - 6x + 9) + (y^2 + 8y + 16) = 11 + 9 + 16$. Esto nos da $(x-3)^2 + (y+4)^2 = 36$. Como $r^2 = 36$, el radio $r$ es $\\sqrt{36} = 6$.",
+        "type": "numeric",
+        "correctAnswer": 6
+      },
+      "expected": {
+        "dimension": "adecuacion_programa",
+        "minSeverity": "critical"
+      },
+      "mustNotFlag": [
+        "correccion_disciplinar"
+      ],
+      "note": "Radio de la circunferencia desde la ecuación general. Fuera de programa. El radio 6 es correcto."
+    },
+    {
+      "id": "quiz_answers.682@superior-matematica-sistemas",
+      "provenance": "real",
+      "persona": "superior-matematica-sistemas",
+      "question": {
+        "id": "q13",
+        "topic": "Tipos de Números Reales",
+        "topicName": "Tipos de Números Reales",
+        "question": "Menciona un ejemplo de un número irracional.",
+        "explanation": "Los números irracionales son aquellos que no pueden expresarse como una fracción de dos enteros, y sus representaciones decimales son infinitas y no periódicas. Ejemplos comunes son $\\sqrt{2}$, $\\pi$ o $e$.",
+        "type": "short_answer",
+        "acceptedAnswers": [
+          "$\\sqrt{2}$",
+          "$\\pi$",
+          "$e$",
+          "$\\sqrt{3}$"
+        ]
+      },
+      "expected": {
+        "dimension": "higiene_formato",
+        "minSeverity": "critical"
+      },
+      "note": "\"Mencioná un ejemplo de número irracional\" con las CUATRO respuestas aceptadas en LaTeX ($\\sqrt{2}$, $\\pi$, $e$, $\\sqrt{3}$). El alumno escribe \"raiz de 2\" o \"pi\" y da incorrecto. 14 de las 235 short_answer del 10/08 tienen este defecto."
+    },
+    {
+      "id": "quiz_answers.1524@superior-matematica-sistemas",
+      "provenance": "real",
+      "persona": "superior-matematica-sistemas",
+      "question": {
+        "id": "q15",
+        "topic": "Sucesos incompatibles e independientes",
+        "topicName": "Sucesos incompatibles e independientes",
+        "question": "Si dos sucesos $A$ y $B$ son independientes y $P(A) = 0.5$ y $P(B) = 0.6$, ¿cuál es el valor de $P(A \\cap B)$?",
+        "explanation": "Cuando los sucesos son independientes, la probabilidad de que ambos ocurran es simplemente el producto de sus probabilidades individuales. En este caso, $0.5 \\times 0.6 = 0.3$.",
+        "type": "numeric",
+        "correctAnswer": 0.3
+      },
+      "expected": {
+        "dimension": "higiene_formato",
+        "minSeverity": "critical"
+      },
+      "note": "Sucesos independientes: correctAnswer 0,3 con tolerance NULL. Se compara por igualdad exacta de flotantes, así que es ingandable. 9 de las 255 numeric del 10/08 están así. (El tema además está fuera de programa: eso NO se declara acá para no atar dos defectos a un solo caso.)"
+    },
+    {
+      "id": "quiz_answers.1502@superior-matematica-sistemas",
+      "provenance": "real",
+      "persona": "superior-matematica-sistemas",
+      "question": {
+        "id": "q13",
+        "topic": "Probabilidad Condicionada",
+        "topicName": "Probabilidad Condicionada",
+        "question": "Si $A$ y $B$ son dos sucesos, ¿cómo se expresa la probabilidad de $A$ dado $B$ ($P(A|B)$) en términos de $P(A \\cap B)$ y $P(B)$?",
+        "explanation": "La probabilidad condicionada es clave para entender cómo la información sobre un suceso afecta la probabilidad de otro. Esta fórmula nos permite calcularla cuando conocemos la probabilidad de la intersección y la del suceso condicionante.",
+        "type": "short_answer",
+        "acceptedAnswers": [
+          "$P(A|B) = \\frac{P(A \\cap B)}{P(B)}$",
+          "P(A|B) = P(A y B) / P(B)",
+          "P(A|B) = P(A interseccion B) / P(B)"
+        ]
+      },
+      "expected": {
+        "dimension": "adecuacion_programa",
+        "minSeverity": "critical"
+      },
+      "mustNotFlag": [
+        "higiene_formato"
+      ],
+      "note": "Probabilidad condicionada — fuera del programa de la Tecnicatura. Sus acceptedAnswers SÍ traen variantes en texto plano (\"P(A|B) = P(A y B) / P(B)\"), así que el formato está bien: es el caso real que verifica que el lint no dispara de más."
+    },
+    {
+      "id": "quiz_answers.291@control-secundario-matematica",
+      "provenance": "real",
+      "persona": "control-secundario-matematica",
+      "question": {
+        "id": "q2",
+        "topic": "Ecuación de la parábola",
+        "topicName": "Ecuación de la parábola",
+        "question": "Una parábola tiene su foco en el punto $(0, 3)$ y su directriz es la recta $y = -3$. ¿Cuál es la ecuación de esta parábola?",
+        "explanation": "Para encontrar la ecuación de una parábola, recordá que cada punto de la parábola equidista del foco y de la directriz. En este caso, como la directriz es horizontal y el foco está sobre el eje $y$, la parábola se abre verticalmente. La distancia del vértice al foco es $p$, y la ecuación será de la forma $x^2 = 4py$. El vértice está en el punto medio entre el foco y la directriz, que es $(0,0)$. La distancia $p$ es 3. Por lo tanto, la ecuación es $x^2 = 4(3)y$, que simplifica a $x^2 = 12y$.",
+        "type": "multiple_choice",
+        "options": [
+          "$x^2 = 6y$",
+          "$y^2 = 6x$",
+          "$x^2 = 12y$",
+          "$y^2 = 12x$"
+        ],
+        "correctAnswer": 2
+      },
+      "expected": null,
+      "note": "CONTROL: la misma pregunta de 291, en el programa donde cónicas SÍ corresponde."
+    },
+    {
+      "id": "quiz_answers.303@control-secundario-matematica",
+      "provenance": "real",
+      "persona": "control-secundario-matematica",
+      "question": {
+        "id": "q14",
+        "topic": "Ecuación general de la circunferencia",
+        "topicName": "Ecuación general de la circunferencia",
+        "question": "Determina el radio de la circunferencia cuya ecuación general es $x^2 + y^2 - 6x + 8y - 11 = 0$.",
+        "explanation": "Para encontrar el radio, necesitamos transformar la ecuación general a la forma estándar completando cuadrados. Agrupamos términos de $x$ y $y$: $(x^2 - 6x) + (y^2 + 8y) = 11$. Completando cuadrados, sumamos $(6/2)^2 = 9$ y $(8/2)^2 = 16$ a ambos lados: $(x^2 - 6x + 9) + (y^2 + 8y + 16) = 11 + 9 + 16$. Esto nos da $(x-3)^2 + (y+4)^2 = 36$. Como $r^2 = 36$, el radio $r$ es $\\sqrt{36} = 6$.",
+        "type": "numeric",
+        "correctAnswer": 6
+      },
+      "expected": null,
+      "note": "CONTROL: la misma pregunta de 303, en el programa donde cónicas SÍ corresponde."
+    },
+    {
+      "id": "quiz_answers.339@control-secundario-matematica",
+      "provenance": "real",
+      "persona": "control-secundario-matematica",
+      "question": {
+        "id": "q10",
+        "topic": "Ecuación de la parábola",
+        "topicName": "Ecuación de la parábola",
+        "question": "¿Cuál de las siguientes ecuaciones representa una parábola con vértice en el origen y que se abre hacia abajo?",
+        "explanation": "Una parábola que se abre hacia abajo tiene su eje de simetría en el eje $y$ y el término $x$ está al cuadrado. La forma general es $x^2 = -4py$, donde $p$ es una constante positiva que determina la 'apertura' de la parábola.",
+        "type": "multiple_choice",
+        "options": [
+          "$y^2 = -4px$",
+          "$x^2 = 4py$",
+          "$y^2 = 4px$",
+          "$x^2 = -4py$"
+        ],
+        "correctAnswer": 3
+      },
+      "expected": null,
+      "note": "CONTROL: la misma pregunta de 339, en el programa donde cónicas SÍ corresponde."
+    }
+  ]
+}

@@ -32,3 +32,7 @@ scripts/backups/
 # pesados, en UTF-16 y sin valor histórico una vez leídos.
 run.log
 *.run.log
+
+# Reportes de los agentes de contenido: artefactos regenerables.
+# El set de calibracion (qa-fixtures/) SI se commitea: es el contrato de la rubrica.
+qa-reports/
