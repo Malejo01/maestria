@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MaestrIA (formerly "Malejo Math") is a Next.js 16 (App Router, React 19, TypeScript) platform that generates and manages AI-assisted educational quizzes for any subject and level (Primario/Secundario/Superior). Two roles with distinct experiences: **ALUMNO** (student) and **DOCENTE** (teacher). See [README.md](README.md) for the full architecture writeup (stack, data model, roles/flows, question-type engine, pedagogy personalization) — read it first, it is kept up to date and this file does not repeat it.
 
+**Read [docs/roadmap.md](docs/roadmap.md) at the start of every session.** It is the canonical record of project state: what phase the work is in, what is blocked and on what, what was already decided and why, and the operational lessons already paid for. README describes how the system is built; the roadmap describes where it stands and what comes next. Treat it as ground truth over inference from the code — several items are complete in the roadmap but deliberately unreferenced anywhere in the repo, and at least one is the reverse (see its "Lecciones operativas" entry on describing files that were never written: verify before assuming). Keep it updated when a phase item lands.
+
 ## Commands
 
 ```bash
