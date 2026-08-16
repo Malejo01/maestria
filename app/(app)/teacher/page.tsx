@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
 import { SubjectContent } from '@/components/subject-content'
@@ -36,6 +37,7 @@ import {
   Users,
   FilePlus,
   Sparkles,
+  ChevronRight,
 } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { TeacherSubjectWizard } from '@/components/teacher-subject-wizard'
@@ -693,7 +695,28 @@ export default function TeacherPage() {
           </Card>
         )}
 
-        {teacherSection === 'aulas' && <TeacherClassrooms programs={teacherPrograms} />}
+        {teacherSection === 'aulas' && (
+          <div className="space-y-4">
+            {/* El diagnóstico del 10/08 no se tomó dentro de un aula, así que
+                no aparece en el seguimiento de ninguna. El acceso vive acá
+                porque es lo más cerca que está de "mis alumnos". */}
+            <Link href="/teacher/diagnostico" className="block">
+              <Card className="p-4 rounded-2xl border border-border/60 bg-card/75 hover:border-primary/50 transition-colors flex items-center justify-between gap-3 group">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">
+                    Diagnóstico del 10 de agosto
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Qué nivelar antes de avanzar, por unidad y con los pisos de azar a la vista
+                  </p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+              </Card>
+            </Link>
+
+            <TeacherClassrooms programs={teacherPrograms} />
+          </div>
+        )}
 
         {teacherSection === 'cuestionarios' && (
           <Card className="p-4 rounded-2xl border border-border/60 bg-card/75 backdrop-blur-md shadow-[0_6px_30px_rgba(23,23,23,0.06)] space-y-3">
