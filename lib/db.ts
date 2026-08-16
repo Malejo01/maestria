@@ -2,7 +2,7 @@ import { neon, type NeonQueryFunction } from '@neondatabase/serverless'
 
 let lazySql: NeonQueryFunction<false, false> | null = null
 
-export const sql = ((...args: unknown[]) => {
+function connect(): NeonQueryFunction<false, false> {
   if (!lazySql) {
     const url = process.env.DATABASE_URL
     if (!url) {
@@ -11,8 +11,26 @@ export const sql = ((...args: unknown[]) => {
     }
     lazySql = neon(url)
   }
-  return (lazySql as (...params: unknown[]) => unknown)(...args)
-}) as NeonQueryFunction<false, false>
+  return lazySql
+}
+
+/**
+ * Cliente lazy: la conexión se abre en la primera consulta, no al importar el
+ * módulo, así un import en build time no exige DATABASE_URL.
+ *
+ * El wrapper reenvía además `sql.query(text, params)`, la forma no-template que
+ * el driver expone para SQL armado como string (la usa
+ * lib/diagnostic-report-server.ts, que comparte una CTE larga entre consultas y
+ * no puede pasarla por un tagged template — ahí un `${}` sería un PARÁMETRO, no
+ * texto SQL). Antes el wrapper era una función pelada casteada a
+ * NeonQueryFunction: `sql.query` tipaba bien y en runtime era undefined.
+ */
+export const sql = Object.assign(
+  (...args: unknown[]) => (connect() as (...params: unknown[]) => unknown)(...args),
+  {
+    query: (text: string, params?: unknown[]) => connect().query(text, params),
+  },
+) as NeonQueryFunction<false, false>
 
 // Types for database operations
 export interface DbUser {

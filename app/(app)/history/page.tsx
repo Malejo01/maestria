@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LaTeXRenderer } from '@/components/latex-renderer'
 import { WeakPointsSection } from '@/components/weak-points-section'
+import { DiagnosticReportCard } from '@/components/diagnostic-report-card'
+import { DIAGNOSTIC_DATE } from '@/lib/diagnostic-report'
 import { useAppStore } from '@/lib/store'
 import {
   Calendar,
@@ -177,6 +179,22 @@ function HistoryPageContent() {
   }, [attempts, selectedSubjectFilter, modeFilter])
 
   // Stats derived from ALL attempts (no filters)
+  /**
+   * ¿El alumno rindió algo después del diagnóstico? Decide si el bloque del
+   * diagnóstico arranca abierto o colapsado. Se compara sobre `completed_at`
+   * recortado a fecha para no depender de la zona horaria del navegador: lo que
+   * importa es "otro día", no "otro instante".
+   */
+  const hasAttemptsAfterDiagnostic = useMemo(
+    () =>
+      attempts.some(
+        (attempt) =>
+          typeof attempt.completed_at === 'string' &&
+          attempt.completed_at.slice(0, 10) > DIAGNOSTIC_DATE,
+      ),
+    [attempts]
+  )
+
   const stats = useMemo(() => {
     const total = attempts.length
     const passed = attempts.filter((a) => Number(a.score) >= 6).length
@@ -311,6 +329,11 @@ function HistoryPageContent() {
             </div>
           ) : (
             <>
+              {/* Arranca abierto sólo mientras el diagnóstico sea lo último que
+                  rindió. En cuanto hay algo más nuevo pasa a colapsado: importa
+                  esta semana, no en noviembre. */}
+              <DiagnosticReportCard defaultOpen={!hasAttemptsAfterDiagnostic} />
+
               {/* ── Stats row ───────────────────────────── */}
               <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
                 <Card className="p-3 border-2 border-border bg-card/80 backdrop-blur-sm">
