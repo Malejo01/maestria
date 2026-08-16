@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { WeakPointsSection } from '@/components/weak-points-section'
 import { TipsChest } from '@/components/tips-chest'
+import { JoinClassroomField } from '@/components/join-classroom-field'
 import { DEFAULT_JURISDICTION } from '@/lib/curriculum-config'
 import {
   Sparkles,
@@ -116,6 +117,10 @@ export default function InicioPage() {
         </Card>
       ) : (
         <>
+          {/* Puerta de entrada al aula: el código llega por WhatsApp y este es
+              el primer lugar donde el alumno lo busca. */}
+          <JoinClassroomField />
+
           {/* Stats Row */}
           <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
             <Card className="p-4 border-2 border-border bg-card/80 backdrop-blur-sm flex flex-col items-center text-center">
