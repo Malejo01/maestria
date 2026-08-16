@@ -87,9 +87,42 @@ Los 31 alumnos estaban registrados como **Secundario / 4to Año**. El sistema si
 - [x] **Sesgo de tipos de pregunta** — implementado en `e053fc2`. Migración **023** (`023-curriculum-tipos-pregunta.sql` + su runner) agrega `curriculum.tipos_pregunta_sugeridos` como JSONB de **pesos relativos, no porcentajes**; `NULL` conserva el reparto parejo previo. La lógica vive en `lib/question-mix.ts`, que separa PRODUCCIÓN (`numeric`, `short_answer`, sin piso por azar) de RECONOCIMIENTO (`multiple_choice`, `true_false`) y sesga hacia la primera, con los números del 10/08 escritos en el módulo. `restrictQuestionTypeMix()` es lo que hace que sea sugerido y no impuesto: la elección explícita del usuario recorta la mezcla.
   - Esta entrada decía "NO implementado, la última migración del repo es la 022 y no existe una 023". Quedó vieja al mergearse el PR #5 y avanzar `main`.
 
-**Pendiente de comunicación:** los alumnos tienen que cerrar sesión y volver a entrar para que el JWT refresque nivel/grado. Sin eso siguen viendo Secundario 4to.
+**~~Pendiente de comunicación:~~ RESUELTO.** Decía que los alumnos tenían que cerrar sesión y volver a entrar para que el JWT refrescara nivel/grado. **Ya no hace falta avisarles nada.**
 
-> **No hace falta que cierren sesión.** [auth.ts:145](../auth.ts#L145) ya re-lee `nivel`/`grado` de la base cuando `trigger === 'update'`, así que un `useSession().update()` desde el cliente refresca el token. El alumno sólo tiene que abrir la app. Falta implementar el disparo: reconciliar una vez cuando el perfil del JWT difiere del de la base. El contenido de un **aula** no depende del JWT (sale del programa del aula); `/practicar` sí.
+> [auth.ts:145](../auth.ts#L145) ya re-leía la base cuando `trigger === 'update'`; faltaba sólo disparar `useSession().update()` desde el cliente. Implementado en la navbar, que ya traía `/api/user/profile` en cada carga con sesión. El alumno abre la app y el token se pone al día solo. La regla de comparación vive en `lib/session-profile-sync.ts` con 7 tests, y los que importan son los que **no** tienen que disparar: `null` vs `undefined` cuenta como igual, porque si no todo usuario sin nivel cargado pegaría a `/api/auth` en cada carga.
+
+---
+
+## 👉 PENDIENTE DE MAURO — leer esto primero (16/08/2026)
+
+Todo lo de la tanda está mergeado a `main` y desplegado. Queda esto, que sólo podés hacer vos:
+
+### 1. Correr la inscripción (bloquea a los 31 alumnos)
+
+Es lo único de la tanda que no está en producción. Sin esto, los 31 **no están en ningún aula**.
+
+```bash
+npx tsx scripts/inscribir-diagnostico-2026-08-10.ts --docente=TU_EMAIL
+```
+
+Eso es el dry-run y no toca nada. Verificado el 16/08: 31 alumnos, 0 ya miembros, 31 filas a insertar, 7 unidades con 36 temas. Para aplicarlo:
+
+```bash
+npx tsx scripts/inscribir-diagnostico-2026-08-10.ts --docente=TU_EMAIL --apply --metodologia="..."
+```
+
+`--metodologia` es **obligatorio** y no tiene default a propósito: ese texto entra derecho al prompt de generación, y el wizard blanquea las metodologías autocompletadas justamente para que lo escriba una persona. Escribí cómo das la materia, en una o dos oraciones.
+
+El script crea el programa (Superior / 1er Año / Matemática, con las 7 unidades copiadas de `curriculum`), el aula, y las 31 membresías. Escribe un backup en `scripts/backups/` **después de cada paso**, así que una caída a la mitad sigue siendo reversible con `--revert=<archivo.json>`.
+
+### 2. Verificaciones manuales (no las pude hacer yo)
+
+No puedo autenticarme como alumno ni como docente, y el dev server del sandbox no levanta por el fetch de Google Fonts. Lo que falta mirar con tus ojos:
+
+- **Refresh del JWT.** El que más importa. Entrá con una cuenta de alumno cuyo perfil hayas cambiado en la base y confirmá que `/practicar` muestra el nivel nuevo **sin cerrar sesión**. Si no anda, el síntoma es que sigue mostrando el viejo; si anda mal, el síntoma sería un pedido a `/api/auth` en bucle (mirá la pestaña Network).
+- **Reporte del alumno** en `/history`, logueado como uno de los 31. Verificá que el aviso de respuestas escritas aparece y que el bloque arranca abierto.
+- **Reporte docente** en `/teacher/diagnostico`. Los números están verificados contra producción; lo que no vi renderizado con sesión real es la página entera.
+- **Campo de código de aula** en el inicio: ese sí lo probé end-to-end contra el aula real, hasta la pantalla de "Entrar" (no apreté el botón para no escribir en producción).
 
 ---
 
@@ -98,7 +131,16 @@ Los 31 alumnos estaban registrados como **Secundario / 4to Año**. El sistema si
 - [x] **Entrada de código de aula en el inicio** — el alumno que recibía un código por WhatsApp no tenía dónde ponerlo. Campo fijo en la rama de ALUMNO que navega a `/aula/<code>`, la pantalla que ya resuelve Google/invitado/invitado-nuevo. No se duplicó el flujo de join.
 - [x] **Reporte del diagnóstico para el alumno** — bloque colapsable en `/history`, por unidad, sin `short_answer` y diciendo por qué, con el piso de azar al lado de cada conteo y separando lo que entra en el programa de lo que no.
 - [x] **Reporte del diagnóstico para el docente** — `/teacher/diagnostico`. Aparte del reporte por aula, que filtra por `classroom_id` y no encuentra nada: los 84 intentos lo tienen en NULL.
-- [ ] **Aula de Análisis de Sistemas + inscripción de los 31** — `scripts/inscribir-diagnostico-2026-08-10.ts`, dry-run verificado (31 filas, 0 duplicados). **Falta correrlo con `--apply --metodologia="..."`.**
+- [x] **Refresh del JWT sin cerrar sesión** — ver arriba.
+- [x] **FASE 0.5 commiteada** — el lint determinista, el fixture de calibración y la extracción de `lib/quiz-generation.ts` estaban **sin commitear en el worktree** mientras este documento ya los describía como hechos. Ahora están en el repo.
+- [ ] **Aula de Análisis de Sistemas + inscripción de los 31** — `scripts/inscribir-diagnostico-2026-08-10.ts`, dry-run verificado (31 filas, 0 duplicados). **Falta correrlo con `--apply --metodologia="..."`.** Único item de la tanda que no está en producción.
+
+### Deuda que dejó el merge
+
+- **`route.ts` conflictuó y no era textual.** `main` había metido el question-mix dentro de las ~690 líneas que esta rama movió a `lib/quiz-generation.ts`. Se resolvió portando el cableado al módulo extraído, sin tocar un solo test: los 29 de caracterización y los 6 de `generate-quiz-question-mix` pasan juntos. `QuizRequestParams.questionTypes` pasó a `explicitQuestionTypes` porque el default ya no se puede aplicar al parsear el body: la precedencia necesita lo que declara `curriculum`.
+- **Después de mergear hay que correr `npm install`.** El build falló una vez por esto: `node_modules` tenía `next 16.2.4` y el `package.json` mergeado pide `16.2.12`.
+- **`lib/qa/lint-questions.ts` era binario para git.** Tenía un byte NUL literal como centinela; git lo clasificaba como binario y no mostraba diffs — un archivo de reglas que nadie podía revisar en un PR. Pasó a escape de 6 caracteres.
+- **El dev server no levanta en el sandbox de Claude Code.** `app/layout.tsx` pide Playfair Display y `fonts.gstatic.com` devuelve 404 desde esa red, así que la home tira 500. El build de producción pasa. Consecuencia práctica: las pantallas nuevas se verificaron con datos reales en páginas temporales, y el refresh del JWT **no** se pudo ejercitar en browser.
 
 ### Lo que destapó
 
