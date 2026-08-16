@@ -10,6 +10,7 @@ import { usePathname } from 'next/navigation'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
+import { isSessionProfileStale } from '@/lib/session-profile-sync'
 import type { UserRole } from '@/lib/types'
 
 const NAV_LINKS = [
@@ -28,6 +29,8 @@ export function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  /** Candado del refresco de sesión por perfil desactualizado. Ver el efecto que lo usa. */
+  const hasSyncedSessionProfile = useRef(false)
 
   const navLinks = isTeacher
     ? [...NAV_LINKS, { href: '/teacher', label: 'Panel Docente', icon: TeacherIcon }]
@@ -99,6 +102,57 @@ export function Navbar() {
       isMounted = false
     }
   }, [isSignedIn, setUserProfile])
+
+  /**
+   * Pone al día el JWT cuando el perfil de la sesión quedó viejo.
+   *
+   * nivel y grado viajan cacheados en el token (ver el callback `jwt` de
+   * auth.ts). Cuando alguien los corrige en la base —una migración de perfiles,
+   * el docente arreglando un curso mal cargado— la sesión abierta sigue
+   * mostrando los viejos, y hasta ahora la única salida era pedirle al alumno
+   * que cerrara sesión y volviera a entrar. Eso es exactamente lo que no se le
+   * puede pedir a 31 personas por WhatsApp.
+   *
+   * auth.ts ya re-lee la base cuando el trigger es 'update', así que alcanza con
+   * detectar el desfasaje y disparar `update()`. El alumno no hace nada: abre la
+   * app y el token se pone al día solo.
+   *
+   * Va en un efecto aparte y depende SÓLO de primitivos a propósito. Metiendo
+   * `session.user` en las dependencias, cualquier render que devuelva un objeto
+   * nuevo vuelve a disparar el efecto; comparando strings, el efecto se queda
+   * quieto salvo que los valores cambien de verdad.
+   *
+   * La regla de comparación vive en lib/session-profile-sync.ts, con tests.
+   */
+  const sessionNivel = session?.user?.nivel ?? null
+  const sessionGrado = session?.user?.grado ?? null
+  const dbNivel = userProfile?.nivel ?? null
+  const dbGrado = userProfile?.grado ?? null
+
+  useEffect(() => {
+    if (!isSignedIn || !userProfile) return
+
+    const stale = isSessionProfileStale(
+      { nivel: dbNivel, grado: dbGrado },
+      { nivel: sessionNivel, grado: sessionGrado },
+    )
+    if (!stale) return
+
+    // Una sola vez por montaje. `update()` reescribe la sesión y vuelve a
+    // correr este efecto; sin el candado, un desfasaje que la base no puede
+    // resolver —el update falla, o el perfil quedó a medio escribir— daría un
+    // loop de requests contra /api/auth en vez de degradar en silencio.
+    if (hasSyncedSessionProfile.current) return
+    hasSyncedSessionProfile.current = true
+
+    updateSession().catch(() => {
+      // Si no se puede refrescar, el alumno sigue viendo el perfil viejo: es el
+      // comportamiento que ya tenía, no una regresión.
+    })
+    // `updateSession` se omite: next-auth la recrea por render y volvería a
+    // disparar el efecto sola.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn, userProfile, dbNivel, dbGrado, sessionNivel, sessionGrado])
 
   const handleRoleChange = async (nextRole: UserRole) => {
     setIsUpdatingRole(true)
