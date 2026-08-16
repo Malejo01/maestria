@@ -63,7 +63,8 @@ npx tsx scripts/qa/calibrate.ts --max-usd=2
 
 Examen real con 31 alumnos que destapó cuatro fallas. Todo resuelto:
 
-- [x] **Corrección de respuestas cortas** — `maxOutputTokens: 500` cortaba el JSON de Gemini antes del veredicto; el cliente hacía `Boolean(undefined) = false` y guardaba como incorrecta en silencio. 225 de 238 mal calificadas. Fix: 2000 tokens + `thinkingBudget: 0` + reintento con contabilidad de usage.
+- [x] **Corrección de respuestas cortas** — `maxOutputTokens: 500` cortaba el JSON de Gemini antes del veredicto; el cliente hacía `Boolean(undefined) = false` y guardaba como incorrecta en silencio. Fix: 2000 tokens + `thinkingBudget: 0` + reintento con contabilidad de usage.
+  - **Los números medidos contra producción el 16/08/2026 son 224 de 235**, no 225 de 238. Ver la corrección de conteos más abajo.
 - [x] **Corrector determinista previo a la IA** (`lib/short-answer-grading.ts` + `lib/numeric-answer.ts` compuestos en `short-answer-autograde.ts`). Validado contra datos reales: 15 de 238 recuperables, cero falsos positivos. Corre antes de `guardAiCall`, así que ahorra la fila de uso y el rate limit.
 - [x] **Fail-open** — migración 021: `is_correct` nullable (NULL = sin calificar), `quiz_attempts.ungraded_answers`, índice parcial. La nota sale sobre `tally.graded`: 8 correctas + 2 sin calificar es un 10, no un 8. Panel ámbar visible para el alumno.
 - [x] **Input numérico** — `type="text"` + `inputMode="decimal"`, interpretado con `parseNumericAnswer`. Acepta `3,5`, `7/2`, `\frac{7}{2}`, `50%`.
@@ -72,9 +73,13 @@ Examen real con 31 alumnos que destapó cuatro fallas. Todo resuelto:
 
 ### Causa raíz del contenido fuera de programa
 
-Los 31 alumnos estaban registrados como **Secundario / 4to Año**. El sistema sirvió impecablemente el currículum de Secundario 4to. 872 de 1.792 respuestas midieron cónicas, sucesiones, combinatoria y probabilidad — nada de eso está en el programa de la carrera.
+Los 31 alumnos estaban registrados como **Secundario / 4to Año**. El sistema sirvió impecablemente el currículum de Secundario 4to. Buena parte del diagnóstico midió cónicas, sucesiones, combinatoria y probabilidad — nada de eso está en el programa de la carrera.
 
-> Los números de arriba se midieron contra **producción**. La branch de staging tiene 1.680 respuestas en 84 intentos para esa fecha, de las cuales 856 caen en esos temas. La diferencia es esperable en un clon, pero tenerla presente: el fixture de calibración de FASE 0.5 sale de staging, así que está construido sobre ese subconjunto.
+> **Corrección de conteos (16/08/2026).** Este bloque decía "872 de 1.792 respuestas" en producción contra "1.680 en staging", y presentaba la diferencia como el desfasaje esperable de un clon. Medido de nuevo contra producción, **producción tiene 1.680 respuestas en 84 intentos** — el mismo número que staging, así que no hay tal diferencia y el 1.792 nunca existió. El dato es consistente por dos caminos: `SUM(quiz_attempts.total_questions)` y el conteo de filas de `quiz_answers` dan los dos 1.680. Por tipo: 862 `multiple_choice`, 328 `true_false`, 255 `numeric`, 235 `short_answer`.
+>
+> Del mismo modo, **los 31 alumnos están hoy en `Superior / 1er Año` en producción, los 31**. La nota de más abajo que dice "30 y 1 sigue en Secundario / 5to Año" describe la branch de staging, no producción.
+>
+> Lección: los números que este documento presenta como "producción" conviene re-medirlos antes de apoyarse en ellos, sobre todo si vienen acompañados de una comparación contra staging.
 
 - [x] Perfiles migrados a Superior / 1er Año (31 filas, con backup y `--revert`)
 - [x] Currículum de la carrera cargado (migración 022): `curriculum.carrera` + `curriculum.contexto_profesional`, 7 unidades del programa 2026
@@ -83,6 +88,25 @@ Los 31 alumnos estaban registrados como **Secundario / 4to Año**. El sistema si
   - Esta entrada decía "NO implementado, la última migración del repo es la 022 y no existe una 023". Quedó vieja al mergearse el PR #5 y avanzar `main`.
 
 **Pendiente de comunicación:** los alumnos tienen que cerrar sesión y volver a entrar para que el JWT refresque nivel/grado. Sin eso siguen viendo Secundario 4to.
+
+> **No hace falta que cierren sesión.** [auth.ts:145](../auth.ts#L145) ya re-lee `nivel`/`grado` de la base cuando `trigger === 'update'`, así que un `useSession().update()` desde el cliente refresca el token. El alumno sólo tiene que abrir la app. Falta implementar el disparo: reconciliar una vez cuando el perfil del JWT difiere del de la base. El contenido de un **aula** no depende del JWT (sale del programa del aula); `/practicar` sí.
+
+---
+
+## 🚀 Tanda de lanzamiento (16/08/2026)
+
+- [x] **Entrada de código de aula en el inicio** — el alumno que recibía un código por WhatsApp no tenía dónde ponerlo. Campo fijo en la rama de ALUMNO que navega a `/aula/<code>`, la pantalla que ya resuelve Google/invitado/invitado-nuevo. No se duplicó el flujo de join.
+- [x] **Reporte del diagnóstico para el alumno** — bloque colapsable en `/history`, por unidad, sin `short_answer` y diciendo por qué, con el piso de azar al lado de cada conteo y separando lo que entra en el programa de lo que no.
+- [x] **Reporte del diagnóstico para el docente** — `/teacher/diagnostico`. Aparte del reporte por aula, que filtra por `classroom_id` y no encuentra nada: los 84 intentos lo tienen en NULL.
+- [ ] **Aula de Análisis de Sistemas + inscripción de los 31** — `scripts/inscribir-diagnostico-2026-08-10.ts`, dry-run verificado (31 filas, 0 duplicados). **Falta correrlo con `--apply --metodologia="..."`.**
+
+### Lo que destapó
+
+- **No existía ningún programa ni aula de Análisis de Sistemas.** Los tres programas del docente eran Lengua/Primario, Ciencias Naturales/Primario y Matemática/Secundario 3er Año, y su única aula colgaba del último. El script crea el programa (7 unidades copiadas de `curriculum`) y el aula, además de inscribir.
+- **La carrera no necesita columna en `teacher_programs`.** Va en `pedagogy_profile.degree`, que es lo que `pedagogyProfileToContext` emite como `Carrera: ...`.
+- **`quiz_answers.topic_name` no sirve para agrupar.** Lo escribe la IA por pregunta: 358 valores distintos en 1.680 respuestas, y coincide con el tema que el alumno eligió sólo 22 veces. La clave real es `quiz_attempts.topics` contra `curriculum.temas`, anclado a Secundario 4to porque 5 de los 46 temas están duplicados entre 4to y 5to y sin el ancla todos los totales salen dobles. Cubre 77 de 84 intentos.
+- **Los distractores recurrentes no dan señal.** Sobre 559 respuestas de múltiple choice incorrectas hay 505 textos distintos; el máximo se repite 5 veces en 5 preguntas por 5 alumnos, y es la palabra "Parábola", que en otras preguntas es la correcta. Se descartó la sección en vez de mostrar ruido.
+- **`lib/db.ts` mentía en el tipo.** El export `sql` era una función pelada casteada a `NeonQueryFunction`: `sql.query` tipaba bien y en runtime era `undefined`. Corregido.
 
 **Verificado en staging el 15/08/2026:** de los 31 alumnos con intento del 10/08, **30 están en `Superior / 1er Año` y 1 sigue en `Secundario / 5to Año`**. Dos cosas a mirar: el rezagado no se migró, y su grado original era 5to, no 4to — así que "los 31 estaban en Secundario / 4to Año" no es exacto. No puedo ver producción desde acá; esto es lo que dice la branch de staging.
 
