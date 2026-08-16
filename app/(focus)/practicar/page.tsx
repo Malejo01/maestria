@@ -108,7 +108,7 @@ export default function PracticarPage() {
       toast({
         variant: 'destructive',
         title: 'Error de Generación',
-        description: `No pudimos generar tu cuestionario: ${errorMsg}. Por favor, vuelve a intentarlo en unos instantes.`,
+        description: `No pudimos generar tu cuestionario: ${errorMsg}. Por favor, volvé a intentarlo en unos instantes.`,
       })
     } finally {
       setIsGenerating(false)

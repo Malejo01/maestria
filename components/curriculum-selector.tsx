@@ -10,6 +10,11 @@ import { MathBackground } from '@/components/math-background'
 import { NIVEL_OPTIONS, type Nivel } from '@/lib/nivel-options'
 import { QuestionTypeSelector } from '@/components/question-type-selector'
 import { DEFAULT_QUESTION_TYPES } from '@/lib/question-types'
+import {
+  mergeQuestionTypeMixes,
+  questionTypesFromMix,
+  type QuestionTypeMix,
+} from '@/lib/question-mix'
 import { cn } from '@/lib/utils'
 import type { QuestionType } from '@/lib/types'
 
@@ -20,6 +25,12 @@ type QuizMode = 'teorico' | 'practico' | 'mixto'
 interface Eje {
   eje: string
   temas: string[]
+  /**
+   * Mezcla de tipos de pregunta que sugiere el programa de cátedra para esta
+   * unidad (migración 023). `null` en todo K-12 y en cualquier programa que no
+   * la declare. Ver lib/question-mix.ts.
+   */
+  tiposPregunta?: QuestionTypeMix | null
 }
 
 interface SelectedTopicMap {
@@ -120,6 +131,12 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
   const [questionCount, setQuestionCount] = useState(20)
   const [difficulty, setDifficulty] = useState<'basico' | 'intermedio' | 'avanzado'>('intermedio')
   const [questionTypes, setQuestionTypes] = useState<QuestionType[]>(DEFAULT_QUESTION_TYPES)
+  /**
+   * Se enciende apenas el usuario toca los chips. A partir de ahí la sugerencia
+   * del currículum no vuelve a pisar la selección: volver atrás a cambiar un
+   * tema no puede deshacer lo que la persona eligió a mano.
+   */
+  const [questionTypesTouched, setQuestionTypesTouched] = useState(false)
 
   // ─── Data fetching ──────────────────────────────────────────────────────────
 
@@ -335,8 +352,29 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     return list
   }
 
+  /**
+   * Pre-tilda los tipos de pregunta que sugiere el programa para las unidades
+   * elegidas — un default, no un candado: los chips siguen siendo editables y
+   * cualquier cambio manual apaga esto para siempre vía `questionTypesTouched`.
+   *
+   * Se calcula sobre los ejes SELECCIONADOS y no sobre todos los de la materia:
+   * un cuestionario de sólo Lógica no debería salir mayoritariamente numérico
+   * porque la unidad de Derivadas exista en el mismo programa.
+   */
   const handleConfirmTopics = () => {
     if (selectedCount === 0) return
+
+    if (!questionTypesTouched) {
+      const selectedEjes = new Set(buildTopicList().map((t) => t.eje))
+      const mixes = axes
+        .filter((ax) => selectedEjes.has(ax.eje))
+        .map((ax) => ax.tiposPregunta)
+        .filter((mix): mix is QuestionTypeMix => Boolean(mix))
+
+      const suggested = questionTypesFromMix(mergeQuestionTypeMixes(mixes))
+      if (suggested.length > 0) setQuestionTypes(suggested)
+    }
+
     setStep('params')
   }
 
@@ -826,7 +864,13 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
               {/* Tipos de pregunta */}
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-3">Tipos de pregunta</label>
-                <QuestionTypeSelector value={questionTypes} onChange={setQuestionTypes} />
+                <QuestionTypeSelector
+                  value={questionTypes}
+                  onChange={(next) => {
+                    setQuestionTypesTouched(true)
+                    setQuestionTypes(next)
+                  }}
+                />
               </div>
             </div>
 

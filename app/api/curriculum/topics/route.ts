@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { DEFAULT_JURISDICTION } from '@/lib/curriculum-config'
 import { captureRouteFailure } from '@/lib/observability'
+import { parseQuestionTypeMix } from '@/lib/question-mix'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,7 @@ interface AxisRow {
   eje: string
   temas: unknown
   contexto_profesional: unknown
+  tipos_pregunta_sugeridos: unknown
 }
 
 /**
@@ -92,7 +94,7 @@ export async function GET(req: Request) {
 
   try {
     const rows = (await sql`
-      SELECT eje, temas, contexto_profesional
+      SELECT eje, temas, contexto_profesional, tipos_pregunta_sugeridos
       FROM curriculum
       WHERE nivel   = ${nivel}
         AND grado   = ${grado}
@@ -105,6 +107,11 @@ export async function GET(req: Request) {
       eje:   r.eje,
       temas: toTopicList(r.temas),
       contextoProfesional: toContextoProfesional(r.contexto_profesional),
+      // Viaja acá y no en un endpoint propio: el selector ya llama a esta ruta
+      // al elegir la materia, así que pre-tildar los tipos que sugiere la
+      // cátedra no cuesta ni un request extra. `null` (todo K-12, y cualquier
+      // programa que no la declare) deja el default de siempre.
+      tiposPregunta: parseQuestionTypeMix(r.tipos_pregunta_sugeridos) ?? null,
     }))
     return NextResponse.json({ axes })
   } catch (error) {

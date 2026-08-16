@@ -440,7 +440,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
         }).catch((err) => console.warn('Could not auto-save tip:', err))
       }
     } catch {
-      setDetailedExplanation('No se pudo cargar la explicación. Por favor intenta de nuevo.')
+      setDetailedExplanation('No se pudo cargar la explicación. Por favor intentá de nuevo.')
       setShowExplanationModal(true)
     } finally {
       setIsLoadingExplanation(false)
@@ -456,7 +456,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       return
     }
 
-    if (confirm('Seguro que quieres salir? Perderas tu progreso actual.')) {
+    if (confirm('¿Seguro que querés salir? Perderás tu progreso actual.')) {
       setActiveView('dashboard')
     }
   }, [isPreviewMode, requestOrRunAction, setActiveView])

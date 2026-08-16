@@ -81,12 +81,12 @@ describe('Curriculum API Route Handlers', () => {
       expect(res.status).toBe(200)
 
       const body = await res.json()
-      // `contextoProfesional` es null cuando la fila no lo declara, que es el
-      // caso de todo K-12: la columna llegó con la migración 022 para las
-      // carreras de nivel Superior.
+      // `contextoProfesional` y `tiposPregunta` son null cuando la fila no los
+      // declara, que es el caso de todo K-12: las columnas llegaron con las
+      // migraciones 022 y 023 para las carreras de nivel Superior.
       expect(body.axes).toEqual([
-        { eje: 'Eje 1', temas: ['Tema 1.1', 'Tema 1.2'], contextoProfesional: null },
-        { eje: 'Eje 2', temas: ['Tema 2.1'], contextoProfesional: null }
+        { eje: 'Eje 1', temas: ['Tema 1.1', 'Tema 1.2'], contextoProfesional: null, tiposPregunta: null },
+        { eje: 'Eje 2', temas: ['Tema 2.1'], contextoProfesional: null, tiposPregunta: null }
       ])
       expect(sql).toHaveBeenCalledTimes(1)
     })
@@ -112,6 +112,43 @@ describe('Curriculum API Route Handlers', () => {
         aplicacion: 'Diseño de algoritmos, validación de procesos',
         herramientas: ['GeoGebra', 'Simulador de lógica'],
       })
+    })
+
+    it('devuelve la mezcla sugerida de tipos de pregunta cuando la unidad la declara', async () => {
+      // Viaja por esta ruta y no por un endpoint propio: el selector ya la llama
+      // al elegir la materia, así que pre-tildar los tipos que sugiere la
+      // cátedra no cuesta un request extra.
+      vi.mocked(sql).mockResolvedValueOnce([
+        {
+          eje: 'Unidad 7 — Derivadas',
+          temas: ['Reglas básicas de derivación.'],
+          tipos_pregunta_sugeridos: { numeric: 50, short_answer: 25, multiple_choice: 20, true_false: 5 },
+        },
+      ])
+
+      const req = new Request(
+        'http://localhost/api/curriculum/topics?nivel=Superior&grado=1er+A%C3%B1o&materia=Matem%C3%A1tica&carrera=Tecnicatura+Superior+en+An%C3%A1lisis+de+Sistemas'
+      )
+      const body = await (await getTopics(req)).json()
+
+      expect(body.axes[0].tiposPregunta).toEqual({
+        numeric: 50, short_answer: 25, multiple_choice: 20, true_false: 5,
+      })
+    })
+
+    it('descarta una mezcla con forma inválida en vez de propagarla', async () => {
+      // Misma regla que el contexto profesional: JSONB garantiza JSON válido, no
+      // esta forma. Una fila mal cargada tiene que dejar el default de siempre.
+      vi.mocked(sql).mockResolvedValueOnce([
+        { eje: 'Eje 1', temas: ['Tema'], tipos_pregunta_sugeridos: { essay: 100 } },
+      ])
+
+      const req = new Request(
+        'http://localhost/api/curriculum/topics?nivel=Superior&grado=1er+A%C3%B1o&materia=Matem%C3%A1tica'
+      )
+      const body = await (await getTopics(req)).json()
+
+      expect(body.axes[0].tiposPregunta).toBeNull()
     })
 
     it('descarta un contexto profesional con forma inválida en vez de propagarlo', async () => {

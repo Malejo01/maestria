@@ -21,6 +21,31 @@ Van **dos proyectos de Vercel** en vez de un Custom Environment porque la cuenta
 
 ## 2. Puesta en marcha
 
+### 2.0 El camino corto: un solo comando
+
+[`scripts/create-staging-branch.ts`](../scripts/create-staging-branch.ts) encadena §2.1, §2.2 y la verificación en una corrida:
+
+```bash
+npx tsx scripts/create-staging-branch.ts
+```
+
+Necesita `NEON_API_KEY` en `.env.local`, además de `NEON_PROJECT_ID` y la `DATABASE_URL` de producción. **Borrá la `NEON_API_KEY` apenas termine**: esa credencial puede borrar cualquier branch del proyecto, producción incluida, y ningún otro script la usa.
+
+Qué hace, en orden:
+
+1. Crea la branch `staging` desde la branch raíz, con datos al momento.
+2. Espera hasta que responda un `SELECT 1` real — no hasta que la API diga `ready`, que describe el compute y no que el endpoint acepte consultas. Timeout 90 s.
+3. Corre la migración 017 contra la branch nueva.
+4. Corre `anonymize-staging.ts`, que anonimiza **y** deja la marca de `staging`.
+5. **Verifica sin creerle al anonimizador**: trae los valores reales de producción y comprueba que ninguno sobreviva. Es la diferencia con `assertAnonymized`, que mira un patrón (`@staging.invalid`) y por eso no puede ver una tabla que el anonimizador no conoce.
+6. Recién ahí escribe `.env.staging.local`.
+
+> **La branch sobrevive si y sólo si los seis pasos salieron bien.** Cualquier fallo —incluido un solo dato real encontrado en el paso 5, o un Ctrl-C durante la espera— la borra. Si el borrado mismo falla, el script grita con el `curl` para borrarla a mano; no es un warning que se pueda pasar por alto. La lógica está en [`scripts/lib/branch-guard.ts`](../scripts/lib/branch-guard.ts), con tests.
+
+El script **se niega a pisar** una branch `staging` existente: para refrescar, borrala primero (§5). Y no cubre §2.3-§2.5 — el OAuth client, los secretos propios y las variables en Vercel siguen siendo a mano.
+
+Lo que sigue es el mismo procedimiento paso a paso, que es lo que hay que leer cuando algo del script falla.
+
 ### 2.1 Branch de Neon
 
 Consola de Neon → *Branches* → *Create branch*:
@@ -174,6 +199,12 @@ El paso 6 va **después** del deploy, así que toda migración tiene que ser com
 ## 5. Refrescar staging
 
 Cuando staging se llenó de basura de pruebas, o querés datos parecidos a los de producción de nuevo:
+
+1. Neon → borrar la branch `staging`. (A mano y a propósito: puede estar en uso, y el script no la pisa por su cuenta.)
+2. `npx tsx scripts/create-staging-branch.ts` — hace los pasos 3 a 5 de abajo y los verifica (§2.0).
+3. Actualizá la connection string en Vercel si cambió; `.env.staging.local` ya lo hizo el script.
+
+A mano, si el script falla o querés hacerlo por partes:
 
 1. Neon → borrar la branch `staging`.
 2. Crearla otra vez desde producción (§2.1).

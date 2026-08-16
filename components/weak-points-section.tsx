@@ -195,7 +195,7 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
                   )}
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground">
-                  Selecciona un tema para tomar un micro-entrenamiento o practica todos los contenidos a la vez.
+                  Seleccioná un tema para tomar un micro-entrenamiento o practicá todos los contenidos a la vez.
                 </DialogDescription>
               </DialogHeader>
 
@@ -287,7 +287,7 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
           }}
           isLoading={Boolean(loadingSubjectId)}
           title="Practicar temas a reforzar"
-          description="Elige el tipo de examen para generar preguntas sobre los temas que necesitas reforzar."
+          description="Elegí el tipo de examen para generar preguntas sobre los temas que necesitás reforzar."
         />
       )}
     </section>

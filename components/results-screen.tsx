@@ -186,7 +186,7 @@ export function ResultsScreen() {
         }).catch((err) => console.warn('Could not auto-save tip:', err))
       }
     } catch {
-      setSelectedModalExplanation('No se pudo cargar la explicación. Por favor intenta de nuevo.')
+      setSelectedModalExplanation('No se pudo cargar la explicación. Por favor intentá de nuevo.')
     } finally {
       setLoadingExplanation(null)
     }
@@ -363,9 +363,9 @@ export function ResultsScreen() {
               <h3 className="font-bold text-foreground">Tu Racha</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 {userProgress.streak >= 2 
-                  ? 'Racha activa - sigue asi!' 
+                  ? '¡Racha activa, seguí así!' 
                   : userProgress.streak === 1
-                    ? 'Una mas para activar la racha'
+                    ? 'Una más para activar la racha'
                     : 'Aprueba 2 seguidos para activar'}
               </p>
             </div>
@@ -608,7 +608,7 @@ export function ResultsScreen() {
         onSelectMode={handleRetry}
         isLoading={isRetrying}
         title="Reintentar cuestionario"
-        description="Selecciona si quieres regenerar este cuestionario en modo teorico, practico o mixto con los mismos temas."
+        description="Seleccioná si querés regenerar este cuestionario en modo teórico, práctico o mixto con los mismos temas."
         showQuestionCountSelector={false}
       />
 
