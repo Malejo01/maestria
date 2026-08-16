@@ -169,20 +169,47 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
 
 ### Antes de invitar usuarios
 
-- [ ] Upgrade de `next` a 16.2.12 + resto de `npm audit`
+- [x] **Upgrade de `next` a 16.2.12** — cierra las 22 advisories propias de Next que traía 16.2.4; siete son bypass de middleware/proxy, y eso pesa más que el promedio acá porque `proxy.ts` es el único lugar donde se bloquea a un ALUMNO de `/teacher`. El techo más alto del lote era `<16.2.11`. `eslint-config-next` se fija también en 16.2.12 para no quedar una minor por delante.
+- [x] **Parte segura de `npm audit`** — `postcss` 8.5.14 → 8.5.26, `nanoid` → 3.3.18, `vite` → 8.2.1 vía `vitest` 4.1.10. Las tres caían dentro de los rangos ya declarados, así que sólo se movió el lockfile. De 7 hallazgos a 5.
+- [x] **Las 2 CRITICAL de Auth.js** — `next-auth` beta.31 → **beta.32**, que arrastra `@auth/core` 0.41.3. La que importaba: «Configuration errors can cause existence-based auth checks to **fail open**», que pega justo en el patrón de `getViewer()` y de `proxy.ts` (`!!session`). **El audit queda en 0 críticas**, de 7 hallazgos a 3.
+  - [ ] **Smoke test manual pendiente** — ningún test automático cubre el runtime de Auth.js (los de `middleware-matcher` son léxicos). Hay que probar a mano: login con Google, invitado por código de aula, bloqueo de `/teacher` para ALUMNO, y switch de rol ALUMNO↔DOCENTE. Ojo con la interpretación: el arreglo hace que una config rota **deje de pasar inadvertida**, así que si aparece un problema de login la primera hipótesis no es «lo rompió el bump». Detalle en [deuda-tecnica.md](deuda-tecnica.md).
+- [ ] `postcss` (4 high) y `sharp` (1 high) — cuelgan de `next`, y no del `postcss` de arriba: el que queda es el que Next trae empaquetado (`node_modules/next/node_modules/postcss@8.4.31`). npm sólo los da por resueltos con **`next@16.3.1`**, que sale de la línea 16.2.x. **Decidido el 16/08/2026: quedarse en 16.2.x** — ninguna es alcanzable (build-time sobre CSS propio) y no se salta de línea menor justo antes de invitar usuarios. Cuando toque subir, `16.3.1` las cierra las tres de un saque. Las de `sharp` siguen en camino muerto por `images.unoptimized: true`, **pero se reactivan solas si alguien da vuelta esa flag**.
 
 ### Próximo sprint
 
 - [ ] **Source maps con Turbopack** — suben bien pero Sentry no los aplica (bug upstream `sentry-javascript#18248`, State: Blocked). Workaround: `next build --webpack`.
-- [ ] **Voseo app-wide** — el onboarding se corrigió, pero quedan ~22 formas peninsulares
+- [x] **Voseo app-wide** — 18 formas en 10 archivos: `quieres`→`querés` (6), `Selecciona`→`Seleccioná` (3), `intenta`→`intentá` (3), `Elige`→`Elegí` (2), `necesitas`→`necesitás` (2), más `completa`, `revisa`, `indica`, `Genera`, `vuelve` y `sigue así`. Vivían sobre todo en toasts de error y en las descripciones de los modos de cuestionario. De paso se corrigieron tildes y signos de apertura **en esas mismas frases** (`¿Qué querés hacer?`, `teórico`, `Perderás`), no más allá. **`/terminos` y `/privacidad` quedan como están**: su registro formal («Usted acepta», «su actividad previa») no es peninsular, es el que corresponde a un texto de cumplimiento de la Ley 25.326. El barrido inicial daba ~50 coincidencias y la mayoría eran comentarios del código en tercera persona, que no son copy.
 - [x] Navegación de vuelta desde `/admin/ai-usage` — un `<Link>` a `/`, no la navbar: montarla arrastraría el layout de `(app)` con sus guards de onboarding, que es justamente lo que la página evita viviendo fuera del grupo. Un `<Link>` además la deja seguir siendo server component.
 - [x] `updated_at` de `deployment_env` no se refresca — el `DEFAULT NOW()` de la columna sólo corre en el INSERT. `markEnvironment()` ya lo ponía a mano; los runners **017** y **018**, que también reescriben la fila, no. **Se descartó el trigger**, que sería el arreglo que no depende de que cada autor se acuerde: es una migración nueva y hay que correrla contra producción para arreglar algo que hoy no rompe nada. En su lugar quedó `tests/deployment-env-updated-at.test.ts` — chequeo léxico sobre el repo, mismo enfoque que `tests/migrations.test.ts`, que exige `updated_at` en todo `UPDATE` y todo `ON CONFLICT … DO UPDATE` sobre la tabla. Los INSERT pelados no se exigen: ahí el DEFAULT sí corre.
 - [ ] Tipos `Db*` en `lib/db.ts` desalineados con el schema
 - [ ] 4 warnings de `any` nuevos de la extracción (ahora hay 29 tests como red)
 - [x] favicon 404 — `public/favicon.ico`, un contenedor `.ico` de verdad con dos PNG embebidos (16 y 32, sacados de `icon-light-32x32.png`), no un PNG renombrado. Va en `public/` y **no** en `app/favicon.ico`: la convención de archivo de Next haría que el framework emita su propio `<link rel="icon">` compitiendo con el bloque `metadata.icons` de `layout.tsx`. Verificado contra el dev server, 404 sin el archivo y 200 con él.
 - [x] Limpieza de ramas — de **16** locales a 9, y de 4 worktrees a 2. Borradas las 5 `worktree-agent-*` y las 3 `v0/*`, las ocho verificadas como ancestros de `main` antes de tocar nada. `fix/flujo-diagnostico-primero` se conserva: es la única sin mergear. (El conteo viejo decía ~14; eran 16.)
-- [ ] **Los íconos siguen siendo el logo de v0**, no la marca de MaestrIA — `public/icon.svg` y los dos PNG de 32×32 son el logotipo de v0.app, y `metadata.generator` sigue diciendo `'v0.app'`. El favicon nuevo hereda ese arte, así que cambiarlo es un solo lugar más. Detectado al arreglar el 404.
+- [x] **Sacar el logo de v0** — los cinco íconos y `metadata.generator: 'v0.app'` afuera. En su lugar hay un arte **provisorio**: una M de trazo sobre cuadrado redondeado en el verde de marca `#43613C`, con el mismo esquema claro/oscuro que tenía el set anterior. `generator` se elimina del objeto en vez de reescribirse — es opcional y no hay nada que declarar.
+  - [ ] **Falta el arte definitivo.** Lo provisorio sirve para no seguir mostrando la marca de otro producto, no para ser la identidad. Ver la nota de abajo sobre qué hace falta.
+- [ ] **El tooling entra en los worktrees anidados de `.claude/`.** Ni `vitest.config.ts` ni la config de ESLint excluyen `.claude/`, así que con un worktree vivo en `.claude/worktrees/` las dos herramientas lo escanean. Medido el 16/08/2026:
+  - `npm test` levanta también los tests del worktree anidado y fallan por resolución del alias `@`: **6 archivos en rojo** ajenos al cambio que estés probando.
+  - `npm run lint` entra al `.next/` del worktree anidado y reporta **34.641 warnings** sobre chunks compilados. El número real del repo es **71 (0 errores)**.
+  - Los dos hacen creer que un cambio rompió algo cuando no. CI no se ve afectado: hace checkout limpio.
+  - Arreglo: `exclude: ['**/.claude/**']` en vitest y el patrón equivalente en ESLint. Dos renglones. Hoy hace ruido cada vez que hay un agente en paralelo, que es justamente el modo de trabajo que recomienda la lección operativa de arriba.
+- [ ] `public/placeholder-logo.svg` y `placeholder-logo.png` también son de v0 y no los referencia nadie. Borrarlos.
 - [ ] Borrar el proyecto Neon de `quiosco-next` (no urgente: una branch no consume slot)
+
+### Qué hace falta para el ícono definitivo
+
+Lo provisorio se generó por script desde un SVG; reemplazarlo es cambiar cinco archivos en `public/` y nada más — `layout.tsx` ya apunta a los nombres correctos y no hay que tocarlo.
+
+Con **un solo SVG cuadrado** alcanza para derivar todo lo demás. Requisitos, que salen de las limitaciones de los formatos y no de una preferencia:
+
+| Necesito | Por qué |
+|---|---|
+| **SVG cuadrado**, lienzo 1:1, con el margen ya incluido | Los PNG se derivan de acá. Si el margen no viene en el arte, cada tamaño hay que recortarlo a ojo. |
+| Que se lea **a 16 px** | Es el tamaño real de la pestaña. Un logotipo con palabra o con trazos finos se convierte en una mancha; a ese tamaño sólo sobrevive la silueta. Si la marca completa no aguanta, hace falta una versión reducida (isotipo). |
+| **Dos variantes, clara y oscura** | El set actual sirve un ícono distinto según `prefers-color-scheme`. Con una sola variante, o desaparece sobre chrome negro o sobre blanco. |
+| Colores **planos**, sin degradés ni sombras | A 16 y 32 px un degradé se vuelve barro. Además el `.ico` se arma con paleta reducida. |
+| Confirmar si `#43613C` es el color de marca | Vino del pedido, no de un manual. Si hay otro verde oficial, ese. |
+
+Sin el SVG también se puede avanzar con un PNG de 512×512 o más, pero el resultado va a ser peor en los tamaños chicos: escalar hacia abajo desde un bitmap pierde definición justo donde más se nota.
 
 ### Vivir con esto
 

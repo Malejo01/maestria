@@ -19,7 +19,6 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: 'MaestrIA - Trabajos prácticos y cuestionarios con IA',
   description: 'Plataforma de generación de trabajos prácticos y cuestionarios con Inteligencia Artificial para todas las materias, grados y niveles educativos.',
-  generator: 'v0.app',
   icons: {
     icon: [
       {

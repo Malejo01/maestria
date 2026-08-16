@@ -233,7 +233,7 @@ export function ProgramFileImport({ onUnitsSuggested, onSourceMetaChange, disabl
     const seedTopics = [guideTopicOne, guideTopicTwo].map((value) => value.trim()).filter((value) => value.length > 0)
 
     if (!guideUnitName.trim() || seedTopics.length < 2) {
-      toast({ title: 'Datos insuficientes', description: 'Para guiar, completa 1 unidad y al menos 2 temas.' })
+      toast({ title: 'Datos insuficientes', description: 'Para guiar, completá 1 unidad y al menos 2 temas.' })
       return
     }
 
@@ -256,7 +256,7 @@ export function ProgramFileImport({ onUnitsSuggested, onSourceMetaChange, disabl
 
       const data = await response.json()
       if (!response.ok) {
-        const detailMessage = data?.details ? ` (${typeof data.details === 'string' ? data.details : 'revisa el formato'})` : ''
+        const detailMessage = data?.details ? ` (${typeof data.details === 'string' ? data.details : 'revisá el formato'})` : ''
         throw new Error(`${data?.error || 'No se pudo guiar el autocompletado'}${detailMessage}`)
       }
 
@@ -366,7 +366,7 @@ export function ProgramFileImport({ onUnitsSuggested, onSourceMetaChange, disabl
           </div>
 
           <Textarea
-            placeholder="Opcional: indica que partes salieron mal o que quieres que busque distinto"
+            placeholder="Opcional: indicá qué partes salieron mal o qué querés que busque distinto"
             value={guideFeedbackNote}
             onChange={(event) => setGuideFeedbackNote(event.target.value)}
             rows={2}

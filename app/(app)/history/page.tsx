@@ -276,7 +276,7 @@ function HistoryPageContent() {
       <div>
         <h1 className="text-2xl font-black text-foreground">Historial y Desempeño</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Tus evaluaciones pasadas y los temas que necesitas reforzar.
+          Tus evaluaciones pasadas y los temas que necesitás reforzar.
         </p>
       </div>
 

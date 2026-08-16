@@ -81,9 +81,27 @@ borrarlos o corregirlos, pero al no estar en uso no rompen nada hoy.
 
 ---
 
-## 3b. `npm audit` — 6 vulnerabilidades (4 high, 2 critical)
+## 3b. `npm audit` — de 7 hallazgos a 3 (3 high, **0 critical**)
 
-**Ninguna resuelta.** No se corrió `npm audit fix`.
+**Actualizado el 16/08/2026.** Las dos críticas están cerradas. Quedan tres high, las tres del mismo racimo y ninguna alcanzable por un cambio de rango.
+
+| # | Paquete | Estado |
+|---|---|---|
+| 1 | `next` | ✅ 16.2.4 → **16.2.12**, cierra sus 22 advisories propias |
+| 2 | `next-auth` | ✅ beta.31 → **beta.32** |
+| 3 | `@auth/core` | ✅ 0.41.2 → **0.41.3**, vía `next-auth` |
+| 4 | `postcss` | ⚠️ el directo se subió a 8.5.26; **queda el que `next` trae empaquetado** |
+| 5 | `sharp` | ⚠️ abierta, no explotable hoy (ver abajo) |
+| 6 | `vite` | ✅ 8.0.12 → **8.2.1**, vía `vitest` 4.1.10 |
+| — | `nanoid` | ✅ → 3.3.18, entraba de arrastre por `postcss` |
+
+### Las 3 que quedan se cierran juntas con `next@16.3.1`
+
+`next` ya no aporta advisories propias: figura en el reporte sólo **via `postcss`, `sharp`**. Y esas dos no se arreglan subiendo el `postcss` de arriba —eso ya se hizo— porque el vulnerable es el que Next trae adentro, en `node_modules/next/node_modules/postcss@8.4.31`. npm lo dice explícito: `fixAvailable: {"name":"next","version":"16.3.1","isSemVerMajor":false}`.
+
+**Decisión del 16/08/2026: quedarse en la línea 16.2.x.** No se salta de minor justo antes de invitar usuarios para ganar un reporte limpio, cuando ninguna de las tres es alcanzable: las de `postcss` son lectura de `.map` vía `sourceMappingURL` en build-time, y no hay CSS de un atacante en el build.
+
+**Cuando toque subir de línea menor, `next@16.3.1` cierra las tres de un saque.** Es el momento de hacerlo: no requiere trabajo aparte, sólo que la subida esté decidida por otro motivo.
 
 ### 1. `next` — **directa**, high
 
@@ -104,7 +122,7 @@ Arrastra ~22 advisories. Los que importan acá:
 - **DoS de Image Optimization** (2 advisories) — **no aplica**: `next.config.mjs` tiene
   `images.unoptimized: true`, el pipeline no corre.
 
-*Veredicto: parchear. Es barato (patch-level) y cierra el único hueco de autorización real.*
+*Veredicto: **hecho el 16/08/2026** (`16.2.12`). Cerró el hueco de las páginas `/teacher/*`, que era el único que no tenía defensa en profundidad detrás.*
 
 ### 2. `next-auth` — **directa**, critical
 
@@ -125,14 +143,28 @@ Arrastra ~22 advisories. Los que importan acá:
 - **`GHSA-xmf8-cvqr-rfgj` (high)** — `getToken()` tira excepción no capturada ante un
   header `Bearer` malformado. Vector de DoS barato si algo llama a `getToken()`.
 
-*Veredicto: parchear, pero con smoke test manual. `fixAvailable: true` y el salto es
-beta→beta dentro de 5.0.0 (no es un major), aunque los betas de next-auth rompen seguido.
-Hay que probar a mano: login con Google, sesión de invitado, y el switch de rol
-ALUMNO↔DOCENTE (que `getTeacherViewer()` lee de la base y no del JWT).*
+*Veredicto: **hecho el 16/08/2026** (beta.31 → beta.32), con el smoke test manual pendiente
+de la lista de acá abajo.*
+
+> **El arreglo de `GHSA-8fpg-xm3f-6cx3` puede DESTAPAR un problema, no sólo prevenirlo.**
+> Lo que hacía era dejar pasar los chequeos por existencia ante un error de configuración.
+> Corregido, esa misma configuración rota deja de pasar inadvertida y se manifiesta como
+> login que falla. Si aparece un problema de login después de este bump, la primera
+> hipótesis no es "lo rompió el bump" sino "había un error de config que hasta ahora venía
+> fallando abierto".
+>
+> Smoke test manual, que no lo cubre ningún test automático — los de
+> `tests/middleware-matcher.test.ts` son léxicos, verifican el patrón declarado en
+> `proxy.ts` y no el runtime de Auth.js:
+>
+> 1. Login con Google.
+> 2. Sesión de invitado entrando por código de aula.
+> 3. Que el middleware siga bloqueando `/teacher` para un ALUMNO.
+> 4. El switch de rol ALUMNO↔DOCENTE, que `getTeacherViewer()` lee de la base y no del JWT.
 
 ### 3. `@auth/core` — **transitiva** (vía `next-auth`), critical
 
-Mismos advisories que arriba. Se resuelve con el mismo bump; no se toca por separado.
+Mismos advisories que arriba. Se resolvió con el mismo bump (0.41.2 → 0.41.3); no se tocó por separado.
 
 ### 4. `postcss` — **directa** (devDep `^8.5`) **y** transitiva vía `next`, high
 
@@ -144,7 +176,10 @@ Todo el CSS del proyecto es propio (Tailwind + `globals.css`); no se procesa CSS
 por nadie. El XSS de stringify requiere que se sirva el output de PostCSS sobre input
 hostil, cosa que no pasa.
 
-*Veredicto: viene arrastrado con el bump de `next` a 16.2.12. No amerita acción propia.*
+*Veredicto: **parcialmente hecho el 16/08/2026.** El `postcss` directo subió a 8.5.26 (y con
+él `nanoid` a 3.3.18). El que sigue abierto es el que `next` trae empaquetado — ver arriba:
+sólo lo cierra `next@16.3.1`. La premisa de "no explotable" no cambia: sigue siendo build-time
+sobre CSS propio.*
 
 ### 5. `sharp` — **transitiva** (vía `next`), high
 
@@ -155,7 +190,15 @@ Optimization de Next, y `next.config.mjs` lo tiene apagado con `images.unoptimiz
 Es código muerto en este deploy. La condición quedó anotada en un comentario **junto a la
 flag misma**, que es donde alguien la va a leer antes de cambiarla.
 
-*Veredicto: vivir con esto, con esa condición.*
+> ⚠️ **Esto se enciende solo.** No hace falta tocar `sharp` ni actualizar nada: alcanza con
+> que alguien ponga `images.unoptimized: false` —o borre la línea, porque el default de Next
+> es optimizar— para que las cuatro CVEs de libvips pasen de código muerto a camino vivo, en
+> el mismo commit y sin que ningún `npm audit` cambie de número. La mitigación no vive en el
+> lockfile: vive en esa flag. Si se reactiva la optimización de imágenes, subir `next` a
+> **16.3.1** (que trae `sharp` ≥ 0.35.0) deja de ser opcional y pasa a ser parte del mismo
+> cambio.
+
+*Veredicto: vivir con esto, con esa condición — y con el aviso de arriba.*
 
 ### 6. `vite` — **transitiva** (vía `vitest`, devDependency), high
 
@@ -168,8 +211,8 @@ El bypass de `fs.deny` necesita un dev server de Vite corriendo y alcanzable por
 atacante; la fuga NTLM necesita que alguien haga click en el overlay de error de Vite
 desde una página hostil.
 
-*Veredicto: vivir con esto. `fixAvailable: true`, así que se puede levantar de paso en
-cualquier limpieza de dependencias, sin urgencia.*
+*Veredicto: **hecho el 16/08/2026.** Se levantó de paso, como decía acá: `vitest` 4.1.6 →
+4.1.10 lo lleva a `vite` 8.2.1. No hizo falta tocar `package.json` — caía dentro de `^4.1.6`.*
 
 ---
 
@@ -638,12 +681,13 @@ comportándose así, cualquier agente que modifique archivos existentes necesita
 
 ### Arreglar antes de invitar usuarios
 
-1. **`next` → 16.2.12.** Bump de patch. Cierra la familia de bypass de middleware. Las
-   APIs de docente ya están cubiertas por revalidación de rol contra la base, pero las
-   **páginas `/teacher/*` dependen sólo del middleware** y hoy quedan expuestas.
-2. **`next-auth` → último 5.0.0-beta.** El fail-open de los chequeos por existencia
-   (`GHSA-8fpg-xm3f-6cx3`) pega exactamente en el patrón que usa `getViewer()`. Requiere
-   smoke test manual de login, invitado y switch de rol.
+1. ~~**`next` → 16.2.12.**~~ — **hecho el 16/08/2026.** Cerró la familia de bypass de
+   middleware, y con ella la exposición de las páginas `/teacher/*`, que era lo único sin
+   defensa en profundidad detrás.
+2. ~~**`next-auth` → último 5.0.0-beta.**~~ — **hecho el 16/08/2026** (beta.32). **Queda
+   pendiente el smoke test manual**: login con Google, invitado por código de aula, bloqueo
+   de `/teacher` para ALUMNO y switch de rol. Sin eso el ítem no está cerrado del todo —
+   ningún test automático cubre el runtime de Auth.js.
 3. **Partir el deploy de la migración 016 en dos pasos.** Ya está documentado en
    [staging.md](staging.md#L170) pero no resuelto: las migraciones corren *después* del
    deploy, y la 016 **renombra** `ai_generation_log` → `ai_usage_log`. Deployada de una,
@@ -663,6 +707,10 @@ comportándose así, cualquier agente que modifique archivos existentes necesita
 
 ### Vivir con esto
 
-5. **`postcss`** — sólo build, y todo el CSS es propio. Se arregla solo con el bump de `next`.
-6. **`sharp`** — camino de código muerto por `images.unoptimized: true`.
-7. **`vite`** — devDependency, nunca se despliega.
+5. **`postcss`** — sólo build, y todo el CSS es propio. **Corrección:** *no* se arregla con el
+   bump a 16.2.12, como decía este renglón. El directo subió a 8.5.26, pero el vulnerable que
+   queda es el que `next` trae empaquetado, y ése sólo lo cierra `next@16.3.1`.
+6. **`sharp`** — camino de código muerto por `images.unoptimized: true`, **y sólo mientras esa
+   flag siga en `true`**: se reactiva sola si alguien la da vuelta, sin que el audit cambie.
+   Ahí `next@16.3.1` deja de ser opcional.
+7. ~~**`vite`**~~ — **hecho el 16/08/2026**, vía `vitest` 4.1.10.
