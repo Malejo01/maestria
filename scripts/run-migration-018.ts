@@ -28,7 +28,11 @@ async function run() {
   if (currentHost) {
     const normalized = normalizeNeonHost(currentHost)
     if (normalized !== currentHost) {
-      await target.sql`UPDATE deployment_env SET origin_host = ${normalized} WHERE id = true`
+      await target.sql`
+        UPDATE deployment_env
+           SET origin_host = ${normalized}, updated_at = NOW()
+         WHERE id = true
+      `
       console.log(`✔ Origin host normalizado: ${currentHost} -> ${normalized}`)
     } else {
       console.log(`✔ Origin host ya estaba normalizado: ${currentHost}`)
