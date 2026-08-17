@@ -115,6 +115,14 @@ npx tsx scripts/inscribir-diagnostico-2026-08-10.ts --docente=TU_EMAIL --apply -
 
 El script crea el programa (Superior / 1er Año / Matemática, con las 7 unidades copiadas de `curriculum`), el aula, y las 31 membresías. Escribe un backup en `scripts/backups/` **después de cada paso**, así que una caída a la mitad sigue siendo reversible con `--revert=<archivo.json>`.
 
+### 1b. Decidir cómo se arreglan las fuentes (bloquea toda verificación en browser)
+
+`app/layout.tsx` importa Manrope y Playfair Display con `next/font/google`, que **descarga en tiempo de build**. Si esa descarga falla, no falla la tipografía: falla el módulo, y la home tira 500. Es lo que viene limitando la verificación en browser hace tres tandas.
+
+Medido el 16/08/2026: `fonts.googleapis.com` responde 200, pero las URLs de **fuente variable** que pide Next dan **404**, mientras que los archivos estáticos del mismo tipo descargan bien. No es lentitud de red — son URLs que no existen más.
+
+Está esperando tu decisión entre self-hosting (preserva la tipografía exacta) y sacar Playfair (cambia el wordmark). Detalle en la respuesta del chat.
+
 ### 2. Verificaciones manuales (no las pude hacer yo)
 
 No puedo autenticarme como alumno ni como docente, y el dev server del sandbox no levanta por el fetch de Google Fonts. Lo que falta mirar con tus ojos:
@@ -198,9 +206,21 @@ Solo la persona 4 tiene casos reales del 10/08. Las otras cuatro calibran con ca
 ### Siguiente sin costo
 
 - [x] ~~Distractores numéricamente equivalentes~~ — implementado. Dos ramas: `critical` si el par duplicado incluye la opción correcta (hay dos respuestas correctas), `major` si son sólo distractores (la pregunta ofrece menos opciones reales de las que aparenta). Los dos casos reales caen en la segunda rama; la primera está cubierta sólo por test sintético.
+- [x] ~~Tres reglas más~~ (16/08/2026) — **el lint pasa de 61 a 88 hallazgos, precisión sigue en 100%**:
+
+  | Regla | Sev. | Casos | Nota |
+  |---|---|---|---|
+  | Escapes `\uXXXX` crudos | `critical` | **10 preguntas** (ids 1430–1448) | El alumno lee `parábola`. Un solo intento con todo su contenido corrupto. |
+  | Manda a mirar un visual inexistente | `critical` | **1** (id 750) | No hay imágenes en ningún cuestionario: irrespondible. El alumno adivinó y erró. |
+  | `true_false` que adelanta su respuesta | `major` | **2** (693, 1432) | Abre con "Es verdadero que…"; los dos tienen `correctAnswer: true`. |
+
+  Dos decisiones de alcance que valen más que las reglas:
+  - El escape se acota a la **mitad alta** de Latin-1 (``–`ÿ`). El primer test falló y tenía razón: el patrón ancho también atrapaba `A`, que es una `A` en ASCII y puede ser el tema legítimo de una pregunta de sistemas sobre codificación.
+  - La del visual es estrecha (imperativo + deíctico + sustantivo). La versión amplia da un **falso positivo** medido: el id 1071 dice "cuya gráfica se muestra" pero después describe el comportamiento en palabras y se responde sin ver nada.
+
 - [ ] `scripts/qa/run-agents.ts` — ya tiene todas las piezas
 
-**Reglas de lint evaluadas y descartadas** (medidas contra los datos del 10/08, 15/08/2026):
+**Reglas de lint evaluadas y descartadas** (medidas contra los datos del 10/08; las cuatro primeras el 15/08/2026, las seis siguientes el 16/08):
 
 | Regla | Veredicto |
 |---|---|
@@ -208,6 +228,15 @@ Solo la persona 4 tiene casos reales del 10/08. Las otras cuatro calibran con ca
 | `acceptedAnswers` sin variante sin tildes | **No, la regla no tiene sentido.** `normalizeAnswerText` ya saca las tildes al comparar ([short-answer-grading.ts:108](../lib/short-answer-grading.ts#L108)); el alumno que escribe "parabola" ya da correcto. Dispararía en 23 casos y los 23 serían falsos positivos. |
 | Opciones con longitudes dispares | **Se deja como está, con la premisa medida.** Sobre 862 preguntas de 4 opciones: la más larga es la correcta el 28,0% de las veces contra un azar de 25% — efecto real pero de ~2 errores estándar. Lo que sí aparece fuerte es lo inverso: la correcta es la más corta sólo el 8,7%. Queda en `minor`, umbral ≥25 chars y ≥2× el promedio (dispara en 4,1%). No hay umbral que aísle una señal fuerte porque no la hay; el número está escrito en el comentario del código para que nadie lo lea como más de lo que es. |
 | `numeric` sin tolerancia | **Ya estaba afinada.** Exige `!Number.isInteger(correctAnswer)`: dispara en 9 de 19 no enteras, y no dispara en las 230 enteras con tolerancia nula. Sin el chequeo de entero dispararía en 239 en vez de 9. |
+| `true_false` cuyo enunciado termina en `?` | **No.** Dispara en 42 de 328 (12,8%) y ninguno es un defecto: "¿Es cierto que el foco está en $(0,4)$?" se responde perfectamente con Verdadero/Falso. Es una forma de redacción, no un error. |
+| Opción correcta repetida literal en el enunciado | **No.** 1 caso de 862 y es falso positivo: el enunciado **cita la relación** ("la cantidad de agua que gastas al ducharte depende del tiempo") y pregunta cuál es la variable dependiente. Que la frase aparezca no regala nada. |
+| Respuesta numérica visible en el enunciado | **No.** 3 de 255 y los tres son ejercicios legítimos de lectura: sacar $r^2$ de $(x-3)^2+(y+2)^2=25$ **es** el ejercicio. La regla confunde "el dato está a la vista" con "la respuesta está regalada". |
+| Una opción es prefijo de otra | **No.** 5 de 862, **los cinco falsos positivos**: `"1"` y `"12"` son números distintos; `"Todos los reales"` y `"Todos los reales excepto $x=2$"` son un par de distractores perfectamente válido. |
+| Opciones con y sin LaTeX mezcladas | **No.** 90 de 862 (10,4%) y es lo correcto: en `["$x > -2$", "Todos los números reales", …]` la opción sin `$` no tiene matemática que envolver. Envolverla sería el error. |
+| `acceptedAnswers` redundantes tras normalizar | **No.** 15 de 235 (`["focos","Focos"]`, `["Hipérbola","Hiperbola"]`). `normalizeAnswerText` ya baja a minúsculas y saca tildes, así que las variantes no agregan nada — pero **tampoco rompen nada**. Marcar una pregunta que funciona es un falso positivo. Es la imagen espejo de la regla de tildes ya descartada arriba. |
+| Opciones que difieren sólo en puntuación | **No — el bug era de la regla.** Parecía disparar en 112 de 862 hasta que se miró la muestra: la canonicalización borraba `+` y `−`, así que daba por iguales `$a^2=b^2+c^2$` y `$a^2=b^2-c^2$`, que difieren justo en lo que importa. Anotada por la lección, no por la regla. |
+
+> Nota de método: el filtro que descartó seis de estas ocho fue **mirar la muestra a mano**, no el conteo. Tres de ellas disparaban con volumen respetable (12,8%, 10,4%, 13%) y las tres eran ruido. Una tasa de disparo alta es motivo para sospechar de la regla, no para celebrarla.
 
 ---
 
@@ -253,8 +282,12 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
 - [x] Limpieza de ramas — de **16** locales a 9, y de 4 worktrees a 2. Borradas las 5 `worktree-agent-*` y las 3 `v0/*`, las ocho verificadas como ancestros de `main` antes de tocar nada. `fix/flujo-diagnostico-primero` se conserva: es la única sin mergear. (El conteo viejo decía ~14; eran 16.)
 - [x] **Sacar el logo de v0** — los cinco íconos y `metadata.generator: 'v0.app'` afuera. En su lugar hay un arte **provisorio**: una M de trazo sobre cuadrado redondeado en el verde de marca `#43613C`, con el mismo esquema claro/oscuro que tenía el set anterior. `generator` se elimina del objeto en vez de reescribirse — es opcional y no hay nada que declarar.
   - [ ] **Falta el arte definitivo.** Lo provisorio sirve para no seguir mostrando la marca de otro producto, no para ser la identidad. Ver la nota de abajo sobre qué hace falta.
+- [ ] **10 preguntas del 10/08 llegaron a un alumno con el texto corrupto.** Detectado el 16/08/2026 al medir reglas de lint nuevas. Los ids 1430–1448 (un solo intento, todas sus respuestas) tienen el contenido con escapes `\uXXXX` sin decodificar: el alumno leyó `La circunferencia se define como el lugar geométrico…`, enunciado, opciones y explicación por igual.
+  - El lint **ya lo detecta** (regla nueva, `critical`), pero eso es el detector, no el arreglo. La causa está en la cadena de reparación de JSON de `lib/quiz-generation.ts`: `repairQuizJson` duplica backslashes con `candidate.replace(/\\(?!["\\/bfnrtu])/g, '\\\\')` para arreglar escapes rotos, y en algún camino los `\u` legítimos terminan igual doblados.
+  - **No está reproducido todavía.** Hay que encontrar qué entrada lo dispara antes de tocar la regex — es la función más delicada del módulo y tiene 29 tests de caracterización encima que hay que respetar.
+  - Prioridad: es un defecto que **ya le llegó a un alumno real**, no una hipótesis.
 - [ ] **El tooling entra en los worktrees anidados de `.claude/`.** Ni `vitest.config.ts` ni la config de ESLint excluyen `.claude/`, así que con un worktree vivo en `.claude/worktrees/` las dos herramientas lo escanean. Medido el 16/08/2026:
-  - `npm test` levanta también los tests del worktree anidado y fallan por resolución del alias `@`: **6 archivos en rojo** ajenos al cambio que estés probando.
+  - `npm test` levanta también los tests del worktree anidado. **Re-medido el 16/08 más tarde: 67 archivos vistos desde la raíz, 32 de ellos del worktree** — o sea que hoy se corre casi todo dos veces. La entrada decía "6 archivos en rojo"; el número creció con cada test que se sumó al worktree.
   - `npm run lint` entra al `.next/` del worktree anidado y reporta **34.641 warnings** sobre chunks compilados. El número real del repo es **71 (0 errores)**.
   - Los dos hacen creer que un cambio rompió algo cuando no. CI no se ve afectado: hace checkout limpio.
   - Arreglo: `exclude: ['**/.claude/**']` en vitest y el patrón equivalente en ESLint. Dos renglones. Hoy hace ruido cada vez que hay un agente en paralelo, que es justamente el modo de trabajo que recomienda la lección operativa de arriba.
