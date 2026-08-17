@@ -27,7 +27,12 @@ import nextTypeScript from 'eslint-config-next/typescript'
  */
 const config = [
   {
-    ignores: ['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'public/**'],
+    // `.claude/**` cubre los worktrees de git anidados. Los patrones de acá se
+    // anclan a la raíz del proyecto, así que `.next/**` NO alcanza al `.next/`
+    // de un worktree: sin esta entrada, `eslint .` entra a los chunks
+    // compilados de la copia anidada y reporta decenas de miles de warnings
+    // sobre código generado, que tapan por completo los del repo.
+    ignores: ['.next/**', 'out/**', 'build/**', 'next-env.d.ts', 'public/**', '.claude/**'],
   },
 
   ...nextCoreWebVitals,
