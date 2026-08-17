@@ -89,6 +89,17 @@ export const quizSchema = z.object({
   }))
 }))
 
+/**
+ * Una pregunta ya validada por `quizSchema`.
+ *
+ * Sale del propio esquema Zod en vez de escribirse a mano: es la única forma de
+ * que no se desincronice cuando se agregue un tipo de pregunta nuevo. Describe
+ * lo que la generación DEVUELVE; adentro del módulo las preguntas siguen
+ * viajando sin tipo mientras se reparan y se barajan, que es donde todavía no
+ * hay garantías que ofrecer.
+ */
+export type GeneratedQuestion = z.infer<typeof quizSchema>['questions'][number]
+
 export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric'] as const
 export type QuestionType = (typeof QUESTION_TYPE_VALUES)[number]
 
@@ -653,10 +664,22 @@ async function loadCurriculumPedagogy({
   }
 }
 
+/**
+ * Unidad del programa tal como la manda el cliente.
+ *
+ * Todo opcional y `unknown` adentro porque viene del body sin validar: el único
+ * consumidor es `buildCurriculumFromUnits`, que ya trata cada campo como
+ * sospechoso. Tipar esto no valida nada — hace visible qué se espera.
+ */
+export interface QuizSubjectUnit {
+  name?: unknown
+  topics?: { name?: unknown }[]
+}
+
 /** Lo que la ruta necesita saber del cuerpo, ya normalizado. */
 export interface QuizRequestParams {
   subject: string
-  subjectUnits: any[]
+  subjectUnits: QuizSubjectUnit[]
   topics: { id: string; name: string }[]
   mode: string
   previousQuestionIds?: string[]
@@ -686,7 +709,11 @@ export type ResolveQuizRequestResult =
  * un chico de primaria que a un estudiante de terciario. Todo lo de acá es
  * parseo puro y no cuesta un token.
  */
-export function resolveQuizRequest(body: any): ResolveQuizRequestResult {
+export function resolveQuizRequest(body: unknown): ResolveQuizRequestResult {
+  // `unknown` en la firma y el ensanche acá: el cuerpo llega de la red y no
+  // está validado. El cast no promete que los campos tengan el tipo declarado
+  // —abajo se los sigue tratando con `Number()`, `Array.isArray` y
+  // `typeof`— pero deja escrito en un solo lugar qué campos se leen.
   const {
     subject,
     subjectUnits = [],
@@ -701,7 +728,27 @@ export function resolveQuizRequest(body: any): ResolveQuizRequestResult {
     carrera: rawCarrera,
     difficulty: rawDifficulty,
     questionTypes: rawQuestionTypes,
-  } = body
+  } = (body ?? {}) as {
+    // subject, topics y mode van NO opcionales a propósito, y es una deuda
+    // hecha visible: el código de abajo los usa sin chequear y `QuizRequestParams`
+    // los declara requeridos, así que la suposición ya existía — el `any`
+    // anterior sólo la escondía. Tiparlos como opcionales acá obliga a decidir
+    // qué pasa cuando faltan, y eso cambia comportamiento: hay 29 tests de
+    // caracterización que fijan el actual. Validarlos es trabajo aparte.
+    subject: string
+    subjectUnits?: QuizSubjectUnit[]
+    topics: { id: string; name: string }[]
+    mode: string
+    previousQuestionIds?: string[]
+    previousQuestions?: { question?: string }[]
+    pedagogyContext?: string
+    questionCount?: unknown
+    nivel?: string
+    grado?: string
+    carrera?: unknown
+    difficulty?: string
+    questionTypes?: unknown
+  }
 
   const parsedQuestionCount = Number(rawQuestionCount)
   const questionCount = Number.isInteger(parsedQuestionCount) && parsedQuestionCount >= 1 ? parsedQuestionCount : 10
@@ -793,7 +840,7 @@ function resolveQuestionTypes(
 }
 
 export type GenerateQuizResult =
-  | { ok: true; questions: any[] }
+  | { ok: true; questions: GeneratedQuestion[] }
   /** No se juntó variedad suficiente. La ruta lo traduce a un 409. */
   | { ok: false; reason: 'insufficient_variety'; message: string }
 
