@@ -115,13 +115,19 @@ npx tsx scripts/inscribir-diagnostico-2026-08-10.ts --docente=TU_EMAIL --apply -
 
 El script crea el programa (Superior / 1er Año / Matemática, con las 7 unidades copiadas de `curriculum`), el aula, y las 31 membresías. Escribe un backup en `scripts/backups/` **después de cada paso**, así que una caída a la mitad sigue siendo reversible con `--revert=<archivo.json>`.
 
-### 1b. Decidir cómo se arreglan las fuentes (bloquea toda verificación en browser)
+### 1b. ~~Decidir cómo se arreglan las fuentes~~ — RESUELTO (16/08/2026)
 
 `app/layout.tsx` importa Manrope y Playfair Display con `next/font/google`, que **descarga en tiempo de build**. Si esa descarga falla, no falla la tipografía: falla el módulo, y la home tira 500. Es lo que viene limitando la verificación en browser hace tres tandas.
 
 Medido el 16/08/2026: `fonts.googleapis.com` responde 200, pero las URLs de **fuente variable** que pide Next dan **404**, mientras que los archivos estáticos del mismo tipo descargan bien. No es lentitud de red — son URLs que no existen más.
 
-Está esperando tu decisión entre self-hosting (preserva la tipografía exacta) y sacar Playfair (cambia el wordmark). Detalle en la respuesta del chat.
+**Resuelto con self-hosting**: los dos subsets `latin` viven en `app/fonts/` (63 kB entre ambos, fuentes variables, un archivo por familia) y se cargan con `next/font/local`. El build no toca la red nunca más.
+
+Dos descartes que conviene no volver a proponer: `display: swap` **no arregla nada** (actúa al renderizar, y acá se rompe antes, en el build), y sacar Playfair tampoco alcanzaba porque Manrope venía por el mismo camino.
+
+**Verificado en browser**, que era el punto: el dev server levanta, la home responde **200 donde antes daba 500** y renderiza completa, cero errores de consola, los dos `woff2` se sirven desde `/_next/static/media/` y no hay una sola petición a `fonts.gstatic.com`.
+
+> **Hallazgo preexistente, no corregido:** el wordmark "MaestrIA" de la navbar se dibuja en **Manrope, no en Playfair**. `--font-brand` se declara dentro de un bloque `@theme inline` de `globals.css`, y el modificador `inline` hace que Tailwind sustituya el valor en sus propias utilidades en vez de emitir una custom property usable — así que `[font-family:var(--font-brand)]` resuelve a vacío. `--font-playfair` sí resuelve. Arreglarlo cambia cómo se ve la marca, así que es una decisión tipográfica y queda para vos.
 
 ### 2. Verificaciones manuales (no las pude hacer yo)
 
@@ -277,7 +283,8 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
 - [x] Navegación de vuelta desde `/admin/ai-usage` — un `<Link>` a `/`, no la navbar: montarla arrastraría el layout de `(app)` con sus guards de onboarding, que es justamente lo que la página evita viviendo fuera del grupo. Un `<Link>` además la deja seguir siendo server component.
 - [x] `updated_at` de `deployment_env` no se refresca — el `DEFAULT NOW()` de la columna sólo corre en el INSERT. `markEnvironment()` ya lo ponía a mano; los runners **017** y **018**, que también reescriben la fila, no. **Se descartó el trigger**, que sería el arreglo que no depende de que cada autor se acuerde: es una migración nueva y hay que correrla contra producción para arreglar algo que hoy no rompe nada. En su lugar quedó `tests/deployment-env-updated-at.test.ts` — chequeo léxico sobre el repo, mismo enfoque que `tests/migrations.test.ts`, que exige `updated_at` en todo `UPDATE` y todo `ON CONFLICT … DO UPDATE` sobre la tabla. Los INSERT pelados no se exigen: ahí el DEFAULT sí corre.
 - [ ] Tipos `Db*` en `lib/db.ts` desalineados con el schema
-- [ ] 4 warnings de `any` nuevos de la extracción (ahora hay 29 tests como red)
+- [x] ~~Warnings de `any` nuevos de la extracción~~ — los tres de la superficie pública tipados el 16/08/2026 (`subjectUnits`, `body`, `questions`); `GeneratedQuestion` se deriva de `quizSchema` con `z.infer` para que no se desincronice. **Quedan 17 en el módulo y quedan a propósito**: vinieron con el código movido y el header del archivo declara que la extracción no cambia comportamiento.
+  - Tipar el `body` destapó que `subject`, `topics` y `mode` pueden venir `undefined` y el código los usa sin chequear. **No se agregó validación**: cambia comportamiento y hay 29 tests de caracterización que fijan el actual. La suposición quedó declarada y comentada en vez de silenciosa. Validarla es trabajo aparte.
 - [x] favicon 404 — `public/favicon.ico`, un contenedor `.ico` de verdad con dos PNG embebidos (16 y 32, sacados de `icon-light-32x32.png`), no un PNG renombrado. Va en `public/` y **no** en `app/favicon.ico`: la convención de archivo de Next haría que el framework emita su propio `<link rel="icon">` compitiendo con el bloque `metadata.icons` de `layout.tsx`. Verificado contra el dev server, 404 sin el archivo y 200 con él.
 - [x] Limpieza de ramas — de **16** locales a 9, y de 4 worktrees a 2. Borradas las 5 `worktree-agent-*` y las 3 `v0/*`, las ocho verificadas como ancestros de `main` antes de tocar nada. `fix/flujo-diagnostico-primero` se conserva: es la única sin mergear. (El conteo viejo decía ~14; eran 16.)
 - [x] **Sacar el logo de v0** — los cinco íconos y `metadata.generator: 'v0.app'` afuera. En su lugar hay un arte **provisorio**: una M de trazo sobre cuadrado redondeado en el verde de marca `#43613C`, con el mismo esquema claro/oscuro que tenía el set anterior. `generator` se elimina del objeto en vez de reescribirse — es opcional y no hay nada que declarar.
@@ -286,12 +293,13 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
   - El lint **ya lo detecta** (regla nueva, `critical`), pero eso es el detector, no el arreglo. La causa está en la cadena de reparación de JSON de `lib/quiz-generation.ts`: `repairQuizJson` duplica backslashes con `candidate.replace(/\\(?!["\\/bfnrtu])/g, '\\\\')` para arreglar escapes rotos, y en algún camino los `\u` legítimos terminan igual doblados.
   - **No está reproducido todavía.** Hay que encontrar qué entrada lo dispara antes de tocar la regex — es la función más delicada del módulo y tiene 29 tests de caracterización encima que hay que respetar.
   - Prioridad: es un defecto que **ya le llegó a un alumno real**, no una hipótesis.
-- [ ] **El tooling entra en los worktrees anidados de `.claude/`.** Ni `vitest.config.ts` ni la config de ESLint excluyen `.claude/`, así que con un worktree vivo en `.claude/worktrees/` las dos herramientas lo escanean. Medido el 16/08/2026:
+- [x] ~~**El tooling entra en los worktrees anidados de `.claude/`.**~~ Resuelto el 16/08/2026 con `exclude: ['**/.claude/**']` en vitest y el patrón equivalente en ESLint. Medido antes y después: vitest pasó de **67 archivos vistos (32 del worktree) a 35, cero del worktree**; ESLint, de decenas de miles de warnings sobre chunks compilados a **75 warnings, 0 errores**, que es el número real del repo. En vitest hay que listar `node_modules`, `dist` y `.next` explícitamente porque declarar `exclude` **reemplaza** los defaults en vez de sumarse. Historia original: Ni `vitest.config.ts` ni la config de ESLint excluyen `.claude/`, así que con un worktree vivo en `.claude/worktrees/` las dos herramientas lo escanean. Medido el 16/08/2026:
   - `npm test` levanta también los tests del worktree anidado. **Re-medido el 16/08 más tarde: 67 archivos vistos desde la raíz, 32 de ellos del worktree** — o sea que hoy se corre casi todo dos veces. La entrada decía "6 archivos en rojo"; el número creció con cada test que se sumó al worktree.
   - `npm run lint` entra al `.next/` del worktree anidado y reporta **34.641 warnings** sobre chunks compilados. El número real del repo es **71 (0 errores)**.
   - Los dos hacen creer que un cambio rompió algo cuando no. CI no se ve afectado: hace checkout limpio.
   - Arreglo: `exclude: ['**/.claude/**']` en vitest y el patrón equivalente en ESLint. Dos renglones. Hoy hace ruido cada vez que hay un agente en paralelo, que es justamente el modo de trabajo que recomienda la lección operativa de arriba.
-- [ ] `public/placeholder-logo.svg` y `placeholder-logo.png` también son de v0 y no los referencia nadie. Borrarlos.
+- [x] ~~`public/placeholder-logo.svg` y `.png`~~ — borrados el 16/08/2026, verificado que no los referenciaba nadie.
+- [ ] Quedan **tres archivos más de la misma tanda de v0**, igual de huérfanos y también sin una sola referencia en el repo: `public/placeholder.svg`, `public/placeholder.jpg` y `public/placeholder-user.jpg`. No se borraron con los otros dos porque no estaban en el pedido.
 - [ ] Borrar el proyecto Neon de `quiosco-next` (no urgente: una branch no consume slot)
 
 ### Qué hace falta para el ícono definitivo
