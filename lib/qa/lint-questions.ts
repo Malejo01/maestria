@@ -65,6 +65,59 @@ const NEWLINE_FOSSIL_PATTERN = /(^|[\s(])eg(?=[a-zA-Z(])/
  */
 const GIVEAWAY_MIN_LENGTH = 25
 
+/**
+ * Secuencia `\uXXXX` que llegó cruda al texto en vez de decodificarse.
+ *
+ * El alumno ve literalmente "parábola". Sale de la cadena de reparación de
+ * JSON: cuando `repairQuizJson` duplica backslashes para arreglar un escape
+ * roto, los `\u` legítimos quedan como `\\u` y el parser los devuelve como
+ * texto. En el 10/08 pasó en 10 respuestas seguidas (ids 1430..1448): un solo
+ * intento, todo su contenido corrupto.
+ *
+ * Acotado a la mitad ALTA del bloque Latin-1 (``..`ÿ`) a propósito:
+ * ahí viven las tildes y los `¿¡` del castellano, y los diez casos reales caen
+ * todos ahí (`á`, `é`, `í`, `ó`, `ñ`, `¿`).
+ *
+ * El primer dígito hexadecimal tiene que ser >= 8, y no es un detalle: sin eso
+ * el patrón también atrapa `A`, que es una `A` en ASCII y puede ser el
+ * tema legítimo de una pregunta de sistemas sobre codificación de caracteres.
+ * Un `é` en una pregunta de matemática en español, en cambio, es siempre
+ * corrupción.
+ */
+const RAW_UNICODE_ESCAPE = /\\u00[89a-fA-F][0-9a-fA-F]/
+
+/**
+ * Enunciado que manda a mirar un material visual que el motor nunca dibuja.
+ *
+ * No hay imágenes en ninguna parte del cuestionario, así que la pregunta es
+ * irrespondible: el alumno sólo puede adivinar. El caso real del 10/08 (id 750,
+ * "Observa el siguiente gráfico. ¿Representa una función matemática?") lo
+ * confirma — el alumno respondió y erró, y la explicación habla de "la línea
+ * vertical x=2 cruza el gráfico en dos puntos", un gráfico que no existió.
+ *
+ * DELIBERADAMENTE ESTRECHO: imperativo + deíctico + sustantivo visual. La
+ * versión amplia —cualquier mención de "gráfica que se muestra"— se midió y
+ * produce un falso positivo (id 1071: dice "cuya gráfica se muestra" pero
+ * después describe el comportamiento en palabras y es perfectamente
+ * respondible). Mencionar un gráfico no rompe nada; mandar a mirar UNO QUE
+ * SIGUE, sí.
+ */
+const DANGLING_VISUAL_REFERENCE =
+  /\b(observ[áa]?|mir[áa]?|analiz[áa]?|f[íi]jate|ve[ad]?)\s+(el|la|los|las)\s+(siguiente|siguientes)\s+(gr[áa]fic\w+|figura|imagen|diagrama|esquema|tabla)\b/i
+
+/**
+ * `true_false` cuyo enunciado se abre afirmando su propia veracidad.
+ *
+ * "Es verdadero que P" pide juzgar verdadero o falso una oración que ya declara
+ * ser verdadera. Los dos casos del 10/08 (ids 693 y 1432) tienen los dos
+ * `correctAnswer: true`, que es exactamente lo que el enunciado adelanta.
+ *
+ * El `^` no es decorativo: separa la afirmación de la pregunta. "¿Es verdadero
+ * que P?" es una forma legítima y frecuente —12 casos en el 10/08— y ninguno
+ * cae acá.
+ */
+const TRUE_FALSE_SELF_ANSWERING = /^\s*es\s+(verdadero|cierto|falso)\s+que\b/i
+
 function finding(
   dimension: Finding['dimension'],
   severity: Severity,
@@ -116,6 +169,17 @@ export function looksLikeProse(segment: string): boolean {
 
 function lintText(text: string, label: string, index: number): Finding[] {
   const findings: Finding[] = []
+
+  if (RAW_UNICODE_ESCAPE.test(text)) {
+    findings.push(
+      finding(
+        'higiene_formato',
+        'critical',
+        index,
+        `${label}: quedaron secuencias \\uXXXX sin decodificar — el alumno lee "par\\u00e1bola" en vez de "parábola".`
+      )
+    )
+  }
 
   if (countMathDelimiters(text) % 2 !== 0) {
     findings.push(
@@ -258,6 +322,29 @@ export function lintQuestions(questions: Question[], context: LintContext): Find
     }
 
     findings.push(...lintText(statement, 'Enunciado', index))
+
+    if (DANGLING_VISUAL_REFERENCE.test(statement)) {
+      findings.push(
+        finding(
+          'higiene_formato',
+          'critical',
+          index,
+          'Manda a mirar un gráfico o figura que el cuestionario nunca muestra: la pregunta no se puede responder, sólo adivinar.'
+        )
+      )
+    }
+
+    if (question.type === 'true_false' && TRUE_FALSE_SELF_ANSWERING.test(statement)) {
+      findings.push(
+        finding(
+          'calidad_distractores',
+          'major',
+          index,
+          'El enunciado arranca afirmando "Es verdadero/cierto que...", así que adelanta la respuesta de una pregunta de verdadero o falso.'
+        )
+      )
+    }
+
     if (explanation.trim().length > 0) {
       findings.push(...lintText(explanation, 'Explicación', index))
     } else {

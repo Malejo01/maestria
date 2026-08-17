@@ -368,3 +368,136 @@ describe('lintQuestions — índices', () => {
     expect(findings[0].questionIndex).toBe(1)
   })
 })
+
+describe('lintQuestions — escapes unicode crudos', () => {
+  // Caso real del 10/08: ids 1430..1448, diez respuestas seguidas de un mismo
+  // intento con todo el contenido escapado sin decodificar.
+  it('marca el enunciado corrompido tal como llegó a los alumnos', () => {
+    const findings = lintQuestions(
+      [mc({ question: 'Es cierto que la par\\u00e1bola es el lugar geom\\u00e9trico de los puntos' })],
+      SUPERIOR
+    )
+    expect(findings.some((f) => f.justification.includes('sin decodificar'))).toBe(true)
+    expect(findings.find((f) => f.justification.includes('sin decodificar'))?.severity).toBe('critical')
+  })
+
+  it('también lo detecta en opciones y en la explicación', () => {
+    expect(
+      lintQuestions([mc({ options: ['bien', 'as\\u00edntota', 'x', 'y'] })], SUPERIOR).some((f) =>
+        f.justification.includes('sin decodificar')
+      )
+    ).toBe(true)
+    expect(
+      lintQuestions([mc({ explanation: 'La ecuaci\\u00f3n queda as\\u00ed.' })], SUPERIOR).some((f) =>
+        f.justification.includes('sin decodificar')
+      )
+    ).toBe(true)
+  })
+
+  // El recorte a Latin-1 existe para esto: una pregunta de sistemas sobre
+  // codificación de caracteres menciona escapes ASCII a propósito.
+  it('no marca un escape fuera de Latin-1, que puede ser el tema de la pregunta', () => {
+    const findings = lintQuestions(
+      [mc({ question: '¿Qué carácter representa el escape \\u0041 en Unicode?' })],
+      SUPERIOR
+    )
+    expect(findings.some((f) => f.justification.includes('sin decodificar'))).toBe(false)
+  })
+
+  it('no marca texto normal con tildes', () => {
+    const findings = lintQuestions([mc({ question: '¿Cuál es la ecuación de la parábola?' })], SUPERIOR)
+    expect(findings.some((f) => f.justification.includes('sin decodificar'))).toBe(false)
+  })
+})
+
+describe('lintQuestions — referencia a un visual inexistente', () => {
+  // Caso real id 750. El alumno respondió y erró una pregunta que no se podía
+  // responder: no hay ningún gráfico en el cuestionario.
+  it('marca "Observa el siguiente gráfico"', () => {
+    const findings = lintQuestions(
+      [mc({ question: 'Observa el siguiente gráfico. ¿Representa una función matemática?' })],
+      SUPERIOR
+    )
+    const hit = findings.find((f) => f.justification.includes('nunca muestra'))
+    expect(hit).toBeDefined()
+    expect(hit?.severity).toBe('critical')
+  })
+
+  // Falso positivo medido sobre los datos reales (id 1071): menciona una
+  // gráfica pero después describe el comportamiento en palabras. Es
+  // respondible, y por eso la regla es estrecha.
+  it('NO marca un enunciado que menciona una gráfica pero se explica solo', () => {
+    const findings = lintQuestions(
+      [
+        mc({
+          question:
+            'Considera una función $f(x)$ cuya gráfica se muestra en un plano cartesiano. Si los valores de $y$ disminuyen mientras $x$ aumenta en $(-\\infty, 2)$ y luego aumentan, ¿qué pasa en $x=2$?',
+        }),
+      ],
+      SUPERIOR
+    )
+    expect(findings.some((f) => f.justification.includes('nunca muestra'))).toBe(false)
+  })
+
+  it('NO marca la mención suelta de una figura', () => {
+    const findings = lintQuestions(
+      [mc({ question: 'Si los semiejes son iguales, la figura resultante es una circunferencia. ¿Cuál es su radio?' })],
+      SUPERIOR
+    )
+    expect(findings.some((f) => f.justification.includes('nunca muestra'))).toBe(false)
+  })
+})
+
+describe('lintQuestions — true_false que adelanta su respuesta', () => {
+  function tf(question: string, correctAnswer = true): Question {
+    return {
+      id: 'q1',
+      topic: 't',
+      topicName: 'Tema',
+      question,
+      explanation: 'Porque sí.',
+      type: 'true_false',
+      correctAnswer,
+    } as unknown as Question
+  }
+
+  // Casos reales 693 y 1432; los dos con correctAnswer true, que es lo que el
+  // enunciado adelanta.
+  it('marca "Es verdadero que..." y "Es cierto que..."', () => {
+    expect(
+      lintQuestions([tf('Es verdadero que la parábola $x^2 = 8y$ se abre hacia arriba.')], SUPERIOR).some((f) =>
+        f.justification.includes('adelanta la respuesta')
+      )
+    ).toBe(true)
+    expect(
+      lintQuestions([tf('Es cierto que la parábola equidista del foco y la directriz.')], SUPERIOR).some((f) =>
+        f.justification.includes('adelanta la respuesta')
+      )
+    ).toBe(true)
+  })
+
+  // 12 casos reales del 10/08 tienen esta forma y ninguno es un defecto.
+  it('NO marca la forma interrogativa, que es legítima', () => {
+    expect(
+      lintQuestions([tf('¿Es verdadero que una función polinómica de grado 3 tiene una raíz real?')], SUPERIOR).some(
+        (f) => f.justification.includes('adelanta la respuesta')
+      )
+    ).toBe(false)
+  })
+
+  it('NO marca una afirmación común que no se auto-califica', () => {
+    expect(
+      lintQuestions([tf('La directriz de una parábola es perpendicular al eje focal.')], SUPERIOR).some((f) =>
+        f.justification.includes('adelanta la respuesta')
+      )
+    ).toBe(false)
+  })
+
+  it('sólo aplica a true_false, no a multiple_choice', () => {
+    expect(
+      lintQuestions([mc({ question: 'Es verdadero que $2+2=4$. ¿Cuál es el resultado?' })], SUPERIOR).some((f) =>
+        f.justification.includes('adelanta la respuesta')
+      )
+    ).toBe(false)
+  })
+})
