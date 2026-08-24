@@ -3,10 +3,17 @@ import { GET as getGrades } from '@/app/api/curriculum/grades/route'
 import { GET as getSubjects } from '@/app/api/curriculum/subjects/route'
 import { GET as getTopics } from '@/app/api/curriculum/topics/route'
 import { sql } from '@/lib/db'
+import { captureRouteFailure } from '@/lib/observability'
 
 // Mock database helper
 vi.mock('@/lib/db', () => ({
   sql: vi.fn(),
+}))
+
+// Se mockea para poder afirmar que la ruta reporta. Sin esto el test pasaría
+// igual con un catch mudo, que es exactamente el bug que cubre.
+vi.mock('@/lib/observability', () => ({
+  captureRouteFailure: vi.fn(),
 }))
 
 describe('Curriculum API Route Handlers', () => {
@@ -165,6 +172,36 @@ describe('Curriculum API Route Handlers', () => {
       const body = await (await getTopics(req)).json()
 
       expect(body.axes[0].contextoProfesional).toBeNull()
+    })
+
+    /**
+     * Regresión del 24/08/2026. La migración 023 estaba en el repo y no en la
+     * base, así que este SELECT venía fallando en producción con
+     * `column "tipos_pregunta_sugeridos" does not exist` desde el 15/08. El
+     * catch devolvía el 500 y no reportaba nada: nueve días de /practicar caído
+     * para TODOS los niveles, cero eventos en Sentry, y en pantalla el estado
+     * vacío ("No hay temas cargados para esta materia todavía").
+     *
+     * Lo que fija este test es que un fallo de base se REPORTE, no que devuelva
+     * 500. El 500 ya lo devolvía, y no alcanzó.
+     */
+    it('reporta a Sentry cuando la consulta falla, además de devolver 500', async () => {
+      const dbError = Object.assign(new Error('column "tipos_pregunta_sugeridos" does not exist'), {
+        code: '42703',
+      })
+      vi.mocked(sql).mockRejectedValueOnce(dbError)
+
+      const req = new Request(
+        'http://localhost/api/curriculum/topics?nivel=Superior&grado=1er+A%C3%B1o&materia=Matem%C3%A1tica'
+      )
+      const res = await getTopics(req)
+
+      expect(res.status).toBe(500)
+      expect(captureRouteFailure).toHaveBeenCalledTimes(1)
+
+      const [reported, context] = vi.mocked(captureRouteFailure).mock.calls[0]
+      expect(reported).toBe(dbError)
+      expect(context).toMatchObject({ endpoint: '/api/curriculum/topics' })
     })
   })
 })

@@ -115,6 +115,17 @@ export async function GET(req: Request) {
     }))
     return NextResponse.json({ axes })
   } catch (error) {
+    // Se REPORTA, no sólo se devuelve 500. Esta ruta estuvo nueve días fallando
+    // en producción con `column "tipos_pregunta_sugeridos" does not exist` —la
+    // migración 023 estaba en el repo y no en la base— sin un solo evento en
+    // Sentry. `toTopicList`, veinte líneas más arriba, ya reportaba un problema
+    // mucho menor que éste; el camino que tumba la pantalla entera no reportaba
+    // nada.
+    captureRouteFailure(error instanceof Error ? error : new Error(String(error)), {
+      endpoint: '/api/curriculum/topics',
+      operation: 'GET',
+    })
+
     return NextResponse.json(
       { error: 'Error al obtener temas', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

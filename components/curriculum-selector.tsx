@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
-  ChevronRight, Loader2,
+  ChevronRight, Loader2, AlertTriangle,
   CheckSquare, Square, Minus, ArrowLeft, Settings2, Upload, FileText, GraduationCap,
 } from 'lucide-react'
 import { MathBackground } from '@/components/math-background'
@@ -106,6 +106,12 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
   const [subjects, setSubjects] = useState<string[]>([])
   const [materia, setMateria] = useState<string>('')
   const [axes, setAxes] = useState<Eje[]>([])
+  /**
+   * Mensaje de la última falla de `/api/curriculum/topics`, o null. Separado de
+   * `axes` a propósito: "sin temas" y "no pude traer los temas" son estados
+   * distintos y tienen que verse distintos. Ver el comentario de fetchTopics.
+   */
+  const [topicsError, setTopicsError] = useState<string | null>(null)
   const [selected, setSelected] = useState<SelectedTopicMap>({})
   const [loadingData, setLoadingData] = useState(false)
 
@@ -186,15 +192,49 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     }
   }
 
+  /**
+   * Distingue "la materia no tiene temas cargados" de "la consulta falló".
+   *
+   * Antes las dos daban lo mismo: `setAxes(data.axes ?? [])` sin mirar
+   * `res.ok`, y la pantalla mostraba el estado vacío. Con eso, `/practicar`
+   * estuvo nueve días caído en producción para TODOS los niveles —la ruta
+   * devolvía 500 porque faltaba la migración 023— y se leía como "todavía no
+   * cargamos el temario". Un fallo disfrazado de dato ausente no se reporta
+   * solo: hay que ir a buscarlo, y nadie va a buscar lo que parece normal.
+   */
   const fetchTopics = async (n: Nivel, g: string, m: string, c = '') => {
     setLoadingData(true)
+    setTopicsError(null)
     try {
       const res = await fetch(
         `/api/curriculum/topics?nivel=${encodeURIComponent(n)}&grado=${encodeURIComponent(g)}&materia=${encodeURIComponent(m)}${carreraParam(c)}`
       )
-      const data = await res.json()
+      // El body se lee igual en el camino de error: la ruta manda `details` con
+      // el mensaje real, y perderlo es volver a no saber qué pasó.
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        setAxes([])
+        setSelected({})
+        setTopicsError(
+          typeof data?.details === 'string' && data.details
+            ? data.details
+            : typeof data?.error === 'string' && data.error
+              ? data.error
+              : `HTTP ${res.status}`
+        )
+        return
+      }
+
       setAxes(data.axes ?? [])
       setSelected({})
+    } catch (err) {
+      // Red caída o respuesta ilegible. Antes esto ni siquiera se atajaba: la
+      // promesa se rechazaba sin dueño porque los handlers llaman a fetchTopics
+      // sin await.
+      setAxes([])
+      setSelected({})
+      setTopicsError(err instanceof Error ? err.message : 'No se pudo conectar')
     } finally {
       setLoadingData(false)
     }
@@ -228,6 +268,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     setCarrera('')
     setAxes([])
     setSelected({})
+    setTopicsError(null)
     if (n === 'Superior') {
       const list = await fetchCareers(n)
       setCareers(list)
@@ -279,6 +320,9 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     setUploadedFile(file)
     setUploadError(null)
     setParsedUnits([])
+    // El camino de programa propio llena `axes` sin pasar por fetchTopics, así
+    // que un error viejo de la ruta no debe sobrevivirle.
+    setTopicsError(null)
     setUploadLoading(true)
 
     try {
@@ -609,6 +653,25 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
 
             {loadingData ? (
               <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : topicsError ? (
+              /* Rama nueva, y va ANTES que la del vacío a propósito: mientras
+                 las dos compartieron el mismo cartel, una caída de la ruta se
+                 leyó durante nueve días como "todavía no cargamos el temario". */
+              <div className="text-center py-12 space-y-3">
+                <AlertTriangle className="w-6 h-6 text-destructive mx-auto" />
+                <p className="text-sm font-semibold text-foreground">No pudimos cargar los temas.</p>
+                <p className="text-muted-foreground text-xs">
+                  No es que la materia esté vacía: falló la consulta. Probá de nuevo en unos
+                  instantes; si sigue igual, avisá con este detalle.
+                </p>
+                <p className="text-[11px] font-mono text-muted-foreground break-words px-4">{topicsError}</p>
+                <button
+                  onClick={() => fetchTopics(nivel!, grado, materia, carrera)}
+                  className="text-sm font-semibold text-primary hover:underline"
+                >
+                  Reintentar
+                </button>
+              </div>
             ) : axes.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-12">No hay temas cargados para esta materia todavía.</p>
             ) : (
