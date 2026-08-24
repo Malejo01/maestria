@@ -10,6 +10,38 @@ Crecimiento **docente-first, bottom-up, freemium**. El docente crea el aula y pa
 
 ---
 
+## 🎯 EL SALTO PENDIENTE: de una app que usa una persona a un producto
+
+**El flujo completo que Mauro está haciendo a mano tiene que ser nativo para cualquier docente.** Esto no es un item de backlog: es la diferencia entre una herramienta y un producto, y hoy la app está del lado equivocado.
+
+El recorrido real, el que ya se recorrió entero con 31 alumnos:
+
+```
+diagnóstico  →  reporte  →  nivelar  →  asignar
+```
+
+Cada uno de esos cuatro pasos existe y funciona. Ninguno es una función del producto:
+
+| Paso | Cómo se hizo | Qué lo ata a Mauro |
+|---|---|---|
+| Diagnóstico | cuestionario generado a mano y compartido por WhatsApp | nada lo declara "diagnóstico"; es un cuestionario más |
+| Reporte | `lib/diagnostic-report.ts` + `/teacher/diagnostico` | la página existe, pero el mapeo de ejes a unidades está **escrito para este programa** |
+| Nivelar | `scripts/fix-perfiles-diagnostico-2026-08-10.ts` | script one-off, con la fecha en el nombre |
+| Asignar | `scripts/inscribir-diagnostico-2026-08-10.ts` | script one-off, `--docente=<email>`, `FECHA_DIAGNOSTICO` hardcodeada |
+
+Los dos scripts están bien escritos —dry-run, backup, `--revert`— y eso es exactamente el problema: **son buenas herramientas de operador, y ninguna docente va a abrir una terminal.** Una profesora que se registra mañana puede generar cuestionarios y crear un aula, pero no puede hacer nada de lo que hizo que esto sirviera para los 31.
+
+Lo que hay que convertir en producto, en orden de dependencia:
+
+1. **El diagnóstico como tipo de asignación**, no como un cuestionario cualquiera. Ver la sección de evaluación vs. práctica: es el mismo modelo.
+2. **El reporte, parametrizado por programa.** Hoy `programLinkFor` conoce las unidades de esta cátedra. Tiene que salir de `curriculum` / `teacher_programs`, como sale todo lo demás.
+3. **Nivelar desde la UI**: "estos 31 alumnos están en el nivel equivocado, corregilos" tiene que ser un botón con confirmación, no un script.
+4. **Inscribir desde la UI**: ya existe el código de aula, que cubre el caso normal. Falta el caso masivo — "traé a todos los que rindieron el diagnóstico".
+
+**Criterio de terminado, y conviene que sea incómodo:** una docente que nunca habló con nosotros tiene que poder recorrer los cuatro pasos sola, sin que nadie corra un script, sin que su email aparezca en ningún archivo del repo.
+
+---
+
 ## ⏸️ PENDIENTE ESPERANDO PRESUPUESTO
 
 ### Evaluador con Claude para los agentes de QA
@@ -283,6 +315,39 @@ Solo la persona 4 tiene casos reales del 10/08. Las otras cuatro calibran con ca
 | Opciones que difieren sólo en puntuación | **No — el bug era de la regla.** Parecía disparar en 112 de 862 hasta que se miró la muestra: la canonicalización borraba `+` y `−`, así que daba por iguales `$a^2=b^2+c^2$` y `$a^2=b^2-c^2$`, que difieren justo en lo que importa. Anotada por la lección, no por la regla. |
 
 > Nota de método: el filtro que descartó seis de estas ocho fue **mirar la muestra a mano**, no el conteo. Tres de ellas disparaban con volumen respetable (12,8%, 10,4%, 13%) y las tres eran ruido. Una tasa de disparo alta es motivo para sospechar de la regla, no para celebrarla.
+
+---
+
+## 📐 Evaluación vs. práctica — diseñado, NO implementado (24/08/2026)
+
+Hoy el aula trata igual dos cosas con propósito distinto. **Evaluación**: el docente arma un cuestionario, lo revisa y lo asigna; 1 o 2 intentos, porque el número mide y repetir lo distorsiona. **Práctica**: el docente elige temas y el alumno entra las veces que quiera, generando un cuestionario nuevo cada vez; el propósito es aprender, no medir.
+
+El diseño completo está discutido (modelo, UX de alumno y docente, reporte, costo). Falta implementarlo. **Dos decisiones ya tomadas, que no hay que volver a discutir:**
+
+### 1. La práctica exige cuenta — los invitados quedan afuera
+
+Un invitado no está autenticado, así que su límite de `quiz_generation` es **3/día** justamente para que no se pueda quemar cuota sin identidad. Subírselo para habilitarles la práctica abre abuso sin autenticación, que es lo que ese límite existe para evitar.
+
+> **Esto es BLOQUEANTE para abrir la app a otros docentes.** Un aula que se llene de invitados va a ver la práctica cortarse al tercer intento, y el docente no va a entender por qué. Antes de invitar a un docente que no seamos nosotros hay que resolver una de estas dos: o la práctica exige cuenta y la UI lo dice desde el principio, o se define un límite de invitado que aguante una clase sin abrir la puerta.
+
+### 2. `topic_mastery` no se toca en este trabajo
+
+La tabla **no sirve** para el reporte de práctica, y no por falta de columnas: sólo escribe cuando el alumno aprueba, `attempts_count` cuenta intentos aprobados, `highest_score` guarda el máximo (o sea que no hay trayectoria) y `mastered_at` no lo escribe ningún camino de código — 0 de 77 filas en producción.
+
+El reporte de práctica se construye sobre **`quiz_attempts`**, que ya guarda cada intento con `topics[]`, `score` y `completed_at`. No hace falta tabla nueva ni extender la vieja.
+
+El diagnóstico completo de `topic_mastery` y sus dos salidas posibles (arreglarla o borrarla) quedó en [deuda-tecnica.md](deuda-tecnica.md), sección 7.
+
+### Costo, medido antes de habilitarlo
+
+Sobre 128 generaciones reales de `ai_usage_log`: **$0,0115 USD promedio** por cuestionario (mín. $0,0021, máx. $0,0208).
+
+| Escenario | Generaciones | Costo |
+|---|---|---|
+| 31 alumnos × 5 prácticas | 155 | **$1,79** |
+| Peor caso (todas al máximo) | 155 | $3,22 |
+
+Los límites actuales lo permiten con margen: por alumno, `quiz_generation` en rol ALUMNO es **30/día y 10/hora**; el tope global `AI_DAILY_BUDGET_USD` no está seteado, así que rige el default de **$15/día**, o sea ~1.300 generaciones. Harían falta ~42 prácticas por alumno el mismo día para cortarlo. **No va a cortar una clase.** Lo que sí conviene mirar es el total diario, porque ese presupuesto es compartido con corrección, revancha y extracción de programas.
 
 ---
 

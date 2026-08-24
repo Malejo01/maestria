@@ -821,3 +821,69 @@ que ningún `fetch` nuevo lo esquive.
 No se ataca ahora **por decisión explícita** (24/08/2026): se cerró la pantalla
 que ya había fallado y se dejó el resto medido, para que la próxima vez se
 discuta sobre números y no sobre impresiones.
+
+---
+
+## 7. `topic_mastery` es un caché que miente — relevado el 24/08/2026
+
+Salió al diseñar el reporte de práctica. La tabla existe desde la migración 001
+y **no modela lo que su nombre promete**. No se tocó en ese trabajo, por decisión
+explícita: o se arregla para registrar todos los intentos, o se borra.
+
+### Lo que está mal
+
+Se escribe en un solo lugar, [save-result/route.ts:231](../app/api/quiz/save-result/route.ts#L231):
+
+```ts
+// 5. Actualizar topic_mastery si la nota es >= 6
+if (score >= 6) { ... }
+```
+
+De ahí salen cuatro defectos, y los cuatro pegan justo donde haría falta:
+
+| Defecto | Consecuencia |
+|---|---|
+| **Sólo escribe cuando el alumno aprueba** | un alumno que intentó un tema cinco veces y falló las cinco **no tiene ni una fila**. El alumno que más importa es invisible. |
+| **`attempts_count` cuenta sólo los intentos aprobados** | el nombre miente; no es "cuántas veces lo intentó". |
+| **`highest_score` guarda el máximo** | por construcción no hay trayectoria: 40% → 90% es indistinguible de 90% → 40%. |
+| **`mastered_at` no lo escribe ningún camino de código** | la columna existe desde 001 y nunca se usó. |
+
+### Medido en producción (24/08/2026)
+
+```
+filas: 77 · alumnos: 8 · temas: 65
+attempts_count promedio: 1,03 · máximo: 3
+mastered_at poblado: 0 de 77
+```
+
+El `mastered_at` en cero no es un dato faltante: es la confirmación de que la
+columna es letra muerta. Y un `attempts_count` promedio de 1,03 sobre 77 filas
+dice que casi nadie reintentó **y aprobó** el mismo tema — que es otra cosa que
+"casi nadie reintentó".
+
+### Por qué NO se extendió para el reporte de práctica
+
+Porque los datos ya están en otro lado. `quiz_attempts` guarda **cada** intento
+con `topics[]`, `score`, `completed_at`, `classroom_id` y `assignment_id`. La
+trayectoria por alumno y por tema es una consulta ordenada por fecha sobre esa
+tabla. No falta modelo: falta leerlo.
+
+Agregarle columnas a `topic_mastery` habría sido construir una segunda fuente de
+verdad sobre una primera que ya está rota.
+
+### Las dos salidas
+
+1. **Arreglarla** — que registre todo intento (apruebe o no), que
+   `attempts_count` cuente intentos, y que `mastered_at` se escriba al cruzar el
+   umbral por primera vez. Sirve como caché de lectura rápida.
+2. **Borrarla** — migración que la elimina, y los consumidores
+   ([quiz/history](../app/api/quiz/history/route.ts), el reclamo de invitado)
+   pasan a derivar de `quiz_attempts`.
+
+**No decidido.** Lo que no puede quedar es el estado actual: una tabla que
+responde con seguridad a una pregunta que no sabe contestar.
+
+> Ojo con el consumidor no obvio: `POST /api/student/guest/claim` fusiona
+> `topic_mastery` al absorber un invitado en una cuenta, con `GREATEST` sobre
+> `highest_score` y suma de `attempts_count`. Cualquiera de las dos salidas
+> tiene que pasar por ahí.
