@@ -43,6 +43,7 @@ import { useSession } from 'next-auth/react'
 import { TeacherSubjectWizard } from '@/components/teacher-subject-wizard'
 import { TeacherOnboardingModal } from '@/components/teacher-onboarding-modal'
 import { TeacherClassrooms } from '@/components/teacher-classrooms'
+import { TeacherQuizReview } from '@/components/teacher-quiz-review'
 import { ShareQuizDialog } from '@/components/share-quiz-dialog'
 import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import { useToast } from '@/hooks/use-toast'
@@ -151,6 +152,8 @@ export default function TeacherPage() {
   const [quizSubjectFilter, setQuizSubjectFilter] = useState<string>('all')
   const [performedQuizzes, setPerformedQuizzes] = useState<Record<string, unknown>[]>([])
   const [expandedQuizId, setExpandedQuizId] = useState<number | null>(null)
+  /** Cuestionario abierto en la vista de revisión, o null. */
+  const [revisandoQuiz, setRevisandoQuiz] = useState<TeacherQuiz | null>(null)
   const [exportingQuizId, setExportingQuizId] = useState<number | null>(null)
   // Saved quizzes can be published to an aula at any time, not only right
   // after generating them.
@@ -744,6 +747,23 @@ export default function TeacherPage() {
               </div>
             </div>
 
+            {revisandoQuiz ? (
+              <TeacherQuizReview
+                quiz={revisandoQuiz}
+                onClose={() => setRevisandoQuiz(null)}
+                onSaved={(guardado, info) => {
+                  // Si el servidor devolvió una COPIA, el id cambió: la lista se
+                  // recarga entera en vez de reemplazar en el lugar, porque
+                  // ahora hay un cuestionario más y las asignaciones se movieron.
+                  setTeacherQuizzes(
+                    info.copiado
+                      ? [guardado, ...teacherQuizzes]
+                      : teacherQuizzes.map((q) => (q.id === guardado.id ? guardado : q)),
+                  )
+                  setRevisandoQuiz(guardado)
+                }}
+              />
+            ) : (
             <Tabs defaultValue="guardados">
               <TabsList>
                 <TabsTrigger value="guardados">Guardados ({teacherQuizzes.length})</TabsTrigger>
@@ -776,6 +796,10 @@ export default function TeacherPage() {
                         )}
 
                         <div className="flex flex-wrap gap-2">
+                          <Button size="sm" variant="outline" onClick={() => setRevisandoQuiz(quiz)}>
+                            <Pencil className="w-4 h-4 mr-1" />
+                            Revisar y editar
+                          </Button>
                           <Button size="sm" variant="outline" onClick={() => handlePreviewQuiz(quiz)}>
                             <Eye className="w-4 h-4 mr-1" />
                             Previsualizar
@@ -821,6 +845,7 @@ export default function TeacherPage() {
                 </div>
               </TabsContent>
             </Tabs>
+            )}
           </Card>
         )}
       </div>
