@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { resolveDbTarget, normalizeNeonHost } from './lib/db-target'
+import { recordMigration } from './lib/migration-registry'
 
 /**
  * Bootstraps the guardrail itself, so it is the one runner that cannot use it
@@ -49,6 +50,8 @@ async function run() {
     environment: string
     origin_host: string | null
   }[]
+
+  await recordMigration(target.sql, '017')
 
   console.log('✅ ¡Migración 017 ejecutada con éxito en PostgreSQL / Neon!')
   console.log(`   Marcador: environment="${rows[0]?.environment}" origin_host="${rows[0]?.origin_host}"`)

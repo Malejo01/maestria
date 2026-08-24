@@ -1,4 +1,5 @@
 import { resolveDbTarget, normalizeNeonHost } from './lib/db-target'
+import { recordMigration } from './lib/migration-registry'
 
 /**
  * Migration 018: Normalizes the existing `origin_host` in the `deployment_env` table.
@@ -40,6 +41,10 @@ async function run() {
   } else {
     console.log('⚠ origin_host es NULL (aún no se había marcado con éxito).')
   }
+
+  // La 018 no tiene .sql: vive entera acá, así que el checksum del registro se
+  // mide sobre este archivo. Ver migrationFile() en lib/migration-registry.ts.
+  await recordMigration(target.sql, '018')
 
   console.log('✅ ¡Migración 018 completada con éxito!')
 }

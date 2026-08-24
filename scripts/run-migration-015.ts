@@ -1,6 +1,7 @@
 import { resolveDbTarget } from './lib/db-target'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { recordMigration } from './lib/migration-registry'
 
 /**
  * Migration 015 is long enough that keeping the SQL in one place beats
@@ -31,6 +32,8 @@ async function run() {
       throw error
     }
   }
+
+  await recordMigration(sql, '015')
 
   console.log('✅ ¡Migración 015 ejecutada con éxito en PostgreSQL / Neon!')
 }

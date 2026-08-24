@@ -1,4 +1,5 @@
 import { resolveDbTarget } from './lib/db-target'
+import { recordMigration } from './lib/migration-registry'
 
 async function run() {
   const { sql } = await resolveDbTarget({ action: 'migración 013' })
@@ -22,6 +23,8 @@ async function run() {
   await sql`
     CREATE INDEX IF NOT EXISTS idx_quiz_answers_type ON quiz_answers(question_type);
   `
+
+  await recordMigration(sql, '013')
 
   console.log('✅ ¡Migración 013 ejecutada con éxito en PostgreSQL / Neon!')
 }

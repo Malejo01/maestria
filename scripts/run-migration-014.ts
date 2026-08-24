@@ -1,4 +1,5 @@
 import { resolveDbTarget } from './lib/db-target'
+import { recordMigration } from './lib/migration-registry'
 
 async function run() {
   const { sql } = await resolveDbTarget({ action: 'migración 014' })
@@ -19,6 +20,8 @@ async function run() {
     CREATE INDEX IF NOT EXISTS idx_teacher_programs_user_nivel_grado
       ON teacher_programs(user_id, nivel, grado);
   `
+
+  await recordMigration(sql, '014')
 
   console.log('✅ ¡Migración 014 ejecutada con éxito en PostgreSQL / Neon!')
   console.log('   Siguiente paso opcional: npx tsx scripts/backfill-program-nivel-grado.ts')

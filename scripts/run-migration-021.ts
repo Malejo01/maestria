@@ -1,6 +1,7 @@
 import { resolveDbTarget } from './lib/db-target'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { recordMigration } from './lib/migration-registry'
 
 /**
  * Migración 021 (respuestas sin calificar). Mismo runner que la 020: el
@@ -31,6 +32,8 @@ async function run() {
       throw error
     }
   }
+
+  await recordMigration(sql, '021')
 
   console.log('✅ ¡Migración 021 ejecutada con éxito en PostgreSQL / Neon!')
 }

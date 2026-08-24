@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import { resolveDbTarget } from './lib/db-target'
 import { buildSchemaModelFromDir, diffAgainstDatabase } from './lib/schema-model'
+import { knownVersions, migrationChecksum, readAppliedMigrations } from './lib/migration-registry'
 
 /**
  * ¿La base tiene lo que las migraciones del repo declaran?
@@ -70,8 +71,57 @@ async function run() {
   console.log(`\nEsquema declarado por las migraciones: ${model.size} tablas, ${declaredColumns} columnas agregadas`)
   console.log(`Base: ${environment} · ${host}\n`)
 
-  if (missing.length === 0) {
+  // ── Segunda capa: el registro (migración 024) ──
+  //
+  // El diff de arriba DEDUCE mirando el catálogo, así que no ve una migración
+  // que sólo agrega un índice, una constraint, un COMMENT o un backfill: esa
+  // pasa el diff sin haberse corrido. El registro no deduce — o la fila está o
+  // no está.
+  const scriptsDir = join(process.cwd(), 'scripts')
+  const applied = await readAppliedMigrations(sql)
+  const unregistered: string[] = []
+  const changed: string[] = []
+
+  if (applied === null) {
+    // Base anterior a la 024. El diff sigue valiendo; sólo falta esta capa.
+    console.log('ℹ  Sin tabla schema_migrations (migración 024): sólo se chequea el catálogo.')
+    console.log('   Para el chequeo exacto: npx tsx scripts/run-migration-024.ts\n')
+  } else {
+    for (const version of knownVersions(scriptsDir)) {
+      const row = applied.get(version)
+      if (!row) {
+        unregistered.push(version)
+        continue
+      }
+      // Una migración YA aplicada cuyo archivo cambió después: el repo y la
+      // base dejaron de decir lo mismo y nadie se entera. No falla el chequeo
+      // —lo aplicado, aplicado está— pero se avisa.
+      if (migrationChecksum(scriptsDir, version).checksum !== row.checksum) changed.push(version)
+    }
+
+    if (changed.length > 0) {
+      console.log(`⚠  Migraciones aplicadas cuyo archivo cambió después: ${changed.join(', ')}`)
+      console.log('   La base tiene la versión vieja. No rompe nada por sí solo; conviene mirarlo.\n')
+    }
+  }
+
+  if (missing.length === 0 && unregistered.length === 0) {
     console.log('✔ La base está al día con las migraciones del repo.\n')
+    return
+  }
+
+  if (unregistered.length > 0) {
+    console.error(`✖ ${unregistered.length} migración(es) sin registrar en schema_migrations:\n`)
+    for (const version of unregistered) {
+      console.error(`    ${version}  → npx tsx scripts/run-migration-${version}.ts`)
+    }
+    console.error(
+      '\n  Si ya estaban aplicadas de antes: npx tsx scripts/backfill-schema-migrations.ts\n',
+    )
+  }
+
+  if (missing.length === 0) {
+    process.exitCode = 1
     return
   }
 

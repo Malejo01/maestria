@@ -1,6 +1,7 @@
 import { resolveDbTarget } from './lib/db-target'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { recordMigration } from './lib/migration-registry'
 
 /**
  * Migración 016 (log de uso de IA). Mismo runner que la 015: el SQL vive en su
@@ -31,6 +32,8 @@ async function run() {
       throw error
     }
   }
+
+  await recordMigration(sql, '016')
 
   console.log('✅ ¡Migración 016 ejecutada con éxito en PostgreSQL / Neon!')
 }

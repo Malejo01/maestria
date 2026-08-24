@@ -1,4 +1,5 @@
 import { resolveDbTarget } from './lib/db-target'
+import { recordMigration } from './lib/migration-registry'
 
 async function run() {
   const { sql } = await resolveDbTarget({ action: 'migración 010' })
@@ -38,6 +39,8 @@ async function run() {
       FOR EACH ROW
       EXECUTE FUNCTION update_updated_at_column();
   `
+
+  await recordMigration(sql, '010')
 
   console.log('✅ ¡Migración 010 ejecutada con éxito en PostgreSQL / Neon!')
 }

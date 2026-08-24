@@ -1,4 +1,5 @@
 import { resolveDbTarget } from './lib/db-target'
+import { recordMigration } from './lib/migration-registry'
 
 async function run() {
   const { sql } = await resolveDbTarget({ action: 'migración 011' })
@@ -10,6 +11,8 @@ async function run() {
       ADD COLUMN IF NOT EXISTS nivel TEXT CHECK (nivel IN ('Primario', 'Secundario', 'Superior')),
       ADD COLUMN IF NOT EXISTS grado TEXT;
   `
+
+  await recordMigration(sql, '011')
 
   console.log('✅ ¡Migración 011 ejecutada con éxito en PostgreSQL / Neon!')
 }

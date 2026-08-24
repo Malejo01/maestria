@@ -1,32 +1,32 @@
-import { resolveDbTarget } from './lib/db-target'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { resolveDbTarget } from './lib/db-target'
 import { recordMigration } from './lib/migration-registry'
 
 /**
- * Migración 023 (mezcla sugerida de tipos de pregunta). Mismo runner que la 022:
+ * Migración 024 (tabla `schema_migrations`). Mismo runner que la 022 y la 023:
  * el SQL vive en su propio archivo y se parte en ";\n" porque el driver
  * serverless de neon manda una sentencia por llamada.
+ *
+ * Después de crear la tabla se registra a sí misma. Las 23 anteriores las cubre
+ * scripts/backfill-schema-migrations.ts, que hay que correr a continuación.
  */
 async function run() {
   const { sql } = await resolveDbTarget({
-    action: 'migración 023 (curriculum.tipos_pregunta_sugeridos)',
+    action: 'migración 024 (schema_migrations)',
   })
-  const file = readFileSync(join(process.cwd(), 'scripts', '023-curriculum-tipos-pregunta.sql'), 'utf8')
+  const file = readFileSync(join(process.cwd(), 'scripts', '024-schema-migrations.sql'), 'utf8')
 
   const statements = file
     .split(/;\s*\n/)
-    // Drop comment-only chunks so we don't send empty statements.
     .map((chunk) => chunk.split('\n').filter((line) => !line.trim().startsWith('--')).join('\n').trim())
     .filter((chunk) => chunk.length > 0)
 
-  console.log(`Ejecutando migración 023 (curriculum.tipos_pregunta_sugeridos) — ${statements.length} sentencias...`)
+  console.log(`Ejecutando migración 024 (schema_migrations) — ${statements.length} sentencias...`)
 
   for (const [index, statement] of statements.entries()) {
     const label = statement.replace(/\s+/g, ' ').slice(0, 70)
     try {
-      // The neon driver only accepts a tagged template for `sql`; raw DDL goes
-      // through sql.query, which takes a plain string.
       await sql.query(statement)
       console.log(`  ✔ ${index + 1}/${statements.length} ${label}...`)
     } catch (error) {
@@ -35,9 +35,10 @@ async function run() {
     }
   }
 
-  await recordMigration(sql, '023')
+  await recordMigration(sql, '024')
 
-  console.log('✅ ¡Migración 023 ejecutada con éxito en PostgreSQL / Neon!')
+  console.log('✅ ¡Migración 024 ejecutada con éxito en PostgreSQL / Neon!')
+  console.log('   Siguiente paso: npx tsx scripts/backfill-schema-migrations.ts')
 }
 
 run().catch((err) => {
