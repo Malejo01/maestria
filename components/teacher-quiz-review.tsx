@@ -29,6 +29,7 @@ import {
 import { LaTeXRenderer } from '@/components/latex-renderer'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { stableStringify } from '@/lib/stable-json'
 import type { Question, TeacherQuiz } from '@/lib/types'
 
 /**
@@ -90,13 +91,16 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
    * Instantánea de lo último guardado, contra la que se compara para saber si
    * quedan cambios pendientes.
    *
-   * Es ESTADO y no un ref a propósito, y no por seguir la regla de hooks: con
-   * un ref, después de guardar se actualiza `.current` pero `questions` no
-   * cambia, así que el memo no se recalcula y el cartel sigue diciendo "cambios
-   * sin guardar" sobre un cuestionario ya guardado. Es justo el aviso que este
-   * componente existe para que sea confiable.
+   * Es ESTADO y no un ref: con un ref, después de guardar se actualiza
+   * `.current` pero `questions` no cambia, así que el memo no se recalcula.
+   *
+   * Y se compara con `stableStringify`, no con `JSON.stringify`. Ese fue el
+   * segundo intento de arreglar el mismo síntoma: Postgres reordena las claves
+   * del `jsonb`, así que la instantánea que volvía del PATCH nunca coincidía
+   * con el estado local aunque el dato fuera idéntico, y el cartel de "cambios
+   * sin guardar" no se apagaba jamás. Ver lib/stable-json.ts.
    */
-  const [guardadoComo, setGuardadoComo] = useState<string>(() => JSON.stringify(quiz.questions))
+  const [guardadoComo, setGuardadoComo] = useState<string>(() => stableStringify(quiz.questions))
   const [questions, setQuestions] = useState<Question[]>(() => structuredClone(quiz.questions))
   const [editando, setEditando] = useState<number | null>(null)
   const [guardando, setGuardando] = useState(false)
@@ -112,7 +116,7 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
   const [conflicto, setConflicto] = useState<QuizImpact | null>(null)
   const [salidaPendiente, setSalidaPendiente] = useState(false)
 
-  const sucio = useMemo(() => JSON.stringify(questions) !== guardadoComo, [questions, guardadoComo])
+  const sucio = useMemo(() => stableStringify(questions) !== guardadoComo, [questions, guardadoComo])
 
   const editadas = useMemo(
     () => questions.filter((q) => origenDe(q) !== 'ai').length,
@@ -242,14 +246,26 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
         }
 
         const guardado = data.quiz as Record<string, unknown>
+        const delServidor = (guardado.questions as Question[]) ?? questions
         const normalizado: TeacherQuiz = {
           ...quiz,
           id: Number(guardado.id),
           questionCount: Number(guardado.question_count),
-          questions: (guardado.questions as Question[]) ?? questions,
+          questions: delServidor,
         }
 
-        setGuardadoComo(JSON.stringify(normalizado.questions))
+        // Se adopta lo que devolvió el servidor como estado local Y como
+        // instantánea, del mismo valor. Antes sólo se movía la instantánea, y
+        // como Postgres reordena las claves del `jsonb`, el baseline quedaba
+        // con un orden y el estado local con otro: `sucio` no volvía a false
+        // nunca, el cartel de "cambios sin guardar" no se apagaba y salir pedía
+        // confirmación sobre un cuestionario ya guardado.
+        //
+        // La comparación además usa `stableStringify`, así que el orden de
+        // claves deja de importar aunque en el futuro los dos valores no salgan
+        // de la misma fuente.
+        setQuestions(delServidor)
+        setGuardadoComo(stableStringify(delServidor))
         setConflicto(null)
         onSaved(normalizado, {
           copiado: Boolean(data.copiado),
@@ -353,23 +369,32 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
                     </div>
                   </div>
 
+                  {/* Con texto visible, no sólo el ícono. Un lápiz y un tacho
+                      se adivinan; el de "regenerar" no — son flechas en
+                      círculo, que en otras apps significa deshacer, recargar o
+                      sincronizar. Son tres acciones y hay lugar, así que el
+                      texto no cuesta nada. En pantallas chicas queda sólo el
+                      ícono, y ahí el aria-label y el title siguen puestos. */}
                   <div className="flex shrink-0 gap-1">
                     <Button
                       size="sm"
-                      variant={enEdicion ? 'default' : 'ghost'}
+                      variant={enEdicion ? 'default' : 'outline'}
                       onClick={() => setEditando(enEdicion ? null : index)}
+                      title={enEdicion ? 'Terminar de editar esta pregunta' : 'Editar el texto de esta pregunta'}
                       aria-label={enEdicion ? 'Terminar edición' : 'Editar pregunta'}
                     >
                       {enEdicion ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                      <span className="ml-1 hidden sm:inline">{enEdicion ? 'Listo' : 'Editar'}</span>
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="outline"
                       disabled={regenerando !== null}
                       onClick={() => {
                         setMotivo('')
                         setPidiendoMotivo(index)
                       }}
+                      title="Pedirle a la IA otra pregunta sobre el mismo tema"
                       aria-label="Regenerar pregunta"
                     >
                       {regenerando === index ? (
@@ -377,15 +402,18 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
                       ) : (
                         <RefreshCw className="h-4 w-4" />
                       )}
+                      <span className="ml-1 hidden sm:inline">Regenerar</span>
                     </Button>
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="outline"
                       className="text-destructive hover:text-destructive"
                       onClick={() => eliminar(index)}
+                      title="Quitar esta pregunta del cuestionario"
                       aria-label="Eliminar pregunta"
                     >
                       <Trash2 className="h-4 w-4" />
+                      <span className="ml-1 hidden sm:inline">Quitar</span>
                     </Button>
                   </div>
                 </div>
@@ -435,7 +463,11 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
 
       {/* ─── Propuesta: la nueva al lado de la vieja ───────────────────────── */}
       <Dialog open={propuesta !== null} onOpenChange={(open) => !open && setPropuesta(null)}>
-        <DialogContent className="max-w-3xl">
+        {/* Ancho de verdad en desktop: dos columnas con LaTeX necesitan
+            lugar, y a max-w-3xl el texto se apilaba como en mobile. El
+            max-height del base sigue actuando —no se toca acá— así que el
+            diálogo scrollea igual cuando la pregunta es larga. */}
+        <DialogContent className="w-[95vw] max-w-3xl lg:max-w-5xl xl:max-w-6xl">
           <DialogHeader>
             <DialogTitle>Pregunta nueva</DialogTitle>
             <DialogDescription>
