@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { DEFAULT_JURISDICTION } from '@/lib/curriculum-config'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +37,14 @@ export async function GET(req: Request) {
     })
     return NextResponse.json({ grades })
   } catch (error) {
+    // Hermana de /api/curriculum/topics, que estuvo nueve dias fallando en
+    // produccion sin un solo evento porque su catch devolvia el 500 y no
+    // reportaba nada. Este tenia el mismo agujero esperando turno.
+    captureRouteFailure(error instanceof Error ? error : new Error(String(error)), {
+      endpoint: '/api/curriculum/grades',
+      operation: 'GET',
+    })
+
     return NextResponse.json(
       { error: 'Error al obtener grados', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

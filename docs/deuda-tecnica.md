@@ -714,3 +714,110 @@ comportándose así, cualquier agente que modifique archivos existentes necesita
    flag siga en `true`**: se reactiva sola si alguien la da vuelta, sin que el audit cambie.
    Ahí `next@16.3.1` deja de ser opcional.
 7. ~~**`vite`**~~ — **hecho el 16/08/2026**, vía `vitest` 4.1.10.
+
+---
+
+## 6. Fallas disfrazadas de estado normal — inventario del 24/08/2026
+
+Relevado después del incidente de la migración 023, que dejó `/practicar` caído
+**nueve días para todos los niveles** mostrando *"No hay temas cargados para esta
+materia todavía"*. La causa era un 500; la pantalla decía "no hay datos".
+
+Es la tercera vez que un fallo se disfraza de resultado válido en este proyecto:
+
+1. **10/08** — `Boolean(undefined) = false` guardaba respuestas cortas como
+   incorrectas en silencio.
+2. **15/08** — el roadmap describía `scripts/create-staging-branch.ts` como
+   existente cuando no existía; nadie lo notó porque el documento se leía bien.
+3. **24/08** — este.
+
+El patrón no es un bug: es una **forma**. Dos variantes, medidas sobre 158
+archivos de `app/`, `components/` y `hooks/`, y las 40 rutas de `app/api/`.
+
+### 6a. `fetch` de cliente que consumen el body sin mirar `res.ok`
+
+**15 llamadas en 10 archivos** (eran 18 en 11 antes de cerrar las cuatro del
+selector de currículum). Todas hacen `.then(res => res.json())` o equivalente: un
+500 queda indistinguible de una lista vacía.
+
+| Archivo | # |
+|---|---|
+| `app/(app)/history/page.tsx` | 4 |
+| `app/(app)/aulas/page.tsx` | 2 |
+| `app/(app)/page.tsx` | 2 |
+| `app/(app)/tips/page.tsx` | 1 |
+| `components/diagnostic-report-card.tsx` | 1 |
+| `components/navbar.tsx` | 1 |
+| `components/onboarding-screen.tsx` | 1 |
+| `components/share-quiz-dialog.tsx` | 1 |
+| `components/teacher-classrooms.tsx` | 1 |
+| `components/teacher-subject-wizard.tsx` | 1 |
+
+**Ya cerrado:** las cuatro de `components/curriculum-selector.tsx`
+(`fetchCareers`, `fetchGrades`, `fetchSubjects`, `fetchTopics`), vía el helper
+`pedirJson` y el componente `CargaFallida`. Ese es el patrón a copiar.
+
+**El más caro de los que quedan** es `components/onboarding-screen.tsx:56`:
+consulta `/api/curriculum/grades` y es lo primero que ve un alumno nuevo. Si
+falla, el onboarding se ve como "no hay años para tu nivel".
+
+### 6b. Route handlers cuyo `catch` no reporta
+
+**38 de 40 rutas tienen `catch`.** Separadas por cuánta señal dan, que es la
+distinción que importa:
+
+| | # | Qué pasa cuando falla |
+|---|---|---|
+| Llaman a un `captureXxx` de `lib/observability.ts` | **10** | evento con tags propios, filtrable |
+| Sólo `console.error` | **8** | llega a Sentry por la integración de consola, sin tags |
+| **Silencio total** | **20** | no llega nada |
+
+Que la diferencia importa está medido: `relation "feedback_reports" does not
+exist` (`MAESTRIA-Z`) llegó a Sentry porque `/api/feedback` hace
+`console.error`. La de `/api/curriculum/topics` no hacía ni eso, y por eso duró
+nueve días.
+
+**Ya cerradas:** las cuatro de `app/api/curriculum/*` (`topics`, `careers`,
+`grades`, `subjects`), con test en [tests/curriculum.test.ts](../tests/curriculum.test.ts)
+que afirma sobre la **llamada** a `captureRouteFailure` y no sobre el status — el
+500 ya se devolvía y no alcanzó.
+
+Las 20 en silencio total:
+
+```
+app/api/classrooms/join/route.ts
+app/api/student/assignments/[id]/route.ts
+app/api/student/classrooms/route.ts
+app/api/student/diagnostic-report/route.ts
+app/api/student/guest/claim/route.ts
+app/api/subjects/meta/route.ts
+app/api/teacher/classrooms/route.ts
+app/api/teacher/classrooms/[id]/route.ts
+app/api/teacher/classrooms/[id]/assignments/route.ts
+app/api/teacher/classrooms/[id]/assignments/[assignmentId]/route.ts
+app/api/teacher/classrooms/[id]/members/route.ts
+app/api/teacher/classrooms/[id]/members/[memberId]/route.ts
+app/api/teacher/classrooms/[id]/report/route.ts
+app/api/teacher/classrooms/[id]/students/[userId]/route.ts
+app/api/teacher/diagnostic-report/route.ts
+app/api/teacher/programs/cleanup-temp/route.ts
+app/api/teacher/quizzes/route.ts
+app/api/teacher/quizzes/[id]/route.ts
+app/api/teacher/tour/route.ts
+app/api/user/profile/route.ts
+```
+
+**Prioridad sugerida cuando se ataque:** las de `student/*` y `classrooms/join`
+primero. Son las que toca un alumno —que no va a reportar nada, sólo se va— y
+las únicas del grupo que un invitado sin cuenta puede ejercitar.
+
+### 6c. Lo que haría falta para que no vuelva a crecer
+
+Una regla de ESLint que exija mirar `res.ok` antes de consumir el body no existe
+lista; habría que escribirla. Más barato y probablemente suficiente: que
+`lib/observability.ts` exporte un `fetchJson` cliente, y revisar en code review
+que ningún `fetch` nuevo lo esquive.
+
+No se ataca ahora **por decisión explícita** (24/08/2026): se cerró la pantalla
+que ya había fallado y se dejó el resto medido, para que la próxima vez se
+discuta sobre números y no sobre impresiones.

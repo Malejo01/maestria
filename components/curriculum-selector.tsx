@@ -66,6 +66,44 @@ interface CurriculumSelectorProps {
   initialGrado?: string | null
 }
 
+/**
+ * Estado de error de un paso de la cascada.
+ *
+ * Existe como componente y no como cuatro bloques repetidos porque el punto es
+ * que los cuatro pasos se vean IGUAL de distintos al estado vacío. Mientras
+ * "falló la consulta" y "no hay datos cargados" compartieron el mismo cartel
+ * gris, una caída de `/api/curriculum/topics` se leyó durante nueve días como
+ * "todavía no cargamos el temario".
+ *
+ * El detalle técnico se muestra en pantalla a propósito: es lo que el alumno
+ * puede copiar y mandar, y es lo que convierte un reporte de "no anda" en uno
+ * accionable.
+ */
+function CargaFallida({
+  que,
+  detalle,
+  onReintentar,
+}: {
+  que: string
+  detalle: string
+  onReintentar: () => void
+}) {
+  return (
+    <div className="text-center py-12 space-y-3">
+      <AlertTriangle className="w-6 h-6 text-destructive mx-auto" />
+      <p className="text-sm font-semibold text-foreground">No pudimos cargar {que}.</p>
+      <p className="text-muted-foreground text-xs max-w-sm mx-auto">
+        No es que no haya nada cargado: falló la consulta. Probá de nuevo en unos instantes; si
+        sigue igual, avisá con este detalle.
+      </p>
+      <p className="text-[11px] font-mono text-muted-foreground break-words px-4">{detalle}</p>
+      <button onClick={onReintentar} className="text-sm font-semibold text-primary hover:underline">
+        Reintentar
+      </button>
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initialGrado }: CurriculumSelectorProps) {
@@ -107,11 +145,13 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
   const [materia, setMateria] = useState<string>('')
   const [axes, setAxes] = useState<Eje[]>([])
   /**
-   * Mensaje de la última falla de `/api/curriculum/topics`, o null. Separado de
-   * `axes` a propósito: "sin temas" y "no pude traer los temas" son estados
-   * distintos y tienen que verse distintos. Ver el comentario de fetchTopics.
+   * Mensaje de la última falla de la API del currículum, o null. Lo comparten
+   * los cuatro pasos de la cascada porque sólo uno corre a la vez.
+   *
+   * Separado de las listas a propósito: "no hay temas" y "no pude traer los
+   * temas" son estados distintos y tienen que verse distintos. Ver `pedirJson`.
    */
-  const [topicsError, setTopicsError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [selected, setSelected] = useState<SelectedTopicMap>({})
   const [loadingData, setLoadingData] = useState(false)
 
@@ -153,16 +193,56 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
    */
   const carreraParam = (c: string) => (c ? `&carrera=${encodeURIComponent(c)}` : '')
 
+  /**
+   * Un GET a la API del currículum que NO confunde "falló" con "vino vacío".
+   *
+   * Los cuatro pasos de la cascada consumían el body sin mirar `res.ok`, así que
+   * un 500 se pintaba como el estado vacío del paso. Con eso `/practicar` estuvo
+   * nueve días caído para todos los niveles —faltaba la migración 023 y la ruta
+   * de temas devolvía 500— y en pantalla decía "no hay temas cargados": nadie va
+   * a investigar algo que parece normal.
+   *
+   * El `details` del body viaja en el error a propósito: es el mensaje real del
+   * servidor, y perderlo es volver a no saber qué pasó.
+   */
+  async function pedirJson<T>(url: string): Promise<{ data: T } | { error: string }> {
+    try {
+      const res = await fetch(url)
+      const body = await res.json().catch(() => ({} as Record<string, unknown>))
+
+      if (!res.ok) {
+        const detalle =
+          typeof body?.details === 'string' && body.details
+            ? body.details
+            : typeof body?.error === 'string' && body.error
+              ? body.error
+              : `HTTP ${res.status}`
+        return { error: detalle }
+      }
+
+      return { data: body as T }
+    } catch (err) {
+      // Red caída o respuesta ilegible.
+      return { error: err instanceof Error ? err.message : 'No se pudo conectar' }
+    }
+  }
+
   const fetchCareers = async (n: Nivel) => {
     setLoadingData(true)
+    setLoadError(null)
     try {
-      const res = await fetch(`/api/curriculum/careers?nivel=${encodeURIComponent(n)}`)
-      const data = await res.json()
-      return (data.careers ?? []) as string[]
-    } catch {
-      // Sin lista de carreras el alumno todavía puede subir su programa; que
-      // falle la consulta no puede dejarlo sin camino.
-      return []
+      const res = await pedirJson<{ careers?: string[] }>(
+        `/api/curriculum/careers?nivel=${encodeURIComponent(n)}`
+      )
+      if ('error' in res) {
+        // Este es el único de los cuatro que degrada en vez de cortar: sin lista
+        // de carreras el alumno todavía puede subir su programa propio, y
+        // dejarlo sin ese camino sería peor que el error. Pero se registra, así
+        // que la pantalla puede decirlo en vez de fingir que no hay ninguna.
+        setLoadError(res.error)
+        return []
+      }
+      return res.data.careers ?? []
     } finally {
       setLoadingData(false)
     }
@@ -170,10 +250,17 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
 
   const fetchGrades = async (n: Nivel, c = '') => {
     setLoadingData(true)
+    setLoadError(null)
     try {
-      const res = await fetch(`/api/curriculum/grades?nivel=${encodeURIComponent(n)}${carreraParam(c)}`)
-      const data = await res.json()
-      setGrades(data.grades ?? [])
+      const res = await pedirJson<{ grades?: string[] }>(
+        `/api/curriculum/grades?nivel=${encodeURIComponent(n)}${carreraParam(c)}`
+      )
+      if ('error' in res) {
+        setGrades([])
+        setLoadError(res.error)
+        return
+      }
+      setGrades(res.data.grades ?? [])
     } finally {
       setLoadingData(false)
     }
@@ -181,12 +268,17 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
 
   const fetchSubjects = async (n: Nivel, g: string, c = '') => {
     setLoadingData(true)
+    setLoadError(null)
     try {
-      const res = await fetch(
+      const res = await pedirJson<{ subjects?: string[] }>(
         `/api/curriculum/subjects?nivel=${encodeURIComponent(n)}&grado=${encodeURIComponent(g)}${carreraParam(c)}`
       )
-      const data = await res.json()
-      setSubjects(data.subjects ?? [])
+      if ('error' in res) {
+        setSubjects([])
+        setLoadError(res.error)
+        return
+      }
+      setSubjects(res.data.subjects ?? [])
     } finally {
       setLoadingData(false)
     }
@@ -204,37 +296,18 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
    */
   const fetchTopics = async (n: Nivel, g: string, m: string, c = '') => {
     setLoadingData(true)
-    setTopicsError(null)
+    setLoadError(null)
     try {
-      const res = await fetch(
+      const res = await pedirJson<{ axes?: Eje[] }>(
         `/api/curriculum/topics?nivel=${encodeURIComponent(n)}&grado=${encodeURIComponent(g)}&materia=${encodeURIComponent(m)}${carreraParam(c)}`
       )
-      // El body se lee igual en el camino de error: la ruta manda `details` con
-      // el mensaje real, y perderlo es volver a no saber qué pasó.
-      const data = await res.json().catch(() => ({}))
-
-      if (!res.ok) {
+      setSelected({})
+      if ('error' in res) {
         setAxes([])
-        setSelected({})
-        setTopicsError(
-          typeof data?.details === 'string' && data.details
-            ? data.details
-            : typeof data?.error === 'string' && data.error
-              ? data.error
-              : `HTTP ${res.status}`
-        )
+        setLoadError(res.error)
         return
       }
-
-      setAxes(data.axes ?? [])
-      setSelected({})
-    } catch (err) {
-      // Red caída o respuesta ilegible. Antes esto ni siquiera se atajaba: la
-      // promesa se rechazaba sin dueño porque los handlers llaman a fetchTopics
-      // sin await.
-      setAxes([])
-      setSelected({})
-      setTopicsError(err instanceof Error ? err.message : 'No se pudo conectar')
+      setAxes(res.data.axes ?? [])
     } finally {
       setLoadingData(false)
     }
@@ -268,7 +341,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     setCarrera('')
     setAxes([])
     setSelected({})
-    setTopicsError(null)
+    setLoadError(null)
     if (n === 'Superior') {
       const list = await fetchCareers(n)
       setCareers(list)
@@ -322,7 +395,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
     setParsedUnits([])
     // El camino de programa propio llena `axes` sin pasar por fetchTopics, así
     // que un error viejo de la ruta no debe sobrevivirle.
-    setTopicsError(null)
+    setLoadError(null)
     setUploadLoading(true)
 
     try {
@@ -545,6 +618,18 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
 
             {loadingData ? (
               <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : loadError ? (
+              /* Acá el error NO deja al alumno sin salida: abajo sigue el botón
+                 de subir el programa propio, que es el camino que existía antes
+                 de que hubiera carreras precargadas. Lo que cambia es que la
+                 lista vacía deja de mentir. */
+              <CargaFallida
+                que="las carreras"
+                detalle={loadError}
+                onReintentar={() => {
+                  fetchCareers('Superior').then(setCareers)
+                }}
+              />
             ) : (
               <div className="grid gap-3">
                 {careers.map((c) => (
@@ -594,6 +679,12 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
 
             {loadingData ? (
               <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : loadError ? (
+              <CargaFallida
+                que="los años"
+                detalle={loadError}
+                onReintentar={() => fetchGrades(nivel!, carrera)}
+              />
             ) : grades.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-12">No hay contenidos cargados para este nivel todavía.</p>
             ) : (
@@ -623,6 +714,12 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
 
             {loadingData ? (
               <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+            ) : loadError ? (
+              <CargaFallida
+                que="las materias"
+                detalle={loadError}
+                onReintentar={() => fetchSubjects(nivel!, grado, carrera)}
+              />
             ) : subjects.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-12">No hay materias cargadas para este nivel todavía.</p>
             ) : (
@@ -653,25 +750,12 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
 
             {loadingData ? (
               <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-            ) : topicsError ? (
-              /* Rama nueva, y va ANTES que la del vacío a propósito: mientras
-                 las dos compartieron el mismo cartel, una caída de la ruta se
-                 leyó durante nueve días como "todavía no cargamos el temario". */
-              <div className="text-center py-12 space-y-3">
-                <AlertTriangle className="w-6 h-6 text-destructive mx-auto" />
-                <p className="text-sm font-semibold text-foreground">No pudimos cargar los temas.</p>
-                <p className="text-muted-foreground text-xs">
-                  No es que la materia esté vacía: falló la consulta. Probá de nuevo en unos
-                  instantes; si sigue igual, avisá con este detalle.
-                </p>
-                <p className="text-[11px] font-mono text-muted-foreground break-words px-4">{topicsError}</p>
-                <button
-                  onClick={() => fetchTopics(nivel!, grado, materia, carrera)}
-                  className="text-sm font-semibold text-primary hover:underline"
-                >
-                  Reintentar
-                </button>
-              </div>
+            ) : loadError ? (
+              <CargaFallida
+                que="los temas"
+                detalle={loadError}
+                onReintentar={() => fetchTopics(nivel!, grado, materia, carrera)}
+              />
             ) : axes.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-12">No hay temas cargados para esta materia todavía.</p>
             ) : (

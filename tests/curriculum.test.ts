@@ -1,4 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { GET as getCareers } from '@/app/api/curriculum/careers/route'
 import { GET as getGrades } from '@/app/api/curriculum/grades/route'
 import { GET as getSubjects } from '@/app/api/curriculum/subjects/route'
 import { GET as getTopics } from '@/app/api/curriculum/topics/route'
@@ -202,6 +203,38 @@ describe('Curriculum API Route Handlers', () => {
       const [reported, context] = vi.mocked(captureRouteFailure).mock.calls[0]
       expect(reported).toBe(dbError)
       expect(context).toMatchObject({ endpoint: '/api/curriculum/topics' })
+    })
+  })
+
+  /**
+   * Las tres hermanas de /topics. Consultan la misma tabla desde la misma
+   * pantalla y tenían el mismo catch mudo: el bug de la 023 les tocaba por
+   * turno. Se cierran juntas para que no quede una sola esperando.
+   */
+  describe('las cuatro rutas de currículum reportan sus fallas', () => {
+    const rutas = [
+      ['/api/curriculum/careers', getCareers, 'http://localhost/api/curriculum/careers?nivel=Superior'],
+      ['/api/curriculum/grades', getGrades, 'http://localhost/api/curriculum/grades?nivel=Secundario'],
+      [
+        '/api/curriculum/subjects',
+        getSubjects,
+        'http://localhost/api/curriculum/subjects?nivel=Secundario&grado=1er+A%C3%B1o',
+      ],
+      [
+        '/api/curriculum/topics',
+        getTopics,
+        'http://localhost/api/curriculum/topics?nivel=Superior&grado=1er+A%C3%B1o&materia=Matem%C3%A1tica',
+      ],
+    ] as const
+
+    it.each(rutas)('%s reporta a Sentry y devuelve 500', async (endpoint, handler, url) => {
+      const dbError = new Error('column "algo_nuevo" does not exist')
+      vi.mocked(sql).mockRejectedValueOnce(dbError)
+
+      const res = await handler(new Request(url))
+
+      expect(res.status).toBe(500)
+      expect(captureRouteFailure).toHaveBeenCalledWith(dbError, expect.objectContaining({ endpoint }))
     })
   })
 })
