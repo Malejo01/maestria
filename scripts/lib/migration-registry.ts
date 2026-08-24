@@ -80,6 +80,25 @@ export async function readAppliedMigrations(sql: Sql): Promise<Map<string, Appli
     // 42P01 = undefined_table. Cualquier otro error es un problema real de
     // conexión o permisos y no se puede tragar como "todavía no está la tabla".
     if ((error as { code?: string }).code === '42P01') return null
+
+    // 42501 = insufficient_privilege. Le pasó al rol `ci_schema_check` en la
+    // primera corrida real del gate (24/08/2026): `docs/gate-de-esquema.md`
+    // listaba un solo GRANT, sobre `deployment_env`, y esa lista quedó vieja el
+    // mismo día, cuando el chequeo sumó la capa del registro.
+    //
+    // NO se degrada a `null`. Sería tentador —el chequeo seguiría corriendo con
+    // la capa del catálogo— y sería exactamente la enfermedad que este proyecto
+    // ya pagó tres veces: apagar en silencio la mitad exacta de la verificación
+    // y que el job siga en verde.
+    if ((error as { code?: string }).code === '42501') {
+      throw new Error(
+        'Sin permiso para leer schema_migrations.\n' +
+          '   El rol necesita:  GRANT SELECT ON schema_migrations TO <rol>;\n' +
+          '   Ver docs/gate-de-esquema.md. No se sigue sin esta capa: es la que detecta\n' +
+          '   una migración de sólo índices, constraints, COMMENT o backfill.',
+      )
+    }
+
     throw error
   }
 }

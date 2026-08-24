@@ -77,14 +77,28 @@ CREATE ROLE ci_schema_check LOGIN PASSWORD '<generada, guardada sólo en el secr
 GRANT CONNECT ON DATABASE neondb TO ci_schema_check;
 GRANT USAGE ON SCHEMA public TO ci_schema_check;
 
--- Único GRANT sobre datos, y es el marcador de entorno de la migración 017:
--- `resolveDbTarget` lo lee para saber contra qué base está hablando.
--- No tiene datos personales.
+-- Marcador de entorno (migración 017). `resolveDbTarget` lo lee para saber
+-- contra qué base está hablando. No tiene datos personales.
 GRANT SELECT ON deployment_env TO ci_schema_check;
+
+-- Registro de migraciones (migración 024), la segunda capa del chequeo.
+-- Guarda version, filename, checksum y fecha: tampoco tiene datos personales.
+GRANT SELECT ON schema_migrations TO ci_schema_check;
 ```
 
 Sin `INSERT`, `UPDATE`, `DELETE` ni `SELECT` sobre ninguna otra tabla. Si alguien
-se lleva ese secreto, se lleva la lista de nombres de columnas.
+se lleva ese secreto, se lleva la lista de nombres de columnas y las fechas en
+que se corrieron las migraciones.
+
+> **Esta lista tenía un solo `GRANT` hasta el 24/08/2026 y estaba mal.** Se
+> escribió cuando el chequeo leía sólo el catálogo, y quedó vieja **el mismo
+> día**, cuando se le sumó la capa del registro (migración 024). La primera
+> corrida real del gate murió con `permission denied for table
+> schema_migrations`. Se anota porque es el mismo patrón que este documento
+> persigue —una descripción que dejó de ser cierta y nadie lo notó— aparecido
+> dentro del propio arreglo.
+>
+> Si el chequeo suma una tabla nueva en el futuro, **acá va su `GRANT`**.
 
 La cadena de conexión de ese rol va al secreto de GitHub
 **`DATABASE_URL_READONLY`**. Mientras el secreto no exista, el job avisa con un
