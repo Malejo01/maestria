@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:schema": "npx tsx scripts/check-schema-drift.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.64",

@@ -29,3 +29,72 @@ jobs:
 
       - name: Build application
         run: npm run build
+
+  # ─── Gate de esquema ────────────────────────────────────────────────────────
+  #
+  # Falla si producción no tiene alguna tabla o columna que declaran las
+  # migraciones del repo. Existe porque ya pasó dos veces que una migración
+  # quedara sin correr después del merge: la 019 (feedback_reports) dejó el
+  # botón de reportar tirando 500, y la 023 (curriculum.tipos_pregunta_sugeridos)
+  # dejó /practicar mostrando "no hay temas cargados" durante NUEVE DÍAS, para
+  # todos los niveles, sin un solo evento en Sentry.
+  #
+  # Las dos son el mismo agujero de orden: el push a main despliega solo y la
+  # migración es manual, así que por construcción hay una ventana en la que el
+  # código pide un esquema que la base no tiene. Esto convierte esa ventana en
+  # un job en rojo.
+  #
+  # Sólo en push a main. En un PR es normal y correcto que la migración nueva
+  # todavía no esté aplicada: ahí el drift no es un defecto, es el estado
+  # esperado hasta el deploy.
+  #
+  # DESBLOQUEO cuando falla: correr el runner que nombra la salida del job y
+  # después "Re-run failed jobs" desde la pestaña Actions. No hace falta un
+  # commit nuevo ni tocar el código.
+  #
+  # Ver docs/gate-de-esquema.md para el rol de sólo lectura y para qué falta
+  # para que esto bloquee el deploy de verdad y no sólo lo marque en rojo.
+  schema-gate:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs: test-and-build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Sin el secreto cargado el job avisa y pasa, en vez de fallar. Un gate
+      # que rompe todos los builds el día que se mergea no sobrevive a la
+      # primera tarde: se desactiva y no vuelve. Cuando el secreto esté, el
+      # chequeo empieza a correr sin tocar este archivo.
+      # El secreto entra por `env` y no interpolado en el `run`: así no termina
+      # como texto en la línea de comando del log.
+      - name: ¿Hay credencial de sólo lectura?
+        id: creds
+        env:
+          DATABASE_URL_READONLY: ${{ secrets.DATABASE_URL_READONLY }}
+        run: |
+          if [ -z "$DATABASE_URL_READONLY" ]; then
+            echo "presente=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::DATABASE_URL_READONLY no está configurado — el gate de esquema no corrió. Ver docs/gate-de-esquema.md"
+          else
+            echo "presente=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Chequear drift de esquema contra producción
+        if: steps.creds.outputs.presente == 'true'
+        env:
+          # `check-schema-drift.ts` es read-only (`destructive: false`), así que
+          # no pide CONFIRM_PRODUCTION. La credencial es de sólo lectura y sólo
+          # ve el catálogo: no puede leer datos de ningún alumno.
+          DATABASE_URL: ${{ secrets.DATABASE_URL_READONLY }}
+        run: npx tsx scripts/check-schema-drift.ts
