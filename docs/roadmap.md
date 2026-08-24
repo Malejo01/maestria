@@ -1,6 +1,6 @@
 # MaestrIA — Roadmap
 
-Documento vivo. Última actualización: **16 de agosto de 2026**.
+Documento vivo. Última actualización: **24 de agosto de 2026**.
 
 ## Tesis de producto
 
@@ -90,6 +90,39 @@ Los 31 alumnos estaban registrados como **Secundario / 4to Año**. El sistema si
 **~~Pendiente de comunicación:~~ RESUELTO.** Decía que los alumnos tenían que cerrar sesión y volver a entrar para que el JWT refrescara nivel/grado. **Ya no hace falta avisarles nada.**
 
 > [auth.ts:145](../auth.ts#L145) ya re-leía la base cuando `trigger === 'update'`; faltaba sólo disparar `useSession().update()` desde el cliente. Implementado en la navbar, que ya traía `/api/user/profile` en cada carga con sesión. El alumno abre la app y el token se pone al día solo. La regla de comparación vive en `lib/session-profile-sync.ts` con 7 tests, y los que importan son los que **no** tienen que disparar: `null` vs `undefined` cuenta como igual, porque si no todo usuario sin nivel cargado pegaría a `/api/auth` en cada carga.
+
+---
+
+## 🚨 Incidente del 15-24/08 y lo que dejó (24/08/2026)
+
+**`/practicar` estuvo nueve días caído en producción, para todos los niveles.** La causa: la migración **023** (`curriculum.tipos_pregunta_sugeridos`) se mergeó y desplegó el 15/08 pero **nunca se corrió contra producción**. `/api/curriculum/topics` fallaba al parsear la consulta (`42703`), devolvía 500, y el cliente lo pintaba como el estado vacío: *"No hay temas cargados para esta materia todavía"*.
+
+Nadie se enteró porque el fallo se disfrazó dos veces: el `catch` de la ruta no reportaba a Sentry, y `fetchTopics` no miraba `res.ok`. **Cero eventos en nueve días.**
+
+Ya es la tercera vez que un fallo se disfraza de resultado válido: el `Boolean(undefined)` del 10/08, el `create-staging-branch.ts` que este documento describía sin que existiera, y ahora esto. El inventario completo del patrón —15 `fetch` sin `res.ok` en 10 archivos, 20 rutas con `catch` en silencio total— quedó medido en [deuda-tecnica.md](deuda-tecnica.md), sección 6.
+
+Todo cerrado el 24/08:
+
+- [x] **023 corrida** — `/practicar` funciona otra vez en todos los niveles. No necesitó deploy: era la base, no el código.
+- [x] **Seeder re-corrido** — las 7 mezclas de tipos de pregunta cargadas. **Toda la tanda pedagógica del 16/08 estuvo inerte en producción hasta hoy**: `loadCurriculumPedagogy` atrapaba el mismo error en su `try/catch` y devolvía `{}`, así que la generación perdía en silencio el contexto profesional *y* la mezcla.
+- [x] **Los dos silenciadores** — `captureRouteFailure` en las cuatro rutas de `curriculum/*`, y el helper `pedirJson` + el componente `CargaFallida` en el selector, que distinguen un 500 de una lista vacía en los cuatro pasos de la cascada.
+- [x] **Detector de drift** — `npm run check:schema`, documentado en [gate-de-esquema.md](gate-de-esquema.md). Probado contra una base del 15/08 simulada: habría atrapado la 023 **y** la 019.
+- [x] **`schema_migrations`** (migración 024) — 23 migraciones registradas. El detector deduce mirando el catálogo; el registro no deduce nada.
+- [x] **Job `schema-gate` en CI** — corre en push a `main` y falla si la base no está al día.
+
+### Lo que queda de esto, y es de Mauro
+
+1. **Rol de sólo lectura en Neon + `DATABASE_URL_READONLY` en GitHub Secrets.** Sin eso el gate avisa y pasa, o sea que no gatea. El SQL exacto está en [gate-de-esquema.md](gate-de-esquema.md); el rol necesita **un solo `GRANT SELECT`**, sobre `deployment_env`, porque el chequeo lee `pg_catalog` y no `information_schema`.
+
+2. **DECISIÓN PENDIENTE — apagar el auto-deploy de Vercel.** Hoy el gate marca en rojo en Actions pero **Vercel despliega igual**: el push a `main` dispara el build sin mirar el workflow. Cerrar el círculo significa apagar el auto-deploy a producción (conservando los previews de PR) y desplegar desde el workflow después del gate, lo que necesita `VERCEL_TOKEN` + `VERCEL_ORG_ID` + `VERCEL_PROJECT_ID`.
+
+   Es una decisión de fricción, no técnica: **¿puede salir un deploy con el esquema desalineado, o queda bloqueado hasta correr la migración?**
+
+   > Lectura de Mauro el 24/08: *"con dos incidentes en dos semanas, yo cerraría el círculo. Pero implica un cambio de flujo de deploy, así que no lo haría hoy."* Queda anotado a propósito para decidirlo con la cabeza fresca, y no el mismo día del incidente.
+
+   El "Ignored Build Step" de Vercel **no** es la alternativa barata: su semántica hace que un drift detectado se vea como un deploy *"Skipped"* — un fallo que se presenta como "no pasó nada", que es exactamente la enfermedad de este incidente.
+
+3. **Verificar `/practicar` con sesión real.** Todo lo verificable sin login está verificado: el handler de `/api/curriculum/topics`, invocado con la base de producción, devuelve **HTTP 200**, las 7 unidades, la Unidad 5 con sus 10 temas y las 7 mezclas. Lo que falta es la pantalla.
 
 ---
 
