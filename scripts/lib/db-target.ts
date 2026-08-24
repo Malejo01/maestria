@@ -146,6 +146,46 @@ async function confirmProduction(target: DbTarget, action: string): Promise<void
   }
 }
 
+/**
+ * `new URL(url).hostname`, pero con un error que se pueda accionar.
+ *
+ * Pelado, `new URL()` sobre una cadena mal formada tira **"Invalid URL"** y
+ * nada más. En el gate de esquema del 24/08/2026 eso apareció en CI sobre un
+ * secreto que nadie puede leer para inspeccionar, y el mensaje no distinguía
+ * "el rol no tiene privilegios" de "el valor no es una URL" — que son dos
+ * problemas sin nada en común.
+ *
+ * Los datos que se imprimen (largo, esquema, comillas, espacios) alcanzan para
+ * arreglarlo y **no revelan la credencial**: el esquema es `postgresql` en todos
+ * los casos y el largo no es secreto. El valor en sí no se imprime nunca, ni
+ * truncado.
+ */
+function parseHost(url: string): string {
+  try {
+    return new URL(url).hostname
+  } catch {
+    const esquema = url.includes('://') ? url.slice(0, url.indexOf('://')) : null
+    const pistas = [
+      `largo: ${url.length}`,
+      esquema === null
+        ? 'no tiene "://" — no parece una URL'
+        : /^(postgres|postgresql)$/.test(esquema)
+          ? `esquema: "${esquema}" (correcto)`
+          : `esquema: "${esquema}" (se esperaba postgresql)`,
+      url !== url.trim() ? 'tiene espacios o saltos de línea alrededor' : null,
+      /^['"]|['"]$/.test(url.trim()) ? 'está entre comillas' : null,
+      /^\s*psql\b/.test(url) ? 'empieza con "psql" — se copió el comando entero' : null,
+    ].filter(Boolean)
+
+    throw new Error(
+      'DATABASE_URL no es una URL válida.\n' +
+        `   Pistas (sin exponer el valor): ${pistas.join(' · ')}\n` +
+        '   Tiene que ser la cadena sola, sin comillas y sin el "psql" de adelante:\n' +
+        '     postgresql://usuario:clave@host/base?sslmode=require',
+    )
+  }
+}
+
 export async function resolveDbTarget(options: ResolveOptions): Promise<DbTarget> {
   const envFile = readRequestedEnvFile()
   if (fs.existsSync(envFile)) {
@@ -161,7 +201,7 @@ export async function resolveDbTarget(options: ResolveOptions): Promise<DbTarget
     process.exit(1)
   }
 
-  const host = new URL(url).hostname
+  const host = parseHost(url)
   const sql = neon(url)
   const marker = await readMarker(sql)
 
