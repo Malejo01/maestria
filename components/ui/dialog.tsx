@@ -60,7 +60,22 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
+          // `max-h` + `overflow-y-auto` es el arreglo del 24/08/2026, y va en el
+          // base porque el agujero era del base: el diálogo se centra con
+          // `top-[50%] translate-y-[-50%]` y NO tenía ninguna restricción de
+          // altura, así que en un viewport bajo se salía por arriba y por abajo
+          // sin forma de llegar al contenido — ni el diálogo ni el body
+          // scrolleaban. Medido en el diálogo de generación: 786 px de alto,
+          // recortado 9 px arriba y abajo en 1366×768, y con "Examen Mixto"
+          // entero fuera de pantalla en 1280×720.
+          //
+          // `dvh` y no `vh`: en mobile la barra del navegador hace que `100vh`
+          // sea más alto que lo que realmente se ve, que es el mismo bug otra
+          // vez en otra pantalla.
+          //
+          // Los diálogos que ya declaran su propio `max-h-[NNvh]` no cambian:
+          // tailwind-merge deja ganar al de la clase pasada por prop.
+          'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-2rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 overflow-y-auto rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg',
           className,
         )}
         {...props}

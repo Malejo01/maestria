@@ -91,8 +91,18 @@ export function QuizModeDialog({
 }: QuizModeDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-3xl border-2 p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-2 text-left space-y-2">
+      {/*
+        `flex flex-col` en lugar del `grid` del base, y el `overflow-hidden` que
+        estaba acá se fue: era lo que impedía scrollear. Con el contador, los
+        cuatro tipos de pregunta y los tres modos, este diálogo mide 786 px —
+        más que los 768 de un portátil, y bastante más que los 720 de un
+        1920×1080 al 150%, donde "Examen Mixto" quedaba entero fuera de vista.
+
+        El header queda fijo (`shrink-0`) y scrollea sólo el cuerpo: el título y
+        el botón de volver tienen que seguir a la vista mientras se elige.
+      */}
+      <DialogContent className="flex max-w-md flex-col rounded-3xl border-2 p-0">
+        <DialogHeader className="shrink-0 px-6 pt-6 pb-2 text-left space-y-2">
           {onBack && (
             <Button
               type="button"
@@ -111,7 +121,9 @@ export function QuizModeDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 pb-6 space-y-3">
+        {/* `min-h-0` es imprescindible: sin eso un hijo flex no baja de su
+            altura de contenido y el `overflow-y-auto` nunca llega a activarse. */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 space-y-3">
           {showQuestionCountSelector && (
           <div className="rounded-2xl border-2 border-border/70 bg-muted/20 p-4 space-y-2">
             <p className="text-sm font-semibold text-foreground">Cantidad de preguntas</p>
