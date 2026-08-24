@@ -149,10 +149,23 @@ export const UNIDADES: UnidadSuperior[] = [
   },
   {
     eje: 'Unidad 5 — Funciones y Modelización Matemática',
+    // El programa de cátedra enuncia los siete tipos de función en un solo
+    // renglón. Acá van desglosados en un tema por tipo, y no es cosmética: el
+    // tema es la unidad de selección del alumno en /practicar y la unidad de
+    // seguimiento en `topic_mastery` (UNIQUE por user_id + subject + topic_id).
+    // Agrupados, "practicar funciones" mezclaba logaritmos con trigonometría y
+    // el dominio de los siete colapsaba en una sola fila de progreso.
+    // Desglosado en `scripts/desglosar-tipos-de-funcion-unidad-5.ts` (24/08/2026).
     temas: [
       'Concepto y representación de funciones.',
       'Dominio, imagen, crecimiento, decrecimiento, continuidad.',
-      'Tipos de funciones: polinómicas, racionales, irracionales, exponenciales, potenciales, logarítmicas y trigonométricas.',
+      'Funciones polinómicas',
+      'Funciones racionales',
+      'Funciones irracionales',
+      'Funciones exponenciales',
+      'Funciones potenciales',
+      'Funciones logarítmicas',
+      'Funciones trigonométricas',
       'Modelización de fenómenos y análisis de datos en sistemas.',
     ],
     contextoProfesional: {
