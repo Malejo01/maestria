@@ -34,12 +34,45 @@ export interface Topic {
  */
 export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric'
 
+/**
+ * De dónde salió el texto de esta pregunta.
+ *
+ * Se distingue por tres consumidores concretos, no por prolijidad:
+ *
+ *  1. `lib/qa/lint-questions.ts` mide la calidad de lo que GENERA el modelo. Si
+ *     el corpus mezcla texto reescrito por un docente, sus hallazgos dejan de
+ *     medir al modelo y pasan a medir una mezcla.
+ *  2. El loop de calidad de la FASE 3 quiere alimentar `education-context.ts`
+ *     con feedback real. "Esta pregunta un docente la tuvo que reescribir" es
+ *     la señal más fuerte que existe para eso, y se pierde si no se marca.
+ *  3. El docente que vuelve a un cuestionario tres semanas después quiere saber
+ *     qué ya revisó.
+ *
+ * Ausente = generada por IA y nunca tocada. Es lo que vale para todo lo escrito
+ * antes de esta distinción, y por eso el campo es opcional en vez de tener un
+ * default que obligaría a backfillear `teacher_quizzes.questions`.
+ */
+export type QuestionOrigin = 'ai' | 'ai_regenerada' | 'editada'
+
 interface BaseQuestion {
   id: string
   topic: string
   topicName: string
   question: string
   explanation: string
+  /** Ver QuestionOrigin. Ausente significa 'ai'. */
+  origin?: QuestionOrigin
+  /**
+   * Lo que el docente escribió al rechazar la pregunta anterior, cuando pidió
+   * regenerarla. Viaja al prompt de esa regeneración para que la nueva no
+   * repita el problema, y queda guardado para el loop de calidad.
+   *
+   * NO se mezcla con `pedagogyContext`: ese campo describe cómo da la materia
+   * el docente en general y viaja a TODAS las generaciones. "El enunciado era
+   * ambiguo" es sobre una pregunta puntual, y meterlo ahí lo ensuciaría para
+   * siempre.
+   */
+  rejectionNote?: string
 }
 
 export interface MultipleChoiceQuestion extends BaseQuestion {

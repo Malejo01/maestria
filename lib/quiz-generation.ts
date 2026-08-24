@@ -695,6 +695,12 @@ export interface QuizRequestParams {
    * tipo final lo decide `generateQuiz` una vez leído el currículum.
    */
   explicitQuestionTypes: QuestionType[]
+  /**
+   * Motivo por el que el docente rechazó la pregunta que se está reemplazando.
+   * Sólo lo manda la regeneración de UNA pregunta; es efímero y no se guarda en
+   * el programa. Ver el bloque que lo usa en generateQuiz.
+   */
+  rejectionNote?: string
 }
 
 export type ResolveQuizRequestResult =
@@ -870,6 +876,7 @@ export async function generateQuiz(
     carrera,
     difficulty,
     explicitQuestionTypes,
+    rejectionNote,
   } = params
 
   const topicsText = topics.map((t: { id: string; name: string }) => `- ${t.name}`).join('\n')
@@ -915,16 +922,34 @@ export async function generateQuiz(
   // student had seen in *previous* quizzes, so each batch was blind to what the
   // rest of this very quiz had already asked.
   const askedTexts: string[] = [...previousQuestionTexts]
+
+  /**
+   * Lo que el docente escribió al rechazar la pregunta que se está
+   * reemplazando. Va SEPARADO de `pedagogyContext`, que describe cómo da la
+   * materia en general y viaja a todas las generaciones: esto es sobre una
+   * pregunta puntual y se descarta apenas termina esta llamada.
+   */
+  const rejectionBlock =
+    typeof rejectionNote === 'string' && rejectionNote.trim().length > 0
+      ? `\n\nEL DOCENTE RECHAZÓ LA PREGUNTA ANTERIOR SOBRE ESTE TEMA. Motivo, en sus palabras:
+"${rejectionNote.trim()}"
+
+Generá una pregunta que NO tenga ese problema. El motivo describe qué corregir,
+no de qué tratar: el tema y el tipo de pregunta no cambian.`
+      : ''
+
   const buildPreviousNote = () => {
     if (askedTexts.length === 0) {
-      return previousQuestionIds && previousQuestionIds.length > 0 ? 'Genera preguntas diferentes a las anteriores.' : ''
+      const base =
+        previousQuestionIds && previousQuestionIds.length > 0 ? 'Genera preguntas diferentes a las anteriores.' : ''
+      return base + rejectionBlock
     }
     return `NO repitas ni reformules ninguna de estas preguntas (ya fueron usadas):
 ${askedTexts.map((question: string, index: number) => `${index + 1}. ${question}`).join('\n')}
 
 Una pregunta cuenta como repetida aunque cambies el tipo, el formato o la redacción,
 si se resuelve con la misma cuenta o evalúa el mismo caso puntual. Usá números o
-situaciones diferentes.`
+situaciones diferentes.${rejectionBlock}`
   }
 
   /** Signatures seen in THIS run — see numericSignature for why it is not global. */
