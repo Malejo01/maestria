@@ -97,9 +97,16 @@ Los 31 alumnos estaban registrados como **Secundario / 4to Año**. El sistema si
 
 Todo lo de la tanda está mergeado a `main` y desplegado. Queda esto, que sólo podés hacer vos:
 
-### 1. Correr la inscripción (bloquea a los 31 alumnos)
+### 1. ~~Correr la inscripción~~ — HECHO (24/08/2026)
 
-Es lo único de la tanda que no está en producción. Sin esto, los 31 **no están en ningún aula**.
+Medido contra producción el 24/08/2026: el script ya se corrió. Existe el programa **id 14** (Matemática · Superior · 1er Año · `created_from: 'curriculum'`, 7 unidades, creado el 24/08 a las 14:26), su fila en `subjects` (`teacher-14-matematica`) y el **aula id 2** ("Matemática — 1er Año Análisis de Sistemas", código `CRB6S9`), con **32 membresías activas**.
+
+Dos cosas que conviene mirar, no bloqueantes:
+
+- **32 y no 31.** El miembro 32 es la cuenta del propio docente (`lizarragamauroalejandro@gmail.com`), que no tiene intentos del 10/08 y por lo tanto no la inscribió el script — entró por el código. Cuenta como alumno en el roster y en `member_count`. Si molesta, se saca desde la pantalla del aula.
+- **El aula todavía no tiene ninguna asignación ni ningún intento** (`classroom_assignments` 0, `quiz_attempts.classroom_id = 2` 0). Los 31 están adentro pero todavía no hicieron nada ahí.
+
+El texto original de esta sección queda abajo como referencia del comando.
 
 ```bash
 npx tsx scripts/inscribir-diagnostico-2026-08-10.ts --docente=TU_EMAIL
@@ -147,7 +154,7 @@ No puedo autenticarme como alumno ni como docente, y el dev server del sandbox n
 - [x] **Reporte del diagnóstico para el docente** — `/teacher/diagnostico`. Aparte del reporte por aula, que filtra por `classroom_id` y no encuentra nada: los 84 intentos lo tienen en NULL.
 - [x] **Refresh del JWT sin cerrar sesión** — ver arriba.
 - [x] **FASE 0.5 commiteada** — el lint determinista, el fixture de calibración y la extracción de `lib/quiz-generation.ts` estaban **sin commitear en el worktree** mientras este documento ya los describía como hechos. Ahora están en el repo.
-- [ ] **Aula de Análisis de Sistemas + inscripción de los 31** — `scripts/inscribir-diagnostico-2026-08-10.ts`, dry-run verificado (31 filas, 0 duplicados). **Falta correrlo con `--apply --metodologia="..."`.** Único item de la tanda que no está en producción.
+- [x] **Aula de Análisis de Sistemas + inscripción de los 31** — `scripts/inscribir-diagnostico-2026-08-10.ts`, corrido con `--apply` el **24/08/2026**. Programa 14, aula 2 (código `CRB6S9`), 32 membresías activas (los 31 del diagnóstico + la cuenta del docente, que entró por código). Verificado contra producción el 24/08. Esta entrada decía "falta correrlo".
 
 ### Deuda que dejó el merge
 
