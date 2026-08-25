@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getViewer } from '@/lib/auth-session'
 import { ASSIGNMENT_STATE_LABEL, assignmentState, canStartAssignment } from '@/lib/classrooms'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,6 +98,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       },
     })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/student/assignments/[id]', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudo abrir el cuestionario', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

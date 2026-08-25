@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getViewer } from '@/lib/auth-session'
 import { isValidJoinCode, normalizeJoinCode } from '@/lib/classrooms'
+import { captureRouteFailure } from '@/lib/observability'
 import {
   GUEST_COOKIE_NAME,
   guestCookieOptions,
@@ -52,6 +53,9 @@ export async function GET(req: Request) {
       viewer: viewer ? { displayName: viewer.displayName, isGuest: viewer.isGuest } : null,
     })
   } catch (error) {
+    // Camino de invitado sin cuenta: si esto falla, el alumno no reporta nada
+    // — se va. Que por lo menos quede el evento.
+    captureRouteFailure(error, { endpoint: '/api/classrooms/join', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudo buscar el aula', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -158,6 +162,7 @@ export async function POST(req: Request) {
     response.cookies.set(GUEST_COOKIE_NAME, await signGuestToken(guestId), guestCookieOptions())
     return response
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/classrooms/join', operation: 'POST' })
     return NextResponse.json(
       { error: 'No se pudo entrar al aula', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

@@ -3,6 +3,7 @@ import { sql } from '@/lib/db'
 import { auth } from '@/auth'
 import { cookies } from 'next/headers'
 import { GUEST_COOKIE_NAME, verifyGuestToken } from '@/lib/guest-session'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -115,6 +116,9 @@ export async function POST() {
     response.cookies.delete(GUEST_COOKIE_NAME)
     return response
   } catch (error) {
+    // Si el claim falla a mitad de camino el progreso del invitado queda en el
+    // limbo y el alumno no tiene forma de contarlo: este evento es la única señal.
+    captureRouteFailure(error, { endpoint: '/api/student/guest/claim', operation: 'POST' })
     return NextResponse.json(
       { error: 'No se pudo transferir tu progreso', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

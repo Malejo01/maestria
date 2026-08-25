@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getViewer } from '@/lib/auth-session'
 import { assignmentState } from '@/lib/classrooms'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -117,6 +118,7 @@ export async function GET() {
 
     return NextResponse.json({ classrooms, viewer: { isGuest: viewer.isGuest, displayName: viewer.displayName } })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/student/classrooms', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudieron obtener tus aulas', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

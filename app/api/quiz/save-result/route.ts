@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { debugLog } from '@/lib/utils'
 import { getViewer } from '@/lib/auth-session'
 import { ASSIGNMENT_STATE_LABEL, assignmentState, canStartAssignment } from '@/lib/classrooms'
+import { captureRouteFailure } from '@/lib/observability'
 
 /**
  * Validates that this student may submit an attempt for an assigned quiz, and
@@ -286,9 +287,9 @@ export async function POST(req: Request) {
     })
 
   } catch (error) {
-    console.error('[v0] Error saving quiz result:', error)
-    console.error('[v0] Error details:', error instanceof Error ? error.message : String(error))
-    console.error('[v0] Error stack:', error instanceof Error ? error.stack : 'No stack')
+    // Un intento que no se guarda es trabajo del alumno perdido; llegaba a
+    // Sentry sólo por la integración de consola, sin tags para filtrar.
+    captureRouteFailure(error, { endpoint: '/api/quiz/save-result', operation: 'POST' })
     return NextResponse.json(
       { error: 'Error al guardar el resultado', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
