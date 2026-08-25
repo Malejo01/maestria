@@ -10,6 +10,16 @@ import { captureRouteFailure } from '@/lib/observability'
  * returns which attempt number it is. Re-checks the window server-side because
  * the client could have had the page open since before the deadline.
  */
+/** Forma del SELECT de abajo — DDL en scripts/015-classrooms.sql. */
+interface AssignmentContextRow {
+  id: number
+  classroom_id: number
+  opens_at: Date | null
+  due_at: Date | null
+  max_attempts: number | null
+  classroom_status: 'open' | 'closed'
+}
+
 async function resolveAssignmentContext(userId: string, assignmentId: number) {
   const rows = (await sql`
     SELECT a.id, a.classroom_id, a.opens_at, a.due_at, a.max_attempts, c.status AS classroom_status
@@ -18,7 +28,7 @@ async function resolveAssignmentContext(userId: string, assignmentId: number) {
     JOIN classroom_members m ON m.classroom_id = c.id AND m.user_id = ${userId} AND m.status = 'active'
     WHERE a.id = ${assignmentId}
     LIMIT 1
-  `) as Record<string, any>[]
+  `) as AssignmentContextRow[]
 
   if (rows.length === 0) return { error: 'No encontramos ese cuestionario en tus aulas.', status: 404 as const }
 

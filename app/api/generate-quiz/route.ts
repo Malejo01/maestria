@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
     await guard.finish(sumUsage(...usageParts))
     return Response.json({ questions: result.questions })
-  } catch (error: any) {
+  } catch (error) {
     // La fila queda en 'error' y sigue contando: si Gemini alcanzó a responder
     // antes de romperse, ese consumo ya se facturó.
     await guard.fail()
@@ -65,11 +65,12 @@ export async function POST(req: Request) {
       operation: 'generate_quiz',
     })
 
+    const err = error instanceof Error ? error : new Error(String(error))
     console.error('[POST] Final error:', {
-      message: error?.message,
-      name: error?.name,
-      cause: error?.cause,
-      stack: error?.stack?.substring(0, 500)
+      message: err.message,
+      name: err.name,
+      cause: err.cause,
+      stack: err.stack?.substring(0, 500)
     })
 
     // This used to answer 200 with buildLocalFallbackQuestions() — template
@@ -83,7 +84,7 @@ export async function POST(req: Request) {
       {
         questions: [],
         error: 'La IA no pudo generar el cuestionario en este momento. Volvé a intentarlo en unos instantes.',
-        details: error?.message || 'Error interno al generar el quiz',
+        details: err.message || 'Error interno al generar el quiz',
       },
       { status: 502 }
     )

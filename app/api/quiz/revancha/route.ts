@@ -143,7 +143,7 @@ OBJETIVO PEDAGÓGICO:
         }
       })
     }
-  } catch (error: any) {
+  } catch (error) {
     await markFailed?.()
     captureRouteFailure(error, {
       endpoint: '/api/quiz/revancha',
@@ -151,6 +151,7 @@ OBJETIVO PEDAGÓGICO:
       operation: 'generate_revancha',
     })
     console.error('[POST /api/quiz/revancha] Error:', error)
-    return Response.json({ error: error?.message || 'Error al generar pregunta de revancha' }, { status: 500 })
+    const message = error instanceof Error ? error.message : String(error)
+    return Response.json({ error: message || 'Error al generar pregunta de revancha' }, { status: 500 })
   }
 }
