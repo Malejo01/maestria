@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
-  ChevronRight, Loader2, AlertTriangle,
+  ChevronRight, Loader2,
   CheckSquare, Square, Minus, ArrowLeft, Settings2, Upload, FileText, GraduationCap,
 } from 'lucide-react'
+import { CargaFallida } from '@/components/carga-fallida'
+import { pedirJson } from '@/lib/pedir-json'
 import { MathBackground } from '@/components/math-background'
 import { NIVEL_OPTIONS, type Nivel } from '@/lib/nivel-options'
 import { QuestionTypeSelector } from '@/components/question-type-selector'
@@ -64,44 +66,6 @@ interface CurriculumSelectorProps {
    *  nivel/grado every session. Omit (or pass null) to start at 'nivel' as before. */
   initialNivel?: Nivel | null
   initialGrado?: string | null
-}
-
-/**
- * Estado de error de un paso de la cascada.
- *
- * Existe como componente y no como cuatro bloques repetidos porque el punto es
- * que los cuatro pasos se vean IGUAL de distintos al estado vacío. Mientras
- * "falló la consulta" y "no hay datos cargados" compartieron el mismo cartel
- * gris, una caída de `/api/curriculum/topics` se leyó durante nueve días como
- * "todavía no cargamos el temario".
- *
- * El detalle técnico se muestra en pantalla a propósito: es lo que el alumno
- * puede copiar y mandar, y es lo que convierte un reporte de "no anda" en uno
- * accionable.
- */
-function CargaFallida({
-  que,
-  detalle,
-  onReintentar,
-}: {
-  que: string
-  detalle: string
-  onReintentar: () => void
-}) {
-  return (
-    <div className="text-center py-12 space-y-3">
-      <AlertTriangle className="w-6 h-6 text-destructive mx-auto" />
-      <p className="text-sm font-semibold text-foreground">No pudimos cargar {que}.</p>
-      <p className="text-muted-foreground text-xs max-w-sm mx-auto">
-        No es que no haya nada cargado: falló la consulta. Probá de nuevo en unos instantes; si
-        sigue igual, avisá con este detalle.
-      </p>
-      <p className="text-[11px] font-mono text-muted-foreground break-words px-4">{detalle}</p>
-      <button onClick={onReintentar} className="text-sm font-semibold text-primary hover:underline">
-        Reintentar
-      </button>
-    </div>
-  )
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -192,40 +156,6 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
    * y lo que evita que una materia de una tecnicatura aparezca en 4to año.
    */
   const carreraParam = (c: string) => (c ? `&carrera=${encodeURIComponent(c)}` : '')
-
-  /**
-   * Un GET a la API del currículum que NO confunde "falló" con "vino vacío".
-   *
-   * Los cuatro pasos de la cascada consumían el body sin mirar `res.ok`, así que
-   * un 500 se pintaba como el estado vacío del paso. Con eso `/practicar` estuvo
-   * nueve días caído para todos los niveles —faltaba la migración 023 y la ruta
-   * de temas devolvía 500— y en pantalla decía "no hay temas cargados": nadie va
-   * a investigar algo que parece normal.
-   *
-   * El `details` del body viaja en el error a propósito: es el mensaje real del
-   * servidor, y perderlo es volver a no saber qué pasó.
-   */
-  async function pedirJson<T>(url: string): Promise<{ data: T } | { error: string }> {
-    try {
-      const res = await fetch(url)
-      const body = await res.json().catch(() => ({} as Record<string, unknown>))
-
-      if (!res.ok) {
-        const detalle =
-          typeof body?.details === 'string' && body.details
-            ? body.details
-            : typeof body?.error === 'string' && body.error
-              ? body.error
-              : `HTTP ${res.status}`
-        return { error: detalle }
-      }
-
-      return { data: body as T }
-    } catch (err) {
-      // Red caída o respuesta ilegible.
-      return { error: err instanceof Error ? err.message : 'No se pudo conectar' }
-    }
-  }
 
   const fetchCareers = async (n: Nivel) => {
     setLoadingData(true)
