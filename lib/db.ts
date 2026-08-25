@@ -32,86 +32,17 @@ export const sql = Object.assign(
   },
 ) as NeonQueryFunction<false, false>
 
-// Types for database operations
-export interface DbUser {
-  id: string
-  email: string
-  name: string | null
-  role: 'ALUMNO' | 'DOCENTE' | null
-  created_at: Date
-  updated_at: Date
-}
-
-export interface DbTopicMastery {
-  id: string
-  user_id: string
-  subject: string
-  topic_id: string
-  topic_name: string
-  max_score: number
-  attempts_count: number
-  last_attempt_at: Date
-}
-
-export interface DbQuizAttempt {
-  id: string
-  user_id: string
-  subject: string
-  mode: 'teorico' | 'practico' | 'mixto'
-  topics: string[]
-  total_questions: number
-  correct_answers: number
-  score: number
-  started_at: Date
-  completed_at: Date
-}
-
-export interface DbQuizAnswer {
-  id: string
-  quiz_attempt_id: string
-  question_id: string
-  question_text: string
-  options: string[]
-  selected_answer: number
-  correct_answer: number
-  is_correct: boolean
-  explanation: string
-  topic_name: string
-}
-
-export interface DbTeacherProgram {
-  id: number
-  user_id: string
-  subject_name: string
-  icon_name: string
-  color_name: string
-  pedagogy_profile: unknown
-  units: unknown
-  source_file_name: string | null
-  source_mime_type: string | null
-  source_file_size_bytes: number | null
-  source_expires_at: Date | null
-  nivel: 'Primario' | 'Secundario' | 'Superior' | null
-  grado: string | null
-  jurisdiccion: string | null
-  created_from: 'upload' | 'curriculum' | 'manual'
-  status: 'active' | 'archived'
-  created_at: Date
-  updated_at: Date
-}
-
-export interface DbTeacherQuiz {
-  id: number
-  user_id: string
-  teacher_program_id: number
-  title: string
-  subject_name: string
-  mode: 'teorico' | 'practico' | 'mixto'
-  status: 'saved' | 'pending_share'
-  selected_topics: unknown
-  question_count: number
-  questions: unknown
-  pedagogy_context: string | null
-  created_at: Date
-  updated_at: Date
-}
+/**
+ * Acá vivían seis interfaces `Db*` (users, topic_mastery, quiz_attempts,
+ * quiz_answers, teacher_programs, teacher_quizzes). Se borraron el 25/08/2026:
+ * no las importaba nadie y varias estaban desalineadas con el schema real
+ * (`DbTopicMastery.max_score` no existe — la columna es `highest_score`;
+ * `DbQuizAttempt` tipaba `id: string` contra un SERIAL, `score: number` cuando
+ * el driver devuelve los DECIMAL como string, y no conocía `incorrect_answers`,
+ * `passed` ni las columnas de aulas). Tipos equivocados sin uso son peores que
+ * ninguno: esperan que alguien los adopte de buena fe.
+ *
+ * La convención del repo es otra (ver deuda-tecnica.md §3a): cada query declara
+ * una interfaz con las columnas que realmente selecciona, junto al call site y
+ * con un comentario que apunta al `.sql` del DDL.
+ */
