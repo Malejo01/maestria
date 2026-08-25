@@ -1,6 +1,6 @@
 # MaestrIA — Roadmap
 
-Documento vivo. Última actualización: **24 de agosto de 2026**.
+Documento vivo. Última actualización: **25 de agosto de 2026**.
 
 ## Tesis de producto
 
@@ -155,6 +155,30 @@ Todo cerrado el 24/08:
    El "Ignored Build Step" de Vercel **no** es la alternativa barata: su semántica hace que un drift detectado se vea como un deploy *"Skipped"* — un fallo que se presenta como "no pasó nada", que es exactamente la enfermedad de este incidente.
 
 3. **Verificar `/practicar` con sesión real.** Todo lo verificable sin login está verificado: el handler de `/api/curriculum/topics`, invocado con la base de producción, devuelve **HTTP 200**, las 7 unidades, la Unidad 5 con sus 10 temas y las 7 mezclas. Lo que falta es la pantalla.
+
+---
+
+## 🛠 Tanda del 24-25/08 — revisión de cuestionarios y limpieza de silenciadores
+
+### Vista de revisión de cuestionarios (24/08, mergeado)
+
+- **Editar y regenerar pregunta por pregunta** (`components/teacher-quiz-review.tsx` + `/api/teacher/quizzes/[id]` PATCH + `/regenerate-question`). Regenerar **no guarda**: la ruta devuelve la pregunta nueva sin escribir, el docente compara lado a lado y decide; el único camino de escritura es el PATCH. El id de la pregunta vieja se conserva a propósito para no renumerar.
+- **Editar sin pisar lo que ya se rindió** — `getQuizImpact` (`lib/teacher-quizzes-server.ts`): el alumno no recibe copia de las preguntas (JOIN en vivo contra `teacher_quizzes.questions`), así que editar un cuestionario con intentos abre un diálogo de decisión (editar en el lugar vs. copia). Asignado sin intentos NO pide confirmación: obligar a confirmar ahí enseña a confirmar sin leer.
+- **Diálogo alto scrolleable** (`components/ui/dialog.tsx`) — un diálogo más alto que la pantalla scrollea en vez de salirse.
+
+### El bug de JSONB y su lección (24/08)
+
+Postgres reordena las claves de `jsonb` (por longitud y después byte a byte). Mordió **dos veces el mismo día en lugares que no se conocen entre sí**: el dry-run del seeder reportó "CAMBIA" en las 7 unidades sin cambio real, y el cartel "Cambios sin guardar" de la vista de revisión no se apagaba nunca después de guardar — comparaba con `JSON.stringify` lo local contra lo que devolvía el `RETURNING`. Un aviso que miente una vez deja de leerse.
+
+La salida es `lib/stable-json.ts` (`stableStringify` / `sameJsonValue`), módulo con nombre propio porque va a volver a aparecer. **La lección de test:** el test viejo pasaba porque su mock devolvía las claves en el mismo orden que mandó el cliente — exactamente lo que el código esperaba, no lo que devuelve el sistema real. El fixture de regresión (`comoLoDevuelvePostgres`) devuelve las claves desordenadas a propósito.
+
+### Tanda autónoma del 25/08 (esta rama, sin tocar producción)
+
+- [x] **Lint de calidad re-verificado**: las 1.680 respuestas del 10/08 dan **88 hallazgos, idénticos al baseline** — reglas estables, precisión intacta. El cuestionario nuevo (Matemática · Práctico · 24/8) quedó **pendiente**: el clasificador de permisos bloqueó la lectura de producción en esta sesión (por los dos caminos: script y MCP). El barrido quedó listo en `scripts/qa/tmp-lint-sweep.ts` (sin commitear); correrlo es: `npx tsx scripts/qa/tmp-lint-sweep.ts --env-file=../../../.env.local --listar-quizzes` y después `--quiz=<id>`.
+- [x] **Silenciadores de deuda-tecnica.md §6 cerrados** — las **20 rutas en silencio total** reportan con `captureRouteFailure` (alumno primero, con tests que afirman sobre la llamada), y los `fetch` sin `res.ok` del camino de alumno usan el helper compartido nuevo `lib/pedir-json.ts` + `components/carga-fallida.tsx` (extraídos del selector). Quedan 3 call sites de docente, anotados en §6a.
+- [x] **`\uXXXX` crudos: reproducido y arreglado** — ver el ítem del backlog, que queda cerrado.
+- [x] **Tipos `Db*` de `lib/db.ts` borrados** (los seis, nadie los importaba, varios mentían contra el schema) y **4 `any` del motor de quiz** cerrados fuera de los 17 intencionales del módulo extraído.
+- [x] **Barrido de tests con mocks que mienten** — inventario en deuda-tecnica.md §8; los tres más peligrosos, cerrados.
 
 ---
 
@@ -394,10 +418,10 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
 - [x] Limpieza de ramas — de **16** locales a 9, y de 4 worktrees a 2. Borradas las 5 `worktree-agent-*` y las 3 `v0/*`, las ocho verificadas como ancestros de `main` antes de tocar nada. `fix/flujo-diagnostico-primero` se conserva: es la única sin mergear. (El conteo viejo decía ~14; eran 16.)
 - [x] **Sacar el logo de v0** — los cinco íconos y `metadata.generator: 'v0.app'` afuera. En su lugar hay un arte **provisorio**: una M de trazo sobre cuadrado redondeado en el verde de marca `#43613C`, con el mismo esquema claro/oscuro que tenía el set anterior. `generator` se elimina del objeto en vez de reescribirse — es opcional y no hay nada que declarar.
   - [ ] **Falta el arte definitivo.** Lo provisorio sirve para no seguir mostrando la marca de otro producto, no para ser la identidad. Ver la nota de abajo sobre qué hace falta.
-- [ ] **10 preguntas del 10/08 llegaron a un alumno con el texto corrupto.** Detectado el 16/08/2026 al medir reglas de lint nuevas. Los ids 1430–1448 (un solo intento, todas sus respuestas) tienen el contenido con escapes `\uXXXX` sin decodificar: el alumno leyó `La circunferencia se define como el lugar geométrico…`, enunciado, opciones y explicación por igual.
-  - El lint **ya lo detecta** (regla nueva, `critical`), pero eso es el detector, no el arreglo. La causa está en la cadena de reparación de JSON de `lib/quiz-generation.ts`: `repairQuizJson` duplica backslashes con `candidate.replace(/\\(?!["\\/bfnrtu])/g, '\\\\')` para arreglar escapes rotos, y en algún camino los `\u` legítimos terminan igual doblados.
-  - **No está reproducido todavía.** Hay que encontrar qué entrada lo dispara antes de tocar la regex — es la función más delicada del módulo y tiene 29 tests de caracterización encima que hay que respetar.
-  - Prioridad: es un defecto que **ya le llegó a un alumno real**, no una hipótesis.
+- [x] ~~**10 preguntas del 10/08 llegaron a un alumno con el texto corrupto.**~~ **Reproducido y arreglado el 25/08/2026.** Los ids 1430–1448 tenían escapes `\uXXXX` sin decodificar: el alumno leyó `La circunferencia…` en enunciado, opciones y explicación.
+  - **La reproducción exoneró a la sospechosa.** Este ítem culpaba a la regex de `repairQuizJson` que duplica backslashes — y esa regex **nunca toca `\u`**: está en su lookahead de exclusión. El disparador real es el modelo emitiendo `par\\u00e1bola` con doble backslash (el mismo hábito con el que escribe `\\frac` para que el JSON signifique `\frac`, aplicado donde no corresponde). Eso es **JSON válido** cuyo valor es el texto literal: ni la reparación ni el parser ven nada raro, así que sólo se puede arreglar después de parsear.
+  - El fix: `decodeStrandedUnicodeEscapes` en la normalización post-parse (las tres salidas del módulo, `acceptedAnswers` incluido), acotado a la mitad alta de Latin-1 con el mismo recorte que la regla del lint y por la misma razón. Tres tests de regresión verificados en rojo sin el fix; los 29 de caracterización, intactos.
+  - La regex delicada quedó sin tocar, que era la restricción.
 - [x] ~~**El tooling entra en los worktrees anidados de `.claude/`.**~~ Resuelto el 16/08/2026 con `exclude: ['**/.claude/**']` en vitest y el patrón equivalente en ESLint. Medido antes y después: vitest pasó de **67 archivos vistos (32 del worktree) a 35, cero del worktree**; ESLint, de decenas de miles de warnings sobre chunks compilados a **75 warnings, 0 errores**, que es el número real del repo. En vitest hay que listar `node_modules`, `dist` y `.next` explícitamente porque declarar `exclude` **reemplaza** los defaults en vez de sumarse. Historia original: Ni `vitest.config.ts` ni la config de ESLint excluyen `.claude/`, así que con un worktree vivo en `.claude/worktrees/` las dos herramientas lo escanean. Medido el 16/08/2026:
   - `npm test` levanta también los tests del worktree anidado. **Re-medido el 16/08 más tarde: 67 archivos vistos desde la raíz, 32 de ellos del worktree** — o sea que hoy se corre casi todo dos veces. La entrada decía "6 archivos en rojo"; el número creció con cada test que se sumó al worktree.
   - `npm run lint` entra al `.next/` del worktree anidado y reporta **34.641 warnings** sobre chunks compilados. El número real del repo es **71 (0 errores)**.

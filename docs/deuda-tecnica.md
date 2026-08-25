@@ -71,13 +71,15 @@ Tres decisiones que vale la pena recordar, porque no son obvias:
   `DEFAULT NOW()`, sin `NOT NULL`. Los call sites usan `?? 0`, que conserva exactamente el
   comportamiento previo (`new Date(null)` ya era la época).
 
-### Pendiente menor relacionado
+### ~~Pendiente menor relacionado~~ — resuelto el 25/08/2026
 
-`lib/db.ts` declara `DbQuizAttempt`, `DbTeacherQuiz` y `DbTopicMastery`, y **no los importa
-nadie**. Además no coinciden con el schema: `DbQuizAttempt.id` dice `string` cuando la
-columna es `SERIAL`, le faltan `incorrect_answers` y `passed`, y tipa `score` como `number`.
-Por eso no se reutilizaron acá — habría sido adoptar tipos ya equivocados. Conviene
-borrarlos o corregirlos, pero al no estar en uso no rompen nada hoy.
+`lib/db.ts` declaraba seis interfaces `Db*` que **no importaba nadie**, varias desalineadas
+con el schema (`DbQuizAttempt.id` decía `string` contra un `SERIAL`, le faltaban
+`incorrect_answers` y `passed`, tipaba `score` como `number` cuando el driver devuelve los
+`DECIMAL` como string; `DbTopicMastery.max_score` no existe — la columna es `highest_score`).
+**Se borraron las seis** en vez de corregirlas: la convención vigente es una interfaz por
+query en el call site, y un tipo equivocado sin uso espera que alguien lo adopte de buena fe.
+Queda un comentario en `lib/db.ts` diciendo por qué no están.
 
 ---
 
@@ -736,35 +738,42 @@ archivos de `app/`, `components/` y `hooks/`, y las 40 rutas de `app/api/`.
 
 ### 6a. `fetch` de cliente que consumen el body sin mirar `res.ok`
 
-**15 llamadas en 10 archivos** (eran 18 en 11 antes de cerrar las cuatro del
-selector de currículum). Todas hacen `.then(res => res.json())` o equivalente: un
-500 queda indistinguible de una lista vacía.
+**Actualizado el 25/08/2026: quedan 3 llamadas, las tres del lado docente.**
+El camino de alumno está cerrado entero. `pedirJson` y `CargaFallida` ya no son
+locales del selector: viven en [lib/pedir-json.ts](../lib/pedir-json.ts) y
+[components/carga-fallida.tsx](../components/carga-fallida.tsx) (el helper
+compartido que pedía §6c), y el arreglo nuevo es importar, no reescribir.
 
-| Archivo | # |
+Cerradas el 25/08 (además de las cuatro del selector, que ya estaban):
+
+| Archivo | Qué distingue ahora |
 |---|---|
-| `app/(app)/history/page.tsx` | 4 |
-| `app/(app)/aulas/page.tsx` | 2 |
-| `app/(app)/page.tsx` | 2 |
-| `app/(app)/tips/page.tsx` | 1 |
-| `components/diagnostic-report-card.tsx` | 1 |
-| `components/navbar.tsx` | 1 |
-| `components/onboarding-screen.tsx` | 1 |
-| `components/share-quiz-dialog.tsx` | 1 |
-| `components/teacher-classrooms.tsx` | 1 |
-| `components/teacher-subject-wizard.tsx` | 1 |
+| `components/onboarding-screen.tsx` | el más caro: un 500 en grades decía "no hay años para tu nivel" a un alumno nuevo. `CargaFallida` con reintento. |
+| `app/(app)/aulas/page.tsx` | "falló la consulta" ≠ "no estás en ninguna aula" |
+| `app/(app)/history/page.tsx` | historial fallido ≠ vacío; el detalle de intento ya no guarda `[]` ante un 500; `explain-error` y `subjects/meta` con `res.ok` |
+| `app/(app)/tips/page.tsx` | cofre vacío ≠ consulta caída |
+| `components/diagnostic-report-card.tsx` | "no rendiste" (bloque oculto) ≠ "falló la consulta" (cartel) |
+| `app/(app)/page.tsx`, `components/navbar.tsx` | guards de `res.ok`: el default es aceptable, pero el fallo cae al catch y no se parsea el body del error como dato |
 
-**Ya cerrado:** las cuatro de `components/curriculum-selector.tsx`
-(`fetchCareers`, `fetchGrades`, `fetchSubjects`, `fetchTopics`), vía el helper
-`pedirJson` y el componente `CargaFallida`. Ese es el patrón a copiar.
+**Las 3 que quedan** (lado docente, que sí reporta cuando algo no anda):
+`components/share-quiz-dialog.tsx:83`, `components/teacher-classrooms.tsx:158`
+y el `useCurriculumLookup` de `components/teacher-subject-wizard.tsx:138`.
+No se cerraron con calzador: piden enhebrar estado de error por componentes
+grandes (el wizard tiene 1200 líneas) y el retorno es menor.
 
-**El más caro de los que quedan** es `components/onboarding-screen.tsx:56`:
-consulta `/api/curriculum/grades` y es lo primero que ve un alumno nuevo. Si
-falla, el onboarding se ve como "no hay años para tu nivel".
+### 6b. Route handlers cuyo `catch` no reporta — **CERRADO el 25/08/2026**
 
-### 6b. Route handlers cuyo `catch` no reporta
+Las **20 rutas en silencio total** reportan ahora con `captureRouteFailure`
+(tags `endpoint` + `operation`), en tres tandas por área: las 6 de alumno
+primero (`classrooms/join` GET y POST, `student/*`, `quiz/save-result` — que
+además pasó de sus tres `console.error` sin tags a la captura con tags), las 2
+compartidas (`user/profile`, `subjects/meta`) y las 13 de docente. Las de
+alumno tienen test propio
+([tests/student-routes-report-failures.test.ts](../tests/student-routes-report-failures.test.ts)),
+mismo contrato que el de curriculum: se afirma sobre la **llamada** al capture,
+no sobre el status.
 
-**38 de 40 rutas tienen `catch`.** Separadas por cuánta señal dan, que es la
-distinción que importa:
+El inventario original, para referencia:
 
 | | # | Qué pasa cuando falla |
 |---|---|---|
@@ -782,7 +791,7 @@ nueve días.
 que afirma sobre la **llamada** a `captureRouteFailure` y no sobre el status — el
 500 ya se devolvía y no alcanzó.
 
-Las 20 en silencio total:
+Las 20 que estaban en silencio total (todas cerradas el 25/08):
 
 ```
 app/api/classrooms/join/route.ts
@@ -807,20 +816,17 @@ app/api/teacher/tour/route.ts
 app/api/user/profile/route.ts
 ```
 
-**Prioridad sugerida cuando se ataque:** las de `student/*` y `classrooms/join`
-primero. Son las que toca un alumno —que no va a reportar nada, sólo se va— y
-las únicas del grupo que un invitado sin cuenta puede ejercitar.
+La prioridad con la que se cerraron fue la que decía este párrafo: las de
+`student/*` y `classrooms/join` primero — las toca un alumno, que no reporta
+nada, sólo se va — y son las únicas del grupo que un invitado sin cuenta puede
+ejercitar. Por eso son también las únicas con test propio.
 
 ### 6c. Lo que haría falta para que no vuelva a crecer
 
-Una regla de ESLint que exija mirar `res.ok` antes de consumir el body no existe
-lista; habría que escribirla. Más barato y probablemente suficiente: que
-`lib/observability.ts` exporte un `fetchJson` cliente, y revisar en code review
-que ningún `fetch` nuevo lo esquive.
-
-No se ataca ahora **por decisión explícita** (24/08/2026): se cerró la pantalla
-que ya había fallado y se dejó el resto medido, para que la próxima vez se
-discuta sobre números y no sobre impresiones.
+**Hecho en su versión barata el 25/08/2026:** el helper compartido existe
+([lib/pedir-json.ts](../lib/pedir-json.ts)) y todo el camino de alumno lo usa.
+Lo que queda es de code review: que ningún `fetch` nuevo lo esquive. La regla
+de ESLint a medida sigue sin escribirse y probablemente no haga falta.
 
 ---
 
@@ -887,3 +893,51 @@ responde con seguridad a una pregunta que no sabe contestar.
 > `topic_mastery` al absorber un invitado en una cuenta, con `GREATEST` sobre
 > `highest_score` y suma de `attempts_count`. Cualquiera de las dos salidas
 > tiene que pasar por ahí.
+
+---
+
+## 8. Tests que pasan con el bug puesto — barrido del 25/08/2026
+
+Buscado a raíz del mock de JSONB del 24/08: tests que verifican comportamiento
+contra un mock que devuelve **exactamente lo que el código espera**, en vez de
+lo que devolvería el sistema real. El veredicto general es mejor de lo
+esperado — los incidentes de agosto ya endurecieron casi todo (los agregados
+van con `::int`, los `DECIMAL` se envuelven en `Number()`, los tests de
+grade-short-answer cubren truncamiento y reintento, los de curriculum y
+pedagogy afirman sobre la llamada a Sentry). Lo que quedó:
+
+### Cerrado en este barrido (los 3 más peligrosos)
+
+1. **La suite de caracterización de generate-quiz pasaba con la corrupción de
+   `\uXXXX` puesta** — todos sus mocks devolvían texto ya limpio. Era el más
+   peligroso porque el bug **ya le llegó a un alumno real** (ids 1430-1448).
+   Reproducido, arreglado (`decodeStrandedUnicodeEscapes`) y fijado con tres
+   tests de regresión verificados en rojo sin el fix. La reproducción además
+   exoneró a la regex de `repairQuizJson` que el backlog señalaba: nunca toca
+   `\u`; el disparador es el modelo emitiendo doble backslash.
+2. **El flujo de regenerar pregunta no tenía ningún test** y es un contrato
+   cliente-servidor nuevo (24/08) con JSONB en el medio. Los dos tests nuevos
+   usan la forma REAL de las respuestas de la ruta (`{question}` con id
+   conservado y `origin: ai_regenerada`; el 502 con `{question: null, error}`)
+   y fijan que regenerar NO guarda.
+3. **Toda la suite de generate-quiz mockeaba `usage: {}`** — el caso degradado,
+   no el real — así que un error en la suma de tokens (que es lo que factura)
+   dejaba la suite en verde. Test nuevo con la forma real del SDK que afirma la
+   suma de las dos tandas del modo mixto.
+
+### Inventariado y aceptado (no son mocks mentirosos, pero conviene saberlo)
+
+- **`tests/middleware-matcher.test.ts` es léxico**: verifica el patrón
+  declarado en `proxy.ts`, no el runtime de Auth.js. Pasa con el runtime roto.
+  Ya estaba documentado acá (§3b) y la salida es el smoke test manual
+  pendiente, no un unit test.
+- **`tests/deployment-env-updated-at.test.ts` es léxico por diseño** — mismo
+  enfoque que `migrations.test.ts`, decisión registrada en el roadmap.
+- **Los `vi.mock('@/lib/db', () => ({ sql: vi.fn() }))`** (5 archivos) exponen
+  un `sql` invocable sin `.query`. Hoy es fiel al uso de esas rutas, pero un
+  test futuro sobre código que use `sql.query` (p. ej.
+  `lib/diagnostic-report-server.ts`, hoy sin tests) tiene que mockear también
+  esa forma — el bug histórico de `lib/db.ts` era exactamente `sql.query`
+  tipando bien y siendo `undefined` en runtime.
+- **`lib/teacher-quizzes-server.test.ts`** mockea filas con numbers y es
+  correcto: la query castea `::int` y el código envuelve en `Number()` igual.
