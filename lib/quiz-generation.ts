@@ -217,8 +217,32 @@ export const repairQuizJson: RepairTextFunction = async ({ text }) => {
   return candidate
 }
 
+/**
+ * Escapes `\uXXXX` que llegaron como TEXTO al alumno (ids 1430-1448 del 10/08:
+ * un intento entero leyó "parábola").
+ *
+ * Reproducido el 25/08/2026: el modelo emite `par\\u00e1bola` — doble
+ * backslash, el mismo hábito con el que escribe `\\frac` para que el JSON
+ * signifique `\frac`, aplicado donde no corresponde. Eso es JSON VÁLIDO cuyo
+ * valor es el texto literal `parábola`, así que ni `repairQuizJson` ni el
+ * parser tienen nada que arreglar: la regex de reparación (que la nota del
+ * backlog señalaba como sospechosa) nunca toca `\u` — está en su lookahead de
+ * exclusión — y el parse sale bien. El defecto sólo se ve acá, después de
+ * parsear.
+ *
+ * Acotado a la mitad ALTA de Latin-1 (``-`ÿ`), el mismo recorte que
+ * la regla del lint (lib/qa/lint-questions.ts) y por la misma razón: ahí viven
+ * las tildes y los `¿¡` del castellano, y un `A` literal puede ser el tema
+ * legítimo de una pregunta de sistemas sobre codificación.
+ */
+function decodeStrandedUnicodeEscapes(text: string): string {
+  return text.replace(/\\u00([89a-fA-F][0-9a-fA-F])/g, (_match, hex: string) =>
+    String.fromCharCode(parseInt(hex, 16))
+  )
+}
+
 function normalizeLogicalNotation(text: string): string {
-  return text
+  return decodeStrandedUnicodeEscapes(text)
     .replace(/\\leftrightarrow/g, '↔')
     .replace(/\\rightarrow/g, '→')
     .replace(/\\wedge/g, '∧')
@@ -235,6 +259,16 @@ function normalizeQuestionSetLogicalNotation(questions: any[]) {
     explanation: normalizeLogicalNotation(String(question.explanation || '')),
     ...(Array.isArray(question.options)
       ? { options: question.options.map((option: unknown) => normalizeLogicalNotation(String(option))) }
+      : {}),
+    // Sólo la decodificación, no la notación lógica: acá el texto es lo que se
+    // compara contra lo que tipea el alumno, y `á` varado ahí hace
+    // incorregible la pregunta igual que en el enunciado.
+    ...(Array.isArray(question.acceptedAnswers)
+      ? {
+          acceptedAnswers: question.acceptedAnswers.map((answer: unknown) =>
+            decodeStrandedUnicodeEscapes(String(answer))
+          ),
+        }
       : {}),
   }))
 }

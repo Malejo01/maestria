@@ -487,3 +487,65 @@ describe('POST — pedagogyContext', () => {
     expect(system).not.toContain('Superior')
   })
 })
+
+/**
+ * Regresión de los ids 1430-1448 del 10/08: un intento entero llegó al alumno
+ * con los escapes `\uXXXX` sin decodificar ("parábola" como texto).
+ *
+ * Reproducido el 25/08/2026: el modelo emite `par\u00e1bola` — doble
+ * backslash, el mismo hábito con el que escribe `\frac` — que es JSON válido
+ * cuyo VALOR es el texto literal `parábola`. Ni la reparación ni el parser
+ * ven nada raro; sólo se puede arreglar después de parsear. Estos tests fijan
+ * esa decodificación, que era el hueco por el que la suite entera pasaba con el
+ * bug puesto: todos los mocks devolvían texto ya limpio, que es lo que el
+ * código esperaba y no lo que el sistema real produce.
+ */
+describe('POST — escapes unicode varados en el texto', () => {
+  it('decodifica los escapes de la mitad alta de Latin-1 en enunciado, opciones y explicación', async () => {
+    const [corrupta] = questions(1)
+    corrupta.question = 'La par\\u00e1bola, \\u00bfqu\\u00e9 representa?'
+    corrupta.explanation = 'La par\\u00e1bola es una c\\u00f3nica.'
+    corrupta.options = ['par\\u00e1bola', 'elipse', 'hip\\u00e9rbola', 'recta']
+
+    generateObject.mockResolvedValue({ object: { questions: [corrupta] }, usage: {} })
+
+    const response = await POST(request({ questionCount: 1 }))
+    const { questions: result } = await response.json()
+
+    expect(result[0].question).toBe('La parábola, ¿qué representa?')
+    expect(result[0].explanation).toBe('La parábola es una cónica.')
+    expect(result[0].options).toContain('parábola')
+    expect(result[0].options).toContain('hipérbola')
+  })
+
+  it('NO toca un escape de la mitad ASCII: puede ser el tema de la pregunta', async () => {
+    const [pregunta] = questions(1)
+    pregunta.question = 'En Unicode, \\u0041 representa la letra A. ¿Verdadero?'
+
+    generateObject.mockResolvedValue({ object: { questions: [pregunta] }, usage: {} })
+
+    const response = await POST(request({ questionCount: 1 }))
+    const { questions: result } = await response.json()
+
+    expect(result[0].question).toContain('\\u0041')
+  })
+
+  it('decodifica también acceptedAnswers, donde el escape varado hace incorregible la pregunta', async () => {
+    const corrupta = {
+      id: 'gen-sa',
+      topic: 'algebra',
+      topicName: 'Álgebra',
+      question: '¿Cómo se llama la curva de una función cuadrática?',
+      explanation: 'Es la parábola.',
+      type: 'short_answer' as const,
+      acceptedAnswers: ['par\\u00e1bola', 'parabola'],
+    }
+
+    generateObject.mockResolvedValue({ object: { questions: [corrupta] }, usage: {} })
+
+    const response = await POST(request({ questionCount: 1, questionTypes: ['short_answer'] }))
+    const { questions: result } = await response.json()
+
+    expect(result[0].acceptedAnswers).toContain('parábola')
+  })
+})
