@@ -549,3 +549,34 @@ describe('POST — escapes unicode varados en el texto', () => {
     expect(result[0].acceptedAnswers).toContain('parábola')
   })
 })
+
+/**
+ * La contabilidad de tokens con la forma REAL del SDK. Todos los demás mocks
+ * de esta suite pasan `usage: {}` — que es exactamente lo que el código espera
+ * como caso degradado, no lo que devuelve el sistema real. Con eso, un error en
+ * la suma (los handlers hacen hasta dos llamadas en mixto y el costo tiene que
+ * sumarlas todas) dejaría la facturación mal y la suite en verde.
+ */
+describe('POST — usage con la forma real del SDK', () => {
+  it('cierra el guard con la suma de tokens de las dos tandas del modo mixto', async () => {
+    generateObject
+      .mockResolvedValueOnce({
+        object: { questions: questions(2, 21) },
+        usage: { inputTokens: 1200, outputTokens: 800, totalTokens: 2000 },
+      })
+      .mockResolvedValueOnce({
+        object: { questions: questions(2, 22) },
+        usage: { inputTokens: 1100, outputTokens: 700, totalTokens: 1800 },
+      })
+
+    const response = await POST(request({ mode: 'mixto', questionCount: 4 }))
+
+    expect(response.status).toBe(200)
+    expect(guardFinish).toHaveBeenCalledTimes(1)
+    expect(guardFinish).toHaveBeenCalledWith({
+      inputTokens: 2300,
+      outputTokens: 1500,
+      totalTokens: 3800,
+    })
+  })
+})
