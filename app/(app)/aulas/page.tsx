@@ -13,6 +13,8 @@ import { ASSIGNMENT_STATE_LABEL, isValidJoinCode, normalizeJoinCode } from '@/li
 import { SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
 import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import { CalendarClock, KeyRound, Loader2, LogIn, PlayCircle, Users } from 'lucide-react'
+import { CargaFallida } from '@/components/carga-fallida'
+import { pedirJson } from '@/lib/pedir-json'
 import type { AssignmentState, StudentClassroom, Subject, SubjectColorName, SubjectIconName } from '@/lib/types'
 
 const STATE_BADGE_VARIANT: Record<AssignmentState, 'default' | 'secondary' | 'outline' | 'destructive'> = {
@@ -55,6 +57,7 @@ export default function MisAulasPage() {
   const [classrooms, setClassrooms] = useState<StudentClassroom[]>([])
   const [viewer, setViewer] = useState<{ isGuest: boolean; displayName: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<number | null>(null)
   const [joinCode, setJoinCode] = useState('')
   const [isJoining, setIsJoining] = useState(false)
@@ -63,18 +66,23 @@ export default function MisAulasPage() {
 
   const load = useCallback(async () => {
     setIsLoading(true)
-    try {
-      const response = await fetch('/api/student/classrooms')
-      const data = await response.json()
-      const list: StudentClassroom[] = Array.isArray(data.classrooms) ? data.classrooms : []
-      setClassrooms(list)
-      setViewer(data.viewer ?? null)
-      setActiveId((current) => current ?? (list.length === 1 ? list[0].id : null))
-    } catch {
+    setLoadError(null)
+    // "Falló la consulta" y "no estás en ninguna aula" tienen que verse
+    // distintos: el catch viejo pintaba el 500 como lista vacía (§6a).
+    const res = await pedirJson<{
+      classrooms?: StudentClassroom[]
+      viewer?: { isGuest: boolean; displayName: string } | null
+    }>('/api/student/classrooms')
+    if ('error' in res) {
       setClassrooms([])
-    } finally {
-      setIsLoading(false)
+      setLoadError(res.error)
+    } else {
+      const list: StudentClassroom[] = Array.isArray(res.data.classrooms) ? res.data.classrooms : []
+      setClassrooms(list)
+      setViewer(res.data.viewer ?? null)
+      setActiveId((current) => current ?? (list.length === 1 ? list[0].id : null))
     }
+    setIsLoading(false)
   }, [])
 
   useEffect(() => {
@@ -242,7 +250,13 @@ export default function MisAulasPage() {
         </p>
       )}
 
-      {!isLoading && classrooms.length === 0 && (
+      {!isLoading && loadError && (
+        <Card className="rounded-2xl">
+          <CargaFallida que="tus aulas" detalle={loadError} onReintentar={load} />
+        </Card>
+      )}
+
+      {!isLoading && !loadError && classrooms.length === 0 && (
         <Card className="p-6 rounded-2xl text-center space-y-2">
           <p className="font-semibold">Todavía no estás en ninguna aula</p>
           <p className="text-sm text-muted-foreground">

@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LaTeXRenderer } from '@/components/latex-renderer'
 import { WeakPointsSection } from '@/components/weak-points-section'
 import { DiagnosticReportCard } from '@/components/diagnostic-report-card'
+import { CargaFallida } from '@/components/carga-fallida'
+import { pedirJson } from '@/lib/pedir-json'
 import { DIAGNOSTIC_DATE } from '@/lib/diagnostic-report'
 import { useAppStore } from '@/lib/store'
 import {
@@ -106,6 +108,7 @@ function HistoryPageContent() {
   const [attempts, setAttempts] = useState<QuizAttempt[]>([])
   const [mastery, setMastery] = useState<TopicMastery[]>([])
   const [loading, setLoading] = useState(true)
+  const [historyError, setHistoryError] = useState<string | null>(null)
   const [expandedAttempt, setExpandedAttempt] = useState<string | null>(null)
   const [attemptDetails, setAttemptDetails] = useState<Record<string, AttemptAnswer[]>>({})
   const [loadingDetails, setLoadingDetails] = useState<string | null>(null)
@@ -121,16 +124,18 @@ function HistoryPageContent() {
     if (!isLoaded || !isSignedIn) return
 
     const fetchHistory = async () => {
-      try {
-        const response = await fetch('/api/quiz/history')
-        const data = await response.json()
-        setAttempts(data.attempts || [])
-        setMastery(data.mastery || [])
-      } catch (error) {
-        console.error('Error fetching history:', error)
-      } finally {
-        setLoading(false)
+      setHistoryError(null)
+      // Un 500 acá se pintaba como historial vacío (§6a de deuda-tecnica.md).
+      const res = await pedirJson<{ attempts?: QuizAttempt[]; mastery?: TopicMastery[] }>(
+        '/api/quiz/history'
+      )
+      if ('error' in res) {
+        setHistoryError(res.error)
+      } else {
+        setAttempts(res.data.attempts || [])
+        setMastery(res.data.mastery || [])
       }
+      setLoading(false)
     }
 
     fetchHistory()
@@ -149,7 +154,10 @@ function HistoryPageContent() {
     if (pending.length === 0) return
 
     fetch(`/api/subjects/meta?names=${encodeURIComponent(pending.join(','))}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
       .then((data) => {
         if (data.subjects) {
           setSubjectMeta((prev) => ({ ...prev, ...data.subjects }))
@@ -218,6 +226,9 @@ function HistoryPageContent() {
     setLoadingDetails(attemptId)
     try {
       const response = await fetch(`/api/quiz/attempt/${attemptId}`)
+      // Sin esto un 500 guardaba `[]` y el bloque quedaba mudo; con el throw se
+      // cae al mensaje honesto de "No se pudieron cargar los detalles".
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
       const data = await response.json()
       setAttemptDetails(prev => ({ ...prev, [attemptId]: data.answers || [] }))
     } catch (error) {
@@ -245,6 +256,7 @@ function HistoryPageContent() {
           topic: answer.topic_name
         })
       })
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
       const data = await response.json()
       setExplanations(prev => ({ ...prev, [key]: data.explanation }))
     } catch {
@@ -327,6 +339,12 @@ function HistoryPageContent() {
             <div className="flex items-center justify-center py-24">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
+          ) : historyError ? (
+            <CargaFallida
+              que="tu historial"
+              detalle={historyError}
+              onReintentar={() => window.location.reload()}
+            />
           ) : (
             <>
               {/* Arranca abierto sólo mientras el diagnóstico sea lo último que

@@ -56,7 +56,12 @@ export function Navbar() {
     let isMounted = true
 
     fetch('/api/student/classrooms')
-      .then((res) => res.json())
+      .then((res) => {
+        // Chip decorativo: ante un 500 no se muestra nada, pero que sea por el
+        // catch y no por parsear el body del error como si fuera el dato.
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
       .then((data) => {
         if (isMounted && data?.viewer?.isGuest) setGuestName(data.viewer.displayName || 'Invitado')
       })

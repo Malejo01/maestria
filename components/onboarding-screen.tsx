@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { GraduationCap, BookOpen, Loader2, ChevronRight, ArrowLeft } from 'lucide-react'
+import { CargaFallida } from '@/components/carga-fallida'
+import { pedirJson } from '@/lib/pedir-json'
 import { MathBackground } from '@/components/math-background'
 import { NIVEL_OPTIONS, type Nivel } from '@/lib/nivel-options'
 import { useRouter } from 'next/navigation'
@@ -21,6 +23,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [nivel, setNivel] = useState<Nivel | null>(null)
   const [grades, setGrades] = useState<string[]>([])
   const [loadingGrades, setLoadingGrades] = useState(false)
+  const [gradesError, setGradesError] = useState<string | null>(null)
 
   const finish = async (payload: { role: 'ALUMNO' | 'DOCENTE'; nivel?: string; grado?: string }) => {
     setSaving(true)
@@ -52,13 +55,19 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const selectNivel = async (n: Nivel) => {
     setNivel(n)
     setLoadingGrades(true)
-    try {
-      const res = await fetch(`/api/curriculum/grades?nivel=${encodeURIComponent(n)}`)
-      const data = await res.json()
-      setGrades(data.grades ?? [])
-    } finally {
-      setLoadingGrades(false)
+    setGradesError(null)
+    // Es lo primero que ve un alumno nuevo: un 500 acá no puede pintarse como
+    // "no hay años para tu nivel" — ver deuda-tecnica.md §6a.
+    const res = await pedirJson<{ grades?: string[] }>(
+      `/api/curriculum/grades?nivel=${encodeURIComponent(n)}`
+    )
+    if ('error' in res) {
+      setGrades([])
+      setGradesError(res.error)
+    } else {
+      setGrades(res.data.grades ?? [])
     }
+    setLoadingGrades(false)
     setStep('grado')
   }
 
@@ -199,6 +208,12 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
               <div className="flex justify-center py-12">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
+            ) : gradesError ? (
+              <CargaFallida
+                que="los años de tu nivel"
+                detalle={gradesError}
+                onReintentar={() => nivel && selectNivel(nivel)}
+              />
             ) : grades.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-8">
                 Todavía no hay contenidos cargados para este nivel — podés elegir tu materia y grado más adelante desde &quot;Practicar&quot;.

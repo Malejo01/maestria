@@ -32,15 +32,24 @@ export default function InicioPage() {
   useEffect(() => {
     if (isTeacher) return
 
+    // Los dos alimentan el saludo y el contador de la home: si fallan, el
+    // default (sin tips, contador en 0) es aceptable — pero un 500 tiene que
+    // caer al catch, no parsearse como si fuera el dato.
     fetch('/api/user/tips')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
       .then((data) => {
         if (Array.isArray(data.tips)) setStudentTips(data.tips)
       })
       .catch((err) => console.warn('Could not fetch student tips:', err))
 
     fetch('/api/quiz/history')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.json()
+      })
       .then((data) => {
         if (Array.isArray(data.attempts)) setPerformedQuizzesCount(data.attempts.length)
       })

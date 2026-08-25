@@ -3,19 +3,21 @@
 import { useEffect, useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { TipsChest } from '@/components/tips-chest'
+import { CargaFallida } from '@/components/carga-fallida'
+import { pedirJson } from '@/lib/pedir-json'
 import type { StudentTip } from '@/lib/types'
 
 export default function TipsPage() {
   const [studentTips, setStudentTips] = useState<StudentTip[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch('/api/user/tips')
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data.tips)) setStudentTips(data.tips)
+    pedirJson<{ tips?: StudentTip[] }>('/api/user/tips')
+      .then((res) => {
+        if ('error' in res) setLoadError(res.error)
+        else if (Array.isArray(res.data.tips)) setStudentTips(res.data.tips)
       })
-      .catch((err) => console.warn('Could not fetch student tips:', err))
       .finally(() => setLoading(false))
   }, [])
 
@@ -39,6 +41,8 @@ export default function TipsPage() {
             <div key={i} className="h-56 rounded-2xl border-2 border-dashed border-border/60 animate-pulse bg-muted/30" />
           ))}
         </div>
+      ) : loadError ? (
+        <CargaFallida que="tus tips" detalle={loadError} onReintentar={() => window.location.reload()} />
       ) : (
         <TipsChest tips={studentTips} />
       )}

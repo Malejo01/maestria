@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
+import { pedirJson } from '@/lib/pedir-json'
 import { cn } from '@/lib/utils'
 import { AlertTriangle, ChevronDown, ChevronUp, ClipboardList, Loader2 } from 'lucide-react'
 import {
@@ -85,19 +86,20 @@ function TypeRow({ type, tally }: { type: ReliableQuestionType; tally: TypeTally
 export function DiagnosticReportCard({ defaultOpen = true }: { defaultOpen?: boolean }) {
   const [report, setReport] = useState<StudentDiagnostic | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [open, setOpen] = useState(defaultOpen)
 
   useEffect(() => {
     let alive = true
 
-    fetch('/api/student/diagnostic-report')
-      .then((res) => res.json())
-      .then((data) => {
-        if (alive) setReport(data?.report ?? null)
-      })
-      .catch(() => {
-        // Un reporte histórico que no carga no puede romper el historial.
-        if (alive) setReport(null)
+    // "No rendiste el diagnóstico" (report null, el bloque no se dibuja) y
+    // "falló la consulta" son estados distintos: el primero es silencio
+    // legítimo, el segundo tiene que verse (§6a de deuda-tecnica.md).
+    pedirJson<{ report?: StudentDiagnostic | null }>('/api/student/diagnostic-report')
+      .then((res) => {
+        if (!alive) return
+        if ('error' in res) setLoadError(res.error)
+        else setReport(res.data.report ?? null)
       })
       .finally(() => {
         if (alive) setLoading(false)
@@ -113,6 +115,15 @@ export function DiagnosticReportCard({ defaultOpen = true }: { defaultOpen?: boo
       <Card className="p-4 border-2 border-border/80 rounded-2xl flex items-center gap-3">
         <Loader2 className="w-4 h-4 animate-spin text-primary" />
         <span className="text-sm text-muted-foreground">Buscando tu diagnóstico…</span>
+      </Card>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <Card className="p-4 border-2 border-destructive/30 rounded-2xl text-sm text-muted-foreground">
+        No pudimos cargar tu reporte del diagnóstico ({loadError}). Recargá la página para
+        reintentar.
       </Card>
     )
   }
