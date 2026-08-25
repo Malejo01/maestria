@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { getOwnedClassroom } from '@/lib/classrooms-server'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,6 +50,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]/members/[memberId]', operation: 'DELETE' })
     return NextResponse.json(
       { error: 'No se pudo quitar al alumno', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

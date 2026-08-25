@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getQuizImpact } from '@/lib/teacher-quizzes-server'
+import { captureRouteFailure } from '@/lib/observability'
 
 function isTeacherRole(role: unknown): boolean {
   return role === 'DOCENTE'
@@ -51,6 +52,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json({ quiz: rows[0] })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/quizzes/[id]', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudo obtener el cuestionario', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -178,6 +180,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     return NextResponse.json({ quiz: rows[0] })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/quizzes/[id]', operation: 'PATCH' })
     return NextResponse.json(
       { error: 'No se pudo actualizar el cuestionario', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -217,6 +220,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/quizzes/[id]', operation: 'DELETE' })
     return NextResponse.json(
       { error: 'No se pudo eliminar el cuestionario', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -297,6 +301,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json({ quiz: newRows[0] })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/quizzes/[id]', operation: 'POST' })
     return NextResponse.json(
       { error: 'No se pudo duplicar el cuestionario', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

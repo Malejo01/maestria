@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { getClassroomMembers, getOwnedClassroom } from '@/lib/classrooms-server'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +26,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json({ members: await getClassroomMembers(classroomId) })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]/members', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudo obtener la lista de alumnos', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -86,6 +88,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json({ copied: inserted.length, members: await getClassroomMembers(classroomId) })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]/members', operation: 'POST' })
     return NextResponse.json(
       { error: 'No se pudieron copiar los alumnos', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

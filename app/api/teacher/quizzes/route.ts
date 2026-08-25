@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import type { Question, TeacherQuizStatus } from '@/lib/types'
+import { captureRouteFailure } from '@/lib/observability'
 
 /**
  * Forma del SELECT sobre `teacher_quizzes` — ver
@@ -96,6 +97,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ quizzes: filteredRows })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/quizzes', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudieron obtener los cuestionarios', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -198,6 +200,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ quiz: rows[0] })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/quizzes', operation: 'POST' })
     return NextResponse.json(
       { error: 'No se pudo guardar el cuestionario', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

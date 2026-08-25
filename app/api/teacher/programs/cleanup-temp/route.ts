@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
+import { captureRouteFailure } from '@/lib/observability'
 
 export async function POST(req: Request) {
   const authHeader = req.headers.get('authorization')
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ deleted: deleted.length })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/programs/cleanup-temp', operation: 'POST' })
     return NextResponse.json(
       { error: 'Cleanup failed', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

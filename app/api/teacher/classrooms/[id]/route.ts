@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { createUniqueJoinCode, getOwnedClassroom } from '@/lib/classrooms-server'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,6 +61,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     return NextResponse.json({ classroom: rows[0] })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]', operation: 'PATCH' })
     return NextResponse.json(
       { error: 'No se pudo actualizar el aula', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -95,6 +97,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]', operation: 'DELETE' })
     return NextResponse.json(
       { error: 'No se pudo eliminar el aula', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

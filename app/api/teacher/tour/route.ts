@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
+import { captureRouteFailure } from '@/lib/observability'
 
 /**
  * Marca de "este docente ya vio el tour de bienvenida" (migración 020).
@@ -28,6 +29,7 @@ export async function GET() {
 
     return NextResponse.json({ seenAt: rows[0]?.teacher_tour_seen_at ?? null })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/tour', operation: 'GET' })
     // Un fallo acá no puede trabar el panel: el cliente trata el error como
     // "ya lo vio" y no muestra el tour, que es el lado seguro de equivocarse.
     // Mostrárselo de nuevo a alguien que ya lo completó es más molesto que no
@@ -64,6 +66,7 @@ export async function POST() {
 
     return NextResponse.json({ seenAt: rows[0].teacher_tour_seen_at })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/tour', operation: 'POST' })
     return NextResponse.json(
       { error: 'No se pudo guardar el estado del tour', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

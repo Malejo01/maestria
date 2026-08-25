@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { getOwnedClassroom } from '@/lib/classrooms-server'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -211,6 +212,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       thresholds: { weakTopic: WEAK_TOPIC_THRESHOLD, minAnswers: MIN_ANSWERS_FOR_TOPIC_SIGNAL },
     })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]/report', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudo armar el seguimiento', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { createUniqueJoinCode } from '@/lib/classrooms-server'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,6 +39,7 @@ export async function GET() {
 
     return NextResponse.json({ classrooms: rows })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudieron obtener las aulas', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -96,6 +98,7 @@ export async function POST(req: Request) {
       },
     })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms', operation: 'POST' })
     return NextResponse.json(
       { error: 'No se pudo crear el aula', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

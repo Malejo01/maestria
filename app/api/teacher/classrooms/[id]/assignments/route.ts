@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
+import { captureRouteFailure } from '@/lib/observability'
 import {
   getClassroomAssignments,
   getOwnedClassroom,
@@ -30,6 +31,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json({ assignments: await getClassroomAssignments(classroomId) })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]/assignments', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudieron obtener las asignaciones', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -135,6 +137,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     return NextResponse.json({ assignment: rows[0], assignments: await getClassroomAssignments(classroomId) })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]/assignments', operation: 'POST' })
     return NextResponse.json(
       { error: 'No se pudo asignar el cuestionario', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

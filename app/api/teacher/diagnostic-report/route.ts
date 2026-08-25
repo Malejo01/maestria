@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { loadCourseDiagnostic } from '@/lib/diagnostic-report-server'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,7 @@ export async function GET() {
   try {
     return NextResponse.json({ report: await loadCourseDiagnostic() })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/diagnostic-report', operation: 'GET' })
     return NextResponse.json(
       {
         error: 'No se pudo armar el reporte del diagnóstico',

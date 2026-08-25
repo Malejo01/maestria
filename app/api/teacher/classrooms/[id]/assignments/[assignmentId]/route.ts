@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { getOwnedClassroom, parseOptionalDate, parseOptionalPositiveInt } from '@/lib/classrooms-server'
+import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
 
@@ -78,6 +79,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     return NextResponse.json({ assignment: rows[0] })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]/assignments/[assignmentId]', operation: 'PATCH' })
     return NextResponse.json(
       { error: 'No se pudo actualizar la asignación', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -111,6 +113,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]/assignments/[assignmentId]', operation: 'DELETE' })
     return NextResponse.json(
       { error: 'No se pudo quitar la asignación', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
