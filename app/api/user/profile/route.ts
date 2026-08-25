@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { sql } from '@/lib/db'
 import type { UserRole } from '@/lib/types'
+import { captureRouteFailure } from '@/lib/observability'
 
 export async function GET() {
   const session = await auth()
@@ -37,6 +38,7 @@ export async function GET() {
       },
     })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/user/profile', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudo obtener el perfil', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
@@ -115,6 +117,7 @@ export async function PATCH(req: Request) {
       },
     })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/user/profile', operation: 'PATCH' })
     return NextResponse.json(
       { error: 'No se pudo actualizar el perfil', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

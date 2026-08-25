@@ -1,6 +1,7 @@
 import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 import { resolveSubjectMetaBatch } from '@/lib/subjects'
+import { captureRouteFailure } from '@/lib/observability'
 
 const MAX_NAMES = 20
 
@@ -26,6 +27,7 @@ export async function GET(req: Request) {
     const subjects = await resolveSubjectMetaBatch(names)
     return NextResponse.json({ subjects })
   } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/subjects/meta', operation: 'GET' })
     return NextResponse.json(
       { error: 'No se pudo resolver metadata de materias', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
