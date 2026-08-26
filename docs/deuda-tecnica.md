@@ -894,6 +894,21 @@ responde con seguridad a una pregunta que no sabe contestar.
 > `highest_score` y suma de `attempts_count`. Cualquiera de las dos salidas
 > tiene que pasar por ahí.
 
+### No es un caso aislado — 25/08/2026
+
+`student_misconceptions.resolved` resultó ser el tercer caso de lo mismo:
+columna que modela el cierre de un ciclo y que **ningún camino de código
+escribe**. Los tres —`mastered_at`, `attempts_count` (que sólo cuenta el camino
+de aprobado) y `resolved`— quedaron descritos como una lección propia en
+[roadmap.md](roadmap.md), en "Lecciones operativas", con el chequeo de treinta
+segundos para no volver a agregar una: buscar la columna fuera de su `.sql` y
+ver si aparece en algún `UPDATE`/`INSERT`.
+
+El de `resolved` ya tiene consecuencia visible para el alumno —la tarjeta
+"A reforzar" de `/history` sólo puede crecer— así que subió a lo primero del
+"Próximo sprint" del roadmap, con el relevamiento de qué soporta el modelo
+para decidir quién marca un tema como superado.
+
 ---
 
 ## 8. Tests que pasan con el bug puesto — barrido del 25/08/2026

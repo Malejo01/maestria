@@ -433,6 +433,16 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
 
 ### Próximo sprint
 
+- [ ] 🔺 **Cerrar el ciclo de "A reforzar": nadie marca un tema como superado.** Lo primero de esta lista, y tiene fecha por sí solo: los 31 están usando la app, `student_misconceptions.resolved` no lo pone en `TRUE` **ningún** camino de código, y la tarjeta "A reforzar" de `/history` sólo puede crecer. En dos semanas es una lista tan larga que no se mira, y mientras tanto castiga justo al alumno que mejoró: sigue viendo ahí el tema que ya domina. Las consultas ya filtran `resolved = FALSE`, así que el día que algo lo marque funcionan solas.
+
+  **La decisión de qué cuenta como "superado" es de Mauro.** Lo que sigue es lo que el modelo soporta hoy, para que la conversación arranque sobre datos y no sobre impresiones:
+
+  - **La hipótesis "N aciertos seguidos sobre ese tema" necesita antes una clave de tema estable, y hoy no la hay.** `student_misconceptions.topic_id` se escribe desde [quiz-engine.tsx:435](../components/quiz-engine.tsx#L435) con `currentQuestion.topic`, que **lo escribe la IA por pregunta** (está en el schema Zod de `lib/quiz-generation.ts`, opcional y con fallback a `'unknown'`). Es la misma familia de campo que este documento ya midió como inservible para agrupar: `quiz_answers.topic_name` tiene **358 valores distintos en 1.680 respuestas** y coincide con el tema que el alumno eligió sólo 22 veces. Sobre esa clave, "acertó 3 veces seguidas *ese* tema" no significa lo que parece.
+  - **Lo que sí es estable** es `quiz_attempts.topics[]`, que son los temas que el alumno eligió, del currículum — la clave que ya usa el reporte del diagnóstico, anclada contra `curriculum.temas`. Es por intento y no por pregunta, así que da una granularidad más gruesa ("le fue bien en los intentos que cubrían este tema") pero con identidad real.
+  - **La corrección por respuesta existe**: `quiz_answers.is_correct` más su `quiz_attempt_id` dan acierto y fecha. Lo que falta es el puente respuesta → tema del currículum.
+  - **La salida manual del docente es la más barata y ya tiene media pieza puesta**: [students/[userId]](../app/api/teacher/classrooms/[id]/students/[userId]/route.ts) ya lee las misconceptions con su `resolved` y las muestra. Falta el PATCH y el control en la UI.
+  - Hay una tercera forma que no requiere decidir nada de lo anterior: **caducidad por tiempo** ("esto lo trabajaste hace dos meses") en vez de un booleano de superado.
+
 - [ ] **Source maps con Turbopack** — suben bien pero Sentry no los aplica (bug upstream `sentry-javascript#18248`, State: Blocked). Workaround: `next build --webpack`.
 - [x] **Voseo app-wide** — 18 formas en 10 archivos: `quieres`→`querés` (6), `Selecciona`→`Seleccioná` (3), `intenta`→`intentá` (3), `Elige`→`Elegí` (2), `necesitas`→`necesitás` (2), más `completa`, `revisa`, `indica`, `Genera`, `vuelve` y `sigue así`. Vivían sobre todo en toasts de error y en las descripciones de los modos de cuestionario. De paso se corrigieron tildes y signos de apertura **en esas mismas frases** (`¿Qué querés hacer?`, `teórico`, `Perderás`), no más allá. **`/terminos` y `/privacidad` quedan como están**: su registro formal («Usted acepta», «su actividad previa») no es peninsular, es el que corresponde a un texto de cumplimiento de la Ley 25.326. El barrido inicial daba ~50 coincidencias y la mayoría eran comentarios del código en tercera persona, que no son copy.
 - [x] Navegación de vuelta desde `/admin/ai-usage` — un `<Link>` a `/`, no la navbar: montarla arrastraría el layout de `(app)` con sus guards de onboarding, que es justamente lo que la página evita viviendo fuera del grupo. Un `<Link>` además la deja seguir siendo server component.
@@ -457,7 +467,6 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
 - [ ] Quedan **tres archivos más de la misma tanda de v0**, igual de huérfanos y también sin una sola referencia en el repo: `public/placeholder.svg`, `public/placeholder.jpg` y `public/placeholder-user.jpg`. No se borraron con los otros dos porque no estaban en el pedido.
 - [ ] Borrar el proyecto Neon de `quiosco-next` (no urgente: una branch no consume slot)
 - [ ] **`xs:` en la navbar deja dos elementos ocultos para siempre.** `xs:` no es un breakpoint de Tailwind 4 y este proyecto no lo define en el `@theme` de `globals.css`, así que la variante no emite ninguna regla. En las filas de tarjetas de `/history` y de la home eso las apilaba a lo ancho (arreglado el 25/08). En [navbar.tsx:233 y :237](../components/navbar.tsx#L233) el patrón es `hidden xs:block`, o sea que el `hidden` gana en **todos** los tamaños: esos dos elementos no los vio nunca nadie. **No se tocó a propósito** — hacerlos aparecer es una decisión de producto (nadie sabe qué debería mostrar esa UI), no un arreglo de layout. Mirarlo cuando se toque la navbar; ahí decidir entre definir `--breakpoint-xs` o borrar los elementos.
-- [ ] **`student_misconceptions.resolved` no lo escribe ningún camino de código.** Es el mismo caso que `topic_mastery.mastered_at` (ver [deuda-tecnica.md](deuda-tecnica.md) §7): la columna existe desde la migración 009, se lee en dos lugares y nunca se pone en `TRUE`. Consecuencia visible desde el 25/08: la tarjeta "A reforzar" de `/history` sólo puede crecer — un alumno que ya dominó un tema lo sigue viendo ahí. Las consultas ya filtran `resolved = FALSE`, así que el día que algo lo marque funcionan solas; lo que falta es **quién** lo marca (¿acertar N veces seguidas ese tema? ¿el docente?).
 
 ### Qué hace falta para el ícono definitivo
 
@@ -488,6 +497,20 @@ Sin ORM · Cold starts de Neon · Corepack (inerte hoy)
 - **No pegar salidas con connection strings en el chat.** Para chequeos, usar el conteo sin exponer el valor.
 - **Un agente puede describir en detalle algo que nunca escribió.** `create-staging-branch.ts` fue descrito con try/finally, timeout y verificación independiente — y no existía en ninguna rama. Verificar antes de asumir. (Ese caso puntual se cerró el 15/08/2026 con `e683395`, que efectivamente los escribió. Lo que se cerró es el caso, no la lección.)
 - **Este documento se lee desde la rama en la que estás parado.** El 16/08/2026 dos entradas estaban lisa y llanamente al revés de la realidad —`create-staging-branch.ts` y el sesgo de tipos de pregunta, las dos marcadas como inexistentes cuando ya estaban en `main`— y ninguna de las dos por mal razonamiento: el worktree estaba dos commits atrás y su remoto ya borrado tras mergear el PR. Si CLAUDE.md manda leer el roadmap al empezar la sesión, el paso previo es mirar contra qué base se lo está leyendo (`git log --oneline HEAD..main`).
+- **El esquema modela el ciclo completo; el código implementa sólo la mitad que crea datos.** Tres casos, y a esta altura no es casualidad:
+
+  | Columna | Qué promete | Qué pasa |
+  |---|---|---|
+  | `topic_mastery.mastered_at` | cuándo dominó el tema | **ningún** código la escribe — 0 de 77 filas en producción |
+  | `topic_mastery.attempts_count` | cuántas veces lo intentó | sólo se incrementa en el camino de aprobado, así que cuenta intentos **aprobados** |
+  | `student_misconceptions.resolved` | si ya superó la confusión | **ningún** código la pone en `TRUE` |
+
+  El patrón: al diseñar la tabla se piensa el ciclo entero —empieza, progresa, se cierra— y se escriben las columnas de los tres momentos. Después se implementa la mitad que *produce* filas, porque es la que hace falta para que la feature se vea andando, y la que las *cierra* queda para "cuando haya tiempo". Nunca lo hay. El resultado no es una columna vacía y a la vista: es una tabla que **responde con seguridad una pregunta que no sabe contestar**, y encima aguas abajo alguien construye una pantalla sobre ella (la tarjeta "A reforzar" que sólo crece).
+
+  Es primo del patrón de deuda-tecnica.md §6 —la falla disfrazada de estado normal— pero entra por otra puerta: ahí el error se disfraza de dato válido, acá lo hace la ausencia de escritura.
+
+  **Cómo detectarlo en treinta segundos, y conviene hacerlo al agregar una columna de cierre:** buscar la columna en el repo y mirar si aparece en algún `UPDATE`/`INSERT` fuera del `.sql` que la creó. Si las únicas referencias son el DDL y `SELECT`s, la columna es letra muerta desde el día uno. La regla al escribir una migración nueva: **si una columna describe un final, el commit que la agrega tiene que incluir quién la escribe, o declarar explícitamente que todavía no existe y que las lecturas lo contemplan.**
+
 - **Los tests de caracterización van antes del refactor, no después.**
 - **PITR de Neon: 6 horas** (plan Free). El dump diario es la única red más allá del mismo día.
 
