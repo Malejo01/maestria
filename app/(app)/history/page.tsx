@@ -352,8 +352,15 @@ function HistoryPageContent() {
                   esta semana, no en noviembre. */}
               <DiagnosticReportCard defaultOpen={!hasAttemptsAfterDiagnostic} />
 
-              {/* ── Stats row ───────────────────────────── */}
-              <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
+              {/* ── Stats row ─────────────────────────────
+                  `grid-cols-3` pelado, sin variante responsive: `xs:` NO es un
+                  breakpoint de Tailwind 4 y este proyecto no lo define en el
+                  @theme de globals.css, así que `xs:grid-cols-3` no emitía
+                  ninguna regla y las tres tarjetas caían apiladas a lo ancho en
+                  TODOS los tamaños — tres pantallas de scroll antes del
+                  historial. Las tarjetas ya son compactas (p-3, ícono de 36px,
+                  label de 10px) y entran en una fila hasta en 320px. */}
+              <div className="grid grid-cols-3 gap-3">
                 <Card className="p-3 border-2 border-border bg-card/80 backdrop-blur-sm">
                   <div className="flex flex-col items-center text-center gap-1">
                     <div className="w-9 h-9 rounded-xl bg-[var(--algebra-light)] flex items-center justify-center">

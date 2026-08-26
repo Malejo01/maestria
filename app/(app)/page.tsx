@@ -130,8 +130,11 @@ export default function InicioPage() {
               el primer lugar donde el alumno lo busca. */}
           <JoinClassroomField />
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
+          {/* Stats Row — mismo arreglo que /history: `xs:` no es un breakpoint
+              de Tailwind 4 ni está definido en globals.css, así que la variante
+              no emitía nada y las tres tarjetas quedaban apiladas a lo ancho en
+              todos los tamaños. */}
+          <div className="grid grid-cols-3 gap-3">
             <Card className="p-4 border-2 border-border bg-card/80 backdrop-blur-sm flex flex-col items-center text-center">
               <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/40 flex items-center justify-center mb-1.5">
                 <Sparkles className="w-5 h-5 text-orange-500" />
