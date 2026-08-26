@@ -252,6 +252,40 @@ export interface TopicMastery {
 }
 
 /**
+ * Agregado por (materia, modo) sobre **todos** los intentos del alumno, tal
+ * como lo devuelve GET /api/quiz/history. Alimenta las tarjetas de resumen de
+ * /history.
+ *
+ * Existe porque la lista de intentos de esa respuesta tiene `LIMIT 20` y las
+ * tarjetas se calculaban sobre esas 20 filas: un promedio que dice ser de todo
+ * el historial y es de los últimos 20 miente igual que uno sin materia.
+ *
+ * `graded` es `correct_answers + incorrect_answers`, NO `total_questions`:
+ * desde la migración 021 las respuestas sin calificar quedan fuera del
+ * numerador y del denominador. Sumar las dos columnas es exactamente "sobre
+ * cuántas se pudo corregir", que es el denominador honesto para un promedio
+ * agregado.
+ */
+export interface SubjectModeTotals {
+  subject: string
+  mode: 'teorico' | 'practico' | 'mixto'
+  attempts: number
+  correct: number
+  graded: number
+}
+
+/**
+ * Un tema pendiente de reforzar, de `student_misconceptions` (migración 009).
+ *
+ * Es dato de la base, a diferencia del `weakPoints` del store de Zustand, que
+ * vive en localStorage y no sobrevive a un cambio de dispositivo.
+ */
+export interface ReinforceTopic {
+  subject: string
+  topicId: string
+}
+
+/**
  * Shape returned by /api/quiz/attempt/[id] (a saved quiz_answers row).
  * question_type defaults to 'multiple_choice' for rows written before
  * migration 013. For multiple_choice, options/selected_answer/correct_answer

@@ -11,6 +11,7 @@ import { WeakPointsSection } from '@/components/weak-points-section'
 import { DiagnosticReportCard } from '@/components/diagnostic-report-card'
 import { CargaFallida } from '@/components/carga-fallida'
 import { pedirJson } from '@/lib/pedir-json'
+import { computeHistoryStats } from '@/lib/history-stats'
 import { DIAGNOSTIC_DATE } from '@/lib/diagnostic-report'
 import { useAppStore } from '@/lib/store'
 import {
@@ -39,7 +40,15 @@ import {
 import { cn } from '@/lib/utils'
 import { SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
 import Link from 'next/link'
-import type { QuizAttempt, TopicMastery, AttemptAnswer, SubjectColorName, SubjectIconName } from '@/lib/types'
+import type {
+  QuizAttempt,
+  TopicMastery,
+  AttemptAnswer,
+  SubjectColorName,
+  SubjectIconName,
+  SubjectModeTotals,
+  ReinforceTopic,
+} from '@/lib/types'
 
 type ModeFilter = 'all' | 'teorico' | 'practico' | 'mixto'
 
@@ -107,6 +116,11 @@ function HistoryPageContent() {
   const { userProgress } = useAppStore()
   const [attempts, setAttempts] = useState<QuizAttempt[]>([])
   const [mastery, setMastery] = useState<TopicMastery[]>([])
+  // Agregados de las tarjetas: vienen del servidor sobre TODOS los intentos,
+  // no de `attempts`, que son las 20 más recientes. Ver `SubjectModeTotals`
+  // en lib/types.ts.
+  const [totals, setTotals] = useState<SubjectModeTotals[]>([])
+  const [reinforce, setReinforce] = useState<ReinforceTopic[]>([])
   const [loading, setLoading] = useState(true)
   const [historyError, setHistoryError] = useState<string | null>(null)
   const [expandedAttempt, setExpandedAttempt] = useState<string | null>(null)
@@ -126,14 +140,19 @@ function HistoryPageContent() {
     const fetchHistory = async () => {
       setHistoryError(null)
       // Un 500 acá se pintaba como historial vacío (§6a de deuda-tecnica.md).
-      const res = await pedirJson<{ attempts?: QuizAttempt[]; mastery?: TopicMastery[] }>(
-        '/api/quiz/history'
-      )
+      const res = await pedirJson<{
+        attempts?: QuizAttempt[]
+        mastery?: TopicMastery[]
+        totals?: SubjectModeTotals[]
+        reinforce?: ReinforceTopic[]
+      }>('/api/quiz/history')
       if ('error' in res) {
         setHistoryError(res.error)
       } else {
         setAttempts(res.data.attempts || [])
         setMastery(res.data.mastery || [])
+        setTotals(res.data.totals || [])
+        setReinforce(res.data.reinforce || [])
       }
       setLoading(false)
     }
@@ -203,15 +222,37 @@ function HistoryPageContent() {
     [attempts]
   )
 
-  const stats = useMemo(() => {
-    const total = attempts.length
-    const passed = attempts.filter((a) => Number(a.score) >= 6).length
-    const avg =
-      total > 0
-        ? attempts.reduce((s, a) => s + Number(a.score), 0) / total
-        : 0
-    return { total, passed, avg }
-  }, [attempts])
+  /**
+   * Los números de las tarjetas de resumen.
+   *
+   * Tres cosas que antes no hacía y que eran, cada una, una forma de mentir:
+   *
+   *  1. **Sigue los filtros.** Se calculaba sobre `attempts` mientras la lista
+   *     usaba `filteredAttempts`: filtrabas por Álgebra y el promedio seguía
+   *     mostrando el de todas las materias.
+   *  2. **Cubre todo el historial**, no las últimas 20. `totals` viene agregado
+   *     del servidor sin `LIMIT`; `attempts` son sólo las 20 más recientes.
+   *  3. **El promedio es `SUM(correctas)/SUM(calificadas)`**, no el promedio de
+   *     los promedios de cada intento. Desde la migración 021 cada intento se
+   *     puntúa sobre las respuestas que se pudieron corregir, así que promediar
+   *     notas es promediar fracciones de denominador distinto. `×10` lo deja en
+   *     la misma escala que `scoreOutOfTen`, que es la nota que el alumno ya vio
+   *     al terminar cada cuestionario.
+   */
+  const stats = useMemo(
+    () => computeHistoryStats(totals, reinforce, selectedSubjectFilter, modeFilter),
+    [totals, reinforce, selectedSubjectFilter, modeFilter]
+  )
+
+  /**
+   * El promedio sólo se muestra con una materia elegida.
+   *
+   * Un "6.7" que promedia Ciencias Sociales con Álgebra y con dos Matemáticas
+   * distintas no describe ninguna materia: el alumno lo lee como su nota y no
+   * lo es. Con el filtro en "todas" la tarjeta directamente no existe y la fila
+   * queda en dos columnas.
+   */
+  const mostrarPromedio = selectedSubjectFilter !== 'all' && stats.promedio !== null
 
   const handleExpandAttempt = async (attemptId: string) => {
     if (expandedAttempt === attemptId) {
@@ -360,7 +401,7 @@ function HistoryPageContent() {
                   TODOS los tamaños — tres pantallas de scroll antes del
                   historial. Las tarjetas ya son compactas (p-3, ícono de 36px,
                   label de 10px) y entran en una fila hasta en 320px. */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className={cn('grid gap-3', mostrarPromedio ? 'grid-cols-3' : 'grid-cols-2')}>
                 <Card className="p-3 border-2 border-border bg-card/80 backdrop-blur-sm">
                   <div className="flex flex-col items-center text-center gap-1">
                     <div className="w-9 h-9 rounded-xl bg-[var(--algebra-light)] flex items-center justify-center">
@@ -373,28 +414,42 @@ function HistoryPageContent() {
                   </div>
                 </Card>
 
-                <Card className="p-3 border-2 border-border bg-card/80 backdrop-blur-sm">
-                  <div className="flex flex-col items-center text-center gap-1">
-                    <div className="w-9 h-9 rounded-xl bg-[var(--analysis-light)] flex items-center justify-center">
-                      <TrendingUp className="w-5 h-5 text-[var(--analysis)]" />
+                {/* "De práctica" no es un adorno: hoy TODO lo que hay es
+                    práctica libre —ningún intento tiene assignment_id— y un
+                    "Promedio 6.7" pelado se lee como la nota de la materia. */}
+                {mostrarPromedio && (
+                  <Card className="p-3 border-2 border-border bg-card/80 backdrop-blur-sm">
+                    <div className="flex flex-col items-center text-center gap-1 w-full">
+                      <div className="w-9 h-9 rounded-xl bg-[var(--analysis-light)] flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-[var(--analysis)]" />
+                      </div>
+                      <div className="text-xl font-black text-foreground leading-none">
+                        {stats.promedio!.toFixed(1)}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide leading-tight">
+                        Promedio de práctica
+                      </div>
+                      {/* Envuelve en vez de truncar: el nombre de la materia
+                          es lo que le da sujeto al número, y "Ciencias Socia…"
+                          a 375px pierde justo eso. Medido: la fila pasa de 134
+                          a 146px sólo cuando el nombre no entra en una línea. */}
+                      <div className="text-[10px] text-foreground/70 font-bold leading-tight w-full break-words">
+                        {selectedSubjectFilter}
+                      </div>
                     </div>
-                    <div className="text-xl font-black text-foreground leading-none">
-                      {stats.avg > 0 ? stats.avg.toFixed(1) : '--'}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide leading-tight">
-                      Promedio
-                    </div>
-                  </div>
-                </Card>
+                  </Card>
+                )}
 
                 <Card className="p-3 border-2 border-border bg-card/80 backdrop-blur-sm">
                   <div className="flex flex-col items-center text-center gap-1">
                     <div className="w-9 h-9 rounded-xl bg-[var(--probability-light)] flex items-center justify-center">
-                      <Trophy className="w-5 h-5 text-[var(--probability)]" />
+                      <Target className="w-5 h-5 text-[var(--probability)]" />
                     </div>
-                    <div className="text-xl font-black text-foreground leading-none">{stats.passed}</div>
+                    <div className="text-xl font-black text-foreground leading-none">
+                      {stats.temasAReforzar}
+                    </div>
                     <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide leading-tight">
-                      Aprobadas
+                      A reforzar
                     </div>
                   </div>
                 </Card>

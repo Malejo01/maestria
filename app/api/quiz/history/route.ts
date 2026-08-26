@@ -2,6 +2,7 @@ import { sql } from '@/lib/db'
 import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 import { debugLog } from '@/lib/utils'
+import type { ReinforceTopic, SubjectModeTotals } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,6 +29,18 @@ interface AttemptRow {
   passed: boolean
   completed_at: Date | null
 }
+
+/**
+ * Los dos agregados que alimentan las tarjetas de resumen de /history viajan
+ * con la forma declarada en lib/types.ts (`SubjectModeTotals`, `ReinforceTopic`),
+ * que es la que consume el cliente: una sola definición para las dos puntas.
+ *
+ * Sobre `student_misconceptions.resolved`: es letra muerta hoy, ningún camino
+ * de código la pone en TRUE (mismo caso que `topic_mastery.mastered_at`, ver
+ * deuda-tecnica.md §7). El filtro se deja igual porque es lo que la columna
+ * significa, y el día que algo marque un tema como superado esta consulta ya
+ * hace lo correcto. Mientras tanto el conteo sólo crece — anotado en el backlog.
+ */
 
 export async function GET(req: Request) {
   try {
@@ -104,9 +117,32 @@ export async function GET(req: Request) {
     `
     debugLog('[v0] Found', mastery.length, 'mastery records')
 
-    return NextResponse.json({ 
+    // Sin LIMIT: son los números que van a las tarjetas de resumen. Ver el
+    // comentario de SubjectModeTotalsRow.
+    const totals = (await sql`
+      SELECT
+        subject,
+        mode,
+        COUNT(*)::int                                          AS attempts,
+        COALESCE(SUM(correct_answers), 0)::int                 AS correct,
+        COALESCE(SUM(correct_answers + incorrect_answers), 0)::int AS graded
+      FROM quiz_attempts
+      WHERE user_id = ${userId}
+      GROUP BY subject, mode
+      ORDER BY subject, mode
+    `) as SubjectModeTotals[]
+
+    const reinforce = (await sql`
+      SELECT DISTINCT subject, topic_id AS "topicId"
+      FROM student_misconceptions
+      WHERE user_id = ${userId} AND resolved = FALSE
+    `) as ReinforceTopic[]
+
+    return NextResponse.json({
       attempts,
-      mastery
+      mastery,
+      totals,
+      reinforce
     })
 
   } catch (error) {
