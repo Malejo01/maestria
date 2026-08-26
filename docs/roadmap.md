@@ -180,6 +180,16 @@ La salida es `lib/stable-json.ts` (`stableStringify` / `sameJsonValue`), módulo
 - [x] **Tipos `Db*` de `lib/db.ts` borrados** (los seis, nadie los importaba, varios mentían contra el schema) y **4 `any` del motor de quiz** cerrados fuera de los 17 intencionales del módulo extraído.
 - [x] **Barrido de tests con mocks que mienten** — inventario en deuda-tecnica.md §8; los tres más peligrosos, cerrados.
 
+### Tarjetas de resumen de `/history` (25/08/2026)
+
+Dos cosas, una de layout y una de producto.
+
+**Layout:** las tres tarjetas ocupaban una fila completa cada una —tres pantallas de scroll antes del historial— porque `xs:` **no es un breakpoint de Tailwind 4** y este proyecto no lo define, así que `xs:grid-cols-3` no emitía ninguna regla. Medido: la fila pasa de 338px a 105px, en desktop y en mobile. El mismo par de clases roto estaba en la home y se arregló igual; el tercer uso, en la navbar, quedó anotado en el backlog porque ahí la variante muerta esconde UI en vez de descolocarla.
+
+**Producto:** el "Promedio 6.7" global se sacó. Mezclaba Ciencias Sociales, Álgebra y dos Matemáticas distintas, se calculaba sobre las últimas 20 filas sin decirlo, promediaba promedios de denominador distinto (migración 021) e ignoraba el filtro de materia que la propia pantalla ofrece. Ahora: los agregados vienen del servidor sobre todo el historial, siguen los filtros, el promedio es `SUM(correctas)/SUM(calificadas)` y **sólo aparece con una materia elegida**, rotulado "Promedio de práctica" con la materia al lado. El tercer lugar dejó de ser "Aprobadas" y pasó a "A reforzar", contado desde `student_misconceptions` y no desde el `weakPoints` del store, que vive en localStorage.
+
+> **Dos hallazgos que no se tocaron y conviene tener presentes.** `quiz_attempts` **no guarda nivel, grado ni carrera**, y `subject` es un string libre: *Matemática de secundaria* y *Matemática de la tecnicatura* caen las dos en `subject = 'Matemática'` y se fusionan en cualquier agrupación por materia. Y la **racha** de la home (`lib/store.ts`) no está en la base: vive en localStorage y cuenta cuestionarios aprobados consecutivos, aunque el label diga "Racha días".
+
 ---
 
 ## 👉 PENDIENTE DE MAURO — leer esto primero (16/08/2026)
@@ -354,6 +364,22 @@ Un invitado no está autenticado, así que su límite de `quiz_generation` es **
 
 > **Esto es BLOQUEANTE para abrir la app a otros docentes.** Un aula que se llene de invitados va a ver la práctica cortarse al tercer intento, y el docente no va a entender por qué. Antes de invitar a un docente que no seamos nosotros hay que resolver una de estas dos: o la práctica exige cuenta y la UI lo dice desde el principio, o se define un límite de invitado que aguante una clase sin abrir la puerta.
 
+### 0. La distinción es `assignment_id`, **no** `mode` — leer antes de implementar
+
+`quiz_attempts.mode` (`teorico` / `practico` / `mixto`) **no tiene nada que ver** con evaluación vs. práctica: describe qué tipo de preguntas trae el cuestionario, no si la nota cuenta. Confundirlos es fácil —el valor se llama literalmente `practico`— y se paga caro si se descubre a mitad de la implementación.
+
+Lo que separa las dos cosas es **`assignment_id`**, que ya existe en `quiz_attempts` desde la migración 015, junto con `classroom_id` y `attempt_number`:
+
+| | Evaluación | Práctica |
+|---|---|---|
+| Señal | `assignment_id IS NOT NULL` | `assignment_id IS NULL` |
+| De dónde sale | el alumno entró por una asignación del aula | práctica libre, con o sin aula |
+| Cupo de intentos | `classroom_assignments.max_attempts` | sin tope |
+
+**Medido el 25/08/2026: hoy no hay un solo intento con `assignment_id`.** El aula 2 no tiene ninguna asignación, así que el 100% de lo que existe —el diagnóstico del 10/08 incluido— es práctica libre. Consecuencia inmediata, ya aplicada en `/history`: mientras eso siga así, cualquier promedio que se le muestre al alumno se rotula **"Promedio de práctica"**, porque un "Promedio 6.7" pelado lo lee como la nota de la materia y no lo es.
+
+Cuando esto se implemente, el reporte del alumno tiene que separar por `assignment_id` y no volver a mezclar las dos poblaciones en un solo número.
+
 ### 2. `topic_mastery` no se toca en este trabajo
 
 La tabla **no sirve** para el reporte de práctica, y no por falta de columnas: sólo escribe cuando el alumno aprueba, `attempts_count` cuenta intentos aprobados, `highest_score` guarda el máximo (o sea que no hay trayectoria) y `mastered_at` no lo escribe ningún camino de código — 0 de 77 filas en producción.
@@ -430,6 +456,8 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
 - [x] ~~`public/placeholder-logo.svg` y `.png`~~ — borrados el 16/08/2026, verificado que no los referenciaba nadie.
 - [ ] Quedan **tres archivos más de la misma tanda de v0**, igual de huérfanos y también sin una sola referencia en el repo: `public/placeholder.svg`, `public/placeholder.jpg` y `public/placeholder-user.jpg`. No se borraron con los otros dos porque no estaban en el pedido.
 - [ ] Borrar el proyecto Neon de `quiosco-next` (no urgente: una branch no consume slot)
+- [ ] **`xs:` en la navbar deja dos elementos ocultos para siempre.** `xs:` no es un breakpoint de Tailwind 4 y este proyecto no lo define en el `@theme` de `globals.css`, así que la variante no emite ninguna regla. En las filas de tarjetas de `/history` y de la home eso las apilaba a lo ancho (arreglado el 25/08). En [navbar.tsx:233 y :237](../components/navbar.tsx#L233) el patrón es `hidden xs:block`, o sea que el `hidden` gana en **todos** los tamaños: esos dos elementos no los vio nunca nadie. **No se tocó a propósito** — hacerlos aparecer es una decisión de producto (nadie sabe qué debería mostrar esa UI), no un arreglo de layout. Mirarlo cuando se toque la navbar; ahí decidir entre definir `--breakpoint-xs` o borrar los elementos.
+- [ ] **`student_misconceptions.resolved` no lo escribe ningún camino de código.** Es el mismo caso que `topic_mastery.mastered_at` (ver [deuda-tecnica.md](deuda-tecnica.md) §7): la columna existe desde la migración 009, se lee en dos lugares y nunca se pone en `TRUE`. Consecuencia visible desde el 25/08: la tarjeta "A reforzar" de `/history` sólo puede crecer — un alumno que ya dominó un tema lo sigue viendo ahí. Las consultas ya filtran `resolved = FALSE`, así que el día que algo lo marque funcionan solas; lo que falta es **quién** lo marca (¿acertar N veces seguidas ese tema? ¿el docente?).
 
 ### Qué hace falta para el ícono definitivo
 
