@@ -74,11 +74,8 @@ Programa y aula para 1º año del Profesorado de Educación Primaria (Instituto 
 
 - [x] **Contenido** en [scripts/data/programa-matematica-didactica-profesorado-primaria.ts](../scripts/data/programa-matematica-didactica-profesorado-primaria.ts): 5 unidades, 53 temas, numeración del documento de contenidos (no la del cronograma). Corregido del Word: MCD/MCM (decía "MCM" y "DCM"), tildes y typos.
 - [x] **Script** [scripts/crear-aula-matematica-didactica.ts](../scripts/crear-aula-matematica-didactica.ts), sobre [scripts/lib/aula-programa.ts](../scripts/lib/aula-programa.ts): dry-run por defecto, backup JSON después de cada paso, `--revert` que **se niega si el aula ya tiene uso** (todas las FK de `classrooms`/`teacher_programs` son `ON DELETE CASCADE`; `--forzar` para pasar igual), idempotente por (docente, materia, nivel, grado) y (docente, nombre del aula). Un test lee el texto de las rutas y falla si las columnas de los INSERT se desvían. Dry-run verificado contra producción el 30/09: crearía 1 programa, 1 materia, 1 aula.
-- [ ] **Correr `--apply`** — lo corre Mauro, con `--metodologia`:
-  ```bash
-  npx tsx scripts/crear-aula-matematica-didactica.ts --docente=TU_EMAIL --apply --metodologia="..."
-  ```
-  Al final imprime el código y el link `/aula/<CÓDIGO>`. Anotar acá el id del programa y del aula cuando corra.
+- [x] **`--apply` corrido el 30/09/2026** con autorización de Mauro: **programa id 15** (`teacher-15-matematica-y-su-didactica`), **aula id 3**, código **`2UQT7J`** → `https://maestria-edu.vercel.app/aula/2UQT7J`. Verificado contra producción: 5 unidades, 53 temas, `degree` = Profesorado de Educación Primaria, aula `open`; `GET /api/classrooms/join?code=2UQT7J` devuelve el aula. El backup para `--revert` quedó en `scripts/backups/` (no versionado), en la máquina de Mauro.
+  - La `--metodologia` cargada es un **borrador de Claude aprobado por Mauro**, no texto propio del docente. Se edita desde el wizard (editar materia) si hace falta ajustarla.
 
 Dos cosas que quedan escritas para no redescubrirlas:
 
