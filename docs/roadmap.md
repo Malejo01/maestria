@@ -364,6 +364,8 @@ Un invitado no está autenticado, así que su límite de `quiz_generation` es **
 
 > **Esto es BLOQUEANTE para abrir la app a otros docentes.** Un aula que se llene de invitados va a ver la práctica cortarse al tercer intento, y el docente no va a entender por qué. Antes de invitar a un docente que no seamos nosotros hay que resolver una de estas dos: o la práctica exige cuenta y la UI lo dice desde el principio, o se define un límite de invitado que aguante una clase sin abrir la puerta.
 
+- [x] **La home lo dice antes del click (30/09/2026).** Sin sesión, el CTA dice "Ingresar con Google y empezar" y avisa que el código de aula es la vía sin cuenta. Y `/sign-in` ahora respeta `callbackUrl` (antes mandaba siempre a `/`, así que el que se logueaba desde el CTA volvía a la home). Esto cubre la práctica libre de `/practicar`; la práctica **dentro del aula**, cuando se implemente, tiene que avisarlo en su propia pantalla.
+
 ### 0. La distinción es `assignment_id`, **no** `mode` — leer antes de implementar
 
 `quiz_attempts.mode` (`teorico` / `practico` / `mixto`) **no tiene nada que ver** con evaluación vs. práctica: describe qué tipo de preguntas trae el cuestionario, no si la nota cuenta. Confundirlos es fácil —el valor se llama literalmente `practico`— y se paga caro si se descubre a mitad de la implementación.

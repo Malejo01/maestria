@@ -21,10 +21,11 @@ import {
 import type { StudentTip } from '@/lib/types'
 
 export default function InicioPage() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const { userProfile, userProgress } = useAppStore()
   const router = useRouter()
   const isTeacher = userProfile?.role === 'DOCENTE'
+  const needsAccount = status === 'unauthenticated'
 
   const [studentTips, setStudentTips] = useState<StudentTip[]>([])
   const [performedQuizzesCount, setPerformedQuizzesCount] = useState(0)
@@ -91,13 +92,26 @@ export default function InicioPage() {
             </p>
           </div>
 
+          {/* Sin sesión de Google, /practicar rebota al login (los invitados
+              de aula tampoco pasan: su cookie no es una sesión NextAuth). El
+              botón lo dice antes del click y va directo al login con el
+              destino ya puesto, en vez de depender del rebote del proxy. */}
           <Button
-            onClick={() => router.push('/practicar')}
+            onClick={() =>
+              router.push(needsAccount ? '/sign-in?callbackUrl=%2Fpracticar' : '/practicar')
+            }
             className="bg-white hover:bg-white/90 text-indigo-700 hover:text-indigo-800 font-bold px-5 py-2.5 rounded-xl shadow-md transition-all duration-200 active:scale-95 flex items-center gap-2 text-sm"
           >
-            {isTeacher ? 'Generar Cuestionario' : 'Comenzar ahora'}
+            {isTeacher ? 'Generar Cuestionario' : needsAccount ? 'Ingresar con Google y empezar' : 'Comenzar ahora'}
             <ChevronRight className="w-4 h-4" />
           </Button>
+
+          {needsAccount && (
+            <p className="text-xs text-white/80 leading-relaxed">
+              Practicar por tu cuenta requiere una cuenta de Google (es gratis). ¿Tu docente te pasó un
+              código de aula? Podés entrar sin cuenta con el código, acá abajo.
+            </p>
+          )}
         </div>
       </div>
 
