@@ -47,6 +47,28 @@ export function dailyBudgetUsd(): number {
   return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_DAILY_BUDGET_USD
 }
 
+/**
+ * Sub-tope para invitados DENTRO del presupuesto global, no una bolsa aparte:
+ * lo que gastan los invitados sigue sumando al total, pero ellos se cortan
+ * mucho antes de que el total se acerque al global.
+ *
+ * Existe porque crear un invitado es gratis (basta un código de aula y un
+ * nombre), así que el límite por usuario no acota nada: cada invitado nuevo
+ * trae su cupo limpio. Sin este sub-tope, un script que fabrica invitados
+ * agota el global en minutos, y el global corta también a los alumnos
+ * logueados en medio de una clase. Con él, lo peor que puede hacer un abuso
+ * anónimo es dejar sin IA a los demás invitados.
+ *
+ * Si se configura por encima del global deja de servir como sub-tope; el
+ * global sigue cortando igual.
+ */
+export const DEFAULT_GUEST_DAILY_BUDGET_USD = 3
+
+export function guestDailyBudgetUsd(): number {
+  const raw = Number(process.env.AI_GUEST_DAILY_BUDGET_USD)
+  return Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_GUEST_DAILY_BUDGET_USD
+}
+
 export interface UsageWindow {
   usedInDay: number
   usedInHour: number
@@ -88,15 +110,30 @@ export async function readUsageWindow(userId: string, bucket: AiBucket): Promise
   }
 }
 
-/** Gasto estimado en la ventana deslizante de 24 h, para el kill switch. */
-export async function readDailySpendUsd(): Promise<number> {
+export interface DailySpend {
+  totalUsd: number
+  /** La parte del total que gastaron invitados. */
+  guestUsd: number
+}
+
+/**
+ * Gasto estimado en la ventana deslizante de 24 h, para el kill switch y el
+ * sub-tope de invitados. Las dos sumas salen del mismo scan. Los `::float8`
+ * no son decorativos: sin ellos Neon devuelve el NUMERIC como string.
+ */
+export async function readDailySpend(): Promise<DailySpend> {
   const rows = (await sql`
-    SELECT COALESCE(SUM(estimated_cost_usd), 0)::float8 AS spent
+    SELECT
+      COALESCE(SUM(estimated_cost_usd), 0)::float8 AS spent,
+      COALESCE(SUM(estimated_cost_usd) FILTER (WHERE is_guest), 0)::float8 AS guest_spent
     FROM ai_usage_log
     WHERE created_at > NOW() - INTERVAL '24 hours'
-  `) as { spent: number }[]
+  `) as { spent: number; guest_spent: number }[]
 
-  return Number(rows[0]?.spent ?? 0)
+  return {
+    totalUsd: Number(rows[0]?.spent ?? 0),
+    guestUsd: Number(rows[0]?.guest_spent ?? 0),
+  }
 }
 
 // ─── Agregados para el dashboard interno ────────────────────────────────────
