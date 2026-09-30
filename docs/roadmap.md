@@ -1,6 +1,6 @@
 # MaestrIA — Roadmap
 
-Documento vivo. Última actualización: **25 de agosto de 2026**.
+Documento vivo. Última actualización: **30 de septiembre de 2026**.
 
 ## Tesis de producto
 
@@ -65,6 +65,33 @@ npx tsx scripts/qa/calibrate.ts --max-usd=2
 **Qué verificar en esa primera corrida:** recall 1.0 sobre known-bad reales, precisión ≥0,9 sobre known-good, y sobre todo el **control cruzado** — las mismas preguntas de cónicas marcadas `critical` bajo Superior y aprobadas bajo Secundario 4to. Si marca `critical` en ambas, la rúbrica reacciona a "parece difícil" y hay que ajustarla.
 
 **Disparador:** cuando salga el proyecto de la muni, o cuando haya USD disponibles.
+
+---
+
+## 🏫 Aula de Matemática y su Didáctica — Profesorado de Educación Primaria (30/09/2026)
+
+Programa y aula para 1º año del Profesorado de Educación Primaria (Instituto Jean Piaget Nº 8048, anual 2026), para que los alumnos entren con el código y practiquen todo el programa. Se hizo por script porque el autocompletar del wizard (`/api/teacher/programs/extract`) fallaba por falta de crédito en Gemini (ver riesgo de abajo), no por código.
+
+- [x] **Contenido** en [scripts/data/programa-matematica-didactica-profesorado-primaria.ts](../scripts/data/programa-matematica-didactica-profesorado-primaria.ts): 5 unidades, 53 temas, numeración del documento de contenidos (no la del cronograma). Corregido del Word: MCD/MCM (decía "MCM" y "DCM"), tildes y typos.
+- [x] **Script** [scripts/crear-aula-matematica-didactica.ts](../scripts/crear-aula-matematica-didactica.ts), sobre [scripts/lib/aula-programa.ts](../scripts/lib/aula-programa.ts): dry-run por defecto, backup JSON después de cada paso, `--revert` que **se niega si el aula ya tiene uso** (todas las FK de `classrooms`/`teacher_programs` son `ON DELETE CASCADE`; `--forzar` para pasar igual), idempotente por (docente, materia, nivel, grado) y (docente, nombre del aula). Un test lee el texto de las rutas y falla si las columnas de los INSERT se desvían. Dry-run verificado contra producción el 30/09: crearía 1 programa, 1 materia, 1 aula.
+- [ ] **Correr `--apply`** — lo corre Mauro, con `--metodologia`:
+  ```bash
+  npx tsx scripts/crear-aula-matematica-didactica.ts --docente=TU_EMAIL --apply --metodologia="..."
+  ```
+  Al final imprime el código y el link `/aula/<CÓDIGO>`. Anotar acá el id del programa y del aula cuando corra.
+
+Dos cosas que quedan escritas para no redescubrirlas:
+
+- **Probabilidad:** la Unidad V se llama "Estadística y probabilidad" pero el programa no lista ningún tema de probabilidad. No se inventaron.
+- **El enfoque didáctico entra sólo por `methodology`.** Ver el ítem 🔺 del backlog sobre la práctica de aula: `contexto_profesional` y `tipos_pregunta_sugeridos` no se aplican ahí, así que cargar filas en `curriculum` para esta carrera hoy no cambiaría nada dentro del aula. Por eso la lectura didáctica ("un niño de 4º grado resolvió así, ¿qué error cometió?") va en la metodología del programa, que sí llega al prompt como "PREFERENCIAS PEDAGÓGICAS DEL DOCENTE". Es por programa, no por unidad, y no controla la mezcla de tipos.
+
+### ⚠️ Riesgo operativo: Gemini sin crédito prepago
+
+El 30/09/2026 el autocompletar del wizard fallaba con `AI_APICallError: Your prepayment credits are depleted` (Sentry **MAESTRIA-18**). La key de la API de Gemini es **prepaga**: cuando el crédito se agota no hay degradación, **se corta toda la IA de la app** — generación de cuestionarios, corrección de `short_answer` que el corrector determinista no resuelve, revancha y extracción de programas — para todos los usuarios a la vez.
+
+- Resuelto ese día cambiando la key (`GOOGLE_GENERATIVE_AI_API_KEY` en `.env.local` y en Vercel, con redeploy). **Ojo con el nombre: la app lee `GOOGLE_GENERATIVE_AI_API_KEY`, no `GEMINI_API_KEY`.**
+- Lo que falta para que no vuelva a pasar por sorpresa: una alerta de saldo bajo en la consola de facturación de Google, o una alerta de Sentry sobre ese mensaje de error. Hoy nos enteramos cuando un docente ve fallar el wizard.
+- Mismo aviso que ya estaba arriba: la suscripción de consumidor de Gemini **no** cubre la API.
 
 ---
 
@@ -447,6 +474,12 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
 
 ### Próximo sprint
 
+- [ ] 🔺 **La práctica de aula no usa el programa de cátedra: ni contexto profesional ni mezcla de tipos.** Medido leyendo el código el 30/09/2026. `SubjectContent` ([subject-content.tsx:180](../components/subject-content.tsx#L180)), que es lo que corre en `/aulas` y en el panel docente, llama a `/api/generate-quiz` **sin `carrera`** —así que `loadCurriculumPedagogy` devuelve `{}`— y **siempre con `questionTypes`** explícito (el default del selector es `['multiple_choice']`), que gana sobre lo sugerido. Consecuencia: **el aula 2 de Análisis de Sistemas genera sin contexto profesional y 100% opción múltiple** salvo que el alumno cambie los tipos a mano. El A/B de la Unidad 5 y la mezcla de la 023 valen para `/practicar` y para la regeneración de una pregunta, no para el aula. Tres cosas más en el mismo camino:
+  - `nivel`/`grado` salen primero del **perfil del alumno** y recién después del programa del aula: un alumno del profesorado registrado como Secundario recibe el prompt de Secundario.
+  - `buildProfessionalContextSection` ([education-context.ts](../lib/education-context.ts)) trae ejemplos y vocabulario **de Sistemas escritos a mano** (algoritmos, usuarios de una app, bases de datos). Antes de cargar `contexto_profesional` para otra carrera (el profesorado) hay que parametrizarlos, o se filtran.
+  - La persona de Superior + Matemática es "implacable en lógica y rigor… demostración", con rúbrica de `short_answer` que pone 0-40% al resultado sin desarrollo: no calza con una unidad de didáctica.
+
+  Arreglo probable: mandar `carrera` desde `pedagogyProfile.degree` y no mandar `questionTypes` mientras el alumno no toque el selector. Cambia comportamiento en un aula con alumnos reales, así que va con decisión explícita.
 - [ ] 🔺 **Cerrar el ciclo de "A reforzar": nadie marca un tema como superado.** Lo primero de esta lista, y tiene fecha por sí solo: los 31 están usando la app, `student_misconceptions.resolved` no lo pone en `TRUE` **ningún** camino de código, y la tarjeta "A reforzar" de `/history` sólo puede crecer. En dos semanas es una lista tan larga que no se mira, y mientras tanto castiga justo al alumno que mejoró: sigue viendo ahí el tema que ya domina. Las consultas ya filtran `resolved = FALSE`, así que el día que algo lo marque funcionan solas.
 
   **La decisión de qué cuenta como "superado" es de Mauro.** Lo que sigue es lo que el modelo soporta hoy, para que la conversación arranque sobre datos y no sobre impresiones:
