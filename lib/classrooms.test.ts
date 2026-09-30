@@ -5,6 +5,7 @@ import {
   assignmentState,
   canStartAssignment,
   generateJoinCode,
+  guestCapStatus,
   isValidJoinCode,
   normalizeJoinCode,
 } from '@/lib/classrooms'
@@ -73,5 +74,21 @@ describe('assignmentState', () => {
     for (const state of ['programada', 'vencida', 'sin_intentos', 'cerrada'] as const) {
       expect(canStartAssignment(state)).toBe(false)
     }
+  })
+})
+
+describe('guestCapStatus', () => {
+  it('avisa al 75% y marca el tope exactamente donde el join empieza a rechazar', () => {
+    expect(guestCapStatus(0, 60)).toBe('ok')
+    expect(guestCapStatus(44, 60)).toBe('ok')
+    expect(guestCapStatus(45, 60)).toBe('near')
+    expect(guestCapStatus(59, 60)).toBe('near')
+    // El join rechaza cuando newGuests >= limit: con 60 ya creados, el 61 no entra.
+    expect(guestCapStatus(60, 60)).toBe('reached')
+    expect(guestCapStatus(75, 60)).toBe('reached')
+  })
+
+  it('una clase de 30 con el tope por defecto no dispara ningún aviso', () => {
+    expect(guestCapStatus(30, 60)).toBe('ok')
   })
 })
