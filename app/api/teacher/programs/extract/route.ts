@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { generateObject } from 'ai'
 import { google } from '@ai-sdk/google'
 import { sql } from '@/lib/db'
+import { AI_MODEL } from '@/lib/ai-model'
 
 export const runtime = 'nodejs'
 
@@ -396,7 +397,7 @@ export async function POST(req: Request) {
 
     try {
       const { object, usage } = await generateObject({
-        model: google('gemini-2.5-flash'),
+        model: google(AI_MODEL),
         schema: parsedProgramSchema,
         schemaName: 'programStructure',
         schemaDescription: 'Estructura curricular con unidades y temas',

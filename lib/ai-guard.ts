@@ -39,8 +39,9 @@ import {
   type DailySpend,
 } from '@/lib/ai-usage'
 import { captureAiBudgetCutoff } from '@/lib/observability'
+import { AI_MODEL } from '@/lib/ai-model'
 
-export const DEFAULT_AI_MODEL = 'gemini-2.5-flash'
+export const DEFAULT_AI_MODEL = AI_MODEL
 
 export interface AiGuardGranted {
   ok: true

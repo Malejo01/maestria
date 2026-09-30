@@ -23,6 +23,8 @@ import type { AiBucket } from '@/lib/ai-rate-limit'
 export const MODEL_PRICING_USD_PER_MTOK: Record<string, { input: number; output: number }> = {
   'gemini-2.5-flash': { input: 0.15, output: 1.25 },
   'gemini-2.5-flash-lite': { input: 0.1, output: 0.4 },
+  // Tarifa estándar pública verificada el 30/09/2026 (entrada de texto).
+  'gemini-3.1-flash-lite': { input: 0.25, output: 1.5 },
 }
 
 const FALLBACK_PRICING = MODEL_PRICING_USD_PER_MTOK['gemini-2.5-flash']

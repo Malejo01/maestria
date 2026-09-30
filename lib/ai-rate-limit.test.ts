@@ -10,7 +10,8 @@ import {
   type AiActor,
   type AiBucket,
 } from '@/lib/ai-rate-limit'
-import { DEFAULT_DAILY_BUDGET_USD, dailyBudgetUsd, estimateCostUsd } from '@/lib/ai-usage'
+import { DEFAULT_DAILY_BUDGET_USD, MODEL_PRICING_USD_PER_MTOK, dailyBudgetUsd, estimateCostUsd } from '@/lib/ai-usage'
+import { AI_MODEL } from '@/lib/ai-model'
 
 const NOW = new Date('2026-08-03T12:00:00.000Z')
 
@@ -205,6 +206,12 @@ describe('estimateCostUsd', () => {
     // 1M de entrada = 0.15, 1M de salida = 1.25
     expect(estimateCostUsd('gemini-2.5-flash', 1_000_000, 0)).toBeCloseTo(0.15, 6)
     expect(estimateCostUsd('gemini-2.5-flash', 0, 1_000_000)).toBeCloseTo(1.25, 6)
+  })
+
+  it('el modelo que usa la app tiene tarifa propia, no la de reemplazo', () => {
+    // Sin su fila, estimateCostUsd lo cobraría con la tarifa de otro modelo y el
+    // tope de gasto diario mediría mal. Cambiar AI_MODEL obliga a cargar el precio.
+    expect(MODEL_PRICING_USD_PER_MTOK[AI_MODEL]).toBeDefined()
   })
 
   it('mantiene un cuestionario típico en el orden del centavo', () => {

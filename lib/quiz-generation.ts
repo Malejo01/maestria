@@ -29,6 +29,7 @@ import {
   type QuestionTypeMix,
 } from '@/lib/question-mix'
 import { sql } from '@/lib/db'
+import { AI_MODEL } from '@/lib/ai-model'
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -410,7 +411,7 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
 
   try {
     const { object, usage } = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: google(AI_MODEL),
       schema: quizSchema,
       schemaName: 'quizQuestions',
       schemaDescription: `Objeto JSON con exactamente ${questionCount} preguntas, cada una con los campos correspondientes a su "type" (${questionTypes.join(', ')}).`,
@@ -440,7 +441,7 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
     for (let retryAttempt = 0; retryAttempt < 2; retryAttempt++) {
       try {
         const response = await generateText({
-          model: google('gemini-2.5-flash'),
+          model: google(AI_MODEL),
           system: systemPrompt,
           prompt: userPrompt,
           maxOutputTokens: 8000,
