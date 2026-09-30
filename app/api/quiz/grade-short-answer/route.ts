@@ -6,6 +6,7 @@ import { guardAiCall } from '@/lib/ai-guard'
 import { captureAiSchemaFailure } from '@/lib/observability'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { gradeShortAnswerLocally } from '@/lib/short-answer-autograde'
+import { AI_MODEL } from '@/lib/ai-model'
 
 const gradeSchema = z.object({
   isCorrect: z.boolean(),
@@ -116,7 +117,7 @@ export async function POST(req: Request) {
 
   const gradeWithAi = () =>
     generateObject({
-      model: google('gemini-2.5-flash'),
+      model: google(AI_MODEL),
       schema: gradeSchema,
       schemaName: 'shortAnswerGrade',
       schemaDescription: 'Evaluacion de una respuesta corta de un estudiante basado en la rubrica del docente.',

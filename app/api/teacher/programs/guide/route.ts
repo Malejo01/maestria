@@ -7,6 +7,7 @@ import { google } from '@ai-sdk/google'
 import { sql } from '@/lib/db'
 import { guardAiCall } from '@/lib/ai-guard'
 import { captureAiSchemaFailure, captureFileParsingFailure, captureRouteFailure } from '@/lib/observability'
+import { AI_MODEL } from '@/lib/ai-model'
 
 export const runtime = 'nodejs'
 
@@ -554,7 +555,7 @@ export async function POST(req: Request) {
 
     try {
       const { object, usage } = await generateObject({
-        model: google('gemini-2.5-flash'),
+        model: google(AI_MODEL),
         schema: continuationSchema,
         schemaName: 'guidedProgramContinuation',
         schemaDescription: 'Continuacion curricular en formato unidades y temas',

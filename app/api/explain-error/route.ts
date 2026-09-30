@@ -2,6 +2,7 @@ import { generateText } from 'ai'
 import { google } from '@ai-sdk/google'
 import { getEducationContext } from '@/lib/education-context'
 import { guardAiCall } from '@/lib/ai-guard'
+import { AI_MODEL } from '@/lib/ai-model'
 
 export async function POST(req: Request) {
   const {
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
   // `.catch` en vez de try/catch para no reindentar el prompt entero: sólo
   // hace falta marcar la fila como fallida y dejar que el error siga su curso.
   const generation = await generateText({
-    model: google('gemini-2.5-flash'),
+    model: google(AI_MODEL),
     messages: [
       {
         role: 'user',

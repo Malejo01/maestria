@@ -15,6 +15,7 @@ import { z } from 'zod'
 import { auth } from '@/auth'
 import { guardAiCall } from '@/lib/ai-guard'
 import { captureAiSchemaFailure, captureFileParsingFailure, captureRouteFailure } from '@/lib/observability'
+import { AI_MODEL } from '@/lib/ai-model'
 
 export const runtime = 'nodejs'
 
@@ -154,7 +155,7 @@ export async function POST(req: Request) {
 
     try {
       const { object, usage } = await generateObject({
-        model: google('gemini-2.5-flash'),
+        model: google(AI_MODEL),
         schema: parsedSchema,
         schemaName: 'programStructure',
         schemaDescription: 'Estructura curricular con unidades y temas',

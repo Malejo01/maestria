@@ -5,6 +5,7 @@ import { buildEducationSystemPrompt } from '@/lib/education-context'
 import { guardAiCall } from '@/lib/ai-guard'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { captureAiSchemaFailure, captureRouteFailure } from '@/lib/observability'
+import { AI_MODEL } from '@/lib/ai-model'
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -80,7 +81,7 @@ OBJETIVO PEDAGÓGICO:
 
     try {
       const { object, usage } = await generateObject({
-        model: google('gemini-2.5-flash'),
+        model: google(AI_MODEL),
         schema: singleQuestionSchema,
         schemaName: 'revanchaQuestion',
         schemaDescription: 'Una única pregunta de revancha con question, options (4), correctAnswer (0-based) y explanation.',
@@ -116,7 +117,7 @@ OBJETIVO PEDAGÓGICO:
       // Los tokens de la llamada que falló se pierden (el SDK lanza sin
       // devolver usage), así que el costo de este camino queda subestimado.
       const { text, usage } = await generateText({
-        model: google('gemini-2.5-flash'),
+        model: google(AI_MODEL),
         system: systemPrompt,
         prompt: userPrompt,
         maxOutputTokens: 2000,

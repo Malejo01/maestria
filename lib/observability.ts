@@ -12,6 +12,7 @@
  * fallas de esquema de Gemini, errores de endpoints, y parseo de archivos.
  */
 import * as Sentry from '@sentry/nextjs'
+import { AI_MODEL } from '@/lib/ai-model'
 
 /** Nunca dejar que un fallo del reporte tape al error que se estaba reportando. */
 function safeCapture(error: unknown, configure: (scope: Sentry.Scope) => void): void {
@@ -49,7 +50,7 @@ export function captureAiSchemaFailure(
     scope.setTag('error_kind', 'ai_schema')
     scope.setTag('ai_endpoint', context.endpoint)
     scope.setTag('ai_fallback', context.fallback)
-    scope.setTag('ai_model', context.model ?? 'gemini-2.5-flash')
+    scope.setTag('ai_model', context.model ?? AI_MODEL)
     // Sin texto libre del alumno: sólo la forma del pedido, que es lo que hace
     // falta para reproducirlo.
     scope.setContext('generacion', {
