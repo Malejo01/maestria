@@ -365,6 +365,18 @@ Un invitado no está autenticado, así que su límite de `quiz_generation` es **
 > **Esto es BLOQUEANTE para abrir la app a otros docentes.** Un aula que se llene de invitados va a ver la práctica cortarse al tercer intento, y el docente no va a entender por qué. Antes de invitar a un docente que no seamos nosotros hay que resolver una de estas dos: o la práctica exige cuenta y la UI lo dice desde el principio, o se define un límite de invitado que aguante una clase sin abrir la puerta.
 
 - [x] **La home lo dice antes del click (30/09/2026).** Sin sesión, el CTA dice "Ingresar con Google y empezar" y avisa que el código de aula es la vía sin cuenta. Y `/sign-in` ahora respeta `callbackUrl` (antes mandaba siempre a `/`, así que el que se logueaba desde el CTA volvía a la home). Esto cubre la práctica libre de `/practicar`; la práctica **dentro del aula**, cuando se implemente, tiene que avisarlo en su propia pantalla.
+- [x] **El agujero de fondo no era el 3/día sino fabricar invitados (30/09/2026).** Crear uno costaba un código de aula y un nombre, y cada invitado nuevo traía su cupo limpio: un `curl` en bucle agotaba el presupuesto global en ~30 minutos, y el global corta también a los alumnos con cuenta. Dos barreras, sin migración:
+  - **Sub-tope de gasto de invitados** (`AI_GUEST_DAILY_BUDGET_USD`, default $3) *dentro* del global: su gasto suma al total, pero se cortan antes. Un abuso anónimo, en el peor caso, deja sin IA a los demás invitados — nunca a los logueados. `lib/ai-guard.test.ts` lo fija simulando invitados fabricados en serie.
+  - **Tope de invitados nuevos por aula** (`CLASSROOM_DAILY_NEW_GUEST_LIMIT`, default **60 en 24 h deslizantes**): el que queda afuera ve por qué y que con Google entra igual; el docente ve el aviso en el panel desde el 75%; a nosotros nos llega a Sentry. Regenerar el código corta una filtración pero **no** libera el cupo del día: el conteo es por aula, no por código.
+    - **Criterio del número: una comisión por aula.** 60 = la clase más grande esperada (40 alumnos entrando juntos, todos sin cuenta) × 1,5 de margen para los que re-entran desde otro dispositivo o en incógnito, que sin la cookie cuentan como invitado nuevo. Dos comisiones de 35 compartiendo la misma aula el mismo día **sí** lo superan, y está bien que así sea: la recomendación al docente es un aula por comisión, no subir el tope. Si un caso real lo pide, se sube por env antes de tocar el criterio.
+    - Lo que puede gastar un código filtrado con 60: 60 × 3 generaciones × ~$0,011 ≈ $2 por día, y el sub-tope de invitados corta antes de que eso se multiplique entre aulas.
+  - Medido antes de hacerlo: en producción había **0 invitados**, 0 filas de `ai_usage_log` con `is_guest` y los 31 del 10/08 tienen cuenta de Google. Ningún usuario real pasó por estos caminos.
+  - **Descartado: límite por IP en `/api/classrooms/join`.** Tres motivos:
+    1. **Una IP escolar para 40 alumnos.** La escuela sale a internet por una sola IP pública, así que el límite tendría que ser más laxo que el tope por aula — no protege nada que el tope por aula no proteja ya.
+    2. **Exige migración.** Un contador en memoria vive por instancia de lambda y no sirve; hace falta una tabla.
+    3. **Guardar IPs de menores.** Es dato personal bajo la Ley 25.326, con política de retención incluida, para una protección marginal.
+
+    **Si aparece abuso, la primera respuesta es una regla de rate limit en el Firewall de Vercel** sobre `POST /api/classrooms/join`: es configuración, no código, no guarda nada en nuestra base y se saca igual de rápido.
 
 ### 0. La distinción es `assignment_id`, **no** `mode` — leer antes de implementar
 

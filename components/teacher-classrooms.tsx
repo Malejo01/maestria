@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import {
+  AlertTriangle,
   ArrowLeft,
   BadgeCheck,
   CalendarClock,
@@ -36,6 +37,8 @@ import {
   Users,
 } from 'lucide-react'
 import { SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
+import { guestCapStatus } from '@/lib/classrooms'
+import { cn } from '@/lib/utils'
 import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import { ClassroomStudentDialog } from '@/components/classroom-student-dialog'
 import { AccuracyBar, formatDateTime, formatPercent, formatScore } from '@/components/classroom-report-parts'
@@ -55,6 +58,9 @@ interface ClassroomRow {
   color_name: SubjectColorName
   member_count: number
   assignment_count: number
+  /** Invitados creados en las últimas 24 h en esta aula; ver lib/classroom-guest-cap.ts. */
+  new_guests_today: number
+  guest_join_limit: number
 }
 
 interface WeakTopic {
@@ -402,6 +408,11 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
               Tus alumnos entran en <span className="font-mono">{joinUrl(activeClassroom.join_code)}</span> con cuenta de
               Google o como invitados.
             </p>
+
+            <GuestCapNotice
+              newGuests={activeClassroom.new_guests_today}
+              limit={activeClassroom.guest_join_limit}
+            />
 
             <div className="flex flex-wrap gap-2">
               <Button
@@ -806,6 +817,48 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
           })}
         </div>
       </Card>
+    </div>
+  )
+}
+
+/**
+ * Aviso de tope de invitados nuevos. Sin esto, cuando el aula llega al tope el
+ * docente sólo se entera por un alumno que dice "no me deja entrar", que es
+ * otra vez un corte disfrazado de "no anda". Aparece al 75% para dar tiempo a
+ * que el resto entre con Google antes de que alguien quede afuera.
+ */
+function GuestCapNotice({ newGuests, limit }: { newGuests: number; limit: number }) {
+  const status = guestCapStatus(newGuests, limit)
+  if (status === 'ok') return null
+
+  const reached = status === 'reached'
+
+  return (
+    <div
+      role={reached ? 'alert' : 'status'}
+      className={cn(
+        'flex gap-2 rounded-lg border p-3 text-xs leading-relaxed',
+        reached
+          ? 'border-destructive/40 bg-destructive/10 text-destructive'
+          : 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300'
+      )}
+    >
+      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+      <div className="space-y-1">
+        <p className="font-semibold">
+          {reached
+            ? `Tu aula llegó al tope de ${limit} ingresos sin cuenta en 24 h.`
+            : `Tu aula lleva ${newGuests} de ${limit} ingresos sin cuenta permitidos en 24 h.`}
+        </p>
+        <p>
+          {reached
+            ? 'Los que intenten entrar sin cuenta ahora ven un aviso y no pueden sumarse; con cuenta de Google entran igual. '
+            : 'Al llegar al tope, los próximos sin cuenta no van a poder entrar. '}
+          Si son tus alumnos, pediles que ingresen con Google. Si no reconocés a los que entraron, el código puede
+          haberse filtrado: regeneralo. Regenerar corta la filtración, pero el cupo se va liberando a medida que
+          pasan las 24 h de cada ingreso.
+        </p>
+      </div>
     </div>
   )
 }

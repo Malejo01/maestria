@@ -83,3 +83,19 @@ export const ASSIGNMENT_STATE_LABEL: Record<AssignmentState, string> = {
  * no la uses para decidir cortes nuevos.
  */
 export const GUEST_DAILY_GENERATION_LIMIT = 3
+
+export type GuestCapStatus = 'ok' | 'near' | 'reached'
+
+/**
+ * Cómo está un aula respecto del tope de invitados nuevos (el tope y el conteo
+ * viven en lib/classroom-guest-cap.ts, que es sólo de servidor). `near` existe
+ * para el docente: enterarse al 75% le da tiempo de pedir que el resto entre
+ * con Google antes de que alguien quede afuera. `reached` usa el mismo `>=`
+ * que el corte del join, así el aviso aparece exactamente cuando empiezan los
+ * rechazos.
+ */
+export function guestCapStatus(newGuests: number, limit: number): GuestCapStatus {
+  if (newGuests >= limit) return 'reached'
+  if (newGuests >= Math.ceil(limit * 0.75)) return 'near'
+  return 'ok'
+}

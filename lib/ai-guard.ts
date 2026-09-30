@@ -1,8 +1,9 @@
 /**
  * Punto único por el que pasa toda llamada a Gemini.
  *
- * Une las tres barreras que protegen la factura, en orden de menor a mayor
- * costo de evaluación: identidad → presupuesto global → límite por usuario.
+ * Une las barreras que protegen la factura, en orden de menor a mayor costo de
+ * evaluación: identidad → presupuesto global → sub-tope de invitados → límite
+ * por usuario.
  * Un handler queda así:
  *
  *   const guard = await guardAiCall({ bucket: 'feedback', nivel })
@@ -30,11 +31,14 @@ import {
   dailyBudgetUsd,
   failAiUsage,
   finishAiUsage,
-  readDailySpendUsd,
+  guestDailyBudgetUsd,
+  readDailySpend,
   readUsageWindow,
   startAiUsage,
   type AiSdkUsage,
+  type DailySpend,
 } from '@/lib/ai-usage'
+import { captureAiBudgetCutoff } from '@/lib/observability'
 
 export const DEFAULT_AI_MODEL = 'gemini-2.5-flash'
 
@@ -75,13 +79,13 @@ export interface GuardAiCallOptions {
  * error del propio estimado, que no cuenta thinking tokens.
  */
 const SPEND_CACHE_MS = 60_000
-let spendCache: { value: number; at: number } | null = null
+let spendCache: { value: DailySpend; at: number } | null = null
 
-async function dailySpendCached(): Promise<number> {
+async function dailySpendCached(): Promise<DailySpend> {
   const now = Date.now()
   if (spendCache && now - spendCache.at < SPEND_CACHE_MS) return spendCache.value
 
-  const value = await readDailySpendUsd()
+  const value = await readDailySpend()
   spendCache = { value, at: now }
   return value
 }
@@ -130,7 +134,8 @@ export async function guardAiCall(options: GuardAiCallOptions): Promise<AiGuardR
   // abuso individual.
   const budget = dailyBudgetUsd()
   const spent = await dailySpendCached()
-  if (spent >= budget) {
+  if (spent.totalUsd >= budget) {
+    captureAiBudgetCutoff({ pool: 'global', bucket, spentUsd: spent.totalUsd, budgetUsd: budget })
     return {
       ok: false,
       response: jsonError(
@@ -139,6 +144,30 @@ export async function guardAiCall(options: GuardAiCallOptions): Promise<AiGuardR
         { ...extra('budget_exhausted'), budgetExhausted: true },
         { 'Retry-After': '3600' }
       ),
+    }
+  }
+
+  // Sub-tope de invitados: va después del global (que corta a todos y tiene
+  // prioridad en el mensaje) y antes del límite por usuario, que para un
+  // invitado no acota nada — fabricar otro invitado es gratis. Se decide por
+  // `viewer.isGuest` y no por el actor, porque es la misma columna que suma
+  // `readDailySpend`: si el guard y la suma no miran lo mismo, el tope no
+  // corta a quien lo gastó.
+  if (viewer.isGuest) {
+    const guestBudget = guestDailyBudgetUsd()
+    if (spent.guestUsd >= guestBudget) {
+      captureAiBudgetCutoff({ pool: 'guest', bucket, spentUsd: spent.guestUsd, budgetUsd: guestBudget })
+      const message =
+        'La práctica con IA para invitados llegó al límite de hoy. No hiciste nada mal: ingresá con tu cuenta de Google para seguir, o volvé a probar mañana.'
+      return {
+        ok: false,
+        response: jsonError(
+          message,
+          429,
+          { ...extra(message), rateLimited: true, guestBudgetExhausted: true },
+          { 'Retry-After': '3600' }
+        ),
+      }
     }
   }
 
@@ -190,7 +219,10 @@ export async function guardAiCall(options: GuardAiCallOptions): Promise<AiGuardR
       // Sumar el costo recién medido mantiene la caché caliente y aproximada,
       // en vez de invalidarla y forzar un SELECT en cada request — que era
       // justo lo que la caché venía a evitar.
-      if (cost != null && spendCache) spendCache.value += cost
+      if (cost != null && spendCache) {
+        spendCache.value.totalUsd += cost
+        if (viewer.isGuest) spendCache.value.guestUsd += cost
+      }
     },
     fail: async () => {
       await failAiUsage(usageId)

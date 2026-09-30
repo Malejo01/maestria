@@ -3,11 +3,13 @@ import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { createUniqueJoinCode } from '@/lib/classrooms-server'
 import { captureRouteFailure } from '@/lib/observability'
+import { classroomDailyNewGuestLimit, countNewGuestsInClassroom } from '@/lib/classroom-guest-cap'
 
 export const dynamic = 'force-dynamic'
 
 // GET /api/teacher/classrooms — every aula of the signed-in teacher, with the
-// two counts the dashboard cards show.
+// two counts the dashboard cards show, plus how close each aula is to today's
+// cap of new guests so the teacher finds out before a student is turned away.
 export async function GET() {
   const teacher = await getTeacherViewer()
   if (!teacher) {
@@ -37,7 +39,19 @@ export async function GET() {
       ORDER BY c.created_at DESC
     `
 
-    return NextResponse.json({ classrooms: rows })
+    // La misma función que usa el join para decidir el corte, no una copia
+    // del SQL: lo que ve el docente tiene que ser exactamente lo que se aplica.
+    // Una consulta por aula, en paralelo; un docente tiene un puñado.
+    const guestJoinLimit = classroomDailyNewGuestLimit()
+    const newGuestCounts = await Promise.all(rows.map((row) => countNewGuestsInClassroom(Number(row.id))))
+
+    return NextResponse.json({
+      classrooms: rows.map((row, index) => ({
+        ...row,
+        new_guests_today: newGuestCounts[index],
+        guest_join_limit: guestJoinLimit,
+      })),
+    })
   } catch (error) {
     captureRouteFailure(error, { endpoint: '/api/teacher/classrooms', operation: 'GET' })
     return NextResponse.json(

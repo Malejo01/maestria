@@ -107,6 +107,72 @@ export function captureClientInvariant(
 }
 
 /**
+ * Un presupuesto diario de IA se agotó y el guard empezó a rechazar llamadas.
+ *
+ * No es una excepción de nadie: el guard responde un 429/503 prolijo y el
+ * sistema "anda". Justamente por eso tiene que llegar acá — si no, el primer
+ * aviso es un docente diciendo que la app no funciona. `pool` separa los dos
+ * casos: `guest` es el sub-tope de invitados (señal de abuso o de un aula
+ * grande de invitados), `global` es el kill switch que corta a todos.
+ *
+ * Mientras dure el corte, cada request lo volvería a reportar; con un abuso
+ * eso son miles de eventos que agotan la cuota de Sentry y nos dejan ciegos
+ * para todo lo demás. Por eso se reporta una vez cada 15 minutos por instancia
+ * y pool, con un fingerprint fijo para que caigan en el mismo issue.
+ */
+const BUDGET_CUTOFF_REPORT_INTERVAL_MS = 15 * 60 * 1000
+const lastBudgetCutoffReport = new Map<string, number>()
+
+export function captureAiBudgetCutoff(context: {
+  pool: 'guest' | 'global'
+  bucket: string
+  spentUsd: number
+  budgetUsd: number
+}): void {
+  const now = Date.now()
+  const last = lastBudgetCutoffReport.get(context.pool)
+  if (last != null && now - last < BUDGET_CUTOFF_REPORT_INTERVAL_MS) return
+  lastBudgetCutoffReport.set(context.pool, now)
+
+  safeCapture(new Error(`Presupuesto de IA agotado (${context.pool})`), (scope) => {
+    scope.setLevel(context.pool === 'global' ? 'error' : 'warning')
+    scope.setTag('error_kind', 'ai_budget')
+    scope.setTag('ai_budget_pool', context.pool)
+    scope.setTag('ai_bucket', context.bucket)
+    scope.setFingerprint(['ai-budget-exhausted', context.pool])
+    scope.setContext('presupuesto', {
+      gastadoUsd: context.spentUsd,
+      topeUsd: context.budgetUsd,
+    })
+  })
+}
+
+/**
+ * Un aula llegó al tope de invitados nuevos del día y se rechazó un ingreso.
+ *
+ * El docente lo ve en su panel; esto es para nosotros: un aula que llega al
+ * tope es o una clase más grande de lo previsto (hay que subir el número) o un
+ * código filtrado. El id del aula va como tag para distinguirlos. Mismo
+ * criterio que el presupuesto: una vez cada 15 minutos por aula e instancia.
+ */
+const lastGuestCapReport = new Map<number, number>()
+
+export function captureGuestJoinCapReached(context: { classroomId: number; newGuests: number; limit: number }): void {
+  const now = Date.now()
+  const last = lastGuestCapReport.get(context.classroomId)
+  if (last != null && now - last < BUDGET_CUTOFF_REPORT_INTERVAL_MS) return
+  lastGuestCapReport.set(context.classroomId, now)
+
+  safeCapture(new Error('Aula llegó al tope de invitados nuevos'), (scope) => {
+    scope.setLevel('warning')
+    scope.setTag('error_kind', 'guest_join_cap')
+    scope.setTag('classroom_id', String(context.classroomId))
+    scope.setFingerprint(['guest-join-cap', String(context.classroomId)])
+    scope.setContext('tope_invitados', { invitadosNuevos: context.newGuests, tope: context.limit })
+  })
+}
+
+/**
  * Falló la extracción de texto de un archivo subido por un docente.
  *
  * Cada formato tiene su propia librería y sus propios modos de romperse (un PDF

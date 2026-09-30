@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getViewer } from '@/lib/auth-session'
 import { isValidJoinCode, normalizeJoinCode } from '@/lib/classrooms'
-import { captureRouteFailure } from '@/lib/observability'
+import { captureGuestJoinCapReached, captureRouteFailure } from '@/lib/observability'
+import {
+  GUEST_CAP_REACHED_MESSAGE,
+  classroomDailyNewGuestLimit,
+  countNewGuestsInClassroom,
+} from '@/lib/classroom-guest-cap'
 import {
   GUEST_COOKIE_NAME,
   guestCookieOptions,
@@ -137,6 +142,18 @@ export async function POST(req: Request) {
         { error: 'Escribí tu nombre y apellido para entrar al aula.', needsName: true },
         { status: 400 }
       )
+    }
+
+    // Recién acá, en el único camino que crea un invitado: el que vuelve con
+    // su cookie o entra con Google ya salió arriba y nunca choca con el tope.
+    // El rechazo no se disfraza: el alumno ve por qué y cómo entrar igual
+    // (con Google, que en esta pantalla está al lado), el docente lo ve en su
+    // panel y a nosotros nos llega a Sentry.
+    const limit = classroomDailyNewGuestLimit()
+    const newGuests = await countNewGuestsInClassroom(classroom.id)
+    if (newGuests >= limit) {
+      captureGuestJoinCapReached({ classroomId: classroom.id, newGuests, limit })
+      return NextResponse.json({ error: GUEST_CAP_REACHED_MESSAGE, guestCapReached: true }, { status: 429 })
     }
 
     const guestId = newGuestId()

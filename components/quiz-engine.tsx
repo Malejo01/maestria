@@ -15,6 +15,7 @@ import { isCorrectMultipleChoice, isCorrectNumeric, isCorrectTrueFalse } from '@
 import { gradeShortAnswerLocally } from '@/lib/short-answer-autograde'
 import { cn } from '@/lib/utils'
 import type { Answer, Question, ShortAnswerQuestion } from '@/lib/types'
+import { aiCutoffMessage } from '@/lib/ai-cutoff-message'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -270,7 +271,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       // Los mensajes dicen sólo la CAUSA: la consecuencia ("no cuenta como
       // error") la agrega el panel, para no repetirla dos veces en pantalla.
       if (!response.ok) {
-        markUngraded('No pudimos corregir esta respuesta.')
+        // Si fue un corte del guard (límite, presupuesto de invitados), su
+        // mensaje dice qué pasó y cómo seguir; el genérico no.
+        markUngraded((await aiCutoffMessage(response)) ?? 'No pudimos corregir esta respuesta.')
         return
       }
 
@@ -418,6 +421,16 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
           grado: config?.grado,
         })
       })
+
+      // Sin esto, un 429/503 abría el modal con `data.explanation` indefinido:
+      // en blanco, sin decir que hubo un corte ni qué hacer.
+      const cutoff = await aiCutoffMessage(response)
+      if (cutoff) {
+        setDetailedExplanation(cutoff)
+        setShowExplanationModal(true)
+        return
+      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
       const data = await response.json()
       setDetailedExplanation(data.explanation)

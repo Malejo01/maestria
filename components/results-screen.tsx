@@ -17,6 +17,8 @@ import { ExplanationModal } from './explanation-modal'
 import { answerRecapLine } from './answer-recap'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/hooks/use-toast'
+import { aiCutoffMessage } from '@/lib/ai-cutoff-message'
 
 export function ResultsScreen() {
   const { currentQuiz, userProgress, resetQuiz, setActiveView, startQuiz } = useAppStore()
@@ -26,6 +28,7 @@ export function ResultsScreen() {
   const [loadingExplanation, setLoadingExplanation] = useState<string | null>(null)
   const [explanations, setExplanations] = useState<Record<string, string>>({})
   const [isRetrying, setIsRetrying] = useState(false)
+  const { toast } = useToast()
   const [showRetryModal, setShowRetryModal] = useState(false)
   const { data: session, status } = useSession()
   const isSignedIn = status === 'authenticated'
@@ -168,6 +171,15 @@ export function ResultsScreen() {
         })
       })
 
+      // El corte no se guarda en `explanations`: cuando se libere el cupo,
+      // volver a abrir la pregunta tiene que pedir la explicación de verdad.
+      const cutoff = await aiCutoffMessage(response)
+      if (cutoff) {
+        setSelectedModalExplanation(cutoff)
+        return
+      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+
       const data = await response.json()
       setExplanations(prev => ({ ...prev, [answer.questionId]: data.explanation }))
       setSelectedModalExplanation(data.explanation)
@@ -220,19 +232,26 @@ export function ResultsScreen() {
         })
       })
       
+      const cutoff = await aiCutoffMessage(response)
       const data = await response.json()
       
       if (data.questions && data.questions.length === config.questionCount) {
         startQuiz({ ...config, mode }, data.questions)
       } else {
+        // Antes volvía a resultados sin decir nada: el botón parecía no andar.
         setActiveView('results')
+        toast({
+          title: 'No pudimos armar el cuestionario nuevo',
+          description: cutoff ?? 'Probá de nuevo en un rato.',
+        })
       }
     } catch {
       setActiveView('results')
+      toast({ title: 'No pudimos armar el cuestionario nuevo', description: 'Revisá tu conexión y probá de nuevo.' })
     } finally {
       setIsRetrying(false)
     }
-  }, [config, questions, setActiveView, startQuiz])
+  }, [config, questions, setActiveView, startQuiz, toast])
 
   const handleGoHome = () => {
     resetQuiz()

@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button'
 import { LaTeXRenderer } from './latex-renderer'
 import { Sparkles, XCircle, CheckCircle2, Zap, Loader2, Award } from 'lucide-react'
 import type { MultipleChoiceQuestion } from '@/lib/types'
+import { useToast } from '@/hooks/use-toast'
+import { aiCutoffMessage } from '@/lib/ai-cutoff-message'
 
 interface ExplanationModalProps {
   open: boolean
@@ -61,6 +63,7 @@ export function ExplanationModal({
     initialMode === 'revancha' && allowRevancha ? 'loading' : 'idle'
   )
   const [revanchaQuestion, setRevanchaQuestion] = useState<MultipleChoiceQuestion | null>(null)
+  const { toast } = useToast()
   const [selectedOpt, setSelectedOpt] = useState<number | null>(null)
   /**
    * Progreso del efecto máquina-de-escribir. Guarda `source` junto al largo
@@ -137,7 +140,10 @@ export function ExplanationModal({
         }),
       })
 
-      if (!res.ok) throw new Error('Error al solicitar revancha')
+      if (!res.ok) {
+        const cutoff = await aiCutoffMessage(res)
+        throw new Error(cutoff ?? 'Error al solicitar revancha', { cause: cutoff ? 'cutoff' : undefined })
+      }
       const data = await res.json()
       if (!data.question) throw new Error('Pregunta no recibida')
 
@@ -147,8 +153,15 @@ export function ExplanationModal({
     } catch (err) {
       console.error('Revancha error:', err)
       setRevanchaState('idle')
+      // Volver a la explicación sin decir nada hacía parecer que el botón no
+      // andaba. Si fue un corte del guard, su mensaje dice cómo seguir.
+      const isCutoff = err instanceof Error && err.cause === 'cutoff'
+      toast({
+        title: 'No pudimos armar la revancha',
+        description: isCutoff ? err.message : 'Probá de nuevo en un rato.',
+      })
     }
-  }, [allowRevancha, question, userAnswer, correctAnswer, topic, topicName, subject, nivel, grado, explanation])
+  }, [allowRevancha, question, userAnswer, correctAnswer, topic, topicName, subject, nivel, grado, explanation, toast])
 
   /** Lo que dispara el botón: marca el estado y pide. */
   const handleStartRevancha = () => {
