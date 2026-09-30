@@ -376,6 +376,59 @@ describe('POST — modo mixto', () => {
   })
 })
 
+describe('POST — alcance de temas y tipos por modo (aula del profesorado, 30/09)', () => {
+  const programa = [
+    {
+      name: 'Unidad I',
+      topics: [
+        { id: 'a', name: 'Divisibilidad en los naturales' },
+        { id: 'b', name: 'Máximo Común Divisor (MCD) y Mínimo Común Múltiplo (MCM)' },
+      ],
+    },
+    { name: 'Unidad V', topics: [{ id: 'c', name: 'Proporcionalidad directa' }] },
+  ]
+
+  it('manda al modelo sólo el tema elegido, no el programa entero', async () => {
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+    await POST(request({ subjectUnits: programa, topics: [{ id: 'a', name: 'Divisibilidad en los naturales' }] }))
+
+    const { prompt } = generateObject.mock.calls[0][0]
+    expect(prompt).toContain('Divisibilidad en los naturales')
+    expect(prompt).toContain('REGLA DE ALCANCE')
+    expect(prompt).not.toContain('Máximo Común Divisor')
+    expect(prompt).not.toContain('Proporcionalidad')
+  })
+
+  it('en modo teórico no pide numeric aunque esté tildado', async () => {
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+    await POST(request({ mode: 'teorico', questionTypes: ['multiple_choice', 'numeric'] }))
+
+    const { system } = generateObject.mock.calls[0][0]
+    expect(system).not.toContain('TIPO "numeric"')
+  })
+
+  it('descarta una numeric que pide palabras y pide otra', async () => {
+    const conceptual = {
+      ...questions(1, 40)[0],
+      type: 'numeric' as const,
+      options: undefined,
+      question: 'Explique cómo se obtiene el MCD. Responda 1 si usa factores primos y 0 si no.',
+      correctAnswer: 1,
+    }
+    generateObject
+      .mockResolvedValueOnce({ object: { questions: [conceptual, ...questions(2, 41)] }, usage: {} })
+      .mockResolvedValueOnce({ object: { questions: questions(3, 42) }, usage: {} })
+
+    const response = await POST(request({ questionTypes: ['multiple_choice', 'numeric'] }))
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.questions).toHaveLength(3)
+    expect(body.questions.map((q: { question: string }) => q.question)).not.toContain(conceptual.question)
+    expect(generateObject).toHaveBeenCalledTimes(2)
+  })
+})
+
 describe('POST — contexto profesional (migración 022)', () => {
   it('no consulta curriculum fuera de Superior', async () => {
     generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })

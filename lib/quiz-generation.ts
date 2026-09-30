@@ -30,6 +30,7 @@ import {
 } from '@/lib/question-mix'
 import { sql } from '@/lib/db'
 import { AI_MODEL } from '@/lib/ai-model'
+import { isConceptualNumericQuestion, questionTypesForMode, scopeUnitsToTopics } from '@/lib/quiz-scope'
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -118,7 +119,9 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
   numeric: `TIPO "numeric":
 - type: "numeric"
 - correctAnswer: number
-- tolerance: number opcional (margen de error aceptado, omitir si la respuesta debe ser exacta)`,
+- tolerance: number opcional (margen de error aceptado, omitir si la respuesta debe ser exacta)
+- Usalo SOLO cuando la respuesta es un único número que sale de un cálculo o un conteo (ej: "Calculá el MCD(24, 36)" → 12).
+- NUNCA lo uses para preguntas que se responden con palabras (explicar, justificar, identificar un error, nombrar un concepto o una propiedad), ni para codificar sí/no o verdadero/falso como 1/0. Si la respuesta es conceptual, usá otro de los tipos pedidos.`,
 }
 
 function buildTypeInstructions(
@@ -397,12 +400,19 @@ ${buildTypeInstructions(questionTypes, questionMix, questionCount)}`
 
   const userPrompt = `Genera ${questionCount} preguntas para: ${subject}
 
-CURRICULUM:
+UBICACIÓN EN EL PROGRAMA (referencia de nivel y contexto):
 ${curriculum}
 
 MODO: ${modeDescription}
 
-TEMAS: ${topicsText}
+TEMAS SELECCIONADOS — ÚNICO ALCANCE DEL CUESTIONARIO:
+${topicsText}
+
+REGLA DE ALCANCE (obligatoria):
+- Cada pregunta evalúa exclusivamente uno de los TEMAS SELECCIONADOS.
+- NO preguntes sobre otros temas del programa, aunque sean de la misma unidad o estén relacionados con los seleccionados.
+- Las preferencias pedagógicas del docente indican CÓMO preguntar (enfoque, tono, tipo de situación), no agregan temas: aplicá ese enfoque a los temas seleccionados.
+- En "topicName" copiá textualmente el nombre del tema seleccionado que evalúa la pregunta.
 
 ${previousNote}
 ${pedagogyNote}
@@ -921,7 +931,10 @@ export async function generateQuiz(
     .filter((question: string | undefined): question is string => Boolean(question))
   const previousQuestionFingerprints = new Set(previousQuestionTexts.map(normalizeQuestionText))
 
-  const curriculum = buildCurriculumFromUnits(subject, subjectUnits)
+  // El aula manda el programa entero; recortarlo a los temas elegidos es lo
+  // que evita que el modelo pregunte por los hermanos. Ver lib/quiz-scope.ts.
+  const scopedUnits = scopeUnitsToTopics(Array.isArray(subjectUnits) ? subjectUnits : [], topics ?? [])
+  const curriculum = buildCurriculumFromUnits(subject, scopedUnits)
   const specialistRole = getSpecialistRole(subject)
 
   // Lo que declara el programa de cátedra: contexto profesional (migración 022)
@@ -931,8 +944,8 @@ export async function generateQuiz(
     grado,
     materia: subject,
     carrera,
-    ejes: Array.isArray(subjectUnits)
-      ? subjectUnits
+    ejes: Array.isArray(scopedUnits)
+      ? scopedUnits
           .map((unit: { name?: unknown }) => (typeof unit?.name === 'string' ? unit.name : ''))
           .filter((name: string) => name.length > 0)
       : [],
@@ -944,6 +957,15 @@ export async function generateQuiz(
   // renormaliza. Un tipo que el usuario tildó y el programa no pondera entra
   // igual; un tipo que el usuario destildó no vuelve por la ventana.
   const questionMix = restrictQuestionTypeMix(suggestedMix, finalQuestionTypes)
+
+  // La tanda teórica no admite `numeric` salvo que sea lo único pedido. Ver
+  // `questionTypesForMode`. `mode === 'teorico'` cubre el aula, que pide las
+  // dos mitades del mixto por separado; la tanda teórica del mixto de acá
+  // abajo usa lo mismo.
+  const teoricoQuestionTypes = questionTypesForMode(finalQuestionTypes, 'teorico')
+  const teoricoQuestionMix = restrictQuestionTypeMix(suggestedMix, teoricoQuestionTypes)
+  const batchQuestionTypes = mode === 'teorico' ? teoricoQuestionTypes : finalQuestionTypes
+  const batchQuestionMix = mode === 'teorico' ? teoricoQuestionMix : questionMix
 
   const modeDescription = mode === 'teorico'
     ? 'MODO TEÓRICO: Preguntas conceptuales sobre definiciones, teoremas y propiedades. Sin cálculos numéricos complejos.'
@@ -990,8 +1012,13 @@ situaciones diferentes.${rejectionBlock}`
   /** Signatures seen in THIS run — see numericSignature for why it is not global. */
   const runSignatures = new Set<string>()
 
-  /** Returns true when the question is a duplicate and should be dropped. */
-  const isDuplicate = (question: { question: string; topic?: string; topicName?: string }): boolean => {
+  /** Returns true when the question is a duplicate, or a numeric one that asks for words, and should be dropped. */
+  const shouldDrop = (question: { question: string; topic?: string; topicName?: string; type?: string }): boolean => {
+    if (isConceptualNumericQuestion(question)) {
+      console.log('[generate-quiz] Dropped a numeric question that asks for words:', question.question)
+      return true
+    }
+
     const fingerprint = normalizeQuestionText(question.question)
     if (!fingerprint || previousQuestionFingerprints.has(fingerprint)) return true
 
@@ -1034,13 +1061,13 @@ situaciones diferentes.${rejectionBlock}`
           nivel,
           grado,
           contextoProfesional,
-          questionTypes: finalQuestionTypes,
-          questionMix,
+          questionTypes: teoricoQuestionTypes,
+          questionMix: teoricoQuestionMix,
           onUsage,
         })
 
         for (const question of teoricoBatch) {
-          if (isDuplicate(question)) continue
+          if (shouldDrop(question)) continue
           teoricoCollected.push(question)
           if (teoricoCollected.length === teoricoCount) break
         }
@@ -1068,7 +1095,7 @@ situaciones diferentes.${rejectionBlock}`
         })
 
         for (const question of practicoBatch) {
-          if (isDuplicate(question)) continue
+          if (shouldDrop(question)) continue
           practicoCollected.push(question)
           if (practicoCollected.length === practicoCount) break
         }
@@ -1102,15 +1129,15 @@ situaciones diferentes.${rejectionBlock}`
       nivel,
       grado,
       contextoProfesional,
-      questionTypes: finalQuestionTypes,
-      questionMix,
+      questionTypes: batchQuestionTypes,
+      questionMix: batchQuestionMix,
       onUsage,
     })
 
     console.log('[generateObject] Success! Questions:', generatedQuestions.length)
 
     for (const question of generatedQuestions) {
-      if (isDuplicate(question)) continue
+      if (shouldDrop(question)) continue
 
       collectedQuestions.push(question)
 
