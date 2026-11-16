@@ -9,6 +9,7 @@ import {
   haceCuanto,
   normalizarNombre,
   resumir,
+  resumirTemas,
   temaCorto,
   type ActividadCruda,
   type InvitacionCruda,
@@ -217,6 +218,47 @@ describe('resumir', () => {
 
   it('sin ningún tema flojo no hay "tema más flojo"', () => {
     expect(resumir(new Map([['a', [tema('Límites', 9, 10)]]]), 0).temaMasFlojo).toBeNull()
+  })
+})
+
+describe('resumirTemas (la celda Temas de la planilla del alumno)', () => {
+  // Los siete temas del temario de Lengua de staging: el caso que, escrito
+  // entero, ocupaba cinco renglones y le comía el ancho a "Resultado".
+  const TEMARIO = [
+    'Lenguas y variedades lingüísticas: Respeto y valoración de las variedades dialectales de la comunidad.',
+    'Clases de palabras: Sustantivos propios y comunes. El adjetivo calificativo. Concordancia de género y número.',
+    'El verbo. Tiempo pasado, presente y futuro.',
+    'Conectores temporales y causales propios de los textos narrativos.',
+    'Familia de palabras. Sufijos y prefijos: Diminutivos y aumentativos, prefijación y sufijación.',
+    'Separación de palabras en sílabas. Sílaba tónica. Clasificación en agudas, graves y esdrújulas. Reglas generales de acentuación.',
+    'Signos de puntuación: Punto y seguido, punto y aparte, coma en enumeraciones, dos puntos, paréntesis y raya de diálogo.',
+  ]
+
+  it('nombra los tres primeros, cortos, y cuenta el resto', () => {
+    const { visibles, resto } = resumirTemas(TEMARIO)
+    expect(visibles).toEqual(['Lenguas y variedades…', 'Clases de palabras', 'El verbo'])
+    expect(resto).toBe(4)
+  })
+
+  it('lo que queda a la vista entra en un renglón de la tabla', () => {
+    const { visibles } = resumirTemas(TEMARIO)
+    expect(visibles.join(' · ').length).toBeLessThan(110)
+  })
+
+  it('el detalle completo no se pierde: va entero, separado por punto y coma', () => {
+    const { completo } = resumirTemas(TEMARIO)
+    for (const tema of TEMARIO) expect(completo).toContain(tema.replace(/\.$/, ''))
+    // El separador viejo dejaba "comunidad., Clases de palabras".
+    expect(completo).not.toContain('.,')
+    expect(completo).not.toContain('.;')
+  })
+
+  it('con tres temas o menos no hay resto', () => {
+    expect(resumirTemas(['Derivadas', 'Integrales'])).toMatchObject({ visibles: ['Derivadas', 'Integrales'], resto: 0 })
+  })
+
+  it('sin temas, nada', () => {
+    expect(resumirTemas([' ', ''])).toEqual({ visibles: [], resto: 0, completo: '' })
   })
 })
 

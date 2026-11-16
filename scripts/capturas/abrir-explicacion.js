@@ -43,7 +43,7 @@
   window.fetch = (url, opciones) =>
     String(url).includes('/api/explain-error')
       ? Promise.resolve(
-          new Response(JSON.stringify({ explanation: EXPLICACION, misconceptionType: 'Captura', tipText: 'Captura' }), {
+          new Response(JSON.stringify({ explanation: EXPLICACION, misconceptionType: 'Sumó los exponentes sin mirar la base', tipText: 'Misma base, se suman los exponentes.' }), {
             headers: { 'Content-Type': 'application/json' },
           }),
         )

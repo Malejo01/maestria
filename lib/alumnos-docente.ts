@@ -97,6 +97,27 @@ export function temaCorto(tema: string): string {
   return `${recorte.slice(0, Math.max(recorte.lastIndexOf(' '), 12)).trimEnd()}…`
 }
 
+/** Cuántos temas se nombran en una celda antes de resumir el resto. */
+export const TEMAS_A_LA_VISTA = 3
+
+/**
+ * Los temas de una práctica para una celda de tabla. Una tarea puede cubrir
+ * siete temas de 120 caracteres cada uno: escritos enteros y separados por
+ * comas eran un párrafo de cinco renglones que le comía el ancho a la columna
+ * del resultado, que es la que el docente vino a mirar. Acá van los nombres
+ * cortos de los primeros y la cuenta del resto; `completo` es para el `title`
+ * y para quien lee con lector de pantalla.
+ */
+export function resumirTemas(temas: string[]): { visibles: string[]; resto: number; completo: string } {
+  const limpios = temas.map((tema) => tema.trim()).filter(Boolean)
+  return {
+    visibles: limpios.slice(0, TEMAS_A_LA_VISTA).map(temaCorto),
+    resto: Math.max(limpios.length - TEMAS_A_LA_VISTA, 0),
+    // Punto y coma, no coma: los nombres de tema traen comas y puntos adentro.
+    completo: limpios.map((tema) => tema.replace(/[.\s]+$/, '')).join('; '),
+  }
+}
+
 // ─── Nombres ──────────────────────────────────────────────────────────────────
 
 /** Para comparar nombres: sin tildes, sin mayúsculas, sin espacios de más. */
