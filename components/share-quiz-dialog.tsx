@@ -1,28 +1,23 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Check, Download, Link2, Loader2, Users } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { useEffect, useId, useMemo, useState } from 'react'
+import { Check, Copy, Download, MessageCircle } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { Aparecer } from '@/components/sistema/aparecer'
+import { Boton } from '@/components/sistema/boton'
+import { Cargando } from '@/components/sistema/cargando'
+import { TRAZO_ICONO } from '@/components/sistema/iconos'
+import type { MisAlumnos } from '@/lib/alumnos-docente-server'
+import { aQuienSaludar, armarMensaje, linkDeWhatsApp } from '@/lib/compartir-tarea'
+import { COMPARTIR_TAREA as T } from '@/lib/textos'
 import type { TeacherQuiz } from '@/lib/types'
 
-interface ClassroomOption {
+interface Grupo {
   id: number
   name: string
   join_code: string
   status: 'open' | 'closed'
   teacher_program_id: number
-  subject_name: string
   member_count: number
 }
 
@@ -31,247 +26,375 @@ interface ShareQuizDialogProps {
   onOpenChange: (open: boolean) => void
   onExportMoodle: () => void
   isExporting?: boolean
-  /** The quiz being shared; needed to publish it into an aula. */
+  /** La tarea que se manda. */
   quiz?: TeacherQuiz | null
-  /** Lets the caller send the teacher to the Aulas section to create one. */
-  onGoToClassrooms?: () => void
+}
+
+const CAMPO =
+  'h-12 w-full rounded-md border border-borde-fuerte bg-superficie-tarjeta px-3 text-[15px] text-texto placeholder:text-texto-suave placeholder:opacity-70'
+const ETIQUETA = 'nota mb-2 block font-semibold text-texto-suave'
+
+/**
+ * Un `datetime-local` no trae zona horaria: el navegador lo lee como hora
+ * local, que es lo que quiso decir el docente al escribir "viernes 23:59".
+ */
+function aFecha(valor: string): Date | null {
+  if (!valor) return null
+  const fecha = new Date(valor)
+  return Number.isNaN(fecha.getTime()) ? null : fecha
 }
 
 /**
- * Turns a datetime-local value into an ISO string. The input has no timezone,
- * so the browser reads it as local time — which is what the teacher meant when
- * they typed "viernes 23:59".
+ * Mandar una tarea y compartirla. Dos pasos en el mismo diálogo:
+ *
+ *  1. Mandar. Una sola decisión: el botón. El grupo de la materia aparece solo
+ *     (se crea si todavía no existe: el docente no pasa por "crear aula"), y
+ *     las fechas y el límite de intentos están plegados porque casi nunca
+ *     hacen falta.
+ *  2. Compartir. La pantalla que más rinde por línea escrita: el link del
+ *     grupo, grande, con su botón de copiar; un mensaje ya escrito para
+ *     WhatsApp; y el recordatorio de que el alumno entra sin cuenta.
+ *
+ * El mensaje se arma en lib/compartir-tarea.ts, que no inventa nada: no dice
+ * para cuándo si no hay fecha, ni nombra a un alumno si la tarea va a varios.
  */
-function localInputToIso(value: string): string | null {
-  if (!value) return null
-  const parsed = new Date(value)
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
-}
-
 export function ShareQuizDialog({
   open,
   onOpenChange,
   onExportMoodle,
   isExporting = false,
   quiz = null,
-  onGoToClassrooms,
 }: ShareQuizDialogProps) {
-  const { toast } = useToast()
+  const id = useId()
+  const [grupos, setGrupos] = useState<Grupo[] | null>(null)
+  const [grupoId, setGrupoId] = useState<number | null>(null)
+  const [alumnos, setAlumnos] = useState<{ nombre: string }[]>([])
+  const [conOpciones, setConOpciones] = useState(false)
+  const [desde, setDesde] = useState('')
+  const [hasta, setHasta] = useState('')
+  const [intentos, setIntentos] = useState('')
+  const [mandando, setMandando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [mandada, setMandada] = useState(false)
+  const [mensaje, setMensaje] = useState('')
+  const [copiado, setCopiado] = useState<'nada' | 'link' | 'mensaje' | 'fallo'>('nada')
 
-  const [classrooms, setClassrooms] = useState<ClassroomOption[]>([])
-  const [isLoadingClassrooms, setIsLoadingClassrooms] = useState(false)
-  const [selectedClassroomId, setSelectedClassroomId] = useState<number | null>(null)
-  const [dueAt, setDueAt] = useState('')
-  const [opensAt, setOpensAt] = useState('')
-  const [maxAttempts, setMaxAttempts] = useState('')
-  const [isAssigning, setIsAssigning] = useState(false)
-  const [assignedTo, setAssignedTo] = useState<string | null>(null)
+  const materiaId = quiz?.teacherProgramId ?? null
 
   useEffect(() => {
-    if (!open) {
-      setSelectedClassroomId(null)
-      setOpensAt('')
-      setDueAt('')
-      setMaxAttempts('')
-      setAssignedTo(null)
-      return
+    if (!open || !materiaId) return
+
+    let vigente = true
+    setGrupos(null)
+    setGrupoId(null)
+    setConOpciones(false)
+    setDesde('')
+    setHasta('')
+    setIntentos('')
+    setError(null)
+    setMandada(false)
+    setCopiado('nada')
+
+    async function preparar() {
+      // El grupo automático: si la materia todavía no tiene grupo, se crea acá.
+      const asegurado = await fetch('/api/teacher/onboarding/grupo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teacherProgramId: materiaId }),
+      })
+      if (!asegurado.ok) throw new Error(`HTTP ${asegurado.status}`)
+
+      const [resGrupos, resAlumnos] = await Promise.all([
+        fetch('/api/teacher/classrooms'),
+        fetch('/api/teacher/alumnos'),
+      ])
+      if (!resGrupos.ok) throw new Error(`HTTP ${resGrupos.status}`)
+      const todos = ((await resGrupos.json()).classrooms ?? []) as Grupo[]
+      const deLaMateria = todos.filter(
+        (grupo) => Number(grupo.teacher_program_id) === Number(materiaId) && grupo.status === 'open',
+      )
+
+      // A quién saludar en el mensaje. Si falla, el mensaje sale sin nombre.
+      const listado = resAlumnos.ok ? ((await resAlumnos.json()) as MisAlumnos) : null
+      const deEstaMateria = (listado?.alumnos ?? []).filter((alumno) =>
+        alumno.materias.some((materia) => materia.id === Number(materiaId)),
+      )
+
+      if (!vigente) return
+      setGrupos(deLaMateria)
+      setGrupoId(deLaMateria[0]?.id ?? null)
+      setAlumnos(deEstaMateria.map((alumno) => ({ nombre: alumno.nombre })))
     }
 
-    let isMounted = true
-    setIsLoadingClassrooms(true)
-
-    fetch('/api/teacher/classrooms')
-      .then((res) => res.json())
-      .then((data) => {
-        if (!isMounted) return
-        setClassrooms(Array.isArray(data.classrooms) ? data.classrooms : [])
-      })
-      .catch(() => {
-        if (isMounted) setClassrooms([])
-      })
-      .finally(() => {
-        if (isMounted) setIsLoadingClassrooms(false)
-      })
+    preparar().catch(() => {
+      if (vigente) {
+        setGrupos([])
+        setError(T.mandar.fallo)
+      }
+    })
 
     return () => {
-      isMounted = false
+      vigente = false
     }
-  }, [open])
+  }, [open, materiaId])
 
-  // An aula hands out one subject, so only aulas of this quiz's materia can
-  // receive it — the API enforces the same rule.
-  const eligibleClassrooms = useMemo(() => {
-    if (!quiz) return []
-    return classrooms.filter((classroom) => Number(classroom.teacher_program_id) === Number(quiz.teacherProgramId))
-  }, [classrooms, quiz])
+  const grupo = useMemo(() => grupos?.find((g) => g.id === grupoId) ?? null, [grupos, grupoId])
+  const link = grupo ? `${window.location.origin}/aula/${grupo.join_code}` : ''
 
-  const handleAssign = async () => {
-    if (!quiz || !selectedClassroomId) {
-      toast({ title: 'Elegí un aula', description: 'Seleccioná a qué aula querés enviarlo.' })
+  async function mandar() {
+    if (!quiz || !grupo) return
+
+    const maximo = intentos.trim() ? Number(intentos) : null
+    if (maximo !== null && (!Number.isInteger(maximo) || maximo < 1)) {
+      setError(T.mandar.intentosInvalidos)
       return
     }
 
-    const parsedAttempts = maxAttempts.trim() ? Number(maxAttempts) : null
-    if (parsedAttempts !== null && (!Number.isInteger(parsedAttempts) || parsedAttempts < 1)) {
-      toast({ title: 'Intentos inválidos', description: 'El máximo de intentos tiene que ser un número mayor a 0.' })
-      return
-    }
-
-    setIsAssigning(true)
-
+    setMandando(true)
+    setError(null)
     try {
-      const response = await fetch(`/api/teacher/classrooms/${selectedClassroomId}/assignments`, {
+      const res = await fetch(`/api/teacher/classrooms/${grupo.id}/assignments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           teacherQuizId: quiz.id,
-          opensAt: localInputToIso(opensAt),
-          dueAt: localInputToIso(dueAt),
-          maxAttempts: parsedAttempts,
+          opensAt: aFecha(desde)?.toISOString() ?? null,
+          dueAt: aFecha(hasta)?.toISOString() ?? null,
+          maxAttempts: maximo,
         }),
       })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || T.mandar.fallo)
 
-      const data = await response.json()
-      if (!response.ok) {
-        throw new Error(data?.error || 'No se pudo asignar el cuestionario')
-      }
-
-      const classroom = eligibleClassrooms.find((item) => item.id === selectedClassroomId)
-      setAssignedTo(classroom?.name ?? 'el aula')
-      toast({
-        title: 'Cuestionario asignado',
-        description: `Tus alumnos de ${classroom?.name ?? 'el aula'} ya lo ven en Mis aulas.`,
-      })
-    } catch (error) {
-      toast({
-        title: 'No se pudo asignar',
-        description: error instanceof Error ? error.message : 'Error desconocido',
-      })
+      setMensaje(
+        armarMensaje({
+          nombre: aQuienSaludar(alumnos),
+          temas: quiz.selectedTopics.map((tema) => tema.name),
+          materia: quiz.subjectName,
+          link,
+          hasta: aFecha(hasta),
+        }),
+      )
+      setMandada(true)
+    } catch (causa) {
+      setError(causa instanceof Error ? causa.message : T.mandar.fallo)
     } finally {
-      setIsAssigning(false)
+      setMandando(false)
+    }
+  }
+
+  async function copiar(texto: string, que: 'link' | 'mensaje') {
+    try {
+      await navigator.clipboard.writeText(texto)
+      setCopiado(que)
+    } catch {
+      setCopiado('fallo')
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg rounded-3xl border-2 max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="text-left">
-          <DialogTitle className="text-xl font-black text-foreground">Compartir cuestionario</DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed">
-            Enviálo a un aula para que tus alumnos lo resuelvan, o exportálo a Moodle.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4">
-          <Card className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Link2 className="w-4 h-4 text-primary" />
-              <h3 className="font-semibold text-sm">Enviar a un aula</h3>
+      <DialogContent className="max-h-[92dvh] overflow-y-auto rounded-lg border-borde sm:max-w-[520px]">
+        {mandada ? (
+          <Aparecer key="compartir" className="flex flex-col gap-4">
+            <div>
+              <DialogTitle className="titulo-m text-texto">{T.lista.titulo}</DialogTitle>
+              <DialogDescription className="cuerpo-s mt-1 text-texto-suave">{T.lista.detalle}</DialogDescription>
             </div>
 
-            {isLoadingClassrooms && (
-              <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> Buscando tus aulas...
+            <div>
+              <label htmlFor={`${id}-link`} className={ETIQUETA}>
+                {T.lista.link}
+              </label>
+              <input
+                id={`${id}-link`}
+                readOnly
+                value={link}
+                onFocus={(evento) => evento.currentTarget.select()}
+                className={`${CAMPO} h-14 bg-superficie-base text-[17px] font-semibold`}
+              />
+              <Boton ancho className="mt-2" onClick={() => copiar(link, 'link')}>
+                {copiado === 'link' ? (
+                  <Check aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                ) : (
+                  <Copy aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                )}
+                <span aria-live="polite">{copiado === 'link' ? T.lista.linkCopiado : T.lista.copiarLink}</span>
+              </Boton>
+            </div>
+
+            <div>
+              <label htmlFor={`${id}-mensaje`} className={ETIQUETA}>
+                {T.lista.mensaje}
+              </label>
+              <textarea
+                id={`${id}-mensaje`}
+                value={mensaje}
+                onChange={(evento) => setMensaje(evento.target.value)}
+                rows={5}
+                aria-describedby={`${id}-mensaje-ayuda`}
+                className="cuerpo-s w-full rounded-md border border-borde-fuerte bg-superficie-tarjeta p-3 text-texto"
+              />
+              <p id={`${id}-mensaje-ayuda`} className="nota mt-1 text-texto-suave">
+                {T.lista.mensajeAyuda}
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Boton variante="secundario" onClick={() => copiar(mensaje, 'mensaje')}>
+                  {copiado === 'mensaje' ? (
+                    <Check aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                  ) : (
+                    <Copy aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                  )}
+                  <span aria-live="polite">
+                    {copiado === 'mensaje' ? T.lista.mensajeCopiado : T.lista.copiarMensaje}
+                  </span>
+                </Boton>
+                <Boton variante="secundario" asChild>
+                  <a href={linkDeWhatsApp(mensaje)} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                    {T.lista.abrirWhatsApp}
+                  </a>
+                </Boton>
+              </div>
+            </div>
+
+            {copiado === 'fallo' && (
+              <p className="nota text-flojo" role="alert">
+                {T.lista.noSeCopio}
               </p>
             )}
 
-            {!isLoadingClassrooms && eligibleClassrooms.length === 0 && (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Todavía no tenés un aula para esta materia. Creá una para repartir el código a tus alumnos.
-                </p>
-                {onGoToClassrooms && (
-                  <Button type="button" variant="outline" size="sm" onClick={onGoToClassrooms}>
-                    <Users className="w-4 h-4 mr-2" />
-                    Ir a Aulas
-                  </Button>
-                )}
-              </div>
+            <p className="cuerpo-s rounded-lg border border-accion-tenue-borde bg-accion-tenue p-3 text-texto">
+              {T.lista.recordatorio}
+            </p>
+
+            <Boton variante="secundario" onClick={() => onOpenChange(false)}>
+              {T.lista.cerrar}
+            </Boton>
+          </Aparecer>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div>
+              <DialogTitle className="titulo-m text-texto">{T.mandar.titulo}</DialogTitle>
+              <DialogDescription className="cuerpo-s mt-1 text-texto-suave">
+                {T.mandar.detalle(quiz?.subjectName ?? '')}
+              </DialogDescription>
+            </div>
+
+            {grupos === null && (
+              <p className="cuerpo-s flex items-center gap-2 text-texto-suave" role="status">
+                <Cargando />
+                {T.mandar.preparando}
+              </p>
             )}
 
-            {!isLoadingClassrooms && eligibleClassrooms.length > 0 && (
-              <>
+            {/* Con un solo grupo no hay nada que elegir: no se pregunta. */}
+            {grupos && grupos.length > 1 && (
+              <fieldset>
+                <legend className={ETIQUETA}>{T.mandar.grupo}</legend>
                 <div className="flex flex-wrap gap-2">
-                  {eligibleClassrooms.map((classroom) => (
-                    <Button
-                      key={classroom.id}
-                      type="button"
-                      size="sm"
-                      variant={selectedClassroomId === classroom.id ? 'default' : 'outline'}
-                      onClick={() => setSelectedClassroomId(classroom.id)}
+                  {grupos.map((opcion) => (
+                    <Boton
+                      key={opcion.id}
+                      variante="secundario"
+                      aria-pressed={grupoId === opcion.id}
+                      className="aria-pressed:border-texto"
+                      onClick={() => setGrupoId(opcion.id)}
                     >
-                      {classroom.name}
-                      <span className="ml-1.5 text-[11px] opacity-70">
-                        {classroom.member_count} {classroom.member_count === 1 ? 'alumno' : 'alumnos'}
-                      </span>
-                    </Button>
+                      {opcion.name}
+                      <span className="nota font-normal text-texto-suave">{T.mandar.alumnos(opcion.member_count)}</span>
+                    </Boton>
                   ))}
                 </div>
+              </fieldset>
+            )}
 
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Disponible desde (opcional)</Label>
-                    <Input
-                      type="datetime-local"
-                      value={opensAt}
-                      onChange={(event) => setOpensAt(event.target.value)}
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Fecha límite (opcional)</Label>
-                    <Input
-                      type="datetime-local"
-                      value={dueAt}
-                      onChange={(event) => setDueAt(event.target.value)}
-                      className="h-9"
-                    />
-                  </div>
+            {grupo && (
+              <>
+                <div>
+                  <button
+                    type="button"
+                    aria-expanded={conOpciones}
+                    onClick={() => setConOpciones((abierto) => !abierto)}
+                    className="cuerpo-s inline-flex min-h-11 items-center rounded-sm font-semibold text-accion hover:text-accion-hover"
+                  >
+                    {conOpciones ? T.mandar.opciones.ocultar : T.mandar.opciones.mostrar}
+                  </button>
+
+                  {conOpciones && (
+                    <Aparecer className="mt-2 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor={`${id}-desde`} className={ETIQUETA}>
+                          {T.mandar.desde}
+                        </label>
+                        <input
+                          id={`${id}-desde`}
+                          type="datetime-local"
+                          value={desde}
+                          onChange={(evento) => setDesde(evento.target.value)}
+                          className={CAMPO}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor={`${id}-hasta`} className={ETIQUETA}>
+                          {T.mandar.hasta}
+                        </label>
+                        <input
+                          id={`${id}-hasta`}
+                          type="datetime-local"
+                          value={hasta}
+                          onChange={(evento) => setHasta(evento.target.value)}
+                          className={CAMPO}
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label htmlFor={`${id}-intentos`} className={ETIQUETA}>
+                          {T.mandar.intentos}
+                        </label>
+                        <input
+                          id={`${id}-intentos`}
+                          type="number"
+                          min={1}
+                          inputMode="numeric"
+                          value={intentos}
+                          onChange={(evento) => setIntentos(evento.target.value)}
+                          aria-describedby={`${id}-intentos-ayuda`}
+                          className={`${CAMPO} max-w-[10rem]`}
+                        />
+                        <p id={`${id}-intentos-ayuda`} className="nota mt-1 text-texto-suave">
+                          {T.mandar.intentosAyuda}
+                        </p>
+                      </div>
+                    </Aparecer>
+                  )}
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs">Máximo de intentos (vacío = sin límite)</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    placeholder="Sin límite"
-                    value={maxAttempts}
-                    onChange={(event) => setMaxAttempts(event.target.value)}
-                    className="h-9 max-w-[160px]"
-                  />
-                </div>
-
-                <Button
-                  type="button"
-                  onClick={handleAssign}
-                  disabled={isAssigning || !selectedClassroomId}
-                  className="w-full h-11 rounded-xl"
-                >
-                  {isAssigning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Link2 className="w-4 h-4 mr-2" />}
-                  Enviar al aula
-                </Button>
-
-                {assignedTo && (
-                  <p className="text-sm text-emerald-700 flex items-center gap-1.5">
-                    <Check className="w-4 h-4" />
-                    Asignado a {assignedTo}.
-                  </p>
-                )}
+                <Boton ancho onClick={mandar} disabled={mandando}>
+                  {mandando && <Cargando />}
+                  {mandando ? T.mandar.mandando : T.mandar.boton}
+                </Boton>
               </>
             )}
-          </Card>
 
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onExportMoodle}
-            disabled={isExporting}
-            className="w-full justify-start h-12 rounded-xl"
-          >
-            {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-            Exportar para Moodle
-          </Button>
-        </div>
+            {error && (
+              <p className="cuerpo-s text-flojo" role="alert">
+                {error}
+              </p>
+            )}
+
+            <div className="border-t border-borde pt-2">
+              <button
+                type="button"
+                onClick={onExportMoodle}
+                disabled={isExporting}
+                className="cuerpo-s inline-flex min-h-11 items-center gap-2 rounded-sm text-texto-suave hover:text-texto disabled:opacity-60"
+              >
+                {isExporting ? <Cargando /> : <Download aria-hidden="true" className="size-4" strokeWidth={TRAZO_ICONO} />}
+                {isExporting ? T.mandar.exportando : T.mandar.moodle}
+              </button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )

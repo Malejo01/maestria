@@ -707,10 +707,6 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
             onExportMoodle={handleExportPendingShare}
             isExporting={isExportingMoodle}
             quiz={pendingSharedQuiz}
-            onGoToClassrooms={() => {
-              setShowShareDialog(false)
-              setTeacherSection('aulas')
-            }}
           />
         </>
       )}
