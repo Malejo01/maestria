@@ -43,11 +43,14 @@ export function captureAiSchemaFailure(
     model?: string
     nivel?: string | null
     subject?: string | null
+    /** I2: 'length' es que el modelo se quedó sin tokens y el JSON salió cortado. */
+    finishReason?: string
   }
 ): void {
   safeCapture(error, (scope) => {
     scope.setLevel('warning')
     scope.setTag('error_kind', 'ai_schema')
+    if (context.finishReason) scope.setTag('ai_finish_reason', context.finishReason)
     scope.setTag('ai_endpoint', context.endpoint)
     scope.setTag('ai_fallback', context.fallback)
     scope.setTag('ai_model', context.model ?? AI_MODEL)

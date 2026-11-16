@@ -22,6 +22,7 @@ import {
   parserPara,
   parteDelArchivo,
 } from '@/lib/lectura-programa-server'
+import { REGLAS_DE_TEMAS, granularizarUnidades } from '@/lib/temas-granulares'
 
 export const runtime = 'nodejs'
 // Un escaneo o una foto van enteros al modelo, que tiene 60 s
@@ -252,6 +253,8 @@ Normaliza cualquier nombre de agrupador (eje, bloque, modulo, nodo) como "Unidad
 Si hay conflicto entre secciones, prioriza la seccion de contenidos.
 No inventes unidades ni temas que no aparezcan en el documento.
 
+${REGLAS_DE_TEMAS}
+
 Aparte: si el documento dice de forma explicita el nivel educativo (Primario, Secundario o Superior) y el año o grado de la materia, devolvelos en "nivel" y "grado". Si no lo dice, dejalos en null. No los deduzcas por la dificultad de los contenidos.`
 }
 
@@ -345,7 +348,7 @@ ${clippedText}`,
     let extractionMethod: 'ai' | 'heuristic' = 'ai'
 
     try {
-      const { object, usage } = await generateObject({
+      const { object, usage, finishReason } = await generateObject({
         model: google(AI_MODEL),
         schema: parsedProgramSchema,
         schemaName: 'programStructure',
@@ -353,11 +356,25 @@ ${clippedText}`,
         system: 'Eres un asistente academico. Extrae una estructura curricular jerarquica precisa.',
         ...entrada,
         temperature: 0.2,
-        maxOutputTokens: 2500,
+        // I2: con temas más finos la respuesta crece (la 05 y la 14 ya tienen
+        // 57 y 58). Con 2.500 se cortaba, el esquema fallaba y caía EN
+        // SILENCIO al heurístico.
+        maxOutputTokens: 8000,
         abortSignal: AbortSignal.timeout(TIEMPO_MAXIMO_DEL_MODELO_MS),
       })
 
+      if (finishReason === 'length') {
+        // Pasó el esquema pero el modelo se quedó sin lugar: puede faltar el
+        // final del programa. Se reporta como una falla de esquema.
+        captureAiSchemaFailure(new Error('La extracción del programa se cortó por largo (finishReason: length)'), {
+          endpoint: '/api/teacher/programs/extract',
+          fallback: 'none',
+          finishReason,
+        })
+      }
       parsedProgram = parsedProgramSchema.parse(object)
+      // La red de abajo: un tema que igual vino como párrafo se parte (I2).
+      parsedProgram = { ...parsedProgram, units: granularizarUnidades(parsedProgram.units) }
       await guard.finish(usage)
     } catch (schemaError) {
       if (esTiempoAgotado(schemaError)) {
@@ -372,6 +389,7 @@ ${clippedText}`,
         captureAiSchemaFailure(schemaError, {
           endpoint: '/api/teacher/programs/extract',
           fallback: modo === 'archivo' ? 'none' : 'heuristic',
+          finishReason: (schemaError as { finishReason?: string } | null)?.finishReason,
         })
       }
       // El intento fallido igual se facturó.
