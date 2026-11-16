@@ -78,7 +78,10 @@ export function FeedbackButton() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const open = context !== null
-  const isQuizView = activeView === 'quiz'
+  // El cuestionario y la pantalla de resultados tienen una barra de acciones
+  // fija abajo. En resultados no se medía, y el botón quedaba encima de
+  // "Tomar revancha".
+  const tieneBarraDeAcciones = activeView === 'quiz' || activeView === 'results'
 
   // Alto real de la barra de acción del quiz, para poder apoyarnos encima.
   //
@@ -99,7 +102,7 @@ export function FeedbackButton() {
   const [quizBarHeight, setQuizBarHeight] = useState(QUIZ_ACTION_BAR_FALLBACK_PX)
 
   useEffect(() => {
-    if (!isQuizView) return
+    if (!tieneBarraDeAcciones) return
 
     // El atributo lo pone `components/quiz-engine.tsx`. QuizEngine y este botón
     // se renderizan en el mismo commit (los dos leen `activeView` del store),
@@ -117,14 +120,16 @@ export function FeedbackButton() {
     const observer = new ResizeObserver(measure)
     observer.observe(bar)
     return () => observer.disconnect()
-  }, [isQuizView])
+    // `activeView` en las dependencias: al pasar del cuestionario a resultados
+    // la barra es OTRO elemento, y hay que volver a buscarlo.
+  }, [tieneBarraDeAcciones, activeView])
 
   // `--feedback-bottom` es la distancia del botón al borde inferior. Es una
   // variable y no un `bottom` suelto porque la leen dos cosas: la posición del
   // contenedor y el techo del panel, que tiene que descontarla para no
   // escaparse por arriba de la pantalla. Fuera del quiz la definen las clases
   // (con su breakpoint sm:); acá sólo la pisamos mientras dura el quiz.
-  const quizOffsetStyle = isQuizView
+  const quizOffsetStyle = tieneBarraDeAcciones
     ? ({ '--feedback-bottom': `calc(${quizBarHeight}px + 0.75rem)` } as React.CSSProperties)
     : undefined
 
