@@ -309,6 +309,10 @@ Los siete bloques están en `main` (`f0911c3`) y la 025 corrida en producción. 
   - Sin verificar: **no se probó en un navegador con la preferencia activada**; lo que hay son los tests sobre el código. `design-reference/` no está versionado, así que el documento cambió sólo en la máquina de Mauro: este PR lleva el código.
   - El papel picado sigue siendo decisión de Mauro (bloque 6): si la regla de sobriedad es estricta, se saca en una línea y se borra su fila de la tabla.
 
+- [x] **B3 · La regla de emojis quedó escrita y con quién la sostenga** (rama `feat/b3-lint-emojis`). La regla: **en la interfaz, ninguno; en el contenido que escribe la IA, sólo para Primario.** Está en `design-reference/sistema/voz-y-textos.md` ("Emojis"), con la tabla por nivel y la línea que separa las dos cosas: quién escribió el texto. Tres cosas la sostienen sin depender de acordarse: el test de diseño (interfaz, ya existía), `permiteEmojis` + `quitarEmojis` (explicaciones, de A2) y, nuevo acá, el **lint de preguntas** ([lib/qa/lint-questions.ts](../lib/qa/lint-questions.ts)): una pregunta de Secundario o Superior con un emoji en el enunciado, una opción o la explicación es un hallazgo `major` de adecuación al nivel, y dice dónde está. Usa la misma `quitarEmojis`, así que una flecha o un ✓ no cuentan. Salió barato porque `scripts/qa/lint-sweep.ts` ya corre `lintQuestions`: no hubo que tocarlo.
+  - Sin verificar: **no se corrió el barrido contra las 1.680 respuestas del 10/08**, así que no se sabe si el baseline de 88 hallazgos se mueve (esos alumnos son de Superior: cualquier pregunta con emoji sumaría). El documento cambió sólo en la máquina de Mauro (`design-reference/` no está versionado).
+  - Queda: las preguntas generadas para Secundario y Superior no pasan por `quitarEmojis` al generarse, sólo se les pide por prompt (A2). El lint las detecta después; no las limpia.
+
 ### Cola nueva, salida de A5 (se hace después de E3)
 
 - [ ] **F1 · La nota no entra en su recuadro en resultados.** A 390, "4.00" a 48 px se sale del cuadro de 144 px y pisa el "/10" (`components/results-screen.tsx`). Captura: `a5-celular/resultados-390-claro.png`.

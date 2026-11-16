@@ -501,3 +501,38 @@ describe('lintQuestions — true_false que adelanta su respuesta', () => {
     ).toBe(false)
   })
 })
+
+describe('lintQuestions — emojis fuera de Primario', () => {
+  const SECUNDARIO = { nivel: 'Secundario', grado: '4to Año', materia: 'Lengua' }
+  const deEmojis = (findings: ReturnType<typeof lintQuestions>) =>
+    findings.filter((f) => f.justification.startsWith('Emojis en'))
+
+  it('en Secundario y Superior, un emoji en el enunciado es un hallazgo de adecuación al nivel', () => {
+    for (const contexto of [SECUNDARIO, SUPERIOR]) {
+      const [hallazgo] = deEmojis(lintQuestions([mc({ question: '¿Cuánto es $2 + 2$? 🔢' })], contexto))
+      expect(hallazgo, contexto.nivel).toMatchObject({ dimension: 'adecuacion_nivel', severity: 'major', questionIndex: 0 })
+      expect(hallazgo.justification).toContain('el enunciado')
+    }
+  })
+
+  it('dice dónde están: enunciado, opciones y explicación', () => {
+    const [hallazgo] = deEmojis(
+      lintQuestions(
+        [mc({ options: ['3', '4 ✨', '5', '6'], explanation: 'Sumamos dos y dos. 🎉' })],
+        SECUNDARIO,
+      ),
+    )
+    expect(hallazgo.justification).toContain('la explicación')
+    expect(hallazgo.justification).toContain('la opción 2')
+    expect(hallazgo.justification).not.toContain('el enunciado')
+  })
+
+  it('en Primario no es un hallazgo: ahí son apoyo de lectura', () => {
+    expect(deEmojis(lintQuestions([mc({ question: '¿Cuántos pollitos 🐥 hay?' })], PRIMARIO))).toEqual([])
+  })
+
+  it('una flecha, un ✓ o un ↔ no son emojis', () => {
+    const pregunta = mc({ question: 'Si p → q y q ↔ r, ¿vale p → r? ✓', explanation: 'Por transitividad: p → r.' })
+    expect(deEmojis(lintQuestions([pregunta], SUPERIOR))).toEqual([])
+  })
+})
