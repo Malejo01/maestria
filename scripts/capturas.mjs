@@ -25,6 +25,7 @@
  *                                archivos separados por coma corren en orden.
  *   NOMBRE=explicacion           nombre del archivo, en lugar del de la ruta
  *   MOVIMIENTO=reducido          emula prefers-reduced-motion: reduce
+ *   COMPLETA=1                   la página entera, de arriba abajo, no sólo la pantalla
  *   PUERTO=9333                  puerto de DevTools (otro para correr dos a la vez)
  *
  * No usa Playwright ni Puppeteer: levanta el navegador instalado (Edge o
@@ -190,7 +191,16 @@ try {
           }
           await esperar(800)
         }
-        const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
+        // COMPLETA=1: la página entera, no sólo lo que entra en la pantalla.
+        let recorte = {}
+        if (process.env.COMPLETA) {
+          const { cssContentSize } = await cdp('Page.getLayoutMetrics')
+          recorte = {
+            captureBeyondViewport: true,
+            clip: { x: 0, y: 0, width: ancho, height: Math.ceil(cssContentSize.height), scale: 1 },
+          }
+        }
+        const { data } = await cdp('Page.captureScreenshot', { format: 'png', ...recorte })
         const archivo = join(salida, `${process.env.NOMBRE ?? nombreDe(ruta)}-${ancho}-${modo}.png`)
         await writeFile(archivo, Buffer.from(data, 'base64'))
         console.log(archivo)
