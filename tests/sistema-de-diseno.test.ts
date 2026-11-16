@@ -43,7 +43,6 @@ function archivosDe(ruta: string): string[] {
  * de esta lista cuando su bloque lo rehace; la lista sólo puede achicarse.
  */
 const TODAVIA_VIEJOS = [
-  'components/docente/mis-materias.tsx', // bloque 4
   'components/docente/mis-tareas.tsx', // bloque 5
 ]
 

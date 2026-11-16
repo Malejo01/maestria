@@ -1,7 +1,6 @@
 'use client'
 
 import { SubjectContent } from '@/components/subject-content'
-import { SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -67,7 +66,6 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
     const subjectId = `teacher-${program.id}`
     const isSelected = activeSubject === subjectId
     const Icon = SUBJECT_ICON_COMPONENTS[program.iconName] ?? BookOpen
-    const chipClass = SUBJECT_COLOR_CLASS[program.colorName]?.chip ?? 'bg-teal-500'
     // Programs created before the wizard have no nivel/grado — stage 2 needs
     // both to match a classroom, so nudge the teacher to fill them in.
     const needsLevelData = !program.nivel || !program.grado
@@ -75,7 +73,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
     return (
       <Card
         key={program.id}
-        className={`relative w-full p-4 pt-6 min-h-[170px] border-2 cursor-pointer transition-all ${isSelected ? 'border-primary shadow-md bg-primary/5' : 'border-border hover:border-primary/40'}`}
+        className={`relative w-full p-4 pt-6 min-h-[170px] border-2 cursor-pointer transition-all ${isSelected ? 'border-accion bg-accion-tenue' : 'border-border hover:border-primary/40'}`}
         onClick={() => handleSubjectChange(subjectId)}
         onDoubleClick={() => {
           handleSubjectChange(subjectId)
@@ -84,7 +82,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
       >
         <button
           type="button"
-          className="absolute -top-2 -left-2 w-8 h-8 rounded-full bg-background border-2 border-border flex items-center justify-center hover:bg-muted"
+          className="absolute -top-3 -left-3 size-11 rounded-md bg-superficie-tarjeta text-texto-suave border border-borde-fuerte flex items-center justify-center hover:border-texto hover:text-texto"
           onClick={(event) => {
             event.stopPropagation()
             handleSubjectChange(subjectId)
@@ -96,7 +94,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
         </button>
         <button
           type="button"
-          className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-red-600 text-white border-2 border-red-600 flex items-center justify-center hover:bg-red-700"
+          className="absolute -top-3 -right-3 size-11 rounded-md bg-superficie-tarjeta text-texto-suave border border-borde-fuerte flex items-center justify-center hover:border-texto hover:text-texto"
           onClick={(event) => {
             event.stopPropagation()
             handleSubjectChange(subjectId)
@@ -108,7 +106,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
         </button>
 
         <div className="flex flex-col items-center text-center gap-2 pt-1">
-          <div className={`w-11 h-11 rounded-xl ${chipClass} text-white flex items-center justify-center shadow-sm`}>
+          <div className="w-11 h-11 rounded-md bg-superficie-suave text-accion flex items-center justify-center">
             <Icon className="w-5 h-5" />
           </div>
           <p className="font-semibold leading-snug whitespace-normal break-words text-sm sm:text-[15px] w-full px-1">
@@ -117,7 +115,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
           {needsLevelData ? (
             <button
               type="button"
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 hover:bg-amber-100"
+              className="inline-flex min-h-11 items-center gap-1 text-[11px] font-semibold text-flojo bg-flojo-fondo rounded-sm px-2"
               onClick={(event) => {
                 event.stopPropagation()
                 handleSubjectChange(subjectId)
@@ -156,7 +154,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
   return (
     <>
         {teacherSection === 'materias' && (
-          <Card className="p-4 rounded-2xl border border-border/60 bg-card/75 backdrop-blur-md shadow-[0_6px_30px_rgba(23,23,23,0.06)] space-y-4">
+          <Card className="p-4 rounded-lg border border-borde bg-superficie-tarjeta space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <Button onClick={() => setShowCreateWizard(true)} className="rounded-xl font-bold">
                 <Plus className="w-4 h-4 mr-2" />
@@ -237,7 +235,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
         )}
 
         {teacherSection === 'crear' && (
-          <Card className="p-4 rounded-2xl border border-border/60 bg-card/75 backdrop-blur-md shadow-[0_6px_30px_rgba(23,23,23,0.06)] space-y-4">
+          <Card className="p-4 rounded-lg border border-borde bg-superficie-tarjeta space-y-4">
             {/* Arriving from a materia's own "Crear cuestionario" button means
                 the materia is already picked — showing the picker again would
                 be the extra step this was meant to remove. */}
