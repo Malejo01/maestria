@@ -22,6 +22,7 @@ import {
   parserPara,
   parteDelArchivo,
 } from '@/lib/lectura-programa-server'
+import { REGLAS_DE_TEMAS, granularizarUnidades } from '@/lib/temas-granulares'
 
 export const runtime = 'nodejs'
 // Como /extract: una imagen o un escaneo van enteros al modelo, con 60 s (I1).
@@ -474,6 +475,7 @@ Temas verificados: ${payload.seedTopics.join('; ')}
 Tu tarea es continuar el programa con las unidades y temas siguientes, sin repetir el ancla.
 Prioriza coincidencias por numeracion (Unidad 2, 3...) y similitud textual.
 Devuelve solo estructura Unidad -> Temas.
+${REGLAS_DE_TEMAS}
       ${rejectedUnitNames.length > 0 ? `No repitas ni propongas estas unidades marcadas como incorrectas: ${rejectedUnitNames.join('; ')}` : ''}
       ${rejectedTopicNames.length > 0 ? `No repitas ni propongas estos temas marcados como incorrectos: ${rejectedTopicNames.join('; ')}` : ''}
       ${guidanceNote ? `Correccion adicional del docente: ${guidanceNote}` : ''}
@@ -511,11 +513,12 @@ ${section.slice(0, 12000)}`,
         system: 'Eres un asistente academico experto en programas anuales en espanol. Continua estructuras sin inventar.',
         ...entrada,
         temperature: 0.2,
-        maxOutputTokens: 2200,
+        maxOutputTokens: 8000,
         abortSignal: AbortSignal.timeout(TIEMPO_MAXIMO_DEL_MODELO_MS),
       })
 
       parsed = continuationSchema.parse(object)
+      parsed = { ...parsed, units: granularizarUnidades(parsed.units) }
       await guard.finish(usage)
     } catch (schemaError) {
       if (esTiempoAgotado(schemaError)) {

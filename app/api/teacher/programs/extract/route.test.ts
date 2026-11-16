@@ -175,3 +175,44 @@ describe('la ruta', () => {
   })
 })
 
+
+describe('temas granulares (I2)', () => {
+  const texto = 'Unidad 1 Matrices operaciones determinantes. '.repeat(12)
+
+  it('pide temas finos, deja lugar para 57 temas, y parte un párrafo que igual vino', async () => {
+    generateObject.mockResolvedValue({
+      object: {
+        units: [
+          {
+            name: 'Unidad III',
+            topics: [
+              {
+                name: 'Sistemas de m ecuaciones lineales con n incógnitas. Reducción a la forma escalonada. Solución general. Rango de una matriz. Teorema de Rouché-Frobenius',
+              },
+            ],
+          },
+        ],
+      },
+      usage: {},
+      finishReason: 'stop',
+    })
+    const res = await POST(pedido('digital.pdf', 'application/pdf', pdfMinimo(texto)))
+    const llamada = generateObject.mock.calls[0][0]
+    expect(llamada.maxOutputTokens).toBe(8000)
+    expect(llamada.prompt).toContain('enseñar y evaluar por separado')
+    const cuerpo = await res.json()
+    expect(cuerpo.units[0].topics.map((t: { name: string }) => t.name)).toEqual([
+      'Sistemas de m ecuaciones lineales con n incógnitas',
+      'Reducción a la forma escalonada',
+      'Solución general',
+      'Rango de una matriz',
+      'Teorema de Rouché-Frobenius',
+    ])
+  })
+
+  it('si el modelo corta por largo, se reporta como falla de esquema', async () => {
+    generateObject.mockResolvedValue({ object: ESTRUCTURA, usage: {}, finishReason: 'length' })
+    await POST(pedido('digital.pdf', 'application/pdf', pdfMinimo(texto)))
+    expect(captureAiSchemaFailure).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ finishReason: 'length' }))
+  })
+})
