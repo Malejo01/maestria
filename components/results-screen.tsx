@@ -330,7 +330,8 @@ export function ResultsScreen() {
       </header>
 
       {/* Main Content */}
-      <main className="px-4 pb-[calc(9rem+env(safe-area-inset-bottom))] space-y-5 relative z-10">
+      {/* Con ancho máximo: a 1280 px las tarjetas medían la ventana entera. */}
+      <main className="relative z-10 mx-auto w-full max-w-2xl space-y-5 px-4 pb-[calc(9rem+env(safe-area-inset-bottom))]">
         {/* Score Card */}
         <Card className={cn(
           'p-6 text-center border-2 overflow-hidden relative rounded-3xl',
@@ -345,9 +346,13 @@ export function ResultsScreen() {
             </>
           )}
           
-          <div className="relative">
+          {/* `w-fit`: la insignia de tendencia se ancla a la esquina del
+              recuadro, no a un cuarto del ancho de la tarjeta. */}
+          <div className="relative mx-auto w-fit">
+            {/* Ancho mínimo y no fijo: "10.00/10" a 48 px no entra en 144 px y
+                pisaba el "/10". El recuadro crece con la nota. */}
             <div className={cn(
-              'w-36 h-36 mx-auto rounded-3xl flex items-center justify-center',
+              'mx-auto flex h-36 w-fit min-w-36 items-center justify-center whitespace-nowrap rounded-3xl px-5',
               'border-4',
               results.passed 
                 ? 'border-logrado bg-superficie-tarjeta' 
@@ -365,7 +370,7 @@ export function ResultsScreen() {
             </div>
 
             <div className={cn(
-              'absolute -top-2 right-1/4 w-12 h-12 rounded-2xl flex items-center justify-center',
+              'absolute -right-4 -top-3 w-12 h-12 rounded-2xl flex items-center justify-center',
               results.passed 
                 ?' bg-logrado' 
                 :' bg-flojo '
@@ -562,13 +567,18 @@ export function ResultsScreen() {
       </main>
 
       {/* Fixed Action Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t-2 border-border bg-card/95 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      {/* `data-quiz-action-bar`: el botón de "Reportar un problema" mide esta
+          barra para ponerse arriba y no encima (components/feedback-button.tsx). */}
+      <div
+        data-quiz-action-bar=""
+        className="fixed bottom-0 left-0 right-0 z-20 border-t-2 border-border bg-card/95 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+      >
         <div className="max-w-md mx-auto space-y-2.5">
           {!results.passed && (
             <Button
               onClick={() => handleRetry('practico')}
               disabled={isRetrying}
-              className="w-full h-13 rounded-2xl bg-flojo hover:bg-flojo text-texto-sobre-accion font-bold text-sm gap-2 active:scale-95 transition-all"
+              className="w-full h-auto min-h-13 whitespace-normal py-2 rounded-2xl bg-flojo hover:bg-flojo text-texto-sobre-accion font-bold text-sm gap-2 active:scale-95 transition-all"
             >
               {isRetrying ? (
                 <>
