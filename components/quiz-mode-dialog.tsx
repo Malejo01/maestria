@@ -170,7 +170,7 @@ export function QuizModeDialog({
             <p className={cn('text-xs', isQuestionCountValid ? 'text-muted-foreground' : 'text-destructive')}>
               {isQuestionCountValid
                 ? `Rango permitido: ${minQuestionCount} a ${maxQuestionCount}.`
-                : `Ingresa un numero entero entre ${minQuestionCount} y ${maxQuestionCount}.`}
+                : `Ingresá un número entero entre ${minQuestionCount} y ${maxQuestionCount}.`}
             </p>
           </div>
           )}

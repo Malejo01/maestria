@@ -60,7 +60,7 @@ function startQuizWith(questions: ShortAnswerQuestion[]) {
 }
 
 function escribirYVerificar(texto: string) {
-  const textarea = screen.getByPlaceholderText('Escribe tu respuesta...')
+  const textarea = screen.getByPlaceholderText('Escribí tu respuesta…')
   fireEvent.change(textarea, { target: { value: texto } })
   act(() => {
     screen.getByRole('button', { name: 'Verificar' }).click()
@@ -148,9 +148,9 @@ describe('fail-open: la IA no contesta', () => {
     render(<QuizEngine />)
     escribirYVerificar('algo')
 
-    // Ni "Correcto!" ni "Respuesta Incorrecta": un tercer estado propio.
+    // Ni "Correcto" ni "Respuesta incorrecta": un tercer estado propio.
     await waitFor(() => expect(screen.getByText('Sin calificar')).toBeTruthy())
-    expect(screen.queryByText('Respuesta Incorrecta')).toBeNull()
+    expect(screen.queryByText('Respuesta incorrecta')).toBeNull()
     expect(screen.getByText(/No cuenta como error en tu nota/)).toBeTruthy()
     expect(screen.getByRole('button', { name: /Reintentar la corrección/ })).toBeTruthy()
   })
@@ -220,6 +220,6 @@ describe('la IA sí contesta', () => {
     await waitFor(() => expect(respuestaGuardada()).toBeTruthy())
     expect(respuestaGuardada().isCorrect).toBe(false)
     expect(respuestaGuardada().gradingStatus).toBeUndefined()
-    expect(screen.getByText('Respuesta Incorrecta')).toBeTruthy()
+    expect(screen.getByText('Respuesta incorrecta')).toBeTruthy()
   })
 })

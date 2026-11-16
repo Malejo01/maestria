@@ -247,8 +247,8 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     if (local.resolved) {
       setShortAnswerFeedback(
         local.via === 'numeric'
-          ? '¡Correcto! Tu respuesta equivale a la esperada.'
-          : '¡Correcto!'
+          ? 'Correcto. Tu respuesta equivale a la esperada.'
+          : 'Correcto.'
       )
       setAnswerState(prev => ({ ...prev, submitted: true, isCorrect: true }))
       answerQuestion(buildAnswer(question, selection, true))
@@ -616,7 +616,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                   <Check className="w-5 h-5 text-texto-sobre-accion" strokeWidth={3} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-logrado mb-1">Correcto!</h3>
+                  <h3 className="font-bold text-logrado mb-1">Correcto</h3>
                   <p className="text-sm text-foreground/80 leading-relaxed">
                     <LaTeXRenderer content={currentQuestion.explanation} />
                   </p>
@@ -675,7 +675,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                   <X className="w-5 h-5 text-texto-sobre-accion" strokeWidth={3} />
                 </div>
                 <div className="flex-1 min-w-0 space-y-3 max-w-full overflow-hidden">
-                  <h3 className="font-bold text-destructive text-lg">Respuesta Incorrecta</h3>
+                  <h3 className="font-bold text-destructive text-lg">Respuesta incorrecta</h3>
 
                   {currentAnswer && <AnswerRecap answer={currentAnswer} />}
 
@@ -862,7 +862,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                   :' bg-[var(--algebra)] '
               )}
             >
-              <span className="truncate">{isLastQuestion ? 'Ver Resultados' : 'Siguiente'}</span>
+              <span className="truncate">{isLastQuestion ? 'Ver resultados' : 'Siguiente'}</span>
               <ChevronRight className="w-4 h-4 shrink-0" />
             </Button>
           )}

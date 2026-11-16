@@ -128,7 +128,7 @@ export default function MisAulasPage() {
         throw new Error(data?.error || 'No pudimos sumarte al aula')
       }
 
-      toast({ title: '¡Listo!', description: `Ya estás en ${data.classroomName}.` })
+      toast({ title: 'Listo', description: `Ya estás en ${data.classroomName}.` })
       setJoinCode('')
       await load()
       setActiveId(Number(data.classroomId))

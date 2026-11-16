@@ -162,7 +162,7 @@ export function ProgramFileImport({
 
   const handleExtract = async () => {
     if (!file) {
-      toast({ title: 'Falta archivo', description: 'Selecciona un PDF, DOCX, DOC o imagen para autocompletar.' })
+      toast({ title: 'Falta archivo', description: 'Elegí un PDF, DOCX, DOC o imagen para autocompletar.' })
       return
     }
 
@@ -256,7 +256,7 @@ export function ProgramFileImport({
 
   const handleGuideAutocomplete = async () => {
     if (!sourceMeta?.sourceFileName) {
-      toast({ title: 'Falta archivo fuente', description: 'Vuelve a ejecutar Autocompletar con IA para habilitar el guiado.' })
+      toast({ title: 'Falta archivo fuente', description: 'Volvé a usar Autocompletar con IA para habilitar el guiado.' })
       return
     }
 
@@ -385,7 +385,7 @@ export function ProgramFileImport({
           Resultado: {extractSummary.unitCount} unidades y {extractSummary.topicCount} temas.
           Confianza estimada: {Math.round(extractSummary.extractionConfidence * 100)}%.
           Metodo: {extractSummary.extractionMethod === 'heuristic' ? 'Heuristica' : 'IA'}.
-          {extractSummary.lowConfidence ? ' Revisa cuidadosamente porque hay baja confianza.' : ''}
+          {extractSummary.lowConfidence ? ' Revisalo con cuidado: hay baja confianza.' : ''}
         </p>
       )}
 
@@ -393,7 +393,7 @@ export function ProgramFileImport({
         <Card className="p-4 space-y-3 border-dashed">
           <h4 className="font-medium">Guiar autocompletado</h4>
           <p className="text-sm text-muted-foreground">
-            Completa una unidad y dos temas de referencia. Se buscara en el documento y se sugeriran los contenidos siguientes.
+            Completá una unidad y dos temas de referencia. Se busca en el documento y se sugieren los contenidos siguientes.
           </p>
 
           <Input

@@ -224,9 +224,9 @@ export function ExplanationModal({
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             {revanchaState === 'active'
-              ? 'Demuestra que superaste esta duda en este nuevo escenario'
+              ? 'Demostrá que superaste esta duda con una pregunta nueva'
               : revanchaState === 'success'
-                ? '¡Desafío completado con éxito!'
+                ? 'Revancha superada'
                 : 'Análisis paso a paso del ejercicio según tu nivel'}
           </DialogDescription>
         </DialogHeader>
@@ -300,7 +300,7 @@ export function ExplanationModal({
                   className="w-full h-auto min-h-13 whitespace-normal py-3 rounded-2xl bg-flojo text-texto-sobre-accion font-bold text-base hover:bg-flojo transition-all active:scale-95 gap-2"
                 >
                   <Zap className="w-5 h-5 fill-texto-sobre-accion" />
-                  ¡Tomarme la Revancha! (1 pregunta nueva)
+                  Tomarme la revancha (1 pregunta nueva)
                 </Button>
               )}
 
@@ -309,7 +309,7 @@ export function ExplanationModal({
                 onClick={handleCloseAll}
                 className="w-full h-11 rounded-xl text-xs font-semibold text-muted-foreground hover:text-foreground"
               >
-                Entendido, ¡continuar!
+                Entendido, seguir
               </Button>
             </div>
           </div>
@@ -380,10 +380,10 @@ export function ExplanationModal({
 
             <div className="space-y-2">
               <h3 className="text-2xl font-black text-logrado dark:text-logrado">
-                ¡Espectacular!
+                Lo superaste
               </h3>
               <p className="text-sm font-semibold text-foreground max-w-sm mx-auto leading-relaxed">
-                ¡Demostraste que superaste tu confusión! Has recuperado tu confianza en este tema.
+                Demostraste que superaste la confusión. Este tema ya lo tenés más firme.
               </p>
             </div>
 
@@ -397,7 +397,7 @@ export function ExplanationModal({
               onClick={handleCloseAll}
               className="w-full h-13 rounded-2xl bg-logrado text-texto-sobre-accion font-bold text-base hover:bg-logrado transition-all active:scale-95"
             >
-              ¡Continuar al Quiz!
+              Volver al cuestionario
             </Button>
           </div>
         )}
@@ -409,7 +409,7 @@ export function ExplanationModal({
               <XCircle className="w-7 h-7" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-foreground">¡Estuviste muy cerca!</h3>
+              <h3 className="text-lg font-bold text-foreground">Estuviste muy cerca</h3>
               <p className="text-xs text-muted-foreground max-w-xs mx-auto">
                 Guardamos este tema en tus tips, dentro de Mi progreso, para que lo repases cuando quieras.
               </p>
@@ -418,7 +418,7 @@ export function ExplanationModal({
               onClick={handleCloseAll}
               className="w-full h-12 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90 transition-all"
             >
-              Entendido, ¡continuar!
+              Entendido, seguir
             </Button>
           </div>
         )}

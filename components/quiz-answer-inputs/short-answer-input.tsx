@@ -18,7 +18,7 @@ export function ShortAnswerInput({ value, submitted, onChange, isCorrect, disabl
       value={value}
       onChange={(event) => onChange(event.target.value)}
       disabled={submitted || disabled}
-      placeholder="Escribe tu respuesta..."
+      placeholder="Escribí tu respuesta…"
       rows={3}
       className={cn(
         'w-full p-4 rounded-2xl border-2 bg-card/80 text-base font-medium transition-all resize-none',

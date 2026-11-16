@@ -128,7 +128,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     if (!Array.isArray(units) || units.length === 0) {
-      return NextResponse.json({ error: 'Debes definir al menos una unidad' }, { status: 400 })
+      return NextResponse.json({ error: 'Falta al menos una unidad' }, { status: 400 })
     }
 
     const resolvedProfile = withDerivedPedagogyProfile(pedagogyProfile, nivel, grado)
@@ -143,7 +143,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     ]
 
     if (requiredPedagogy.some((value) => !value || String(value).trim().length === 0)) {
-      return NextResponse.json({ error: 'Completa todos los campos pedagogicos obligatorios' }, { status: 400 })
+      return NextResponse.json({ error: 'Completá todos los campos obligatorios de cómo das la materia' }, { status: 400 })
     }
 
     const rows = await sql`

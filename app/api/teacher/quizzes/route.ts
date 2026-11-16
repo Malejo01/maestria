@@ -140,19 +140,19 @@ export async function POST(req: Request) {
     }
 
     if (!title) {
-      return NextResponse.json({ error: 'Debes indicar un titulo' }, { status: 400 })
+      return NextResponse.json({ error: 'Falta el título' }, { status: 400 })
     }
 
     if (!subjectName) {
-      return NextResponse.json({ error: 'Debes indicar la materia' }, { status: 400 })
+      return NextResponse.json({ error: 'Falta la materia' }, { status: 400 })
     }
 
     if (!Array.isArray(selectedTopics) || selectedTopics.length === 0) {
-      return NextResponse.json({ error: 'Debes seleccionar al menos un tema' }, { status: 400 })
+      return NextResponse.json({ error: 'Elegí al menos un tema' }, { status: 400 })
     }
 
     if (!Array.isArray(questions) || questions.length === 0) {
-      return NextResponse.json({ error: 'Debes generar preguntas antes de guardar' }, { status: 400 })
+      return NextResponse.json({ error: 'Generá las preguntas antes de guardar' }, { status: 400 })
     }
 
     const programRows = await sql`

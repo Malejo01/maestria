@@ -275,7 +275,7 @@ export function FeedbackButton() {
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-bold text-foreground">¡Gracias! Quedó registrado.</p>
+                  <p className="text-sm font-bold text-foreground">Gracias. Quedó registrado.</p>
                   <p className="text-xs text-muted-foreground">No vas a recibir una respuesta automática, pero lo vamos a leer.</p>
                 </div>
                 <button
