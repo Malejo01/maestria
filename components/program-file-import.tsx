@@ -1,13 +1,18 @@
 'use client'
 
 import { useState, type ChangeEvent } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
+import { Boton } from '@/components/sistema/boton'
+import { Cargando } from '@/components/sistema/cargando'
+import { LECTURA_DE_ARCHIVO as T } from '@/lib/textos'
+import { TIPO_DE_PROGRESO, leerNivelSugerido, type EventoDeLectura, type NivelSugerido } from '@/lib/wizard-temario'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Upload } from 'lucide-react'
+import { Check, Loader2, Upload } from 'lucide-react'
 import type { ProgramUnit } from '@/lib/types'
 
 export interface ProgramSourceMeta {
@@ -25,6 +30,8 @@ interface ProgramFileImportProps {
    */
   onUnitsSuggested: (units: ProgramUnit[], anchorUnitName?: string) => void
   onSourceMetaChange?: (meta: ProgramSourceMeta | null) => void
+  /** El nivel y el año que el archivo dice de forma explícita, si los dice. */
+  onNivelSugerido?: (sugerido: NivelSugerido | null) => void
   disabled?: boolean
 }
 
@@ -59,13 +66,24 @@ function sanitizeSuggestedUnits(input: unknown): ProgramUnit[] {
  * retry when confidence is low) and hands finished units back to the parent,
  * which decides where to merge them.
  */
-export function ProgramFileImport({ onUnitsSuggested, onSourceMetaChange, disabled = false }: ProgramFileImportProps) {
+export function ProgramFileImport({
+  onUnitsSuggested,
+  onSourceMetaChange,
+  onNivelSugerido,
+  disabled = false,
+}: ProgramFileImportProps) {
   const { toast } = useToast()
+  const sinMovimiento = useReducedMotion()
 
   const [file, setFile] = useState<File | null>(null)
   const [sourceMeta, setSourceMeta] = useState<ProgramSourceMeta | null>(null)
-  const [extractStage, setExtractStage] = useState('Listo para procesar')
-  const [extractProgress, setExtractProgress] = useState(0)
+  /**
+   * Lo que fue pasando con el archivo, en orden. Cada renglón es una etapa que
+   * el servidor informó de verdad (o la subida, que ocurre acá): no hay
+   * porcentaje, porque no hay forma honesta de calcularlo.
+   */
+  const [pasos, setPasos] = useState<string[]>([])
+  const [falloDeLectura, setFalloDeLectura] = useState<string | null>(null)
   const [isExtracting, setIsExtracting] = useState(false)
   const [extractSummary, setExtractSummary] = useState<{
     extractionMethod: 'ai' | 'heuristic'
@@ -150,29 +168,49 @@ export function ProgramFileImport({ onUnitsSuggested, onSourceMetaChange, disabl
     updateSourceMeta(null)
     setExtractSummary(null)
     resetGuideState()
-    setExtractProgress(8)
-    setExtractStage('Subiendo archivo')
+    setPasos([T.subiendo])
+    setFalloDeLectura(null)
+    onNivelSugerido?.(null)
 
     try {
       const formData = new FormData()
       formData.append('file', file)
 
-      setExtractProgress(24)
-      setExtractStage('Leyendo contenido')
-
       const response = await fetch('/api/teacher/programs/extract', {
         method: 'POST',
+        headers: { Accept: TIPO_DE_PROGRESO },
         body: formData,
       })
 
-      setExtractProgress(72)
-      setExtractStage('Extrayendo unidades y temas con IA')
-
-      const data = await response.json()
-      if (!response.ok) {
-        const detailMessage = data?.details ? ` (${data.details})` : ''
-        throw new Error(`${data.error || 'No se pudo extraer el programa'}${detailMessage}`)
+      // Un rechazo previo al procesamiento (sin sesión, archivo inválido, sin
+      // cupo de IA) llega como JSON común, no como progreso.
+      if (!response.ok || !response.body || !response.headers.get('content-type')?.includes(TIPO_DE_PROGRESO)) {
+        const rechazo = await response.json().catch(() => null)
+        throw new Error(rechazo?.error || T.fallo)
       }
+
+      // El servidor manda una línea JSON por etapa, a medida que ocurren.
+      let data: Record<string, any> | null = null
+      const lector = response.body.getReader()
+      const decodificador = new TextDecoder()
+      let pendiente = ''
+      for (;;) {
+        const { done, value } = await lector.read()
+        pendiente += decodificador.decode(value ?? new Uint8Array(), { stream: !done })
+        const lineas = pendiente.split('\n')
+        pendiente = lineas.pop() ?? ''
+        for (const linea of lineas) {
+          if (!linea.trim()) continue
+          const evento = JSON.parse(linea) as EventoDeLectura
+          if (evento.etapa === 'leyendo') setPasos((previos) => [...previos, T.leyendo])
+          else if (evento.etapa === 'leido') setPasos((previos) => [...previos, T.leido])
+          else if (evento.etapa === 'ordenando') setPasos((previos) => [...previos, T.ordenando])
+          else if (evento.etapa === 'error') throw new Error(evento.error)
+          else if (evento.etapa === 'listo') data = evento.resultado
+        }
+        if (done) break
+      }
+      if (!data) throw new Error(T.fallo)
 
       const extractedUnits = sanitizeSuggestedUnits(data.units)
       if (extractedUnits.length > 0) {
@@ -201,26 +239,16 @@ export function ProgramFileImport({ onUnitsSuggested, onSourceMetaChange, disabl
         setShowGuidePanel(true)
       }
 
-      setExtractProgress(100)
-      setExtractStage('Validacion finalizada')
-
-      const methodLabel = data.extractionMethod === 'heuristic' ? 'Heuristica' : 'IA'
-      const confidencePercent = Math.round(Number(data.extractionConfidence || 0) * 100)
-      toast({
-        title: 'Autocompletado finalizado',
-        description: `${data?.summary?.unitCount || 0} unidades, ${data?.summary?.topicCount || 0} temas. Metodo: ${methodLabel}. Confianza: ${confidencePercent}%`,
-      })
+      onNivelSugerido?.(leerNivelSugerido(data.nivelSugerido))
+      setPasos((previos) => [
+        ...previos,
+        T.listo(Number(data?.summary?.unitCount || 0), Number(data?.summary?.topicCount || 0)),
+      ])
     } catch (error) {
-      toast({
-        title: 'No se pudo procesar el archivo',
-        description: error instanceof Error ? error.message : 'Error desconocido',
-      })
+      // El motivo queda escrito al lado del archivo, no en un aviso que se va.
+      setFalloDeLectura(error instanceof Error && error.message ? error.message : T.fallo)
     } finally {
       setIsExtracting(false)
-      setTimeout(() => {
-        setExtractProgress(0)
-        setExtractStage('Listo para procesar')
-      }, 900)
     }
   }
 
@@ -299,7 +327,7 @@ export function ProgramFileImport({ onUnitsSuggested, onSourceMetaChange, disabl
   return (
     <div className="space-y-3">
       <div className="space-y-2">
-        <Label htmlFor="program-file">Archivo del programa (PDF, DOCX, DOC, PNG o JPG, max 5MB)</Label>
+        <Label htmlFor="program-file">Tu temario (PDF, Word o una foto, hasta 5 MB)</Label>
         <Input
           id="program-file"
           type="file"
@@ -309,20 +337,40 @@ export function ProgramFileImport({ onUnitsSuggested, onSourceMetaChange, disabl
         />
       </div>
 
-      <Button type="button" variant="outline" onClick={handleExtract} disabled={disabled || isExtracting || !file}>
-        {isExtracting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-        Autocompletar con IA
-      </Button>
+      <Boton onClick={handleExtract} disabled={disabled || isExtracting || !file}>
+        {isExtracting ? <Cargando /> : <Upload aria-hidden="true" />}
+        {T.boton}
+      </Boton>
 
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Estado: {extractStage}</span>
-          <span>{extractProgress}%</span>
-        </div>
-        <div className="h-2 rounded bg-muted overflow-hidden">
-          <div className="h-full bg-primary transition-all duration-300" style={{ width: `${extractProgress}%` }} />
-        </div>
-      </div>
+      {/* Qué está pasando, renglón por renglón. El último es el que está en
+          curso mientras dura la lectura. */}
+      {pasos.length > 0 && (
+        <ol aria-label={T.progreso} aria-live="polite" className="flex flex-col gap-2">
+          {pasos.map((paso, indice) => {
+            const enCurso = isExtracting && indice === pasos.length - 1
+            return (
+              <motion.li
+                key={indice}
+                initial={sinMovimiento ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className={`cuerpo-s flex items-start gap-2 ${enCurso ? 'font-semibold text-texto' : 'text-texto-suave'}`}
+              >
+                <span aria-hidden="true" className="mt-0.5 flex size-4 shrink-0 items-center justify-center">
+                  {enCurso ? <Cargando /> : <Check className="size-4 text-logrado" />}
+                </span>
+                {paso}
+              </motion.li>
+            )
+          })}
+        </ol>
+      )}
+
+      {falloDeLectura && (
+        <p className="cuerpo-s text-flojo" role="alert">
+          {falloDeLectura}
+        </p>
+      )}
 
       {sourceMeta && (
         <p className="text-sm text-muted-foreground">

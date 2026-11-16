@@ -26,7 +26,11 @@ import { NIVEL_OPTIONS } from '@/lib/nivel-options'
 import { DEFAULT_JURISDICTION } from '@/lib/curriculum-config'
 import { SUBJECT_COLOR_OPTIONS, SUBJECT_ICON_OPTIONS, SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
 import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
+import { Boton } from '@/components/sistema/boton'
+import { Cargando } from '@/components/sistema/cargando'
 import { ProgramFileImport, type ProgramSourceMeta } from '@/components/program-file-import'
+import { elegirGrado, ordenDePasos, pasoVecino, puedeLlegarA, type NivelSugerido, type PasoId } from '@/lib/wizard-temario'
+import { WIZARD_TEMARIO } from '@/lib/textos'
 import type {
   Nivel,
   PedagogyProfile,
@@ -51,14 +55,12 @@ interface CurriculumAxis {
   temas: string[]
 }
 
-type StepId = 1 | 2 | 3 | 4
+// Los pasos se identifican por su contenido (1 = nivel y año, 2 = materia,
+// 3 = temario, 4 = cómo das la materia), no por su posición: el ORDEN en que
+// aparecen depende de cómo se arma el temario. Ver lib/wizard-temario.ts.
+type StepId = PasoId
 
-const STEPS: { id: StepId; label: string }[] = [
-  { id: 1, label: 'Nivel y año' },
-  { id: 2, label: 'Materia' },
-  { id: 3, label: 'Temario' },
-  { id: 4, label: 'Ajustes' },
-]
+const STEP_LABEL: Record<StepId, string> = WIZARD_TEMARIO.pasos
 
 /**
  * The methodology used to ship prefilled with a generic sentence, so every
@@ -92,11 +94,6 @@ const AUTOFILLED_METHODOLOGIES = new Set([
  * mientras completa los pasos previos. El texto está en futuro a propósito:
  * describe lo que va a pasar en el paso 3, no lo que está pasando ahora.
  */
-const INITIAL_PATH_HINT: Record<'import' | 'curriculum' | 'manual', string> = {
-  import: 'Vas a subir tu programa y la IA lo va a leer.',
-  curriculum: 'Vas a partir del diseño curricular oficial.',
-  manual: 'Vas a escribir el temario vos.',
-}
 
 const COMPLEXITY_OPTIONS = ['Básica', 'Intermedia', 'Avanzada']
 
@@ -224,6 +221,9 @@ export function TeacherSubjectWizard({
   }, [nextId])
 
   const [step, setStep] = useState<StepId>(1)
+  const orden = useMemo(() => ordenDePasos(initialPath, isEditing), [initialPath, isEditing])
+  /** Nivel y año que MaestrIA leyó del archivo. El docente lo confirma o lo cambia. */
+  const [sugerido, setSugerido] = useState<NivelSugerido | null>(null)
 
   const [nivel, setNivel] = useState<Nivel | null>(null)
   const [grado, setGrado] = useState('')
@@ -290,13 +290,14 @@ export function TeacherSubjectWizard({
       idCounter.current = 0
       setUnits([])
       setPedagogy(DEFAULT_PEDAGOGY)
-      setStep(1)
+      setStep(ordenDePasos(initialPath, false)[0])
       // `null`, no `''`: materia nueva, que la coincidencia automática vuelva a
       // correr en cuanto el docente escriba el nombre.
       setBrowseMateriaChoice(null)
     }
 
     setSourceMeta(null)
+    setSugerido(null)
     setActiveUnitId(null)
     setCustomTopicDraft({})
     setTopicSearch('')
@@ -332,6 +333,25 @@ export function TeacherSubjectWizard({
       : null,
     'subjects'
   )
+
+  // Lo que se leyó del archivo se propone, nunca se impone: sólo llena lo que
+  // el docente todavía no eligió.
+  const recibirSugerencia = useCallback(
+    (sugerencia: NivelSugerido | null) => {
+      if (!sugerencia || isEditing) return
+      setSugerido(sugerencia)
+      setNivel((actual) => actual ?? sugerencia.nivel)
+    },
+    [isEditing],
+  )
+
+  useEffect(() => {
+    if (!sugerido || grado || nivel !== sugerido.nivel || isLoadingGrades) return
+    const elegido = elegirGrado(sugerido.grado, grades)
+    if (elegido) setGrado(elegido)
+    // `grado` se omite a propósito: si el docente lo borra, no se lo volvemos a poner.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sugerido, nivel, grades, isLoadingGrades])
 
   // When the curriculum offers exactly the subject the teacher named, browse it
   // by default so step 3 opens with topics already on screen. Es un cálculo, no
@@ -508,12 +528,9 @@ export function TeacherSubjectWizard({
     }
   }, [nivel, grado, subjectName, units, pedagogy])
 
-  const canReachStep = (target: StepId): boolean => {
-    for (let id = 1; id < target; id += 1) {
-      if (stepBlockers[id as StepId]) return false
-    }
-    return true
-  }
+  const canReachStep = (target: StepId): boolean => puedeLlegarA(orden, stepBlockers, target)
+  const anterior = pasoVecino(orden, step, -1)
+  const siguiente = pasoVecino(orden, step, 1)
 
   const goToStep = (target: StepId) => {
     if (!canReachStep(target)) {
@@ -629,6 +646,11 @@ export function TeacherSubjectWizard({
 
   const renderStepOne = () => (
     <div className="space-y-5">
+      {sugerido && nivel === sugerido.nivel && (
+        <p className="cuerpo-s rounded-lg border border-accion-tenue-borde bg-accion-tenue p-3 text-texto">
+          {WIZARD_TEMARIO.leidoDelArchivo}
+        </p>
+      )}
       <div className="space-y-2">
         <Label>Nivel educativo</Label>
         <div className="grid sm:grid-cols-3 gap-3">
@@ -687,7 +709,7 @@ export function TeacherSubjectWizard({
 
           {!isLoadingGrades && grades.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No hay años cargados en el diseño curricular de {DEFAULT_JURISDICTION} para este nivel. Escribilo a mano y
+              No hay años cargados en el plan oficial para este nivel. Escribilo a mano y
               después armá el temario con tus propios temas.
             </p>
           )}
@@ -722,7 +744,7 @@ export function TeacherSubjectWizard({
         {curriculumSubjects.length > 0 && (
           <div className="space-y-2 pt-1">
             <p className="text-xs text-muted-foreground">
-              Materias del diseño curricular para {nivel} · {grado}. Elegí una para partir de su temario.
+              Materias del plan oficial para {nivel} · {grado}. Elegí una para partir de su temario.
             </p>
             <div className="flex flex-wrap gap-2">
               {curriculumSubjects.map((materia) => (
@@ -818,7 +840,7 @@ export function TeacherSubjectWizard({
           <ChevronRight className="w-4 h-4 shrink-0" />
         )}
         <div className="min-w-0">
-          <h3 className="font-semibold text-sm">Seleccionar del diseño curricular</h3>
+          <h3 className="font-semibold text-sm">Elegir del plan oficial de la provincia</h3>
           <p className="text-xs text-muted-foreground truncate">
             {nivel} · {grado} · {DEFAULT_JURISDICTION}
           </p>
@@ -984,7 +1006,11 @@ export function TeacherSubjectWizard({
                 <p className="text-xs text-muted-foreground pb-2">
                   Las unidades que encuentre la IA se agregan a tu temario, no lo reemplazan.
                 </p>
-                <ProgramFileImport onUnitsSuggested={mergeSuggestedUnits} onSourceMetaChange={setSourceMeta} />
+                <ProgramFileImport
+                  onUnitsSuggested={mergeSuggestedUnits}
+                  onSourceMetaChange={setSourceMeta}
+                  onNivelSugerido={recibirSugerencia}
+                />
               </div>
             )}
           </div>
@@ -1004,7 +1030,7 @@ export function TeacherSubjectWizard({
 
       {units.length === 0 && (
         <p className="text-sm text-muted-foreground">
-          Todavía no armaste unidades. Abrí &quot;Seleccionar del diseño curricular&quot; o &quot;Agregar temas
+          Todavía no armaste unidades. Abrí &quot;Elegir del plan oficial de la provincia&quot; o &quot;Agregar temas
           personalizados&quot; para empezar.
         </p>
       )}
@@ -1230,54 +1256,39 @@ export function TeacherSubjectWizard({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar materia' : 'Crear materia'}</DialogTitle>
-          <DialogDescription>
-            Elegí nivel y año, y armá el temario tomando temas del diseño curricular o escribiendo los tuyos.
-          </DialogDescription>
+          <DialogTitle className="titulo-m text-texto">
+            {isEditing ? WIZARD_TEMARIO.tituloEditar : WIZARD_TEMARIO.tituloCrear}
+          </DialogTitle>
+          <DialogDescription className="cuerpo-s text-texto-suave">{WIZARD_TEMARIO.detalle}</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-wrap items-center gap-1.5 pb-1">
-          {STEPS.map((item, index) => {
-            const isCurrent = step === item.id
-            const isDone = step > item.id && !stepBlockers[item.id]
+        <ol className="flex flex-wrap items-center gap-2 pb-1">
+          {orden.map((id, index) => {
+            const isCurrent = step === id
+            const isDone = orden.indexOf(step) > index && !stepBlockers[id]
 
             return (
-              <div key={item.id} className="flex items-center gap-1.5">
+              <li key={id}>
                 <button
                   type="button"
-                  onClick={() => goToStep(item.id)}
-                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  onClick={() => goToStep(id)}
+                  aria-current={isCurrent ? 'step' : undefined}
+                  className={`nota flex min-h-11 items-center gap-2 rounded-md border px-3 font-semibold transition-colors ${
                     isCurrent
-                      ? 'border-primary bg-primary text-primary-foreground'
+                      ? 'border-texto bg-superficie-tarjeta text-texto'
                       : isDone
-                        ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                        : 'border-border text-muted-foreground hover:border-primary/40'
+                        ? 'border-logrado-fondo bg-logrado-fondo text-logrado'
+                        : 'border-borde text-texto-suave hover:border-borde-fuerte'
                   }`}
                 >
-                  <span className="w-4 h-4 rounded-full bg-background/20 flex items-center justify-center text-[10px]">
-                    {isDone ? <Check className="w-3 h-3" /> : item.id}
-                  </span>
-                  {item.label}
+                  <span aria-hidden="true">{isDone ? <Check className="w-3.5 h-3.5" /> : index + 1}</span>
+                  {STEP_LABEL[id]}
+                  {isDone && <span className="sr-only">: {WIZARD_TEMARIO.pasoListo}</span>}
                 </button>
-                {index < STEPS.length - 1 && <span className="text-muted-foreground text-xs">›</span>}
-              </div>
+              </li>
             )
           })}
-        </div>
-
-        {/* El camino elegido en el tour se resuelve recién en el paso 3, pero el
-            wizard siempre abre en el 1. Sin este recordatorio, el docente que
-            apretó "Subir un archivo" ve dos pantallas de formulario y da por
-            hecho que el botón no hizo nada. Desaparece al llegar al paso donde
-            su elección efectivamente se aplica. */}
-        {!isEditing && initialPath && step < 3 && (
-          <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
-            <Sparkles className="w-3.5 h-3.5 text-primary shrink-0" />
-            <p className="text-muted-foreground">
-              {INITIAL_PATH_HINT[initialPath]} <span className="text-foreground">Primero, estos dos pasos cortos.</span>
-            </p>
-          </div>
-        )}
+        </ol>
 
         <div className="py-1">
           {step === 1 && renderStepOne()}
@@ -1286,7 +1297,9 @@ export function TeacherSubjectWizard({
             <div className="space-y-4">
               {renderUnitsPanel()}
               <div className="space-y-3">
-                {renderCurriculumSection()}
+                {/* El plan oficial se filtra por nivel y año. Si todavía no se
+                    eligieron (subiendo un archivo van después), no se ofrece. */}
+                {nivel && grado ? renderCurriculumSection() : null}
                 {renderCustomTopicsSection()}
               </div>
             </div>
@@ -1294,26 +1307,25 @@ export function TeacherSubjectWizard({
           {step === 4 && renderStepFour()}
         </div>
 
-        {currentBlocker && <p className="text-sm text-amber-700">{currentBlocker}</p>}
+        {currentBlocker && <p className="cuerpo-s text-flojo">{currentBlocker}</p>}
 
-        <div className="flex items-center justify-between gap-2 border-t pt-3">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => (step === 1 ? onOpenChange(false) : setStep((prev) => (prev - 1) as StepId))}
+        <div className="flex items-center justify-between gap-2 border-t border-borde pt-3">
+          <Boton
+            variante="secundario"
+            onClick={() => (anterior === null ? onOpenChange(false) : setStep(anterior))}
           >
-            {step === 1 ? 'Cancelar' : 'Atrás'}
-          </Button>
+            {anterior === null ? WIZARD_TEMARIO.cancelar : WIZARD_TEMARIO.atras}
+          </Boton>
 
-          {step < 4 ? (
-            <Button type="button" onClick={() => goToStep((step + 1) as StepId)} disabled={Boolean(currentBlocker)}>
-              Continuar
-            </Button>
+          {siguiente !== null ? (
+            <Boton onClick={() => goToStep(siguiente)} disabled={Boolean(currentBlocker)}>
+              {WIZARD_TEMARIO.continuar}
+            </Boton>
           ) : (
-            <Button type="button" onClick={handleSave} disabled={isSaving || Boolean(currentBlocker)}>
-              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              {isEditing ? 'Guardar cambios' : 'Crear materia'}
-            </Button>
+            <Boton onClick={handleSave} disabled={isSaving || Boolean(currentBlocker)}>
+              {isSaving ? <Cargando /> : null}
+              {isEditing ? WIZARD_TEMARIO.guardar : WIZARD_TEMARIO.crear}
+            </Boton>
           )}
         </div>
       </DialogContent>

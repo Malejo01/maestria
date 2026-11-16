@@ -384,3 +384,29 @@ export const FICHA_ALUMNO = {
     sinCalificar: (n: number) => `${n} sin calificar`,
   },
 } as const
+
+export const WIZARD_TEMARIO = {
+  tituloCrear: 'Crear materia',
+  tituloEditar: 'Editar materia',
+  detalle: 'Armá el temario de tu materia: subí el archivo que ya tenés, partí del plan oficial o escribilo.',
+  pasos: { 1: 'Nivel y año', 2: 'Materia', 3: 'Temario', 4: 'Cómo das la materia' },
+  pasoListo: 'listo',
+  leidoDelArchivo: 'Esto lo leímos de tu archivo. Confirmalo o cambialo.',
+  cancelar: 'Cancelar',
+  atras: 'Atrás',
+  continuar: 'Continuar',
+  guardar: 'Guardar cambios',
+  crear: 'Crear materia',
+} as const
+
+export const LECTURA_DE_ARCHIVO = {
+  boton: 'Leer el archivo',
+  subiendo: 'Subiendo el archivo…',
+  leyendo: 'Leyendo el archivo…',
+  leido: 'Ya lo leí. Busco dónde están los contenidos.',
+  ordenando: 'Separando las unidades y sus temas…',
+  listo: (unidades: number, temas: number) =>
+    `Listo: ${unidades} ${unidades === 1 ? 'unidad' : 'unidades'} y ${temas} ${temas === 1 ? 'tema' : 'temas'}. Revisalos abajo.`,
+  fallo: 'No pudimos leer el archivo. Probá con otro.',
+  progreso: 'Qué está pasando con tu archivo',
+} as const
