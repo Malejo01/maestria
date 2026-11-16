@@ -1,0 +1,31 @@
+/**
+ * Las rutas que el middleware (proxy.ts) deja pasar sin sesión. "Pública" acá
+ * significa "el middleware no rebota al ingreso": cada ruta decide por su
+ * cuenta qué muestra (un invitado con cookie no es una sesión de NextAuth).
+ *
+ * Vive fuera de proxy.ts para poder testearla sin levantar Auth.js.
+ */
+export const RUTAS_PUBLICAS = [
+  '/',
+  '/sign-in',
+  '/sign-up',
+  '/precios',             // G5: lo que Mauro le manda a un cliente por WhatsApp
+  '/terminos',            // Legales: los linkea la pantalla de ingreso, y Google
+  '/privacidad',          //   pide la política de privacidad pública
+  '/api/auth',            // NextAuth's own routes
+  '/api/generate-quiz',   // Guests generate inside an aula
+  '/api/explain-error',   // Explicación del error tras responder mal
+  '/aula',                // Join-by-code page
+  '/aulas',               // "Mis aulas"
+  '/api/classrooms',      // Join endpoint
+  '/api/student',         // Student-side aula endpoints
+  '/api/quiz/save-result',      // Guests submit attempts too
+  '/api/quiz/grade-short-answer',
+  '/api/quiz/revancha',   // Se dispara desde la pantalla de resultados
+  '/api/feedback',        // Reportar un problema (el invitado también reporta)
+  '/monitoring',          // Túnel de Sentry (tunnelRoute en next.config.mjs)
+] as const
+
+export function esRutaPublica(pathname: string): boolean {
+  return RUTAS_PUBLICAS.some((ruta) => pathname === ruta || pathname.startsWith(ruta + '/'))
+}

@@ -618,3 +618,25 @@ export const PLAN = {
     noPuede: ['Generar cuestionarios.', 'Crear materias o grupos.', 'Sumar alumnos.'],
   },
 } as const
+
+/** G5: /precios. Lo que un docente lee en el celular cuando Mauro le pasa el link. */
+export const PRECIOS = {
+  titulo: 'Precios',
+  frase: 'Pagás una clase por cada cinco alumnos que seguís.',
+  prueba: 'Empezás con 30 días gratis, con hasta 10 alumnos y todo incluido.',
+  empezar: 'Probar 30 días gratis',
+  plan: 'Plan',
+  columnaAlumnos: 'Alumnos',
+  porMes: 'Por mes',
+  pase: 'Pase de 90 días',
+  nombreNivel: (nivel: number) =>
+    nivel === 0 ? 'Prueba' : nivel === 5 ? 'Tope' : nivel === 1 ? '1 bloque' : `${nivel} bloques`,
+  alumnos: (cupo: number) => `Hasta ${cupo} alumnos`,
+  gratis: (dias: number) => `Gratis, ${dias} días`,
+  notas: [
+    'Por mes son 30 días desde que se acredita el pago; el pase, 90 días. No es por mes calendario.',
+    'Cuentan todos los alumnos de tus grupos, también los que entran sin cuenta. Un alumno en dos grupos tuyos cuenta una vez.',
+    'Si tu plan vence no se borra nada: seguís viendo todo, y tus alumnos siguen respondiendo las tareas que ya les mandaste.',
+    'Precios en pesos argentinos.',
+  ],
+} as const
