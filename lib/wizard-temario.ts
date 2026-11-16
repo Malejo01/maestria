@@ -4,6 +4,7 @@
  * leyó del archivo.
  */
 import type { Nivel } from '@/lib/nivel-options'
+import { canonicalGrado } from '@/lib/grado'
 
 /** Los cuatro pasos, identificados por su contenido y no por su posición. */
 export const PASO = { nivel: 1, materia: 2, temario: 3, ajustes: 4 } as const
@@ -113,6 +114,18 @@ export function elegirGrado(sugerido: string, opciones: string[]): string | null
   if (numero === null) return null
   const candidatas = opciones.filter((opcion) => numeroDeGrado(opcion) === numero)
   return candidatas.length === 1 ? candidatas[0] : null
+}
+
+/**
+ * I5: qué año se precarga cuando el archivo lo dice. Si coincide con uno de
+ * la lista oficial, ése; si no hay lista (Superior suele no tenerla) o no
+ * coincide con una sola, lo que dijo el archivo en la forma de siempre
+ * ("1º año" → "1er Año"). El docente lo puede cambiar; antes quedaba vacío.
+ */
+export function gradoAPrecargar(sugerido: string, opciones: string[]): string | null {
+  const limpio = sugerido.trim()
+  if (!limpio) return null
+  return elegirGrado(limpio, opciones) ?? canonicalGrado(limpio)
 }
 
 // ─── El progreso de la lectura del archivo ────────────────────────────────────

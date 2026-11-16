@@ -32,11 +32,19 @@ export function MisAlumnos({
   agregarAbierto,
   onAgregarCambia,
   onArmarTarea,
+  refrescarCon,
 }: {
   agregarAbierto: boolean
   onAgregarCambia: (abierto: boolean) => void
   /** Lleva a armar una tarea, con la materia ya elegida si se sabe cuál. */
   onArmarTarea: (materiaId: number | null) => void
+  /**
+   * I5: cuando cambia, se vuelve a leer. Al crear la primera materia la
+   * tarjeta de hitos decía "2 de 4 pasos" y acá seguía "Primero armá tu
+   * materia" hasta recargar: dos mensajes que se contradicen en el primer
+   * logro del docente.
+   */
+  refrescarCon?: unknown
 }) {
   const [datos, setDatos] = useState<Datos | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -57,7 +65,7 @@ export function MisAlumnos({
 
   useEffect(() => {
     void leer()
-  }, [leer])
+  }, [leer, refrescarCon])
 
   async function quitar(invitacionId: number) {
     await fetch(`/api/teacher/alumnos/invitaciones/${invitacionId}`, { method: 'DELETE' }).catch(() => null)

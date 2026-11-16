@@ -91,6 +91,7 @@ export default function TeacherPage() {
               onArmarTarea={(materiaId) =>
                 router.push(`/teacher?seccion=tareas&armar=1${materiaId ? `&materia=${materiaId}` : ''}`)
               }
+              refrescarCon={teacherPrograms.length}
             />
 
             {/* La gestión por grupo de la versión anterior (códigos, tareas

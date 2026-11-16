@@ -26,11 +26,11 @@ import {
 } from 'lucide-react'
 import { NIVEL_OPTIONS } from '@/lib/nivel-options'
 import { DEFAULT_JURISDICTION } from '@/lib/curriculum-config'
-import { SUBJECT_ICON_OPTIONS } from '@/lib/subject-appearance'
+import { NOMBRE_DE_ICONO, SUBJECT_ICON_OPTIONS } from '@/lib/subject-appearance'
 import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import { Boton } from '@/components/sistema/boton'
 import { ProgramFileImport, type ProgramSourceMeta } from '@/components/program-file-import'
-import { PASO, elegirGrado, ordenDePasos, pasoVecino, puedeLlegarA, type NivelSugerido, type PasoId } from '@/lib/wizard-temario'
+import { PASO, gradoAPrecargar, ordenDePasos, pasoVecino, puedeLlegarA, type NivelSugerido, type PasoId } from '@/lib/wizard-temario'
 import { WIZARD_TEMARIO, contar } from '@/lib/textos'
 import type {
   Nivel,
@@ -354,7 +354,7 @@ export function TeacherSubjectWizard({
 
   useEffect(() => {
     if (!sugerido || grado || nivel !== sugerido.nivel || isLoadingGrades) return
-    const elegido = elegirGrado(sugerido.grado, grades)
+    const elegido = gradoAPrecargar(sugerido.grado, grades)
     if (elegido) setGrado(elegido)
     // `grado` se omite a propósito: si el docente lo borra, no se lo volvemos a poner.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -691,6 +691,7 @@ export function TeacherSubjectWizard({
               <button
                 key={option.value}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => {
                   setNivel(option.value)
                   setGrado('')
@@ -809,7 +810,7 @@ export function TeacherSubjectWizard({
             <div className="w-8 h-8 rounded-md border flex items-center justify-center bg-muted">
               <SelectedIcon className="w-4 h-4" />
             </div>
-            <span className="text-sm font-medium">{iconName}</span>
+            <span className="text-sm font-medium">{NOMBRE_DE_ICONO[iconName]}</span>
           </div>
           <div className="grid grid-cols-5 gap-2">
             {SUBJECT_ICON_OPTIONS.map((icon) => {
@@ -822,9 +823,11 @@ export function TeacherSubjectWizard({
                   size="sm"
                   onClick={() => setIconName(icon)}
                   className="h-10 px-2"
-                  title={icon}
+                  title={NOMBRE_DE_ICONO[icon]}
+                  aria-label={NOMBRE_DE_ICONO[icon]}
+                  aria-pressed={iconName === icon}
                 >
-                  <Icon className="w-4 h-4" />
+                  <Icon className="w-4 h-4" aria-hidden="true" />
                 </Button>
               )
             })}

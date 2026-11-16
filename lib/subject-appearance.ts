@@ -13,6 +13,23 @@ export const SUBJECT_ICON_OPTIONS: SubjectIconName[] = [
   'target',
 ]
 
+/**
+ * I5: cómo se llama cada ícono para una persona (y para un lector de
+ * pantalla). Antes se anunciaba el nombre interno en inglés: "book-open".
+ */
+export const NOMBRE_DE_ICONO: Record<SubjectIconName, string> = {
+  'book-open': 'Libro',
+  calculator: 'Calculadora',
+  sigma: 'Sigma',
+  'chart-line': 'Gráfico de líneas',
+  'flask-conical': 'Probeta',
+  atom: 'Átomo',
+  ruler: 'Regla',
+  landmark: 'Edificio',
+  'pie-chart': 'Gráfico de torta',
+  target: 'Diana',
+}
+
 export const SUBJECT_COLOR_OPTIONS: SubjectColorName[] = [
   'teal',
   'blue',
