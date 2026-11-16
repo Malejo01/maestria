@@ -72,7 +72,6 @@ function Marco({
   )
   const activa = entradaActiva(contexto, pathname, seccion)
   const tieneBarraInferior = entradas.length > 0
-  const enProgreso = contexto === 'alumno' && activa === 'progreso'
 
   return (
     <div className="flex min-h-dvh flex-col bg-superficie-base">
@@ -119,7 +118,6 @@ function Marco({
 
       <main className={cn('flex-1', tieneBarraInferior && 'pb-16 md:pb-0')}>
         <PageContainer>
-          {enProgreso && <SubNavProgreso pathname={pathname} />}
           {children}
         </PageContainer>
       </main>
@@ -189,39 +187,6 @@ function BarraInferior({ entradas, activa }: { entradas: EntradaNav[]; activa: s
             )}
             <Icono aria-hidden="true" className="size-[22px]" strokeWidth={TRAZO_ICONO} />
             {entrada.etiqueta}
-          </Link>
-        )
-      })}
-    </nav>
-  )
-}
-
-/**
- * Historial y tips todavía son dos pantallas; "Mi progreso" las agrupa con
- * estas dos sub-entradas hasta que el bloque 6 las funda en una sola.
- */
-function SubNavProgreso({ pathname }: { pathname: string }) {
-  const items = [
-    { href: '/history', etiqueta: NAVEGACION.progreso.historial },
-    { href: '/tips', etiqueta: NAVEGACION.progreso.tips },
-  ]
-  return (
-    <nav aria-label={NAVEGACION.alumno.progreso} className="mb-6 flex gap-2">
-      {items.map((item) => {
-        const activa = pathname === item.href
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={activa ? 'page' : undefined}
-            className={cn(
-              'cuerpo-s inline-flex min-h-11 items-center rounded-md border px-4 font-semibold transition-colors',
-              activa
-                ? 'border-texto bg-superficie-tarjeta text-texto'
-                : 'border-borde bg-superficie-tarjeta text-texto-suave hover:border-borde-fuerte hover:text-texto',
-            )}
-          >
-            {item.etiqueta}
           </Link>
         )
       })}

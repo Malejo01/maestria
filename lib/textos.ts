@@ -45,8 +45,6 @@ export const NAVEGACION = {
   etiquetaNav: 'Principal',
   alumno: { tareas: 'Mis tareas', practicar: 'Practicar', progreso: 'Mi progreso' },
   docente: { alumnos: 'Mis alumnos', materias: 'Mis materias', tareas: 'Mis tareas' },
-  /** Sub-entradas de "Mi progreso" mientras historial y tips sigan en dos pantallas (bloque 6 las funde). */
-  progreso: { historial: 'Historial', tips: 'Tips' },
   ingresar: 'Ingresar',
 } as const
 
@@ -470,4 +468,62 @@ export const MIS_TAREAS = {
   confirmarBorrado: 'Sí, borrarla',
   noBorrar: 'No borrar',
   nota: (nota: string) => `Nota ${nota}`,
+} as const
+
+export const MIS_TAREAS_ALUMNO = {
+  titulo: 'Mis tareas',
+  cargando: 'Buscando tus tareas…',
+  queCargamos: 'tus tareas',
+  sinGrupo: {
+    titulo: 'Todavía no estás en ningún grupo',
+    detalle: 'Pedile el código a tu profe y escribilo acá abajo. Cuando te mande una tarea, la vas a ver en esta pantalla.',
+  },
+  sinTareas: {
+    titulo: 'Tu profe todavía no te mandó ninguna tarea',
+    detalle: 'Cuando te mande una, aparece acá con la fecha. Mientras tanto podés practicar el temario de tu grupo.',
+  },
+  empezar: 'Empezar tarea',
+  volverAHacer: 'Volver a hacerla',
+  desde: (fecha: string) => `desde el ${fecha}`,
+  hasta: (fecha: string) => `hasta el ${fecha}`,
+  intentos: (hechos: number, maximo: number | null) =>
+    maximo ? `${hechos} de ${maximo} ${maximo === 1 ? 'intento' : 'intentos'}` : hechos === 0 ? 'sin empezar' : `la hiciste ${hechos} ${hechos === 1 ? 'vez' : 'veces'}`,
+  mejorNota: (nota: string) => `tu mejor nota: ${nota}`,
+  accesos: {
+    etiqueta: 'Qué más podés hacer',
+    practicar: { titulo: 'Practicar', detalle: 'Elegí la materia y los temas, y practicá por tu cuenta.' },
+    progreso: { titulo: 'Mi progreso', detalle: 'Cómo te va en cada tema, lo que hiciste y tus tips.' },
+  },
+  grupos: {
+    titulo: 'Mis grupos',
+    teInvito: (docente: string) => `Te invitó ${docente}`,
+    cerrado: 'Tu profe cerró este grupo.',
+    practicar: 'Practicar este temario',
+    cerrarPractica: 'Cerrar la práctica',
+    practicaDetalle: 'Elegí los temas y MaestrIA te arma preguntas con el temario de tu profe.',
+    practicaConCuenta: 'Con tu cuenta también vas a poder practicar este temario por tu cuenta.',
+    queVe: (docente: string) =>
+      `${docente} ve tu nombre, cómo te fue en lo que hacés en este grupo y los temas que te cuestan. Lo que practicás por tu cuenta es sólo tuyo.`,
+  },
+  sumarme: { etiqueta: 'Sumarme a otro grupo con un código', ejemplo: '7K4P2M', boton: 'Entrar al grupo' },
+} as const
+
+export const MI_PROGRESO = {
+  titulo: 'Mi progreso',
+  detalle: 'Lo que hiciste, los temas que te conviene reforzar y tus tips.',
+  pestanas: {
+    historial: 'Lo que hice',
+    reforzar: (n: number) => (n > 0 ? `A reforzar (${n})` : 'A reforzar'),
+    tips: 'Mis tips',
+  },
+  tips: {
+    cargando: 'Buscando tus tips…',
+    queCargamos: 'tus tips',
+    vacio: {
+      titulo: 'Todavía no tenés tips',
+      detalle: 'Cuando te equivoques y pidas que te lo expliquen, MaestrIA guarda acá la idea clave para que la repases antes de rendir.',
+    },
+    resumenTitulo: 'Mis tips',
+    verTodos: 'Ver todos',
+  },
 } as const

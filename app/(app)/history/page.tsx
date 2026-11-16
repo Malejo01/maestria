@@ -1,5 +1,8 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { Suspense, useEffect, useState, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
@@ -8,6 +11,8 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LaTeXRenderer } from '@/components/latex-renderer'
 import { WeakPointsSection } from '@/components/weak-points-section'
+import { TipsDelAlumno } from '@/components/alumno/tips-del-alumno'
+import { MI_PROGRESO } from '@/lib/textos'
 import { DiagnosticReportCard } from '@/components/diagnostic-report-card'
 import { CargaFallida } from '@/components/carga-fallida'
 import { pedirJson } from '@/lib/pedir-json'
@@ -102,7 +107,7 @@ function formatAttemptAnswerText(answer: AttemptAnswer, which: 'selected' | 'cor
 
 export default function HistoryPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center py-24"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center py-24"><Cargando className="w-8 h-8 text-primary" /></div>}>
       <HistoryPageContent />
     </Suspense>
   )
@@ -132,7 +137,8 @@ function HistoryPageContent() {
   const [modeFilter, setModeFilter] = useState<ModeFilter>('all')
   const [subjectMeta, setSubjectMeta] = useState<Record<string, SubjectMeta | null>>({})
 
-  const defaultTab = searchParams.get('tab') === 'reforzar' ? 'reforzar' : 'historial'
+  const tabPedida = searchParams.get('tab')
+  const defaultTab = tabPedida === 'reforzar' || tabPedida === 'tips' ? tabPedida : 'historial'
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return
@@ -321,7 +327,7 @@ function HistoryPageContent() {
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Cargando className="w-8 h-8 text-primary" />
       </div>
     )
   }
@@ -329,7 +335,7 @@ function HistoryPageContent() {
   if (!isSignedIn) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
-        <Card className="p-8 text-center border-2 bg-card/80 backdrop-blur-sm">
+        <Card className="p-8 text-center border-2 bg-card/80">
           <h1 className="text-2xl font-bold mb-4">Inicia sesion</h1>
           <p className="text-muted-foreground mb-6">
             Debes iniciar sesion para ver tu historial de evaluaciones.
@@ -345,26 +351,27 @@ function HistoryPageContent() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-foreground">Historial y Desempeño</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Tus evaluaciones pasadas y los temas que necesitás reforzar.
-        </p>
+        <h1 className="titulo-l text-texto">{MI_PROGRESO.titulo}</h1>
+        <p className="cuerpo-s mt-1 text-texto-suave">{MI_PROGRESO.detalle}</p>
       </div>
 
       <Tabs defaultValue={defaultTab}>
         <TabsList>
-          <TabsTrigger value="historial">Historial</TabsTrigger>
-          <TabsTrigger value="reforzar">
-            Temas a Reforzar {userProgress.weakPoints.length > 0 && `(${userProgress.weakPoints.length})`}
-          </TabsTrigger>
+          <TabsTrigger value="historial">{MI_PROGRESO.pestanas.historial}</TabsTrigger>
+          <TabsTrigger value="reforzar">{MI_PROGRESO.pestanas.reforzar(userProgress.weakPoints.length)}</TabsTrigger>
+          <TabsTrigger value="tips">{MI_PROGRESO.pestanas.tips}</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="tips" className="pt-4">
+          <TipsDelAlumno />
+        </TabsContent>
 
         <TabsContent value="reforzar" className="pt-4">
           {userProgress.weakPoints.length > 0 ? (
             <WeakPointsSection weakPoints={userProgress.weakPoints} variant="full" />
           ) : (
-            <Card className="p-8 text-center border-2 border-dashed bg-card/60 backdrop-blur-sm rounded-3xl">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+            <Card className="p-8 text-center border-2 border-dashed bg-card/60 rounded-3xl">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-flojo/10 flex items-center justify-center text-flojo">
                 <Zap className="w-7 h-7" />
               </div>
               <h3 className="font-bold text-lg text-foreground mb-1">Sin temas pendientes</h3>
@@ -378,7 +385,7 @@ function HistoryPageContent() {
         <TabsContent value="historial" className="pt-4 space-y-5">
           {loading ? (
             <div className="flex items-center justify-center py-24">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <Cargando className="w-8 h-8 text-primary" />
             </div>
           ) : historyError ? (
             <CargaFallida
@@ -402,7 +409,7 @@ function HistoryPageContent() {
                   historial. Las tarjetas ya son compactas (p-3, ícono de 36px,
                   label de 10px) y entran en una fila hasta en 320px. */}
               <div className={cn('grid gap-3', mostrarPromedio ? 'grid-cols-3' : 'grid-cols-2')}>
-                <Card className="p-3 border-2 border-border bg-card/80 backdrop-blur-sm">
+                <Card className="p-3 border-2 border-border bg-card/80">
                   <div className="flex flex-col items-center text-center gap-1">
                     <div className="w-9 h-9 rounded-xl bg-[var(--algebra-light)] flex items-center justify-center">
                       <BookOpen className="w-5 h-5 text-[var(--algebra)]" />
@@ -418,10 +425,10 @@ function HistoryPageContent() {
                     práctica libre —ningún intento tiene assignment_id— y un
                     "Promedio 6.7" pelado se lee como la nota de la materia. */}
                 {mostrarPromedio && (
-                  <Card className="p-3 border-2 border-border bg-card/80 backdrop-blur-sm">
+                  <Card className="p-3 border-2 border-border bg-card/80">
                     <div className="flex flex-col items-center text-center gap-1 w-full">
-                      <div className="w-9 h-9 rounded-xl bg-[var(--analysis-light)] flex items-center justify-center">
-                        <TrendingUp className="w-5 h-5 text-[var(--analysis)]" />
+                      <div className="w-9 h-9 rounded-xl bg-logrado-fondo flex items-center justify-center">
+                        <TrendingUp className="w-5 h-5 text-logrado" />
                       </div>
                       <div className="text-xl font-black text-foreground leading-none">
                         {stats.promedio!.toFixed(1)}
@@ -440,7 +447,7 @@ function HistoryPageContent() {
                   </Card>
                 )}
 
-                <Card className="p-3 border-2 border-border bg-card/80 backdrop-blur-sm">
+                <Card className="p-3 border-2 border-border bg-card/80">
                   <div className="flex flex-col items-center text-center gap-1">
                     <div className="w-9 h-9 rounded-xl bg-[var(--probability-light)] flex items-center justify-center">
                       <Target className="w-5 h-5 text-[var(--probability)]" />
@@ -471,7 +478,7 @@ function HistoryPageContent() {
                         className={cn(
                           'flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all',
                           active
-                            ? 'bg-primary text-primary-foreground border-transparent shadow-md'
+                            ? 'bg-primary text-primary-foreground border-transparent '
                             : 'bg-card/80 border-border text-muted-foreground hover:border-primary/40'
                         )}
                       >
@@ -490,7 +497,7 @@ function HistoryPageContent() {
                       className={cn(
                         'px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all',
                         modeFilter === m
-                          ? 'bg-primary text-primary-foreground border-transparent shadow-md'
+                          ? 'bg-primary text-primary-foreground border-transparent '
                           : 'bg-card/80 border-border text-muted-foreground hover:border-primary/40'
                       )}
                     >
@@ -511,7 +518,7 @@ function HistoryPageContent() {
                 </h2>
 
                 {filteredAttempts.length === 0 ? (
-                  <Card className="p-8 text-center border-2 bg-card/80 backdrop-blur-sm">
+                  <Card className="p-8 text-center border-2 bg-card/80">
                     <p className="text-muted-foreground text-sm">
                       {attempts.length === 0
                         ? 'Aún no completaste ninguna evaluación.'
@@ -533,7 +540,7 @@ function HistoryPageContent() {
                       return (
                         <Card
                           key={attempt.id}
-                          className={cn('border-2 overflow-hidden bg-card/80 backdrop-blur-sm self-start', classes.border)}
+                          className={cn('border-2 overflow-hidden bg-card/80 self-start', classes.border)}
                         >
                           {/* Card header row */}
                           <div
@@ -550,7 +557,7 @@ function HistoryPageContent() {
                                   <p className="font-bold text-foreground text-sm truncate">{attempt.subject}</p>
                                   <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                     <span
-                                      className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold text-white', classes.chip)}
+                                      className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold text-texto-sobre-accion', classes.chip)}
                                     >
                                       {attempt.mode === 'teorico' ? 'Teórico' : attempt.mode === 'practico' ? 'Práctico' : 'Mixto'}
                                     </span>
@@ -558,8 +565,8 @@ function HistoryPageContent() {
                                       className={cn(
                                         'px-2 py-0.5 rounded-full text-[10px] font-bold',
                                         passed
-                                          ? 'bg-[var(--analysis-light)] text-[var(--analysis)]'
-                                          : 'bg-orange-100 text-orange-600'
+                                          ? 'bg-logrado-fondo text-logrado'
+                                          : 'bg-flojo-fondo text-flojo'
                                       )}
                                     >
                                       {passed ? 'Aprobado' : 'Desaprobado'}
@@ -595,7 +602,7 @@ function HistoryPageContent() {
                             <div className="border-t-2 border-border/60 p-4 bg-muted/20 space-y-3">
                               {loadingDetails === attempt.id ? (
                                 <div className="flex items-center justify-center py-4">
-                                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                                  <Cargando className="w-5 h-5 text-primary" />
                                 </div>
                               ) : attemptDetails[attempt.id] ? (
                                 attemptDetails[attempt.id].map((answer, i) => (
@@ -604,13 +611,13 @@ function HistoryPageContent() {
                                     className={cn(
                                       'p-3 rounded-xl border-2',
                                       answer.is_correct
-                                        ? 'border-[var(--analysis)]/30 bg-[var(--analysis-light)]'
+                                        ? 'border-logrado/30 bg-logrado-fondo'
                                         : 'border-destructive/30 bg-destructive/5'
                                     )}
                                   >
                                     <div className="flex items-start gap-2">
                                       {answer.is_correct ? (
-                                        <CheckCircle className="w-5 h-5 text-[var(--analysis)] shrink-0 mt-0.5" />
+                                        <CheckCircle className="w-5 h-5 text-logrado shrink-0 mt-0.5" />
                                       ) : (
                                         <XCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
                                       )}
@@ -627,7 +634,7 @@ function HistoryPageContent() {
                                                 Tu respuesta:{' '}
                                                 <LaTeXRenderer content={formatAttemptAnswerText(answer, 'selected')} />
                                               </p>
-                                              <p className="text-[var(--analysis)]">
+                                              <p className="text-logrado">
                                                 Correcta:{' '}
                                                 <LaTeXRenderer content={formatAttemptAnswerText(answer, 'correct')} />
                                               </p>
@@ -655,7 +662,7 @@ function HistoryPageContent() {
                                               >
                                                 {loadingExplanation === answer.id ? (
                                                   <>
-                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                    <Cargando className="w-3 h-3" />
                                                     Cargando...
                                                   </>
                                                 ) : (
@@ -700,7 +707,7 @@ function HistoryPageContent() {
                       return (
                         <Card
                           key={`${item.subject}-${item.topic_id}`}
-                          className={cn('p-3 border-2 bg-card/80 backdrop-blur-sm', classes.border)}
+                          className={cn('p-3 border-2 bg-card/80', classes.border)}
                         >
                           <div className="flex items-center gap-3">
                             <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', classes.iconBg)}>
