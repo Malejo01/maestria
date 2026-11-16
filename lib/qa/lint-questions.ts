@@ -19,7 +19,7 @@
  * del modelo es una opinión calibrada; uno de acá es un hecho. El campo
  * `source` del Finding mantiene esa distinción visible aguas abajo.
  */
-import { getEducationContext } from '@/lib/education-context'
+import { getEducationContext, quitarEmojis } from '@/lib/education-context'
 import { parseNumericAnswer } from '@/lib/numeric-answer'
 import type { Question } from '@/lib/types'
 import type { Finding, Severity } from '@/lib/qa/rubric'
@@ -322,6 +322,31 @@ export function lintQuestions(questions: Question[], context: LintContext): Find
     }
 
     findings.push(...lintText(statement, 'Enunciado', index))
+
+    // Los emojis son contenido pedagógico sólo para Primario (voz-y-textos.md,
+    // "Emojis"). Se usa `quitarEmojis` y no una regex propia para que el lint y
+    // la limpieza de las explicaciones entiendan lo mismo por "emoji": una
+    // flecha o un ✓ no lo son.
+    if (!educationContext.permiteEmojis) {
+      const opciones = question.type === 'multiple_choice' ? (question.options ?? []) : []
+      const conEmoji = [
+        ['el enunciado', statement],
+        ['la explicación', explanation],
+        ...opciones.map((opcion, i) => [`la opción ${i + 1}`, String(opcion)]),
+      ]
+        .filter(([, texto]) => quitarEmojis(texto) !== texto)
+        .map(([donde]) => donde)
+      if (conEmoji.length > 0) {
+        findings.push(
+          finding(
+            'adecuacion_nivel',
+            'major',
+            index,
+            `Emojis en ${conEmoji.join(', ')}: fuera de Primario el contenido no los lleva (${educationContext.grado}, ${educationContext.nivel}).`
+          )
+        )
+      }
+    }
 
     if (DANGLING_VISUAL_REFERENCE.test(statement)) {
       findings.push(
