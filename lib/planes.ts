@@ -185,6 +185,26 @@ export function contarEnVentana(fechas: readonly (Date | string)[], ahora: Date)
   }).length
 }
 
+// ─── Docente nuevo o de antes del rediseño (H3) ──────────────────────────────
+
+/**
+ * Cuándo llegó a producción el aviso de G2: el merge del PR #29
+ * (`feat/g2-aviso-de-prueba`, commit b537bbc) a `main`, el 16/11/2026 a las
+ * 03:13 de Argentina, que es lo que Vercel despliega. Quien se registró antes
+ * conoció la versión anterior y lee "Rediseñamos MaestrIA"; quien se registró
+ * después nunca la vio, y para él "rediseñamos" no significa nada.
+ */
+export const CORTE_DOCENTES_PREVIOS = new Date('2026-11-16T06:13:07Z')
+
+/**
+ * Si el docente se registró después del rediseño. Sin fecha legible, nuevo:
+ * a alguien de antes el texto de nuevo igual le dice algo cierto; al revés, no.
+ */
+export function esDocenteNuevo(creadoEl: Date | string | null | undefined, corte: Date = CORTE_DOCENTES_PREVIOS): boolean {
+  const fecha = aFecha(creadoEl)
+  return fecha === null || fecha.getTime() >= corte.getTime()
+}
+
 // ─── Estado ──────────────────────────────────────────────────────────────────
 
 export interface DatosDelPlan {
@@ -338,6 +358,8 @@ export interface ResumenDelPlan {
   topeCuestionarios: number
   /** Cuestionarios generados en los últimos 30 días; null si no se contó (fuera del gratis). */
   cuestionarios: number | null
+  /** H3: se registró después del rediseño. Decide el texto del aviso de bienvenida. */
+  docenteNuevo: boolean
 }
 
 export interface CuerpoDeBloqueo {

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Boton } from '@/components/sistema/boton'
-import type { ResumenDelPlan } from '@/lib/planes'
+import { DIAS_PRUEBA, cupoDeNivel, type ResumenDelPlan } from '@/lib/planes'
 import { pedirJson } from '@/lib/pedir-json'
 import { PLAN } from '@/lib/textos'
 
@@ -15,6 +15,30 @@ export function debeMostrarAvisoDePrueba(plan: ResumenDelPlan | null | undefined
   return Boolean(plan && plan.estado !== 'exento' && plan.avisoDePruebaPendiente)
 }
 
+/**
+ * H3: qué dice el aviso. El docente que ya existía antes del rediseño lee
+ * "Rediseñamos MaestrIA"; el nuevo, que nunca vio la versión anterior, no.
+ * null si no corresponde mostrar nada (la exenta, entre otros).
+ */
+export function textosDelAviso(
+  plan: ResumenDelPlan | null | undefined,
+): { titulo: string; detalle: string; lista: string } | null {
+  if (!plan || !debeMostrarAvisoDePrueba(plan)) return null
+  const cupoPrueba = cupoDeNivel(0)
+  if (plan.docenteNuevo) {
+    return {
+      titulo: T.nuevo.titulo(DIAS_PRUEBA, cupoPrueba),
+      detalle: T.nuevo.detalle(plan.cupoGratis),
+      lista: T.nuevo.lista,
+    }
+  }
+  return {
+    titulo: T.existente.titulo,
+    detalle: T.existente.detalle(DIAS_PRUEBA, cupoPrueba, plan.cupoGratis),
+    lista: T.existente.lista,
+  }
+}
+
 interface Props {
   plan: ResumenDelPlan | null | undefined
   /** Después de arrancar la prueba: relee el plan. */
@@ -22,7 +46,7 @@ interface Props {
 }
 
 /**
- * G2: el aviso que ven los docentes la primera vez que entran después del
+ * G2 y H3: el aviso que ven los docentes la primera vez que entran después del
  * rediseño (y los nuevos, en su primer panel). Dice qué cambió y que la
  * prueba de 30 días empieza hoy.
  *
@@ -35,7 +59,8 @@ export function AvisoDePrueba({ plan, onArranco }: Props) {
   const [cerrado, setCerrado] = useState(false)
   const [mandando, setMandando] = useState(false)
 
-  if (cerrado || !debeMostrarAvisoDePrueba(plan)) return null
+  const textos = textosDelAviso(plan)
+  if (cerrado || !textos) return null
 
   const aceptar = async () => {
     if (mandando) return
@@ -56,11 +81,11 @@ export function AvisoDePrueba({ plan, onArranco }: Props) {
     <Dialog open onOpenChange={(abierto) => !abierto && void aceptar()}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader className="space-y-2 text-left">
-          <DialogTitle className="titulo-m text-texto">{T.titulo}</DialogTitle>
-          <DialogDescription className="cuerpo-s text-texto-suave">{T.queIncluye}</DialogDescription>
+          <DialogTitle className="titulo-m text-texto">{textos.titulo}</DialogTitle>
+          <DialogDescription className="cuerpo-s text-texto-suave">{textos.detalle}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <p className="cuerpo-s font-bold text-texto">{T.queHayDeNuevo}</p>
+          <p className="cuerpo-s font-bold text-texto">{textos.lista}</p>
           <ul className="space-y-2">
             {T.novedades.map((novedad) => (
               <li key={novedad} className="flex gap-2 cuerpo-s text-texto">
@@ -71,7 +96,7 @@ export function AvisoDePrueba({ plan, onArranco }: Props) {
           </ul>
         </div>
         <Boton ancho onClick={() => void aceptar()} disabled={mandando}>
-          {T.boton}
+          {T.boton(DIAS_PRUEBA)}
         </Boton>
       </DialogContent>
     </Dialog>

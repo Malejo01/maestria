@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  CORTE_DOCENTES_PREVIOS,
   contarEnVentana,
+  esDocenteNuevo,
   cuerpoDeBloqueo,
   cuestionariosGratisPorMes,
   cupoGratis,
@@ -201,6 +203,7 @@ describe('cuerpoDeBloqueo', () => {
     cupoGratis: 2,
     topeCuestionarios: 20,
     cuestionarios: null,
+    docenteNuevo: false,
   }
 
   it('sin cupo: ofrece el nivel que alcanza para uno más, con los dos montos', () => {
@@ -334,5 +337,18 @@ describe('plan gratis', () => {
       expect(estadoDelPlan(datos({ nivel: undefined, venceEl: '2020-01-01', alumnosActuales: alumnos }), {})).toBe('exento')
       expect(estadoDelPlan(datos({ nivel: null, alumnosActuales: alumnos }), {})).toBe('exento')
     }
+  })
+})
+
+describe('esDocenteNuevo (H3)', () => {
+  it('antes del corte es de antes del rediseño; desde el corte, nuevo', () => {
+    expect(esDocenteNuevo('2026-08-01T12:00:00Z')).toBe(false)
+    expect(esDocenteNuevo(new Date(CORTE_DOCENTES_PREVIOS.getTime() - 1))).toBe(false)
+    expect(esDocenteNuevo(CORTE_DOCENTES_PREVIOS)).toBe(true)
+    expect(esDocenteNuevo('2026-11-20T12:00:00Z')).toBe(true)
+  })
+  it('sin fecha legible, nuevo', () => {
+    expect(esDocenteNuevo(null)).toBe(true)
+    expect(esDocenteNuevo('basura')).toBe(true)
   })
 })

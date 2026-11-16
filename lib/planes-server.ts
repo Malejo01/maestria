@@ -12,6 +12,7 @@ import {
   cupoGratis,
   cupoVigente,
   diasRestantes,
+  esDocenteNuevo,
   estadoDelPlan,
   normalizarNivel,
   puedeGenerar,
@@ -39,6 +40,8 @@ interface PlanLeido {
   datos: DatosDelPlan
   /** false si las columnas de la 026 no existen (o la consulta falló). */
   columnasPresentes: boolean
+  /** `users.created_at`, para el texto del aviso de bienvenida (H3). */
+  creadoEl: unknown
 }
 
 /**
@@ -57,11 +60,12 @@ async function leerPlan(
   const vacio: PlanLeido = {
     datos: { nivel: undefined, venceEl: null, pruebaIniciadaEl: null, esExento, ahora, alumnosActuales: 0 },
     columnasPresentes: false,
+    creadoEl: null,
   }
   if (esExento) return vacio
   try {
     const filas = (await sql`
-      SELECT plan_nivel, plan_vence_el, prueba_iniciada_el FROM users WHERE id = ${userId} LIMIT 1
+      SELECT plan_nivel, plan_vence_el, prueba_iniciada_el, created_at FROM users WHERE id = ${userId} LIMIT 1
     `) as Fila[]
     const fila = filas[0]
     if (!fila) return vacio
@@ -76,7 +80,7 @@ async function leerPlan(
     if (normalizarNivel(datos.nivel) !== null && (contarSiempre || terminoElPeriodo(datos))) {
       datos.alumnosActuales = await contarAlumnosSinRomper(userId)
     }
-    return { datos, columnasPresentes: true }
+    return { datos, columnasPresentes: true, creadoEl: fila.created_at }
   } catch (error) {
     // 42703 = columna inexistente: la 026 todavía no corrió en esta base. Es
     // el estado esperado hasta que Mauro la corra, no un incidente.
@@ -93,10 +97,10 @@ export async function resumenDelPlan(
   email: string | null,
   ahora: Date = new Date(),
 ): Promise<ResumenDelPlan> {
-  const { datos, columnasPresentes } = await leerPlan(teacherId, email, ahora, { contarSiempre: true })
+  const { datos, columnasPresentes, creadoEl } = await leerPlan(teacherId, email, ahora, { contarSiempre: true })
   const estado = estadoDelPlan(datos)
   const cuestionarios = estado === 'gratis' ? await contarCuestionariosEnVentana(teacherId) : null
-  return armarResumen(datos, estado, cuestionarios, columnasPresentes)
+  return armarResumen(datos, estado, cuestionarios, columnasPresentes, creadoEl)
 }
 
 function armarResumen(
@@ -104,6 +108,7 @@ function armarResumen(
   estado: EstadoPlan,
   cuestionarios: number | null,
   columnasPresentes: boolean,
+  creadoEl: unknown,
 ): ResumenDelPlan {
   // Exento no cuenta nada: ni consume ni se muestra.
   const exento = estado === 'exento'
@@ -122,6 +127,7 @@ function armarResumen(
     cupoGratis: cupoGratis(),
     topeCuestionarios: cuestionariosGratisPorMes(),
     cuestionarios,
+    docenteNuevo: esDocenteNuevo(creadoEl as string | Date | null | undefined),
   }
 }
 
@@ -239,7 +245,7 @@ export interface DocenteEnPlanes {
 /** La tabla de /admin/planes. Lanza si la 026 no corrió: la pantalla lo dice. */
 export async function listarDocentesConPlan(ahora: Date = new Date()): Promise<DocenteEnPlanes[]> {
   const filas = (await sql`
-    SELECT id, name, email, plan_nivel, plan_vence_el, prueba_iniciada_el, plan_notas
+    SELECT id, name, email, plan_nivel, plan_vence_el, prueba_iniciada_el, plan_notas, created_at
     FROM users
     WHERE role = 'DOCENTE' AND COALESCE(is_guest, false) = false
     ORDER BY created_at ASC
@@ -264,7 +270,7 @@ export async function listarDocentesConPlan(ahora: Date = new Date()): Promise<D
         email,
         alumnos,
         notas: typeof fila.plan_notas === 'string' ? fila.plan_notas : null,
-        resumen: armarResumen(datos, estadoDelPlan(datos), null, true),
+        resumen: armarResumen(datos, estadoDelPlan(datos), null, true, fila.created_at),
       }
     }),
   )

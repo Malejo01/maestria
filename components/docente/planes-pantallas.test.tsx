@@ -28,6 +28,7 @@ const base: ResumenDelPlan = {
   cupoGratis: 2,
   topeCuestionarios: 20,
   cuestionarios: null,
+  docenteNuevo: false,
 }
 
 afterEach(cleanup)

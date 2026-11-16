@@ -161,6 +161,15 @@ describe('plan gratis (H7)', () => {
   })
 })
 
+describe('docente nuevo (H3)', () => {
+  it('sale de users.created_at contra el corte del rediseño', async () => {
+    sqlMock.mockResolvedValue([{ plan_nivel: 0, plan_vence_el: null, prueba_iniciada_el: null, created_at: '2026-08-01T00:00:00Z' }])
+    expect((await resumenDelPlan('d1', 'd@x.com')).docenteNuevo).toBe(false)
+    sqlMock.mockResolvedValue([{ plan_nivel: 0, plan_vence_el: null, prueba_iniciada_el: null, created_at: '2026-11-17T00:00:00Z' }])
+    expect((await resumenDelPlan('d1', 'd@x.com')).docenteNuevo).toBe(true)
+  })
+})
+
 describe('lineaDeAcreditacion', () => {
   it('dice quién, cuándo, qué nivel, hasta cuándo y la nota', () => {
     const linea = lineaDeAcreditacion({
