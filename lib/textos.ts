@@ -352,7 +352,9 @@ export const FICHA_ALUMNO = {
   asignar: 'Asignarle una tarea',
   temas: {
     titulo: 'Cómo le va en cada tema',
-    detalle: 'Sobre lo que respondió en tus tareas y prácticas. Un tema con menos de 5 respuestas todavía no tiene datos.',
+    /** Los dos números salen de `lib/alumnos-docente.ts`: el texto no puede decir otra cosa que la regla. */
+    detalle: (paraFlojo: number, paraDominado: number) =>
+      `Sobre lo que respondió en tus tareas y prácticas. Con menos de ${paraFlojo} respuestas un tema todavía no tiene datos, y para darlo por dominado hacen falta ${paraDominado}.`,
     vacio: 'Todavía no respondió nada. Cuando resuelva su primera tarea, acá vas a ver tema por tema.',
     aciertos: (correctas: number, calificadas: number) => `${correctas} de ${calificadas} bien`,
     porcentaje: (p: number) => `${p} %`,
