@@ -4,6 +4,7 @@ import { guardAiCall } from '@/lib/ai-guard'
 import { captureAiSchemaFailure, captureFileParsingFailure, captureRouteFailure } from '@/lib/observability'
 import { z } from 'zod'
 import { generateObject } from 'ai'
+import { TIPO_DE_PROGRESO, leerNivelSugerido, type EventoDeLectura } from '@/lib/wizard-temario'
 import { google } from '@ai-sdk/google'
 import { sql } from '@/lib/db'
 import { AI_MODEL } from '@/lib/ai-model'
@@ -21,6 +22,10 @@ const parsedProgramSchema = z.object({
       ).min(1),
     })
   ).min(1),
+  // Opcionales y sólo si el documento los dice de forma explícita. Son una
+  // sugerencia para que el docente confirme (lib/wizard-temario.ts).
+  nivel: z.string().nullable().optional(),
+  grado: z.string().nullable().optional(),
 })
 
 type ParsedProgram = z.infer<typeof parsedProgramSchema>
@@ -295,52 +300,28 @@ function normalizeUnits(parsed: ParsedProgram) {
   }))
 }
 
-export async function POST(req: Request) {
-  const session = await auth()
-  const userId = session?.user?.id ?? null
+type Resultado = { status: number; body: Record<string, unknown> }
 
-  if (!userId) {
-    return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
-  }
-
-  try {
-    const isTeacher = await requireTeacher(userId)
-    if (!isTeacher) {
-      return NextResponse.json({ error: 'Solo docentes pueden subir programas' }, { status: 403 })
-    }
-
-    const formData = await req.formData()
-    const file = formData.get('file') as File | null
-
-    if (!file) {
-      return NextResponse.json({ error: 'Debes subir un archivo' }, { status: 400 })
-    }
-
-    const validTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/msword',
-      'image/png',
-      'image/jpeg',
-    ]
-
-    const normalizedMimeType = normalizeDocMimeType(file)
-
-    if (!validTypes.includes(normalizedMimeType)) {
-      return NextResponse.json({ error: 'Solo se aceptan PDF, DOCX, DOC, PNG y JPG' }, { status: 400 })
-    }
-
-    const maxSizeBytes = 5 * 1024 * 1024
-    if (file.size > maxSizeBytes) {
-      return NextResponse.json({ error: 'El archivo supera el limite de 5MB' }, { status: 400 })
-    }
-
-    // Tipo y tamaño ya validados: un archivo rechazado no consume cupo. El rol
-    // va explícito porque requireTeacher acaba de leerlo de la base, y el JWT
-    // podría estar desactualizado si el docente cambió de rol recién.
-    const guard = await guardAiCall({ bucket: 'program_extraction', actor: 'docente' })
-    if (!guard.ok) return guard.response
-
+/**
+ * Lee el archivo y arma la estructura de unidades y temas, avisando en qué
+ * etapa está. Es el cuerpo de la ruta, separado para poder responder de dos
+ * formas con el mismo trabajo: de una vez (JSON) o contando el progreso
+ * mientras ocurre (una línea JSON por etapa).
+ */
+async function procesarArchivo({
+  file,
+  normalizedMimeType,
+  userId,
+  guard,
+  avisar,
+}: {
+  file: File
+  normalizedMimeType: string
+  userId: string
+  guard: Extract<Awaited<ReturnType<typeof guardAiCall>>, { ok: true }>
+  avisar: (evento: EventoDeLectura) => void
+}): Promise<Resultado> {
+    avisar({ etapa: 'leyendo' })
     const arrayBuffer = await file.arrayBuffer()
     const fileBuffer = Buffer.from(arrayBuffer)
 
@@ -374,22 +355,19 @@ export async function POST(req: Request) {
         sizeBytes: file.size,
       })
       await guard.fail()
-      return NextResponse.json(
-        { error: 'No se pudo leer el archivo. Probá con otro formato o volvé a exportarlo.' },
-        { status: 422 }
-      )
+      return { status: 422, body: { error: 'No se pudo leer el archivo. Probá con otro formato o volvé a exportarlo.' } }
     }
 
     if (!extractedText || extractedText.length < 100) {
       await guard.fail()
-      return NextResponse.json(
-        { error: 'No se pudo extraer contenido util del archivo. Intenta con otro documento.' },
-        { status: 422 }
-      )
+      return { status: 422, body: { error: 'No se pudo extraer contenido util del archivo. Intenta con otro documento.' } }
     }
 
     const curriculumSection = extractCurriculumSection(extractedText)
     const clippedText = extractedText.slice(0, 25000)
+
+    avisar({ etapa: 'leido' })
+    avisar({ etapa: 'ordenando' })
     const clippedSection = curriculumSection.slice(0, 15000)
 
     let parsedProgram: ParsedProgram
@@ -410,6 +388,8 @@ Busca primero la seccion equivalente a: "Programa Analitico de Contenidos", "Est
 Normaliza cualquier nombre de agrupador (eje, bloque, modulo, nodo) como "Unidad".
 Si hay conflicto entre secciones, prioriza la seccion de contenidos.
 No inventes unidades ni temas que no aparezcan en el documento.
+
+Aparte: si el documento dice de forma explicita el nivel educativo (Primario, Secundario o Superior) y el año o grado de la materia, devolvelos en "nivel" y "grado". Si no lo dice, dejalos en null. No los deduzcas por la dificultad de los contenidos.
 
 Seccion prioritaria detectada:
 ${clippedSection}
@@ -463,7 +443,9 @@ ${clippedText}`,
     const normalizedUnits = normalizeUnits(parsedProgram)
     const quality = estimateConfidence(parsedProgram, extractionMethod)
 
-    return NextResponse.json({
+    return {
+      status: 200,
+      body: {
       sourceFileName: file.name,
       sourceMimeType: normalizedMimeType,
       sourceFileSizeBytes: file.size,
@@ -475,7 +457,94 @@ ${clippedText}`,
         unitCount: quality.unitCount,
         topicCount: quality.topicCount,
       },
-    })
+      // Sólo si salió de la IA: el heurístico no lee nivel ni año.
+      nivelSugerido:
+        extractionMethod === 'ai' ? leerNivelSugerido({ nivel: parsedProgram.nivel, grado: parsedProgram.grado }) : null,
+      },
+    }
+}
+
+export async function POST(req: Request) {
+  const session = await auth()
+  const userId = session?.user?.id ?? null
+
+  if (!userId) {
+    return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+  }
+
+  try {
+    const isTeacher = await requireTeacher(userId)
+    if (!isTeacher) {
+      return NextResponse.json({ error: 'Solo docentes pueden subir programas' }, { status: 403 })
+    }
+
+    const formData = await req.formData()
+    const file = formData.get('file') as File | null
+
+    if (!file) {
+      return NextResponse.json({ error: 'Debes subir un archivo' }, { status: 400 })
+    }
+
+    const validTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+      'image/png',
+      'image/jpeg',
+    ]
+
+    const normalizedMimeType = normalizeDocMimeType(file)
+
+    if (!validTypes.includes(normalizedMimeType)) {
+      return NextResponse.json({ error: 'Solo se aceptan PDF, DOCX, DOC, PNG y JPG' }, { status: 400 })
+    }
+
+    const maxSizeBytes = 5 * 1024 * 1024
+    if (file.size > maxSizeBytes) {
+      return NextResponse.json({ error: 'El archivo supera el limite de 5MB' }, { status: 400 })
+    }
+
+    // Tipo y tamaño ya validados: un archivo rechazado no consume cupo. El rol
+    // va explícito porque requireTeacher acaba de leerlo de la base, y el JWT
+    // podría estar desactualizado si el docente cambió de rol recién.
+    const guard = await guardAiCall({ bucket: 'program_extraction', actor: 'docente' })
+    if (!guard.ok) return guard.response
+
+    // Con `Accept: application/x-ndjson` la respuesta va contando las etapas
+    // mientras ocurren: el spinner mudo es donde más docentes abandonan. Sin
+    // ese encabezado responde como siempre, de una vez.
+    if (req.headers.get('accept')?.includes(TIPO_DE_PROGRESO)) {
+      const codificador = new TextEncoder()
+      const flujo = new ReadableStream<Uint8Array>({
+        async start(controlador) {
+          const avisar = (evento: EventoDeLectura) =>
+            controlador.enqueue(codificador.encode(`${JSON.stringify(evento)}\n`))
+          try {
+            const resultado = await procesarArchivo({ file, normalizedMimeType, userId, guard, avisar })
+            if (resultado.status === 200) {
+              avisar({ etapa: 'listo', resultado: resultado.body })
+            } else {
+              avisar({ etapa: 'error', error: String(resultado.body.error), status: resultado.status })
+            }
+          } catch (error) {
+            captureRouteFailure(error, {
+              endpoint: '/api/teacher/programs/extract',
+              status: 500,
+              operation: 'extract_program',
+            })
+            avisar({ etapa: 'error', error: 'No se pudo procesar el archivo', status: 500 })
+          } finally {
+            controlador.close()
+          }
+        },
+      })
+      return new Response(flujo, {
+        headers: { 'Content-Type': `${TIPO_DE_PROGRESO}; charset=utf-8`, 'Cache-Control': 'no-store' },
+      })
+    }
+
+    const resultado = await procesarArchivo({ file, normalizedMimeType, userId, guard, avisar: () => {} })
+    return NextResponse.json(resultado.body, { status: resultado.status })
   } catch (error) {
     captureRouteFailure(error, {
       endpoint: '/api/teacher/programs/extract',
