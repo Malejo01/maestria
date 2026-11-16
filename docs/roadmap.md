@@ -89,12 +89,39 @@ Decisiones que conviene no redescubrir:
 
 Pendiente del bloque 1, a propósito:
 
-- [ ] **Verificación con sesión real.** Lo público (entrada, ingreso, link de grupo contra el aula `2UQT7J`) se verificó en browser. Los caparazones de alumno, invitado y docente se verificaron con una página temporal de datos de ejemplo, **no** con sesión: no hay `.env.staging.local`, así que el dev server apunta a producción y loguearse ahí escribe. Se re-verifica al arrancar el bloque 2, que empieza por crear la branch de staging y un login de desarrollo.
+- [x] ~~**Verificación con sesión real.**~~ Hecha el 15/11 al arrancar el bloque 2, con el ingreso de desarrollo contra staging: las tres pestañas del docente, el redirect de la raíz a `/teacher` y la vista de alumno con su aviso funcionan con sesión. Sigue sin recorrerse el camino por Google (elegir rol → Google → volver sin que la bienvenida pregunte de nuevo): necesita un OAuth client de staging (`docs/staging.md` §2.3).
 - [ ] **Ingreso por email con código**: fuera de este bloque por decisión de Mauro. Necesita proveedor de correo, una key y una migración de tokens de verificación. Va en su propio PR, apagado por variable de entorno.
 - [ ] **El panel docente por dentro es el viejo.** Las tres pestañas muestran las secciones que ya existían (aulas, materias, cuestionarios + crear) con los tokens nuevos aplicados por arrastre. Los bloques 3 y 4 lo rehacen; "+ Alumno" de la referencia llega con el bloque 3.
 - [ ] **El inicio viejo del alumno (`/`) desapareció**: racha, contador y adelanto de tips vivían ahí. Siguen accesibles en Mi progreso; el bloque 6 arma el inicio nuevo con accesos a todo lo que puede hacer (pedido de Mauro).
 - [ ] **Gráficos por tema y planilla por alumno** (pedido de Mauro al elegir maquetas): van en la ficha de alumno, bloque 3.
 - [ ] `components/math-background.tsx` sigue montado en el cuestionario, los resultados y `/practicar` (degradé + grilla de puntos). Se va con el bloque 6.
+
+### Bloque 2 — Onboarding docente (rama `rediseno/2-onboarding-docente`)
+
+Sin maquetas con pausa (acordado). La alternativa descartada está al final.
+
+- [x] **Staging en uso.** La branch `staging` de Neon del 15/08 seguía viva y anonimizada (re-verificado el 15/11: `deployment_env = staging`, 0 emails reales, 0 tokens). No hizo falta clonar producción de nuevo. Se le corrieron las migraciones 023 y 024, que le faltaban. `.env.staging.local` se armó cambiando sólo el host sobre `.env.local`, con un `AUTH_SECRET` distinto.
+- [x] **`npm run dev:staging`** ([scripts/dev-staging.mjs](../scripts/dev-staging.mjs)): levanta `next dev` contra staging. `npm run dev` a secas **sigue apuntando a producción**; para trabajar en el rediseño se usa el otro.
+- [x] **Ingreso de desarrollo** ([lib/dev-login.ts](../lib/dev-login.ts), `/sign-in/dev`): entrar como un usuario de staging sin Google. Tres candados: `next dev`, `DEV_LOGIN=1` (sólo en `.env.staging.local`) y que la base diga ser staging. En un build de producción el proveedor no se registra.
+- [x] **Cuatro hitos** — Tu materia, Tu temario, Tu primer alumno, Tu primera tarea — en una tarjeta arriba del panel que no se va hasta que hay un alumno con una tarea mandada. Dice un solo paso por vez, con un solo botón.
+- [x] **El progreso se deduce, no se guarda** ([lib/onboarding-docente.ts](../lib/onboarding-docente.ts), con tests). El encargo pedía un campo de progreso; se descartó a propósito: es exactamente la columna de cierre que nadie escribe de las "Lecciones operativas". Deducido de materias, temas, miembros y tareas mandadas, no se puede desincronizar, retoma solo en cualquier dispositivo y **no necesita migración**.
+- [x] **Grupo automático.** El docente pide el link para su primer alumno y el grupo de esa materia se crea detrás (`POST /api/teacher/onboarding/grupo`, idempotente). No ve un botón "crear aula" en el onboarding.
+- [x] **Los caminos del temario ya no se abren solos.** `teacher-onboarding-modal.tsx` perdió la pantalla de bienvenida en prosa: ahora es el primer paso de la tarjeta de hitos y lo abre el docente. Vocabulario al día ("plan oficial de la provincia").
+- [x] `scripts/capturas.mjs` acepta `ENTRAR_COMO="Nombre"` para capturar pantallas con sesión.
+
+Decisiones:
+
+- **El hito del alumno se cumple cuando alguien entra**, no cuando el docente copia el link: no hay forma de saber si lo mandó. Mientras tanto la tarjeta dice "Esperando a tu primer alumno" y deja ir armando la tarea.
+- **El docente no cuenta como su propio alumno** (la cuenta de Mauro es miembro del aula 2).
+- **El "¡Listo!" dura 48 horas** desde la primera tarea mandada y se puede cerrar. El cierre vive en localStorage: es un aviso, no un estado.
+- Descartado: guardar el progreso en `users` (migración + una columna que puede mentir) y un asistente modal a pantalla completa (tapa el panel, que es justo lo que el docente tiene que aprender a usar).
+
+Pendiente, a propósito:
+
+- [ ] **El grupo que crea el onboarding no aparece en la lista vieja de "Mis aulas" hasta recargar.** Esa lista se va en el bloque 3.
+- [ ] **Mandar la tarea sigue siendo el flujo viejo** ("Asignar a un aula" en las tareas guardadas). El bloque 5 lo rehace con la pantalla de compartir.
+- [ ] **Nombre del alumno y "qué prepara"** al invitarlo: bloque 3, que sí necesita migración.
+- [ ] No se probó un alumno entrando de verdad para ver el hito 3 completarse en pantalla: la regla está cubierta por tests, el recorrido no.
 
 ---
 

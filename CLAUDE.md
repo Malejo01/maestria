@@ -11,7 +11,8 @@ MaestrIA (formerly "Malejo Math") is a Next.js 16 (App Router, React 19, TypeScr
 ## Commands
 
 ```bash
-npm run dev          # dev server
+npm run dev          # dev server — OJO: contra .env.local, que es PRODUCCIÓN
+npm run dev:staging  # dev server contra la branch de staging (.env.staging.local); usá éste
 npm run build         # production build
 npm run lint            # ESLint
 npm run test           # vitest run (all tests, single run)
@@ -30,6 +31,8 @@ Every script under `scripts/` that writes to Postgres goes through [scripts/lib/
 - **`CONFIRM_PRODUCTION=<project-id>`** is the non-interactive equivalent, for CI.
 
 Which environment a database *is* comes from the `deployment_env` row (migration 017), never from the hostname or the env file — a cloned Neon branch inherits the row saying `'production'`, so the table also stores `origin_host` to tell a real production from an unflipped clone. An unknown or missing marker is treated as production. Full rationale in [docs/staging.md](docs/staging.md#3-correr-migraciones).
+
+`npm run dev:staging` also enables the development sign-in at `/sign-in/dev` (pick a staging user, no Google). It is gated three ways — `next dev`, `DEV_LOGIN=1` and a database whose `deployment_env` row says `staging` — see [lib/dev-login.ts](lib/dev-login.ts). Never add `DEV_LOGIN` to `.env.local` or to Vercel.
 
 Staging must never hold real personal data: `markEnvironment()` refuses to label a branch `staging` while any un-anonymized email survives, and [scripts/anonymize-staging.ts](scripts/anonymize-staging.ts) is a required step of the branch-refresh procedure, not a cleanup nicety. Note it nulls `accounts.access_token`/`refresh_token`/`id_token` — those are live Google credentials that a naive clone copies straight into a lower-trust environment.
 

@@ -13,6 +13,9 @@
  *   MODOS=claro,oscuro           qué modos capturar
  *   ANCHOS=1440,390              qué anchos capturar
  *   COOKIE="nombre=valor"        cookie de sesión, para pantallas con login
+ *   ENTRAR_COMO="Nombre"         entra por el ingreso de desarrollo (/sign-in/dev,
+ *                                sólo con `npm run dev:staging`) como el usuario
+ *                                cuyo nombre contenga ese texto
  *
  * No usa Playwright ni Puppeteer: levanta el navegador instalado (Edge o
  * Chrome) sin ventana y lo maneja por el protocolo de DevTools con el
@@ -120,6 +123,23 @@ try {
   if (process.env.COOKIE) {
     const [name, ...resto] = process.env.COOKIE.split('=')
     await cdp('Network.setCookie', { name, value: resto.join('='), url: BASE })
+  }
+
+  if (process.env.ENTRAR_COMO) {
+    await navegar(`${BASE}/sign-in/dev`)
+    await esperar(1500)
+    const { result } = await cdp('Runtime.evaluate', {
+      expression: `(() => {
+        const boton = [...document.querySelectorAll('button')].find((b) => b.textContent.includes(${JSON.stringify(process.env.ENTRAR_COMO)}))
+        if (!boton) return false
+        boton.click()
+        return true
+      })()`,
+      returnByValue: true,
+    })
+    if (!result.value) throw new Error(`No encontré a "${process.env.ENTRAR_COMO}" en /sign-in/dev.`)
+    // El ingreso redirige a la raíz y de ahí al inicio del rol.
+    await esperar(6000)
   }
 
   await mkdir(salida, { recursive: true })
