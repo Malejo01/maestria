@@ -1,5 +1,6 @@
 import type { FilePart, ImagePart } from 'ai'
 import { esImagen, MIME_PDF } from '@/lib/lectura-programa'
+import { textoDeHtmlDeWord } from '@/lib/html-de-word'
 
 /**
  * La lectura del archivo de un programa, compartida por /api/teacher/programs/
@@ -72,10 +73,14 @@ async function leerPdf(buffer: Buffer): Promise<PdfLeido> {
   }
 }
 
+/**
+ * I3: como HTML y no como texto crudo. `extractRawText` aplana las tablas y
+ * mezcla las columnas; así cada fila llega como `celda | celda | celda`.
+ */
 async function leerDocx(buffer: Buffer): Promise<string> {
   const mammoth = await import('mammoth')
-  const result = await mammoth.extractRawText({ buffer })
-  return (result.value || '').trim()
+  const result = await mammoth.convertToHtml({ buffer })
+  return textoDeHtmlDeWord(result.value || '').trim()
 }
 
 async function leerDoc(buffer: Buffer): Promise<string> {

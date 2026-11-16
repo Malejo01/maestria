@@ -25,6 +25,7 @@ import {
   parteDelArchivo,
 } from '@/lib/lectura-programa-server'
 import { REGLAS_DE_TEMAS, granularizarUnidades } from '@/lib/temas-granulares'
+import { normalizarNombreDeUnidad } from '@/lib/nombre-de-unidad'
 
 export const runtime = 'nodejs'
 // Un escaneo o una foto van enteros al modelo, que tiene 60 s
@@ -234,7 +235,8 @@ async function requireTeacher(userId: string) {
 function normalizeUnits(parsed: ParsedProgram) {
   return parsed.units.map((unit, unitIndex) => ({
     id: `tp-u-${unitIndex + 1}`,
-    name: unit.name,
+    // I3: "1" → "Unidad 1"; "UNIDAD I: LÓGICA" → "Unidad I: Lógica". El resto, tal cual.
+    name: normalizarNombreDeUnidad(unit.name),
     topics: unit.topics.map((topic, topicIndex) => ({
       id: `tp-u-${unitIndex + 1}-t-${topicIndex + 1}`,
       name: topic.name,
@@ -252,6 +254,8 @@ function instruccionesDeExtraccion(): string {
 
 Busca primero la seccion equivalente a: "Programa Analitico de Contenidos", "Estructura Curricular", "Contenidos del Programa", "Temario", "Unidades Didacticas", "Ejes de Aprendizaje", "Saberes Prioritarios" o "Bloques Tematicos".
 Normaliza cualquier nombre de agrupador (eje, bloque, modulo, nodo) como "Unidad".
+Nombra cada unidad como aparece en el documento, con su numero y su titulo si los tiene (por ejemplo "Unidad 1: Algebra"). Si el documento no le da titulo, usa solo el numero ("Unidad 2"). No inventes titulos.
+Las tablas llegan como lineas "celda | celda | celda": la primera fila suele decir que es cada columna.
 Si hay conflicto entre secciones, prioriza la seccion de contenidos.
 No inventes unidades ni temas que no aparezcan en el documento.
 
