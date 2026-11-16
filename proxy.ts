@@ -1,8 +1,9 @@
 import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 import { isAdminEmail } from '@/lib/ai-rate-limit'
+import { esRutaPublica } from '@/lib/rutas-publicas'
 
-// Routes that do NOT require a NextAuth session.
+// Routes that do NOT require a NextAuth session live in lib/rutas-publicas.ts.
 //
 // The aula routes are listed here because a guest student has no NextAuth
 // session at all — they carry a signed guest cookie instead. Each of those
@@ -15,33 +16,12 @@ import { isAdminEmail } from '@/lib/ai-rate-limit'
 // migración 016 tres de ellos no verificaban absolutamente nada: cualquiera
 // con curl podía quemar la cuota. Si agregás un endpoint de IA acá, cableá el
 // guard en el handler o volvés a abrir ese agujero.
-const PUBLIC_PATHS = [
-  '/',
-  '/sign-in',
-  '/sign-up',
-  '/api/auth',            // NextAuth's own routes
-  '/api/generate-quiz',   // Guests generate inside an aula
-  '/api/explain-error',   // Explicación del error tras responder mal
-  '/aula',                // Join-by-code page
-  '/aulas',               // "Mis aulas"
-  '/api/classrooms',      // Join endpoint
-  '/api/student',         // Student-side aula endpoints
-  '/api/quiz/save-result',      // Guests submit attempts too
-  '/api/quiz/grade-short-answer',
-  '/api/quiz/revancha',   // Se dispara desde la pantalla de resultados
-  '/api/feedback',        // Reportar un problema (el invitado también reporta)
-  '/monitoring',          // Túnel de Sentry (tunnelRoute en next.config.mjs)
-]
-
-function isPublic(pathname: string): boolean {
-  return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(path + '/'))
-}
 
 export default auth((req) => {
   const { nextUrl, auth: session } = req
   const isAuthenticated = !!session
 
-  if (!isAuthenticated && !isPublic(nextUrl.pathname)) {
+  if (!isAuthenticated && !esRutaPublica(nextUrl.pathname)) {
     const signInUrl = new URL('/sign-in', nextUrl.origin)
     signInUrl.searchParams.set('callbackUrl', nextUrl.pathname)
     return NextResponse.redirect(signInUrl)
