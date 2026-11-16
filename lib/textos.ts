@@ -578,4 +578,43 @@ export const PLAN = {
     queIncluye: 'Durante la prueba seguís hasta 10 alumnos y usás todo, sin tarjeta.',
     boton: 'Empezar los 30 días',
   },
+  opciones: {
+    mensual: 'Por mes',
+    mensualDetalle: '30 días desde que se acredita el pago.',
+    pase: 'Pase de 90 días',
+    paseDetalle: '90 días desde que se acredita el pago.',
+    pagarMensual: 'Pagar el mes',
+    pagarPase: 'Pagar el pase',
+    ahorro: (monto: string) => `Ahorrás ${monto} frente a tres meses.`,
+    nivel: (nivel: number) => (nivel === 5 ? 'Tope' : nivel === 1 ? '1 bloque' : `${nivel} bloques`),
+    cupo: (cupo: number) => `Hasta ${cupo} alumnos`,
+    acreditacion: 'El pago se acredita a mano, en el día. Tus alumnos y tus datos no se tocan mientras tanto.',
+    sinPago: 'Todavía no se puede pagar este plan en línea.',
+  },
+  limite: {
+    titulo: (alumnos: number, cupo: number) => `Tenés ${alumnos} de ${cupo} alumnos`,
+    detalle: (nivel: number) =>
+      `Para sumar a uno más pasá a ${nivel === 5 ? 'el tope, de hasta 150 alumnos' : `${nivel} bloques`}. Pagás una clase por cada cinco alumnos que seguís.`,
+    vencido: 'Tu plan venció, así que por ahora no se pueden sumar alumnos.',
+    sinNivel: 'Llegaste al tope de 150 alumnos.',
+    volver: 'Volver',
+  },
+  vencimiento: {
+    banner: (dias: number, esPrueba: boolean) =>
+      `${esPrueba ? 'Tu prueba' : 'Tu plan'} termina ${dias <= 1 ? 'mañana' : `en ${dias} días`}.`,
+    bannerDetalle: 'Después vas a poder ver todo, pero no generar ni sumar alumnos.',
+    verPlanes: 'Ver planes',
+    planesTitulo: 'Elegí cómo seguir',
+    tituloPrueba: 'Terminó tu prueba de 30 días',
+    tituloPlan: 'Tu plan venció',
+    detalle: (fecha: string) => `Venció el ${fecha}. Nada se borró.`,
+    podes: 'Podés seguir',
+    puede: [
+      'Viendo tus materias, tus grupos y tus tareas.',
+      'Viendo cómo le va a cada alumno.',
+      'Tus alumnos responden las tareas que ya les mandaste.',
+    ],
+    noPodes: 'Para esto hace falta renovar',
+    noPuede: ['Generar cuestionarios.', 'Crear materias o grupos.', 'Sumar alumnos.'],
+  },
 } as const

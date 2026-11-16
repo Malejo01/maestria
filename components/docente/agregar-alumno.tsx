@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { AGREGAR_ALUMNO as T, ONBOARDING_DOCENTE } from '@/lib/textos'
+import { PantallaDeLimite } from '@/components/docente/pantalla-de-limite'
+import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
 
 const L = ONBOARDING_DOCENTE.link
 const CAMPO =
@@ -43,6 +45,8 @@ export function AgregarAlumno({
   const [error, setError] = useState<string | null>(null)
   const [listo, setListo] = useState<{ nombre: string; codigo: string } | null>(null)
   const [copiado, setCopiado] = useState<'no' | 'si' | 'fallo'>('no')
+  // G3: el alta se frenó por el plan (402). Se muestra la pantalla de límite.
+  const [bloqueo, setBloqueo] = useState<CuerpoDeBloqueo | null>(null)
 
   const materiaElegida = materiaId ?? materias[0]?.id ?? null
 
@@ -54,6 +58,7 @@ export function AgregarAlumno({
       setError(null)
       setListo(null)
       setCopiado('no')
+      setBloqueo(null)
     }
   }
 
@@ -70,6 +75,11 @@ export function AgregarAlumno({
         body: JSON.stringify({ nombre, contexto, teacherProgramId: materiaElegida }),
       })
       const data = await res.json().catch(() => null)
+      const frenado = res.status === 402 ? leerBloqueo(data) : null
+      if (frenado) {
+        setBloqueo(frenado)
+        return
+      }
       if (!res.ok) throw new Error(data?.error || T.fallo)
 
       setListo({ nombre: nombre.trim(), codigo: data.grupo.codigo })
@@ -94,8 +104,10 @@ export function AgregarAlumno({
 
   return (
     <Dialog open={abierto} onOpenChange={cerrar}>
-      <DialogContent className="rounded-lg border-borde sm:max-w-[480px]">
-        {listo ? (
+      <DialogContent className={`rounded-lg border-borde ${bloqueo ? 'sm:max-w-[560px]' : 'sm:max-w-[480px]'}`}>
+        {bloqueo ? (
+          <PantallaDeLimite bloqueo={bloqueo} onVolver={() => setBloqueo(null)} />
+        ) : listo ? (
           <>
             <DialogTitle className="titulo-m text-texto">{T.listo.titulo(listo.nombre.split(' ')[0])}</DialogTitle>
             <DialogDescription className="cuerpo-s text-texto-suave">{T.listo.detalle}</DialogDescription>

@@ -12,6 +12,7 @@ import { MisTareas } from '@/components/docente/mis-tareas'
 import { usePanelDocente } from '@/components/docente/use-panel-docente'
 import { EsqueletoPanel } from '@/components/docente/esqueletos'
 import { AvisoDePrueba } from '@/components/docente/aviso-de-prueba'
+import { EstadoDelPlan } from '@/components/docente/estado-del-plan'
 import { usePlanDocente } from '@/components/docente/use-plan-docente'
 
 /**
@@ -63,6 +64,7 @@ export default function TeacherPage() {
   return (
     <div className="space-y-4">
       <AvisoDePrueba plan={planDatos?.plan} onArranco={recargarPlan} />
+      <EstadoDelPlan datos={planDatos} />
 
       <HitosOnboarding
         onCrearMateria={() => setShowOnboardingModal(true)}
