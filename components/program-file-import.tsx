@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Check, Loader2, Upload } from 'lucide-react'
+import { Check, Upload } from 'lucide-react'
 import type { ProgramUnit } from '@/lib/types'
 
 export interface ProgramSourceMeta {

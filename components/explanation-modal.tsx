@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { LaTeXRenderer } from './latex-renderer'
-import { Sparkles, XCircle, CheckCircle2, Zap, Loader2, Award } from 'lucide-react'
+import { Sparkles, XCircle, CheckCircle2, Zap, Award } from 'lucide-react'
 import type { MultipleChoiceQuestion } from '@/lib/types'
 import { useToast } from '@/hooks/use-toast'
 import { aiCutoffMessage } from '@/lib/ai-cutoff-message'

@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Save, PlayCircle, Share2, Loader2 } from 'lucide-react'
+import { Save, PlayCircle, Share2 } from 'lucide-react'
 import type { QuizActionMode } from '@/lib/types'
 
 interface QuizActionDialogProps {

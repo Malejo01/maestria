@@ -147,6 +147,14 @@ async function run() {
     )
   }
 
+  // Una cuenta recién creada, sin rol: para mirar la bienvenida y el
+  // onboarding del alumno entrando por /sign-in/dev.
+  await sql.query(`DELETE FROM users WHERE id = 'stg-demo-nueva'`)
+  await sql.query(
+    `INSERT INTO users (id, email, name, role, is_onboarded, is_guest, created_at, updated_at)
+     VALUES ('stg-demo-nueva', 'stg-demo-nueva@staging.invalid', 'Cuenta Nueva', NULL, false, false, NOW(), NOW())`,
+  )
+
   console.log(`✔ ${DEMOS.length} alumnos de ejemplo en el grupo ${grupoId} de "${programa.subject_name}" (docente ${programa.user_id}).`)
 }
 

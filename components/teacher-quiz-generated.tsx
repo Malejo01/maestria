@@ -10,9 +10,18 @@ import { exportQuizToMoodleGift } from '@/lib/moodle-export'
 import { MathBackground } from '@/components/math-background'
 import { LaTeXRenderer } from '@/components/latex-renderer'
 import {
-  Save, PlayCircle, Trash2, ChevronDown, ChevronUp,
-  ArrowLeft, Loader2, CheckCircle, GraduationCap, Pencil,
-  BookOpen, ArrowRight, Sparkles,
+  Save,
+  PlayCircle,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  ArrowLeft,
+  CheckCircle,
+  GraduationCap,
+  Pencil,
+  BookOpen,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
