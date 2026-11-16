@@ -12,6 +12,7 @@
  *   BASE=http://localhost:3000   de dónde se sirven las rutas
  *   MODOS=claro,oscuro           qué modos capturar
  *   ANCHOS=1440,390              qué anchos capturar
+ *   ESPERA=3000                  milisegundos a esperar en cada pantalla antes de la foto
  *   COOKIE="nombre=valor"        cookie de sesión, para pantallas con login
  *   ENTRAR_COMO="Nombre"         entra por el ingreso de desarrollo (/sign-in/dev,
  *                                sólo con `npm run dev:staging`) como el usuario
@@ -161,7 +162,7 @@ try {
       for (const ruta of rutas) {
         await navegar(BASE + ruta)
         // Datos que llegan por fetch y animaciones de entrada.
-        await esperar(1500)
+        await esperar(Number(process.env.ESPERA ?? 3000))
         const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
         const archivo = join(salida, `${nombreDe(ruta)}-${ancho}-${modo}.png`)
         await writeFile(archivo, Buffer.from(data, 'base64'))

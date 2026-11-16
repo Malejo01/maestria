@@ -22,6 +22,7 @@ const ZONAS_REDISENADAS = [
   'components/caparazon',
   'components/docente',
   'components/teacher-onboarding-modal.tsx',
+  'components/share-quiz-dialog.tsx',
   'app/(entrada)',
   'app/(app)/layout.tsx',
   'app/layout.tsx',
@@ -42,8 +43,7 @@ function archivosDe(ruta: string): string[] {
  * vieja, movida tal cual al partir app/(app)/teacher/page.tsx. Cada uno sale
  * de esta lista cuando su bloque lo rehace; la lista sólo puede achicarse.
  */
-const TODAVIA_VIEJOS = [
-  'components/docente/mis-tareas.tsx', // bloque 5
+const TODAVIA_VIEJOS: string[] = [
 ]
 
 const FUENTES = ZONAS_REDISENADAS.flatMap(archivosDe)

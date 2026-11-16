@@ -35,6 +35,7 @@ export default function TeacherPage() {
     teacherPrograms,
     teacherQuizzes,
     teacherSection,
+    version,
   } = panel
 
   if (isSignedIn && userProfile && !isTeacher) {
@@ -48,7 +49,7 @@ export default function TeacherPage() {
         onCargarTemario={() => router.push('/teacher?seccion=materias')}
         onArmarTarea={() => router.push('/teacher?seccion=tareas&armar=1')}
         onMandarTarea={() => router.push('/teacher?seccion=tareas')}
-        refrescarCon={`${teacherPrograms.length}-${teacherQuizzes.length}-${teacherSection}`}
+        refrescarCon={`${teacherPrograms.length}-${teacherQuizzes.length}-${teacherSection}-${version}`}
       />
 
       <MisTareas panel={panel} />

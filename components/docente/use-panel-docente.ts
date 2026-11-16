@@ -155,6 +155,14 @@ export function usePanelDocente() {
   // Saved quizzes can be published to an aula at any time, not only right
   // after generating them.
   const [sharingQuiz, setSharingQuiz] = useState<TeacherQuiz | null>(null)
+  /** Sube cuando algo cambió fuera de este estado (se mandó una tarea): la tarjeta de primeros pasos relee. */
+  const [version, setVersion] = useState(0)
+  /**
+   * Falso hasta que la primera lectura de tareas terminó. Sin esto, la lista
+   * vacía inicial se dibuja como "todavía no armaste ninguna tarea" durante el
+   * instante de carga: un estado que todavía no se sabe, mostrado como un hecho.
+   */
+  const [tareasLeidas, setTareasLeidas] = useState(false)
 
 
   // Non-teachers shouldn't land here directly
@@ -295,6 +303,8 @@ export function usePanelDocente() {
           setTeacherQuizzes([])
           setPerformedQuizzes([])
         }
+      } finally {
+        if (isMounted) setTareasLeidas(true)
       }
     }
 
@@ -452,6 +462,9 @@ export function usePanelDocente() {
     setExportingQuizId,
     sharingQuiz,
     setSharingQuiz,
+    version,
+    setVersion,
+    tareasLeidas,
     userProfile,
     teacherPrograms,
     teacherQuizzes,
