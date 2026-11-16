@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { captureRouteFailure } from '@/lib/observability'
 import { opcionDePago, nivelQueAlcanza } from '@/lib/planes'
-import { resumenDelPlan } from '@/lib/planes-server'
+import { iniciarPrueba, resumenDelPlan } from '@/lib/planes-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,4 +39,23 @@ export async function GET() {
       renovar: null,
     })
   }
+}
+
+/**
+ * POST /api/teacher/plan — { accion: 'empezar-prueba' }
+ *
+ * G2: el docente vio el aviso. Arranca la prueba de 30 días si todavía no
+ * arrancó; si ya arrancó, o es la cuenta exenta, o la 026 no corrió, no hace
+ * nada y responde igual. Por eso el aviso aparece una vez y no dos.
+ */
+export async function POST(req: Request) {
+  const teacher = await getTeacherViewer()
+  if (!teacher) return NextResponse.json({ error: 'Solo docentes' }, { status: 403 })
+
+  const body = await req.json().catch(() => null)
+  if (body?.accion !== 'empezar-prueba') {
+    return NextResponse.json({ error: 'Acción desconocida' }, { status: 400 })
+  }
+  const arranco = await iniciarPrueba(teacher.id, teacher.email)
+  return NextResponse.json({ arranco })
 }

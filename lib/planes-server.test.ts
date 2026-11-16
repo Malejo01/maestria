@@ -97,3 +97,26 @@ describe('lineaDeAcreditacion', () => {
     expect(linea).toBe('16/11/2026 · mauro@x.com acreditó nivel 2 hasta el 16/12/2026 · transferencia MercadoPago')
   })
 })
+
+describe('iniciarPrueba (G2)', () => {
+  it('una vez arrancada, el resumen ya no pide el aviso', async () => {
+    sqlMock.mockResolvedValue([{ plan_nivel: 0, plan_vence_el: '2099-01-01T00:00:00Z', prueba_iniciada_el: '2026-11-16T00:00:00Z' }])
+    expect((await resumenDelPlan('d1', 'd@x.com')).avisoDePruebaPendiente).toBe(false)
+  })
+
+  it('la cuenta exenta no arranca nada ni toca la base', async () => {
+    process.env.ADMIN_EMAILS = 'dueno@x.com'
+    const { iniciarPrueba } = await import('./planes-server')
+    expect(await iniciarPrueba('d1', 'dueno@x.com')).toBe(false)
+    expect(sqlMock).not.toHaveBeenCalled()
+  })
+
+  it('sólo escribe si la prueba no arrancó: el UPDATE lleva la guarda', async () => {
+    const { iniciarPrueba } = await import('./planes-server')
+    sqlMock.mockResolvedValue([])
+    expect(await iniciarPrueba('d1', 'd@x.com')).toBe(false)
+    const consulta = (sqlMock.mock.calls[0][0] as TemplateStringsArray).join('?')
+    expect(consulta).toMatch(/prueba_iniciada_el IS NULL/)
+    expect(consulta).toMatch(/plan_vence_el IS NULL/)
+  })
+})

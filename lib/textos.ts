@@ -561,3 +561,21 @@ export const ONBOARDING_ALUMNO = {
 export function contar(n: number, singular: string, plural: string): string {
   return `${n} ${n === 1 ? singular : plural}`
 }
+
+/**
+ * Planes y cobro (tanda G). Sin signos de admiración, sin "¡Bienvenido!": la
+ * voz de design-reference/sistema/voz-y-textos.md.
+ */
+export const PLAN = {
+  avisoDePrueba: {
+    titulo: 'Rediseñamos MaestrIA. Desde hoy tenés 30 días para probarla completa.',
+    queHayDeNuevo: 'Qué hay de nuevo',
+    novedades: [
+      'Mis alumnos: cada alumno en una fila, con los temas donde se equivoca y cuándo practicó por última vez.',
+      'El temario se arma en cuatro pasos: subís el archivo que ya tenés, partís del plan oficial o lo escribís.',
+      'Cada tarea sale con el link del grupo y un mensaje listo para pasarles.',
+    ],
+    queIncluye: 'Durante la prueba seguís hasta 10 alumnos y usás todo, sin tarjeta.',
+    boton: 'Empezar los 30 días',
+  },
+} as const
