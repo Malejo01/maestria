@@ -11,6 +11,8 @@ import { MisMaterias } from '@/components/docente/mis-materias'
 import { MisTareas } from '@/components/docente/mis-tareas'
 import { usePanelDocente } from '@/components/docente/use-panel-docente'
 import { EsqueletoPanel } from '@/components/docente/esqueletos'
+import { AvisoDePrueba } from '@/components/docente/aviso-de-prueba'
+import { usePlanDocente } from '@/components/docente/use-plan-docente'
 
 /**
  * El panel del docente, como contenedor: tres pestañas (Mis alumnos, Mis
@@ -41,6 +43,11 @@ export default function TeacherPage() {
     teacherSection,
     version,
   } = panel
+  // El plan se relee cuando el docente crea o borra algo: cambia cuántos
+  // alumnos tiene contra su cupo.
+  const { datos: planDatos, recargar: recargarPlan } = usePlanDocente(
+    `${teacherPrograms.length}-${teacherQuizzes.length}-${version}`,
+  )
 
   if (isSignedIn && userProfile && !isTeacher) {
     return null
@@ -55,6 +62,8 @@ export default function TeacherPage() {
 
   return (
     <div className="space-y-4">
+      <AvisoDePrueba plan={planDatos?.plan} onArranco={recargarPlan} />
+
       <HitosOnboarding
         onCrearMateria={() => setShowOnboardingModal(true)}
         onCargarTemario={() => router.push('/teacher?seccion=materias')}
