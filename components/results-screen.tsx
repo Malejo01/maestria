@@ -120,7 +120,10 @@ export function ResultsScreen() {
     saveResult()
   }, [isSignedIn, config, answers, questions.length, results.correct, results.score])
 
-  // Trigger confetti on passing
+  // El papel picado al aprobar: la única animación decorativa de la app y la
+  // única que no es de Framer Motion, así que no puede usar useReducedMotion().
+  // `disableForReducedMotion` hace que la librería consulte la preferencia y
+  // no dibuje nada. Ver design-reference/sistema/accesibilidad.md, "Movimiento".
   useEffect(() => {
     if (results.passed) {
       const duration = 3000
@@ -132,14 +135,16 @@ export function ResultsScreen() {
           angle: 60,
           spread: 55,
           origin: { x: 0 },
-          colors: coloresDelSistema()
+          colors: coloresDelSistema(),
+          disableForReducedMotion: true,
         })
         confetti({
           particleCount: 3,
           angle: 120,
           spread: 55,
           origin: { x: 1 },
-          colors: coloresDelSistema()
+          colors: coloresDelSistema(),
+          disableForReducedMotion: true,
         })
 
         if (Date.now() < end) {

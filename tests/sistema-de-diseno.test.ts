@@ -101,6 +101,27 @@ describe('sistema de diseño — lo ya rediseñado', () => {
     expect(infractores(/\banimate-(spin|pulse|bounce|ping|shake|in|out)\b|@keyframes/)).toEqual([])
   })
 
+  // Lo que se mueve SIN pasar por Framer Motion no puede consultar
+  // useReducedMotion(): tiene su propia forma de respetar la preferencia, y
+  // estos dos tests son los que la sostienen (accesibilidad.md, "Movimiento").
+  it('el papel picado no se dispara con prefers-reduced-motion', () => {
+    const conConfetti = FUENTES.filter((ruta) => /\bconfetti\(/.test(sinComentarios(readFileSync(join(RAIZ, ruta), 'utf8'))))
+    expect(conConfetti.length).toBeGreaterThan(0)
+    for (const ruta of conConfetti) {
+      const codigo = sinComentarios(readFileSync(join(RAIZ, ruta), 'utf8'))
+      const llamadas = codigo.match(/\bconfetti\(\{[\s\S]*?\}\)/g) ?? []
+      expect(llamadas.length, ruta).toBeGreaterThan(0)
+      for (const llamada of llamadas) expect(llamada, ruta).toContain('disableForReducedMotion: true')
+    }
+  })
+
+  it('globals.css apaga las transiciones y animaciones de CSS con prefers-reduced-motion', () => {
+    const css = sinComentarios(readFileSync(join(RAIZ, 'app/globals.css'), 'utf8'))
+    const bloque = css.match(/@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\n\}/)?.[0] ?? ''
+    expect(bloque).toContain('transition-duration: 0.01ms !important')
+    expect(bloque).toContain('animation-duration: 0.01ms !important')
+  })
+
   it('nada de role="button" sobre un div o un span', () => {
     expect(infractores(/role=["']button["']/)).toEqual([])
   })
