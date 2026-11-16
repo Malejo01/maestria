@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TeacherQuizReview } from '@/components/teacher-quiz-review'
 import { ShareQuizDialog } from '@/components/share-quiz-dialog'
 import type { PanelDocente } from '@/components/docente/use-panel-docente'
+import { EsqueletoListaDeTareas } from '@/components/docente/esqueletos'
 
 /**
  * "Mis tareas": las tareas guardadas y las realizadas, con revisar, editar,
@@ -117,10 +118,15 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
             ) : (
             <Tabs defaultValue="guardados">
               <TabsList>
-                <TabsTrigger value="guardados">{T.guardadas(teacherQuizzes.length)}</TabsTrigger>
-                <TabsTrigger value="realizados">{T.hechas(performedQuizzes.length)}</TabsTrigger>
+                <TabsTrigger value="guardados">
+                  {tareasLeidas ? T.guardadas(teacherQuizzes.length) : T.guardadasSinContar}
+                </TabsTrigger>
+                <TabsTrigger value="realizados">
+                  {tareasLeidas ? T.hechas(performedQuizzes.length) : T.hechasSinContar}
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="guardados" className="space-y-3">
+                {!tareasLeidas && teacherQuizzes.length === 0 && <EsqueletoListaDeTareas />}
                 {tareasLeidas && teacherQuizzes.length === 0 && (
                   <div className="rounded-lg border border-borde p-4">
                     <p className="cuerpo text-texto">{T.vacio.titulo}</p>

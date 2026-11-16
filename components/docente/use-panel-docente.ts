@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
-import { SECCION_DOCENTE_POR_DEFECTO, esSeccionDocente } from '@/lib/navegacion'
+import { SECCION_DOCENTE_POR_DEFECTO, esSeccionDocente, type SeccionDocente } from '@/lib/navegacion'
 import { teacherProgramToSubject } from '@/lib/teacher-programs'
 import { X } from 'lucide-react'
 import { useSession } from 'next-auth/react'
@@ -76,6 +76,18 @@ export const ASSESSMENT_STYLE_LABELS: Record<string, string> = {
 }
 
 /**
+ * En qué pestañas de la barra puede estar a la vista cada sección del store.
+ * "Armar tarea" ('crear') se abre desde Mis tareas y también desde la tarjeta
+ * de una materia, sin cambiar de pestaña.
+ */
+const PESTANAS_DE: Record<'materias' | 'crear' | 'cuestionarios' | 'aulas', SeccionDocente[]> = {
+  aulas: ['alumnos'],
+  materias: ['materias'],
+  cuestionarios: ['tareas'],
+  crear: ['tareas', 'materias'],
+}
+
+/**
  * El estado y los datos del panel del docente: materias, tareas guardadas,
  * la materia elegida, los filtros y los diálogos abiertos.
  *
@@ -107,12 +119,17 @@ export function usePanelDocente() {
     startQuiz,
     startQuizPreview,
   } = useAppStore()
-  const { status } = useSession()
+  const { data: session, status } = useSession()
   const isSignedIn = status === 'authenticated'
   const { toast } = useToast()
   const router = useRouter()
 
-  const isTeacher = userProfile?.role === 'DOCENTE'
+  // El rol sale del perfil cuando ya llegó, y mientras tanto de la sesión.
+  // Antes era sólo el perfil, así que las materias y las tareas no se
+  // empezaban a pedir hasta que terminara OTRO pedido (/api/user/profile): un
+  // viaje de ida y vuelta entero de pantalla vacía. El proxy ya no deja llegar
+  // acá a un alumno, y si el perfil dice otra cosa cuando llega, gana el perfil.
+  const isTeacher = (userProfile?.role ?? session?.user?.role) === 'DOCENTE'
 
   // La sección la manda la URL (?seccion=), que es lo que marcan las pestañas
   // de la barra: Mis alumnos / Mis materias / Mis tareas. Sin parámetro, la
@@ -130,12 +147,26 @@ export function usePanelDocente() {
   useEffect(() => {
     if (agregarDesdeLaUrl) setAgregarAlumno(true)
   }, [agregarDesdeLaUrl])
+  /** La pestaña que marca la barra. Se sabe desde el primer render: sale de la URL. */
+  const seccionDeLaBarra: SeccionDocente = esSeccionDocente(seccionDeLaUrl) ? seccionDeLaUrl : SECCION_DOCENTE_POR_DEFECTO
+  /**
+   * Falso mientras la sección del store no corresponde a la pestaña de la URL.
+   * El store arranca en 'materias': sin esto, entrar a Mis alumnos dibujaba un
+   * instante Mis materias. Se deduce en vez de guardarse: no hay un "ya
+   * sincronizó" que pueda quedar marcado de más.
+   */
+  const seccionLista = PESTANAS_DE[teacherSection].includes(seccionDeLaBarra)
   useEffect(() => {
-    const seccion = esSeccionDocente(seccionDeLaUrl) ? seccionDeLaUrl : SECCION_DOCENTE_POR_DEFECTO
     setTeacherSection(
-      seccion === 'alumnos' ? 'aulas' : seccion === 'materias' ? 'materias' : armarDesdeLaUrl ? 'crear' : 'cuestionarios',
+      seccionDeLaBarra === 'alumnos'
+        ? 'aulas'
+        : seccionDeLaBarra === 'materias'
+          ? 'materias'
+          : armarDesdeLaUrl
+            ? 'crear'
+            : 'cuestionarios',
     )
-  }, [seccionDeLaUrl, armarDesdeLaUrl, setTeacherSection])
+  }, [seccionDeLaBarra, armarDesdeLaUrl, setTeacherSection])
 
   const [activeSubject, setActiveSubject] = useState<string | null>(null)
   const [showCreateWizard, setShowCreateWizard] = useState(false)
@@ -163,6 +194,8 @@ export function usePanelDocente() {
    * instante de carga: un estado que todavía no se sabe, mostrado como un hecho.
    */
   const [tareasLeidas, setTareasLeidas] = useState(false)
+  /** Lo mismo para las materias: falso hasta que terminó la primera lectura, haya salido bien o mal. */
+  const [materiasLeidas, setMateriasLeidas] = useState(false)
 
 
   // Non-teachers shouldn't land here directly
@@ -220,6 +253,8 @@ export function usePanelDocente() {
         if (isMounted) {
           setTeacherPrograms([])
         }
+      } finally {
+        if (isMounted) setMateriasLeidas(true)
       }
     }
 
@@ -413,6 +448,10 @@ export function usePanelDocente() {
     isSignedIn,
     router,
     isTeacher,
+    sesionCargando: status === 'loading',
+    seccionDeLaBarra,
+    seccionLista,
+    materiasLeidas,
     parametros,
     seccionDeLaUrl,
     armarDesdeLaUrl,

@@ -10,6 +10,7 @@ import { TeacherClassrooms } from '@/components/teacher-classrooms'
 import { MisMaterias } from '@/components/docente/mis-materias'
 import { MisTareas } from '@/components/docente/mis-tareas'
 import { usePanelDocente } from '@/components/docente/use-panel-docente'
+import { EsqueletoPanel } from '@/components/docente/esqueletos'
 
 /**
  * El panel del docente, como contenedor: tres pestañas (Mis alumnos, Mis
@@ -25,6 +26,9 @@ export default function TeacherPage() {
     isSignedIn,
     router,
     isTeacher,
+    sesionCargando,
+    seccionDeLaBarra,
+    seccionLista,
     agregarDesdeLaUrl,
     agregarAlumno,
     setAgregarAlumno,
@@ -40,6 +44,13 @@ export default function TeacherPage() {
 
   if (isSignedIn && userProfile && !isTeacher) {
     return null
+  }
+
+  // Antes de saber quién es o en qué pestaña está, el panel no tiene nada
+  // propio que dibujar. La pestaña la dice la URL, así que el esqueleto ya es
+  // el de la pantalla que viene, no uno genérico.
+  if (sesionCargando || !seccionLista) {
+    return <EsqueletoPanel seccion={seccionDeLaBarra} />
   }
 
   return (
