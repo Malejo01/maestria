@@ -5,6 +5,7 @@
   "packageManager": "npm@10.9.8",
   "scripts": {
     "dev": "next dev",
+    "dev:staging": "node scripts/dev-staging.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
