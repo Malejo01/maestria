@@ -9,8 +9,25 @@ import { google } from '@ai-sdk/google'
 import { sql } from '@/lib/db'
 import { AI_MODEL } from '@/lib/ai-model'
 import { bloqueoParaGenerar } from '@/lib/planes-server'
+import {
+  NO_SE_PUDO_LEER,
+  TIEMPO_MAXIMO_DEL_MODELO_MS,
+  comoLeerPrograma,
+  elModeloLoLee,
+  esTiempoAgotado,
+} from '@/lib/lectura-programa'
+import {
+  extraerTextoDePrograma,
+  normalizarMimeDePrograma,
+  parserPara,
+  parteDelArchivo,
+} from '@/lib/lectura-programa-server'
 
 export const runtime = 'nodejs'
+// Un escaneo o una foto van enteros al modelo, que tiene 60 s
+// (TIEMPO_MAXIMO_DEL_MODELO_MS). Ninguna petición vuelve a llegar a los 300 s
+// del 504 de la foto de celular (I1).
+export const maxDuration = 90
 
 const parsedProgramSchema = z.object({
   units: z.array(
@@ -176,85 +193,6 @@ function parseHeuristicProgram(rawText: string): ParsedProgram {
   }
 }
 
-function normalizeDocMimeType(file: File): string {
-  const lowerName = file.name.toLowerCase()
-  if (lowerName.endsWith('.doc') || file.type === 'application/msword') {
-    return 'application/msword'
-  }
-  if (lowerName.endsWith('.png') || file.type === 'image/png') {
-    return 'image/png'
-  }
-  if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || file.type === 'image/jpeg') {
-    return 'image/jpeg'
-  }
-  if (lowerName.endsWith('.docx')) {
-    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  }
-  if (lowerName.endsWith('.pdf')) {
-    return 'application/pdf'
-  }
-
-  return file.type
-}
-
-async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const pdfModule = await import('pdf-parse')
-  const legacyParse = (pdfModule as unknown as { default?: (data: Buffer) => Promise<{ text?: string }> }).default
-
-  // Backward compatibility for older pdf-parse versions that export a function.
-  if (typeof legacyParse === 'function') {
-    const parsed = await legacyParse(buffer)
-    return (parsed?.text || '').trim()
-  }
-
-  const PDFParseClass = (pdfModule as unknown as { PDFParse?: new (params: { data: Buffer }) => { getText: () => Promise<{ text?: string }>; destroy?: () => Promise<void> } }).PDFParse
-
-  if (typeof PDFParseClass !== 'function') {
-    throw new Error('PDF parser no disponible: exportacion invalida de pdf-parse')
-  }
-
-  const parserWithWorker = pdfModule as unknown as {
-    PDFParse?: {
-      new (params: { data: Buffer }): { getText: () => Promise<{ text?: string }>; destroy?: () => Promise<void> }
-      setWorker?: (workerSrc?: string) => string
-    }
-  }
-
-  if (typeof parserWithWorker.PDFParse?.setWorker === 'function') {
-    parserWithWorker.PDFParse.setWorker('pdfjs-dist/legacy/build/pdf.worker.mjs')
-  }
-
-  const parser = new PDFParseClass({ data: buffer })
-  try {
-    const parsed = await parser.getText()
-    return (parsed?.text || '').trim()
-  } finally {
-    if (typeof parser.destroy === 'function') {
-      await parser.destroy()
-    }
-  }
-}
-
-async function extractTextFromDocx(buffer: Buffer): Promise<string> {
-  const mammoth = await import('mammoth')
-  const result = await mammoth.extractRawText({ buffer })
-  return (result.value || '').trim()
-}
-
-async function extractTextFromDoc(buffer: Buffer): Promise<string> {
-  const wordExtractorModule = await import('word-extractor')
-  const WordExtractor = wordExtractorModule.default
-  const extractor = new WordExtractor()
-  const document = await extractor.extract(buffer)
-  return String(document.getBody() || '').trim()
-}
-
-async function extractTextFromImage(buffer: Buffer): Promise<string> {
-  const tesseract = await import('tesseract.js')
-  const result = await tesseract.recognize(buffer, 'spa+eng')
-  return String(result?.data?.text || '').trim()
-}
-
 function estimateConfidence(parsed: ParsedProgram, extractionMethod: 'ai' | 'heuristic') {
   const unitCount = parsed.units.length
   const topicCount = parsed.units.reduce((acc, unit) => acc + unit.topics.length, 0)
@@ -303,6 +241,20 @@ function normalizeUnits(parsed: ParsedProgram) {
 
 type Resultado = { status: number; body: Record<string, unknown> }
 
+/** Lo que se le pide al modelo, venga el programa como texto o como archivo. */
+function instruccionesDeExtraccion(): string {
+  return `Analiza el programa y devuelve la estructura curricular en este orden de prioridad:
+1) Unidades
+2) Temas dentro de cada unidad
+
+Busca primero la seccion equivalente a: "Programa Analitico de Contenidos", "Estructura Curricular", "Contenidos del Programa", "Temario", "Unidades Didacticas", "Ejes de Aprendizaje", "Saberes Prioritarios" o "Bloques Tematicos".
+Normaliza cualquier nombre de agrupador (eje, bloque, modulo, nodo) como "Unidad".
+Si hay conflicto entre secciones, prioriza la seccion de contenidos.
+No inventes unidades ni temas que no aparezcan en el documento.
+
+Aparte: si el documento dice de forma explicita el nivel educativo (Primario, Secundario o Superior) y el año o grado de la materia, devolvelos en "nivel" y "grado". Si no lo dice, dejalos en null. No los deduzcas por la dificultad de los contenidos.`
+}
+
 /**
  * Lee el archivo y arma la estructura de unidades y temas, avisando en qué
  * etapa está. Es el cuerpo de la ruta, separado para poder responder de dos
@@ -327,49 +279,67 @@ async function procesarArchivo({
     const fileBuffer = Buffer.from(arrayBuffer)
 
     // Cada formato trae su propia librería y sus propias formas de romperse (un
-    // PDF escaneado, un .doc de Word 97, un OCR que no encuentra nada). El tag
-    // por parser es lo que después permite ver si falla un formato puntual en
-    // vez de mirar un montón de errores genéricos de "no se pudo procesar".
-    const parser = normalizedMimeType === 'application/pdf'
-      ? 'pdf-parse'
-      : normalizedMimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        ? 'mammoth'
-        : normalizedMimeType === 'application/msword'
-          ? 'word-extractor'
-          : 'tesseract'
+    // .doc de Word 97, un PDF dañado). El tag por parser es lo que después
+    // permite ver si falla un formato puntual.
+    const parser = parserPara(normalizedMimeType)
 
     let extractedText = ''
+    let paginas = 0
     try {
-      if (parser === 'pdf-parse') {
-        extractedText = await extractTextFromPdf(fileBuffer)
-      } else if (parser === 'mammoth') {
-        extractedText = await extractTextFromDocx(fileBuffer)
-      } else if (parser === 'word-extractor') {
-        extractedText = await extractTextFromDoc(fileBuffer)
-      } else {
-        extractedText = await extractTextFromImage(fileBuffer)
-      }
+      ;({ texto: extractedText, paginas } = await extraerTextoDePrograma(fileBuffer, normalizedMimeType))
     } catch (parsingError) {
       captureFileParsingFailure(parsingError, {
         parser,
         mimeType: normalizedMimeType,
         sizeBytes: file.size,
       })
-      await guard.fail()
-      return { status: 422, body: { error: 'No se pudo leer el archivo. Probá con otro formato o volvé a exportarlo.' } }
+      // Un PDF que pdf-parse no puede abrir todavía lo puede leer el modelo.
+      // Un Word roto, no: el modelo no recibe .docx.
+      if (!elModeloLoLee(normalizedMimeType)) {
+        await guard.fail()
+        return { status: 422, body: { error: NO_SE_PUDO_LEER } }
+      }
     }
 
-    if (!extractedText || extractedText.length < 100) {
+    // Una imagen, o un PDF sin capa de texto (un escaneo), va entero al
+    // modelo. Antes la foto pasaba por tesseract y el escaneo cortaba acá.
+    const modo = comoLeerPrograma({ mimeType: normalizedMimeType, texto: extractedText, paginas })
+
+    if (modo === 'texto' && (!extractedText || extractedText.length < 100)) {
       await guard.fail()
-      return { status: 422, body: { error: 'No pudimos leer contenido útil del archivo. Probá con otro documento.' } }
+      return { status: 422, body: { error: NO_SE_PUDO_LEER } }
     }
 
-    const curriculumSection = extractCurriculumSection(extractedText)
+    const curriculumSection = modo === 'texto' ? extractCurriculumSection(extractedText) : ''
     const clippedText = extractedText.slice(0, 25000)
 
-    avisar({ etapa: 'leido' })
+    avisar(modo === 'archivo' ? { etapa: 'leyendo-con-ia' } : { etapa: 'leido' })
     avisar({ etapa: 'ordenando' })
     const clippedSection = curriculumSection.slice(0, 15000)
+
+    const instrucciones = instruccionesDeExtraccion()
+    const entrada =
+      modo === 'archivo'
+        ? {
+            messages: [
+              {
+                role: 'user' as const,
+                content: [
+                  { type: 'text' as const, text: `${instrucciones}\n\nEl programa va adjunto (es una imagen o un escaneo).` },
+                  parteDelArchivo(fileBuffer, normalizedMimeType),
+                ],
+              },
+            ],
+          }
+        : {
+            prompt: `${instrucciones}
+
+Seccion prioritaria detectada:
+${clippedSection}
+
+Documento completo (respaldo):
+${clippedText}`,
+          }
 
     let parsedProgram: ParsedProgram
     let extractionMethod: 'ai' | 'heuristic' = 'ai'
@@ -381,37 +351,36 @@ async function procesarArchivo({
         schemaName: 'programStructure',
         schemaDescription: 'Estructura curricular con unidades y temas',
         system: 'Eres un asistente academico. Extrae una estructura curricular jerarquica precisa.',
-        prompt: `Analiza el programa y devuelve la estructura curricular en este orden de prioridad:
-1) Unidades
-2) Temas dentro de cada unidad
-
-Busca primero la seccion equivalente a: "Programa Analitico de Contenidos", "Estructura Curricular", "Contenidos del Programa", "Temario", "Unidades Didacticas", "Ejes de Aprendizaje", "Saberes Prioritarios" o "Bloques Tematicos".
-Normaliza cualquier nombre de agrupador (eje, bloque, modulo, nodo) como "Unidad".
-Si hay conflicto entre secciones, prioriza la seccion de contenidos.
-No inventes unidades ni temas que no aparezcan en el documento.
-
-Aparte: si el documento dice de forma explicita el nivel educativo (Primario, Secundario o Superior) y el año o grado de la materia, devolvelos en "nivel" y "grado". Si no lo dice, dejalos en null. No los deduzcas por la dificultad de los contenidos.
-
-Seccion prioritaria detectada:
-${clippedSection}
-
-Documento completo (respaldo):
-${clippedText}`,
+        ...entrada,
         temperature: 0.2,
         maxOutputTokens: 2500,
+        abortSignal: AbortSignal.timeout(TIEMPO_MAXIMO_DEL_MODELO_MS),
       })
 
       parsedProgram = parsedProgramSchema.parse(object)
       await guard.finish(usage)
     } catch (schemaError) {
-      // Silencioso para el docente: cae al heurístico y ve un resultado peor
-      // sin ningún aviso. Por eso se reporta.
-      captureAiSchemaFailure(schemaError, {
-        endpoint: '/api/teacher/programs/extract',
-        fallback: 'heuristic',
-      })
-      // El heurístico no llama al modelo; el intento fallido igual se facturó.
+      if (esTiempoAgotado(schemaError)) {
+        captureRouteFailure(schemaError, {
+          endpoint: '/api/teacher/programs/extract',
+          status: 504,
+          operation: modo === 'archivo' ? 'extract_program_file_timeout' : 'extract_program_timeout',
+        })
+      } else {
+        // Silencioso para el docente cuando cae al heurístico: ve un resultado
+        // peor sin ningún aviso. Por eso se reporta.
+        captureAiSchemaFailure(schemaError, {
+          endpoint: '/api/teacher/programs/extract',
+          fallback: modo === 'archivo' ? 'none' : 'heuristic',
+        })
+      }
+      // El intento fallido igual se facturó.
       await guard.fail()
+      // Sin texto no hay heurístico posible: la imagen o el escaneo sólo los
+      // lee el modelo.
+      if (modo === 'archivo') {
+        return { status: 422, body: { error: NO_SE_PUDO_LEER } }
+      }
       parsedProgram = parseHeuristicProgram(clippedText)
       extractionMethod = 'heuristic'
     }
@@ -498,7 +467,7 @@ export async function POST(req: Request) {
       'image/jpeg',
     ]
 
-    const normalizedMimeType = normalizeDocMimeType(file)
+    const normalizedMimeType = normalizarMimeDePrograma(file.name, file.type)
 
     if (!validTypes.includes(normalizedMimeType)) {
       return NextResponse.json({ error: 'Solo se aceptan PDF, DOCX, DOC, PNG y JPG' }, { status: 400 })
