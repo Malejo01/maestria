@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PASO, elegirGrado, leerNivelSugerido, ordenDePasos, pasoVecino, puedeLlegarA, type PasoId } from './wizard-temario'
+import { PASO, elegirGrado, gradoAPrecargar, leerNivelSugerido, ordenDePasos, pasoVecino, puedeLlegarA, type PasoId } from './wizard-temario'
 
 const sinPendientes: Record<PasoId, string | null> = { 1: null, 2: null, 3: null, 4: null }
 
@@ -104,5 +104,19 @@ describe('elegirGrado', () => {
 
   it('si hay dos opciones con el mismo número, no adivina', () => {
     expect(elegirGrado('1ro', ['1er Año', '1er Año B'])).toBeNull()
+  })
+})
+
+describe('gradoAPrecargar (I5)', () => {
+  it('si coincide con uno de la lista oficial, ése', () => {
+    expect(gradoAPrecargar('3º año', ['1er Año', '2do Año', '3er Año'])).toBe('3er Año')
+  })
+  it('Superior sin lista: lo que dijo el archivo, en la forma de siempre', () => {
+    expect(gradoAPrecargar('1º año', [])).toBe('1er Año')
+    expect(gradoAPrecargar('Primero', [])).toBe('1er Año')
+  })
+  it('lo que no es un número va tal cual; vacío, nada', () => {
+    expect(gradoAPrecargar('Ciclo básico', [])).toBe('Ciclo básico')
+    expect(gradoAPrecargar('  ', [])).toBeNull()
   })
 })
