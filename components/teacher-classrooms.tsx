@@ -45,6 +45,7 @@ import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import { ClassroomStudentDialog } from '@/components/classroom-student-dialog'
 import { AccuracyBar, formatDateTime, formatPercent, formatScore } from '@/components/classroom-report-parts'
 import type { SubjectColorName, SubjectIconName, TeacherProgram } from '@/lib/types'
+import { etiquetaDeMateria, materiaDePrograma, nombreRepetido } from '@/lib/etiqueta-materia'
 
 interface ClassroomRow {
   id: number
@@ -747,8 +748,11 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
                       variant={newProgramId === program.id ? 'default' : 'outline'}
                       onClick={() => setNewProgramId(program.id)}
                     >
-                      {program.subjectName}
-                      {program.grado ? <span className="ml-1.5 text-[11px] opacity-70">{program.grado}</span> : null}
+                      {etiquetaDeMateria(materiaDePrograma(program), programs.map(materiaDePrograma))}
+                      {/* Con el nombre repetido la etiqueta ya trae el año (H6). */}
+                      {program.grado && !nombreRepetido(program, programs) ? (
+                        <span className="ml-1.5 text-[11px] opacity-70">{program.grado}</span>
+                      ) : null}
                     </Button>
                   ))}
                 </div>

@@ -11,6 +11,7 @@ import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { AGREGAR_ALUMNO as T, ONBOARDING_DOCENTE } from '@/lib/textos'
 import { PantallaDeLimite } from '@/components/docente/pantalla-de-limite'
 import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
+import { etiquetaDeMateria } from '@/lib/etiqueta-materia'
 
 const L = ONBOARDING_DOCENTE.link
 const CAMPO =
@@ -33,7 +34,8 @@ export function AgregarAlumno({
 }: {
   abierto: boolean
   onCambiar: (abierto: boolean) => void
-  materias: { id: number; nombre: string }[]
+  /** Con nivel y año: si dos se llaman igual, el selector los distingue (H6). */
+  materias: { id: number; nombre: string; nivel?: string | null; grado?: string | null }[]
   /** Se llama cuando el alumno quedó agregado, para releer el listado. */
   alAgregar: () => void
 }) {
@@ -201,7 +203,7 @@ export function AgregarAlumno({
                   >
                     {materias.map((materia) => (
                       <option key={materia.id} value={materia.id}>
-                        {materia.nombre}
+                        {etiquetaDeMateria(materia, materias)}
                       </option>
                     ))}
                   </select>
