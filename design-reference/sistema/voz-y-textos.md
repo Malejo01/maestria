@@ -54,7 +54,7 @@ La línea entre las dos cosas es **quién escribió el texto**: si está en `lib
 
 Cómo se sostiene, para que no dependa de acordarse:
 
-- **Interfaz:** `tests/sistema-de-diseno.test.ts` falla si aparece un emoji en `app/` o en `components/`.
+- **Interfaz:** `tests/sistema-de-diseno.test.ts` falla si aparece un emoji en `app/` o en `components/`, y también en `lib/` y `hooks/`, donde viven textos de interfaz como el aviso de tope de la IA (desde H2; quedan afuera sólo los prompts y las herramientas de QA). Un aviso de límite es interfaz aunque lo lea un alumno de Primario.
 - **Contenido:** el nivel decide (`permiteEmojis` en `lib/education-context.ts`). Fuera de Primario el prompt los prohíbe, la explicación pasa además por `quitarEmojis` antes de llegar al alumno, y el lint de preguntas (`lib/qa/lint-questions.ts`) marca cualquier pregunta de Secundario o Superior que traiga uno.
 
 Lo que **no** es un emoji para esta regla: los símbolos que son contenido (→, ↔, ✓, ©, ½) y todo lo que va dentro de una fórmula.

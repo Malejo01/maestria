@@ -158,10 +158,25 @@ describe('rateLimitMessage', () => {
     const primario = rateLimitMessage(blocked, { actor: 'alumno', nivel: 'Primario' })
     const superior = rateLimitMessage(blocked, { actor: 'alumno', nivel: 'Superior' })
 
-    expect(primario).toMatch(/🌱/)
+    // Lo cálido de Primario está en las palabras, no en un emoji: el aviso de
+    // tope es interfaz, y en la interfaz no va ninguno (B3, H2).
     expect(primario).toContain('Descansá')
-    expect(superior).not.toMatch(/🌱/)
     expect(superior).toContain('límite')
+  })
+
+  it('ningún aviso de tope lleva emoji ni signos de admiración, en ningún nivel', () => {
+    if (blocked.allowed) throw new Error('debería estar bloqueado')
+    const roleBlocked = evaluate('program_extraction', 'alumno', 0)
+    if (roleBlocked.allowed) throw new Error('debería estar bloqueado')
+
+    for (const nivel of ['Primario', 'Secundario', 'Superior', null]) {
+      for (const actor of ['alumno', 'docente', 'guest'] as const) {
+        for (const decision of [blocked, roleBlocked]) {
+          const mensaje = rateLimitMessage(decision, { actor, nivel })
+          expect(mensaje, `${actor} · ${nivel}`).not.toMatch(/\p{Extended_Pictographic}|[¡!]/u)
+        }
+      }
+    }
   })
 
   it('explica el bloqueo por rol sin hablar de cupos', () => {
