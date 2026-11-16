@@ -193,8 +193,11 @@ export function rateLimitMessage(
     return `Como invitado podés usar la IA ${decision.limit} veces por día. Iniciá sesión con Google para tener mucho más margen — y además se te guarda el progreso. Si preferís seguir como invitado, probá de nuevo ${when}.`
   }
 
+  // Cálido, pero es un aviso de la interfaz: sin emoji ni signos de
+  // admiración (voz-y-textos.md, "Emojis"). Los emojis de Primario van sólo
+  // dentro del contenido que genera la IA.
   if (nivel === 'Primario') {
-    return `¡Uf, cuánta práctica! 🌱 Por hoy llegaste al máximo de ${decision.limit}. Descansá un poquito y volvé ${when}, que te sigo esperando.`
+    return `Uf, cuánta práctica. Por hoy llegaste al máximo de ${decision.limit}. Descansá un poquito y volvé ${when}, que te sigo esperando.`
   }
 
   if (actor === 'docente') {
