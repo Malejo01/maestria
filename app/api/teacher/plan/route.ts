@@ -44,6 +44,7 @@ export async function GET() {
         cupoGratis: cupoGratis(),
         topeCuestionarios: cuestionariosGratisPorMes(),
         cuestionarios: null,
+        docenteNuevo: true,
       } satisfies ResumenDelPlan,
       renovar: null,
     })

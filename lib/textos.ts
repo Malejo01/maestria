@@ -567,16 +567,31 @@ export function contar(n: number, singular: string, plural: string): string {
  * voz de design-reference/sistema/voz-y-textos.md.
  */
 export const PLAN = {
+  /**
+   * G2 y H3: dos textos. Al docente que ya usaba MaestrIA se le cuenta que
+   * cambió; al que llega nuevo, que no vio la versión anterior, no se le habla
+   * de un rediseño. Los números (días, alumnos de la prueba, alumnos gratis)
+   * llegan de lib/planes.ts y de las variables de entorno.
+   */
   avisoDePrueba: {
-    titulo: 'Rediseñamos MaestrIA. Desde hoy tenés 30 días para probarla completa.',
-    queHayDeNuevo: 'Qué hay de nuevo',
+    existente: {
+      titulo: 'Rediseñamos MaestrIA.',
+      detalle: (dias: number, cupoPrueba: number, cupoGratis: number) =>
+        `Desde hoy tenés ${dias} días para probarla completa, con hasta ${cupoPrueba} alumnos. Después podés seguir gratis con hasta ${cupoGratis}.`,
+      lista: 'Qué hay de nuevo',
+    },
+    nuevo: {
+      titulo: (dias: number, cupoPrueba: number) =>
+        `Tenés ${dias} días para probar MaestrIA completa, con hasta ${cupoPrueba} alumnos.`,
+      detalle: (cupoGratis: number) => `Sin tarjeta. Después podés seguir gratis con hasta ${cupoGratis}.`,
+      lista: 'Lo que vas a encontrar',
+    },
     novedades: [
       'Mis alumnos: cada alumno en una fila, con los temas donde se equivoca y cuándo practicó por última vez.',
       'El temario se arma en cuatro pasos: subís el archivo que ya tenés, partís del plan oficial o lo escribís.',
       'Cada tarea sale con el link del grupo y un mensaje listo para pasarles.',
     ],
-    queIncluye: 'Durante la prueba seguís hasta 10 alumnos y usás todo, sin tarjeta.',
-    boton: 'Empezar los 30 días',
+    boton: (dias: number) => `Empezar los ${dias} días`,
   },
   opciones: {
     mensual: 'Por mes',
