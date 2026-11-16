@@ -36,12 +36,12 @@ export function StreakBadge({ streak, size = 'md' }: StreakBadgeProps) {
           'relative rounded-2xl flex flex-col items-center justify-center transition-all duration-300 border-2',
           sizeClasses[size],
           isActive
-            ? 'bg-gradient-to-br from-orange-400 via-red-500 to-pink-500 border-orange-300 shadow-lg shadow-orange-500/40'
+            ?' bg-flojo border-flojo '
             : 'bg-muted border-border'
         )}
       >
         {isActive && (
-          <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-orange-400 to-red-500 blur-lg opacity-40 -z-10" />
+          <div className="absolute inset-0 rounded-2xl bg-flojo blur-lg opacity-40 -z-10" />
         )}
         
         <Flame
@@ -49,14 +49,14 @@ export function StreakBadge({ streak, size = 'md' }: StreakBadgeProps) {
             iconSizes[size],
             'transition-all duration-300',
             isActive 
-              ? 'text-white drop-shadow-lg' 
+              ? 'text-texto-sobre-accion' 
               : 'text-muted-foreground'
           )}
         />
         <span className={cn(
           'font-black leading-none',
           textSizes[size],
-          isActive ? 'text-white' : 'text-muted-foreground'
+          isActive ? 'text-texto-sobre-accion' : 'text-muted-foreground'
         )}>
           {streak}
         </span>

@@ -1,5 +1,7 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
 import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -480,16 +482,16 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
 
       {/* Teacher Preview Banner */}
       {isPreviewMode && (
-        <div className="bg-amber-500/15 border-b border-amber-500/30 text-amber-900 dark:text-amber-200 px-4 py-2.5 flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold z-30 shadow-sm">
+        <div className="bg-flojo/15 border-b border-flojo/30 text-flojo dark:text-flojo px-4 py-2.5 flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold z-30">
           <div className="flex items-center gap-2 min-w-0">
-            <Eye className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <Eye className="w-4 h-4 text-flojo dark:text-flojo shrink-0" />
             <span className="truncate">Modo Vista Previa (Docente) — Estás simulando la experiencia del alumno.</span>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={handleExit}
-            className="h-8 px-3 rounded-lg border-amber-500/40 bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-100 text-xs font-bold shrink-0"
+            className="h-8 px-3 rounded-lg border-flojo/40 bg-flojo/20 hover:bg-flojo/30 text-flojo dark:text-flojo text-xs font-bold shrink-0"
           >
             Volver al Editor
           </Button>
@@ -497,7 +499,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       )}
 
       {/* Header with Progress */}
-      <header className="sticky top-0 z-20 bg-card/95 backdrop-blur-xl border-b-2 border-border shadow-sm">
+      <header className="sticky top-0 z-20 bg-card/95 border-b-2 border-border">
         <div className="px-4 py-3 flex items-center gap-4">
           <Button
             variant="ghost"
@@ -508,7 +510,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
             <X className="w-5 h-5" />
           </Button>
           <div className="flex-1">
-            <Progress value={progress} className="h-3 bg-muted [&>div]:bg-gradient-to-r [&>div]:from-[var(--algebra)] [&>div]:to-[var(--analysis)]" />
+            <Progress value={progress} className="h-3 bg-muted [&>div]:bg-[var(--algebra)]" />
           </div>
           <div className="shrink-0 bg-[var(--algebra-light)] text-[var(--algebra)] px-3 py-1 rounded-full text-sm font-bold">
             {currentIndex + 1}/{questions.length}
@@ -531,7 +533,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       <main className="flex-1 px-4 py-6 pb-[calc(11rem_+_env(safe-area-inset-bottom))] overflow-y-auto">
         <div className="space-y-5">
           {/* Question */}
-          <Card className="p-6 border-2 border-border bg-card/90 backdrop-blur-sm shadow-lg">
+          <Card className="p-6 border-2 border-border bg-card/90">
             <div className="space-y-4">
               {isPreviewMode && currentQuestion.type === 'multiple_choice' && (
                 <div className="flex flex-wrap gap-2">
@@ -601,20 +603,20 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
 
           {isGradingShortAnswer && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Cargando className="w-4 h-4" />
               Corrigiendo con IA...
             </div>
           )}
 
           {/* Feedback after answer - correct */}
           {answerState.submitted && answerState.isCorrect && (
-            <Card className="p-5 border-2 border-[var(--analysis)] bg-[var(--analysis-light)] animate-in fade-in-50 slide-in-from-bottom-4">
+            <Card className="p-5 border-2 border-logrado bg-logrado-fondo fade-in-50 slide-in-from-bottom-4">
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[var(--analysis)] flex items-center justify-center shrink-0">
-                  <Check className="w-5 h-5 text-white" strokeWidth={3} />
+                <div className="w-10 h-10 rounded-xl bg-logrado flex items-center justify-center shrink-0">
+                  <Check className="w-5 h-5 text-texto-sobre-accion" strokeWidth={3} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[var(--analysis)] mb-1">Correcto!</h3>
+                  <h3 className="font-bold text-logrado mb-1">Correcto!</h3>
                   <p className="text-sm text-foreground/80 leading-relaxed">
                     <LaTeXRenderer content={currentQuestion.explanation} />
                   </p>
@@ -628,13 +630,13 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
               rojo. `isCorrect === null` con `submitted` en true significa que la
               corrección no pudo correr, no que el alumno se haya equivocado. */}
           {answerState.submitted && answerState.isCorrect === null && (
-            <Card className="p-4 sm:p-5 border-2 border-amber-400/40 bg-amber-50/60 animate-in fade-in-50 slide-in-from-bottom-4 space-y-4 max-w-full overflow-hidden min-w-0">
+            <Card className="p-4 sm:p-5 border-2 border-flojo/40 bg-flojo-fondo/60 fade-in-50 slide-in-from-bottom-4 space-y-4 max-w-full overflow-hidden min-w-0">
               <div className="flex items-start gap-3 min-w-0 max-w-full overflow-hidden">
-                <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center shrink-0">
-                  <AlertCircle className="w-5 h-5 text-white" strokeWidth={3} />
+                <div className="w-10 h-10 rounded-xl bg-flojo flex items-center justify-center shrink-0">
+                  <AlertCircle className="w-5 h-5 text-texto-sobre-accion" strokeWidth={3} />
                 </div>
                 <div className="flex-1 min-w-0 space-y-3 max-w-full overflow-hidden">
-                  <h3 className="font-bold text-amber-700 text-lg">Sin calificar</h3>
+                  <h3 className="font-bold text-flojo text-lg">Sin calificar</h3>
 
                   <p className="text-sm text-foreground/80 leading-relaxed">
                     {shortAnswerFeedback ?? 'No pudimos corregir esta respuesta.'}{' '}
@@ -653,10 +655,10 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                     variant="outline"
                     onClick={retryShortAnswerGrading}
                     disabled={isGradingShortAnswer}
-                    className="h-11 rounded-xl border-amber-500/50 text-amber-700 hover:bg-amber-100 font-bold gap-2"
+                    className="h-11 rounded-xl border-flojo/50 text-flojo hover:bg-flojo-fondo font-bold gap-2"
                   >
                     {isGradingShortAnswer
-                      ? <Loader2 className="w-4 h-4 animate-spin" />
+                      ? <Cargando className="w-4 h-4" />
                       : <RotateCcw className="w-4 h-4" />}
                     Reintentar la corrección
                   </Button>
@@ -667,10 +669,10 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
 
           {/* Feedback after answer - incorrect */}
           {answerState.submitted && answerState.isCorrect === false && (
-            <Card className="p-4 sm:p-5 border-2 border-destructive/30 bg-destructive/5 animate-in fade-in-50 slide-in-from-bottom-4 space-y-4 max-w-full overflow-hidden min-w-0">
+            <Card className="p-4 sm:p-5 border-2 border-destructive/30 bg-destructive/5 fade-in-50 slide-in-from-bottom-4 space-y-4 max-w-full overflow-hidden min-w-0">
               <div className="flex items-start gap-3 min-w-0 max-w-full overflow-hidden">
                 <div className="w-10 h-10 rounded-xl bg-destructive flex items-center justify-center shrink-0">
-                  <X className="w-5 h-5 text-white" strokeWidth={3} />
+                  <X className="w-5 h-5 text-texto-sobre-accion" strokeWidth={3} />
                 </div>
                 <div className="flex-1 min-w-0 space-y-3 max-w-full overflow-hidden">
                   <h3 className="font-bold text-destructive text-lg">Respuesta Incorrecta</h3>
@@ -699,10 +701,10 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                             setModalInitialMode('revancha')
                             setShowExplanationModal(true)
                           }}
-                          className="w-full sm:flex-1 h-12 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-xs gap-1.5 shadow-md hover:from-amber-600 hover:to-orange-600 active:scale-95 whitespace-normal leading-tight px-3"
+                          className="w-full sm:flex-1 h-12 rounded-xl bg-flojo text-texto-sobre-accion font-bold text-xs gap-1.5 hover:bg-flojo active:scale-95 whitespace-normal leading-tight px-3"
                         >
-                          <Zap className="w-4 h-4 fill-white shrink-0" />
-                          <span>⚡ ¡Tomarme la Revancha ahora!</span>
+                          <Zap className="w-4 h-4 fill-texto-sobre-accion shrink-0" />
+                          <span>Tomarme la revancha ahora</span>
                         </Button>
                       )}
                       <Button
@@ -736,7 +738,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
           toque. */}
       <div
         data-quiz-action-bar=""
-        className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))] bg-card/95 backdrop-blur-xl border-t-2 border-border z-20"
+        className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))] bg-card/95 border-t-2 border-border z-20"
       >
         <div className={cn(isPreviewMode ? 'flex flex-col gap-2.5' : 'flex gap-2.5')}>
           {isPreviewMode ? (
@@ -749,14 +751,14 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                   onClick={handleSubmit}
                   disabled={!isAnswerReady || isGradingShortAnswer || isEditingQuestion}
                   className={cn(
-                    'h-14 w-full text-base font-bold rounded-2xl shadow-lg transition-all',
-                    'bg-gradient-to-r from-[var(--algebra)] to-[var(--algebra)]/80',
-                    'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]',
+                    'h-14 w-full text-base font-bold rounded-2xl transition-all',
+                    ' bg-[var(--algebra)]',
+                    ' hover:scale-[1.02] active:scale-[0.98]',
                     'disabled:opacity-50 disabled:shadow-none disabled:scale-100'
                   )}
                 >
                   {isGradingShortAnswer ? (
-                    <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Corrigiendo...</span>
+                    <span className="flex items-center gap-2"><Cargando className="w-4 h-4" /> Corrigiendo...</span>
                   ) : (
                     'Verificar'
                   )}
@@ -775,7 +777,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                 {isLastQuestion ? (
                   <Button
                     onClick={handleExit}
-                    className="flex-1 h-14 text-base font-bold gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600"
+                    className="flex-1 h-14 text-base font-bold gap-2 rounded-2xl bg-flojo text-texto-sobre-accion hover:bg-flojo "
                   >
                     <Pencil className="w-5 h-5 shrink-0" />
                     <span className="truncate">Volver al editor</span>
@@ -802,10 +804,10 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                     setModalInitialMode('revancha')
                     setShowExplanationModal(true)
                   }}
-                  className="flex-1 h-14 rounded-2xl border-2 border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-xs sm:text-sm gap-1.5 hover:bg-amber-500/20 transition-all"
+                  className="flex-1 h-14 rounded-2xl border-2 border-flojo/40 bg-flojo/10 text-flojo dark:text-flojo font-bold text-xs sm:text-sm gap-1.5 hover:bg-flojo/20 transition-all"
                 >
-                  <Zap className="w-4 h-4 fill-amber-500 text-amber-500 shrink-0" />
-                  <span className="truncate">⚡ Revancha</span>
+                  <Zap className="w-4 h-4 fill-flojo text-flojo shrink-0" />
+                  <span className="truncate">Revancha</span>
                 </Button>
               )}
 
@@ -818,7 +820,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                 >
                   {isLoadingExplanation ? (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
+                      <Cargando className="w-4 h-4 text-primary shrink-0" />
                       <span className="truncate">Analizando...</span>
                     </>
                   ) : (
@@ -837,14 +839,14 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
               onClick={handleSubmit}
               disabled={!isAnswerReady || isGradingShortAnswer}
               className={cn(
-                'flex-1 h-14 text-base font-bold rounded-2xl shadow-lg transition-all',
-                'bg-gradient-to-r from-[var(--algebra)] to-[var(--algebra)]/80',
-                'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]',
+                'flex-1 h-14 text-base font-bold rounded-2xl transition-all',
+                ' bg-[var(--algebra)]',
+                ' hover:scale-[1.02] active:scale-[0.98]',
                 'disabled:opacity-50 disabled:shadow-none disabled:scale-100'
               )}
             >
               {isGradingShortAnswer ? (
-                <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Corrigiendo...</span>
+                <span className="flex items-center gap-2"><Cargando className="w-4 h-4" /> Corrigiendo...</span>
               ) : (
                 'Verificar'
               )}
@@ -853,11 +855,11 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
             <Button
               onClick={handleNext}
               className={cn(
-                'flex-1 h-14 text-xs sm:text-sm font-bold gap-1.5 rounded-2xl shadow-lg transition-all',
-                'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]',
+                'flex-1 h-14 text-xs sm:text-sm font-bold gap-1.5 rounded-2xl transition-all',
+                ' hover:scale-[1.02] active:scale-[0.98]',
                 answerState.isCorrect 
-                  ? 'bg-gradient-to-r from-[var(--analysis)] to-[var(--analysis)]/80 shadow-[var(--analysis)]/30' 
-                  : 'bg-gradient-to-r from-[var(--algebra)] to-[var(--algebra)]/80'
+                  ?' bg-logrado' 
+                  :' bg-[var(--algebra)] '
               )}
             >
               <span className="truncate">{isLastQuestion ? 'Ver Resultados' : 'Siguiente'}</span>

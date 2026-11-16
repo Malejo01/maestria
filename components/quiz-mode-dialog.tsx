@@ -1,5 +1,8 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { BookOpen, Calculator, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -45,27 +48,27 @@ const modeCards = [
     title: 'Examen Teorico',
     description: 'Conceptos, definiciones, propiedades y fundamentos.',
     icon: BookOpen,
-    accent: 'from-sky-500 to-cyan-400',
-    border: 'border-sky-200 hover:border-sky-400',
-    background: 'from-sky-50 to-cyan-50',
+    accent: 'bg-accion',
+    border: 'border-accion-tenue-borde hover:border-accion',
+    background: 'bg-accion-tenue',
   },
   {
     mode: 'practico' as const,
     title: 'Examen Practico',
     description: 'Resolucion de ejercicios, cuentas y aplicacion directa.',
     icon: Calculator,
-    accent: 'from-orange-500 to-amber-400',
-    border: 'border-orange-200 hover:border-orange-400',
-    background: 'from-orange-50 to-amber-50',
+    accent: 'bg-flojo',
+    border: 'border-flojo hover:border-flojo',
+    background: 'bg-flojo-fondo',
   },
   {
     mode: 'mixto' as const,
     title: 'Examen Mixto',
     description: 'Combina ejercicios teoricos y practicos.',
     icon: BookOpen,
-    accent: 'from-violet-500 to-fuchsia-400',
-    border: 'border-violet-200 hover:border-violet-400',
-    background: 'from-violet-50 to-fuchsia-50',
+    accent: 'bg-accion',
+    border: 'border-accion-tenue-borde hover:border-accion',
+    background: 'bg-accion-tenue',
   },
 ]
 
@@ -192,17 +195,17 @@ export function QuizModeDialog({
               onClick={() => onSelectMode(mode)}
               className={cn(
                 'h-auto w-full justify-start rounded-2xl border-2 px-4 py-4 text-left',
-                'bg-gradient-to-br shadow-sm transition-all hover:scale-[1.01] hover:shadow-md',
+                ' transition-all hover:scale-[1.01]',
                 border,
                 background
               )}
             >
               <div className="flex w-full items-center gap-4">
                 <div className={cn(
-                  'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg',
+                  'flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-texto-sobre-accion',
                   accent
                 )}>
-                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Icon className="h-5 w-5" />}
+                  {isLoading ? <Cargando className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-bold text-foreground">{modeTitle}</div>

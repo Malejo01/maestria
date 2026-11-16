@@ -1,5 +1,8 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
@@ -24,10 +27,9 @@ import {
 } from 'lucide-react'
 import { NIVEL_OPTIONS } from '@/lib/nivel-options'
 import { DEFAULT_JURISDICTION } from '@/lib/curriculum-config'
-import { SUBJECT_COLOR_OPTIONS, SUBJECT_ICON_OPTIONS, SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
+import { SUBJECT_ICON_OPTIONS } from '@/lib/subject-appearance'
 import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import { Boton } from '@/components/sistema/boton'
-import { Cargando } from '@/components/sistema/cargando'
 import { ProgramFileImport, type ProgramSourceMeta } from '@/components/program-file-import'
 import { elegirGrado, ordenDePasos, pasoVecino, puedeLlegarA, type NivelSugerido, type PasoId } from '@/lib/wizard-temario'
 import { WIZARD_TEMARIO } from '@/lib/textos'
@@ -666,9 +668,9 @@ export function TeacherSubjectWizard({
                   setGrado('')
                   setBrowseMateriaChoice(null)
                 }}
-                className={`text-left p-4 rounded-xl border-2 transition-all ${isActive ? 'border-primary bg-primary/5 shadow-sm' : 'border-border hover:border-primary/40'}`}
+                className={`text-left p-4 rounded-xl border-2 transition-all ${isActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
               >
-                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${option.color} text-white flex items-center justify-center mb-2`}>
+                <div className={`w-10 h-10 rounded-lg ${option.color} text-texto-sobre-accion flex items-center justify-center mb-2`}>
                   <Icon className="w-5 h-5" />
                 </div>
                 <p className="font-semibold text-sm">{option.label}</p>
@@ -684,7 +686,7 @@ export function TeacherSubjectWizard({
           <Label>Año / grado</Label>
           {isLoadingGrades && (
             <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" /> Buscando años de {nivel}...
+              <Cargando className="w-4 h-4" /> Buscando años de {nivel}...
             </p>
           )}
 
@@ -801,28 +803,7 @@ export function TeacherSubjectWizard({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Color</Label>
-          <div className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
-            <span className={`w-4 h-4 rounded-full border ${SUBJECT_COLOR_CLASS[colorName].chip}`} />
-            <span className="text-sm font-medium">{colorName}</span>
-          </div>
-          <div className="grid grid-cols-5 gap-2">
-            {SUBJECT_COLOR_OPTIONS.map((color) => (
-              <Button
-                key={color}
-                type="button"
-                variant={colorName === color ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setColorName(color)}
-                className="h-10 px-2"
-                title={color}
-              >
-                <span className={`w-4 h-4 rounded-full border ${SUBJECT_COLOR_CLASS[color].chip}`} />
-              </Button>
-            ))}
-          </div>
-        </div>
+        {/* El color por materia se fue: el sistema usa un solo azul. */}
       </div>
     </div>
   )
@@ -889,7 +870,7 @@ export function TeacherSubjectWizard({
           <div className="overflow-y-auto space-y-2 max-h-[40vh] pr-1">
             {isLoadingAxes && (
               <p className="text-sm text-muted-foreground flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> Cargando temas...
+                <Cargando className="w-4 h-4" /> Cargando temas...
               </p>
             )}
 

@@ -1,10 +1,12 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useId, useState, type FormEvent } from 'react'
 import { Check, Copy } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Boton } from '@/components/sistema/boton'
-import { Cargando } from '@/components/sistema/cargando'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { AGREGAR_ALUMNO as T, ONBOARDING_DOCENTE } from '@/lib/textos'
 

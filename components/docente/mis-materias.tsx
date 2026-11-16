@@ -392,7 +392,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-white hover:bg-destructive/90" onClick={handleDeleteActiveProgram}>
+            <AlertDialogAction className="bg-destructive text-texto-sobre-accion hover:bg-destructive/90" onClick={handleDeleteActiveProgram}>
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>

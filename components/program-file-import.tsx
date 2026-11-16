@@ -1,9 +1,11 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useState, type ChangeEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Boton } from '@/components/sistema/boton'
-import { Cargando } from '@/components/sistema/cargando'
 import { LECTURA_DE_ARCHIVO as T } from '@/lib/textos'
 import { TIPO_DE_PROGRESO, leerNivelSugerido, type EventoDeLectura, type NivelSugerido } from '@/lib/wizard-temario'
 import { Button } from '@/components/ui/button'
@@ -379,7 +381,7 @@ export function ProgramFileImport({
       )}
 
       {extractSummary && (
-        <p className={`text-sm ${extractSummary.lowConfidence ? 'text-amber-700' : 'text-emerald-700'}`}>
+        <p className={`text-sm ${extractSummary.lowConfidence ? 'text-flojo' : 'text-logrado'}`}>
           Resultado: {extractSummary.unitCount} unidades y {extractSummary.topicCount} temas.
           Confianza estimada: {Math.round(extractSummary.extractionConfidence * 100)}%.
           Metodo: {extractSummary.extractionMethod === 'heuristic' ? 'Heuristica' : 'IA'}.
@@ -426,7 +428,7 @@ export function ProgramFileImport({
             onClick={handleGuideAutocomplete}
             disabled={isGuiding || !sourceMeta}
           >
-            {isGuiding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+            {isGuiding ? <Cargando className="w-4 h-4 mr-2" /> : null}
             {isGuiding
               ? 'Analizando documento...'
               : guidePreviewUnits && guidePreviewUnits.length > 0
@@ -435,7 +437,7 @@ export function ProgramFileImport({
           </Button>
 
           {guideSummary && (
-            <p className={`text-sm ${guideSummary.lowConfidence ? 'text-amber-700' : 'text-emerald-700'}`}>
+            <p className={`text-sm ${guideSummary.lowConfidence ? 'text-flojo' : 'text-logrado'}`}>
               Vista previa: {guideSummary.unitCount} unidades y {guideSummary.topicCount} temas.
               Confianza: {Math.round(guideSummary.guideConfidence * 100)}%.
               Metodo: {guideSummary.extractionMethod === 'heuristic' ? 'Heuristica' : 'IA'}.

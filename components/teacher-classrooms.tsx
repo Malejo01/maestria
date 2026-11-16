@@ -1,5 +1,8 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -356,7 +359,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
   // ─── Detail view ───────────────────────────────────────────────────────────
   if (activeClassroom) {
     const Icon = SUBJECT_ICON_COMPONENTS[activeClassroom.icon_name] ?? SUBJECT_ICON_COMPONENTS['book-open']
-    const chipClass = SUBJECT_COLOR_CLASS[activeClassroom.color_name]?.chip ?? 'bg-teal-500'
+    const chipClass = SUBJECT_COLOR_CLASS[activeClassroom.color_name]?.chip ?? 'bg-logrado'
     const otherClassrooms = classrooms.filter((classroom) => classroom.id !== activeClassroom.id)
 
     return (
@@ -369,7 +372,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
         <Card className="p-4 space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className={`w-11 h-11 rounded-xl ${chipClass} text-white flex items-center justify-center`}>
+              <div className={`w-11 h-11 rounded-xl ${chipClass} text-texto-sobre-accion flex items-center justify-center`}>
                 <Icon className="w-5 h-5" />
               </div>
               <div>
@@ -460,7 +463,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
               <p className="text-2xl font-black">{summary.totalAttempts}</p>
               <p className="text-xs text-muted-foreground">cuestionarios resueltos</p>
             </Card>
-            <Card className={`p-3 ${summary.inactiveCount > 0 ? 'border-amber-300 bg-amber-50/60' : ''}`}>
+            <Card className={`p-3 ${summary.inactiveCount > 0 ? 'border-flojo bg-flojo-fondo/60' : ''}`}>
               <p className="text-2xl font-black">{summary.inactiveCount}</p>
               <p className="text-xs text-muted-foreground">sin actividad</p>
             </Card>
@@ -469,7 +472,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
 
         {isLoadingReport && (
           <p className="text-sm text-muted-foreground flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" /> Cargando seguimiento...
+            <Cargando className="w-4 h-4" /> Cargando seguimiento...
           </p>
         )}
 
@@ -547,7 +550,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
                             >
                               <span className="font-medium">{student.displayName}</span>
                               {student.isVerified ? (
-                                <BadgeCheck className="w-4 h-4 text-emerald-600" aria-label="Cuenta verificada" />
+                                <BadgeCheck className="w-4 h-4 text-logrado" aria-label="Cuenta verificada" />
                               ) : (
                                 <Badge variant="outline" className="h-5 text-[10px] px-1.5">
                                   sin verificar
@@ -567,7 +570,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
                                   <Badge
                                     key={topic.topicName}
                                     variant="outline"
-                                    className="max-w-[220px] text-[10px] font-normal border-red-200 bg-red-50 text-red-800"
+                                    className="max-w-[220px] text-[10px] font-normal border-flojo bg-flojo-fondo text-flojo"
                                     title={`${topic.correct} de ${topic.total} correctas`}
                                   >
                                     <span className="truncate">{topic.topicName}</span>
@@ -661,7 +664,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       <Badge variant="secondary">{assignment.submittedCount} entregaron</Badge>
                       {assignment.pendingCount > 0 && (
-                        <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">
+                        <Badge variant="outline" className="border-flojo bg-flojo-fondo text-flojo">
                           {assignment.pendingCount} pendientes
                         </Badge>
                       )}
@@ -702,7 +705,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction className="bg-destructive text-white hover:bg-destructive/90" onClick={handleDelete}>
+              <AlertDialogAction className="bg-destructive text-texto-sobre-accion hover:bg-destructive/90" onClick={handleDelete}>
                 Eliminar
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -764,7 +767,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
             </div>
 
             <Button onClick={handleCreate} disabled={isCreating || programs.length === 0}>
-              {isCreating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              {isCreating ? <Cargando className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
               Crear aula y generar código
             </Button>
           </Card>
@@ -772,7 +775,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
 
         {isLoading && (
           <p className="text-sm text-muted-foreground flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" /> Cargando tus aulas...
+            <Cargando className="w-4 h-4" /> Cargando tus aulas...
           </p>
         )}
 
@@ -783,7 +786,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
         <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(260px,1fr))]">
           {classrooms.map((classroom) => {
             const Icon = SUBJECT_ICON_COMPONENTS[classroom.icon_name] ?? SUBJECT_ICON_COMPONENTS['book-open']
-            const chipClass = SUBJECT_COLOR_CLASS[classroom.color_name]?.chip ?? 'bg-teal-500'
+            const chipClass = SUBJECT_COLOR_CLASS[classroom.color_name]?.chip ?? 'bg-logrado'
 
             return (
               <Card
@@ -792,7 +795,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
                 onClick={() => setActiveId(classroom.id)}
               >
                 <div className="flex items-start gap-2">
-                  <div className={`w-9 h-9 rounded-lg ${chipClass} text-white flex items-center justify-center shrink-0`}>
+                  <div className={`w-9 h-9 rounded-lg ${chipClass} text-texto-sobre-accion flex items-center justify-center shrink-0`}>
                     <Icon className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
@@ -840,7 +843,7 @@ function GuestCapNotice({ newGuests, limit }: { newGuests: number; limit: number
         'flex gap-2 rounded-lg border p-3 text-xs leading-relaxed',
         reached
           ? 'border-destructive/40 bg-destructive/10 text-destructive'
-          : 'border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300'
+          : 'border-flojo/40 bg-flojo/10 text-flojo dark:text-flojo'
       )}
     >
       <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />

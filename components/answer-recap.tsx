@@ -25,13 +25,13 @@ export function AnswerRecap({ answer }: { answer: Answer }) {
   return (
     <div className="grid gap-2.5 grid-cols-1 sm:grid-cols-2 w-full min-w-0 max-w-full">
       <div className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 space-y-1 min-w-0 max-w-full overflow-hidden break-words">
-        <span className="text-xs font-bold text-destructive uppercase tracking-wider block">🔴 Tu respuesta</span>
+        <span className="text-xs font-bold text-destructive uppercase tracking-wider block">Tu respuesta</span>
         <div className="text-sm font-medium text-foreground break-words min-w-0 overflow-hidden">
           <LaTeXRenderer content={formatValue(answer, 'selected')} />
         </div>
       </div>
-      <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 space-y-1 min-w-0 max-w-full overflow-hidden break-words">
-        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block">🟢 Respuesta correcta</span>
+      <div className="p-3.5 rounded-2xl bg-logrado/10 border border-logrado/25 space-y-1 min-w-0 max-w-full overflow-hidden break-words">
+        <span className="text-xs font-bold text-logrado dark:text-logrado uppercase tracking-wider block">Respuesta correcta</span>
         <div className="text-sm font-medium text-foreground break-words min-w-0 overflow-hidden">
           <LaTeXRenderer content={formatValue(answer, 'correct')} />
         </div>

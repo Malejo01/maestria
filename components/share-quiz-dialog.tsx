@@ -1,11 +1,13 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useEffect, useId, useMemo, useState } from 'react'
 import { Check, Copy, Download, MessageCircle } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Aparecer } from '@/components/sistema/aparecer'
 import { Boton } from '@/components/sistema/boton'
-import { Cargando } from '@/components/sistema/cargando'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import type { MisAlumnos } from '@/lib/alumnos-docente-server'
 import { aQuienSaludar, armarMensaje, linkDeWhatsApp } from '@/lib/compartir-tarea'

@@ -1,5 +1,8 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -47,7 +50,7 @@ export function QuizActionDialog({
             onClick={() => onSelectAction('realizar')}
             className="w-full justify-start h-12 rounded-xl"
           >
-            {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <PlayCircle className="w-4 h-4 mr-2" />}
+            {isLoading ? <Cargando className="w-4 h-4 mr-2" /> : <PlayCircle className="w-4 h-4 mr-2" />}
             Realizar
           </Button>
 

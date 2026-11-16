@@ -21,6 +21,8 @@ interface Demo {
   id: string
   nombre: string
   contexto: string
+  /** Con cuenta (se puede entrar como ella desde /sign-in/dev) o invitada sin cuenta. */
+  conCuenta?: boolean
   /** Por tema (índice en el temario): [correctas, total, hace cuántos días]. */
   intentos: [tema: number, correctas: number, total: number, haceDias: number][]
   error: { tema: number; texto: string }
@@ -30,6 +32,7 @@ const DEMOS: Demo[] = [
   {
     id: 'stg-demo-sofia',
     nombre: 'Sofía Ramírez',
+    conCuenta: true,
     contexto: 'Rinde el 12/12',
     intentos: [
       [0, 9, 10, 9],
@@ -106,8 +109,9 @@ async function run() {
     await sql.query(`DELETE FROM users WHERE id = $1`, [demo.id])
     await sql.query(
       `INSERT INTO users (id, email, name, role, is_onboarded, is_guest, created_at, updated_at)
-       VALUES ($1, NULL, $2, 'ALUMNO', true, true, NOW(), NOW())`,
-      [demo.id, demo.nombre],
+       VALUES ($1, $2, $3, 'ALUMNO', true, $4, NOW(), NOW())`,
+      // El dominio @staging.invalid es el que exige el guardarraíl de staging.
+      [demo.id, demo.conCuenta ? `${demo.id}@staging.invalid` : null, demo.nombre, !demo.conCuenta],
     )
     await sql.query(
       `INSERT INTO classroom_members (classroom_id, user_id, display_name, is_verified, status, contexto)

@@ -1,5 +1,8 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
@@ -54,7 +57,7 @@ export default function DiagnosticoPage() {
 
       {loading && (
         <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Cargando className="w-8 h-8 text-primary" />
         </div>
       )}
 

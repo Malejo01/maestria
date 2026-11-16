@@ -1,5 +1,8 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useAppStore } from '@/lib/store'
@@ -261,15 +264,15 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
               className={cn(
                 'w-full flex items-center gap-4 p-4 rounded-2xl border transition-all text-left group',
                 saved
-                  ? 'border-emerald-500/40 bg-emerald-500/5 text-foreground'
-                  : 'border-border/80 bg-card hover:border-primary/50 hover:bg-primary/5 shadow-sm'
+                  ? 'border-logrado/40 bg-logrado/5 text-foreground'
+                  : 'border-border/80 bg-card hover:border-primary/50 hover:bg-primary/5 '
               )}
             >
               <div className={cn(
-                'w-11 h-11 rounded-xl flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105',
-                saved ? 'bg-emerald-500/15 text-emerald-600' : 'bg-primary/10 text-primary'
+                'w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105',
+                saved ? 'bg-logrado/15 text-logrado' : 'bg-primary/10 text-primary'
               )}>
-                {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : saved ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <Save className="w-5 h-5 text-primary" />}
+                {saving ? <Cargando className="w-5 h-5" /> : saved ? <CheckCircle className="w-5 h-5 text-logrado" /> : <Save className="w-5 h-5 text-primary" />}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-bold text-sm text-foreground">
@@ -284,7 +287,7 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
             {saved && onGoToSavedQuizzes && (
               <button
                 onClick={onGoToSavedQuizzes}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-all active:scale-[0.98]"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-logrado hover:bg-logrado text-texto-sobre-accion font-bold text-xs transition-all active:scale-[0.98]"
               >
                 <BookOpen className="w-4 h-4" />
                 <span>Ver mis cuestionarios guardados</span>
@@ -296,13 +299,13 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
           {/* Card 2: Moodle */}
           <button
             onClick={handleExportMoodle}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl border border-border/80 bg-card hover:border-orange-500/50 hover:bg-orange-500/5 shadow-sm transition-all text-left group"
+            className="w-full flex items-center gap-4 p-4 rounded-2xl border border-border/80 bg-card hover:border-flojo/50 hover:bg-flojo/5 transition-all text-left group"
           >
-            <div className="w-11 h-11 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105">
+            <div className="w-11 h-11 rounded-xl bg-flojo/15 flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
               <svg width="22" height="22" viewBox="0 0 48 48" fill="none" className="shrink-0">
-                <rect width="48" height="48" rx="10" fill="#f98012"/>
-                <path d="M10 32V20c0-4.4 3.6-8 8-8h4c2.2 0 4 1.8 4 4s-1.8 4-4 4h-4v12H10z" fill="white"/>
-                <path d="M28 32V20h4c2.2 0 4 1.8 4 4v8h-4v-8h-4z" fill="white"/>
+                <rect width="48" height="48" rx="10" className="fill-flojo"/>
+                <path d="M10 32V20c0-4.4 3.6-8 8-8h4c2.2 0 4 1.8 4 4s-1.8 4-4 4h-4v12H10z" className="fill-texto-sobre-accion"/>
+                <path d="M28 32V20h4c2.2 0 4 1.8 4 4v8h-4v-8h-4z" className="fill-texto-sobre-accion"/>
               </svg>
             </div>
             <div className="flex-1 min-w-0">
@@ -316,9 +319,9 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
           {/* Card 3: Preview */}
           <button
             onClick={handlePreviewAsAlumno}
-            className="w-full flex items-center gap-4 p-4 rounded-2xl border border-border/80 bg-card hover:border-violet-500/50 hover:bg-violet-500/5 shadow-sm transition-all text-left group"
+            className="w-full flex items-center gap-4 p-4 rounded-2xl border border-border/80 bg-card hover:border-accion/50 hover:bg-accion/5 transition-all text-left group"
           >
-            <div className="w-11 h-11 rounded-xl bg-violet-500/15 text-violet-600 flex items-center justify-center shrink-0 shadow-sm transition-transform group-hover:scale-105">
+            <div className="w-11 h-11 rounded-xl bg-accion/15 text-accion flex items-center justify-center shrink-0 transition-transform group-hover:scale-105">
               <PlayCircle className="w-5 h-5" />
             </div>
             <div className="flex-1 min-w-0">
@@ -463,7 +466,7 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
                         className={cn(
                           'flex items-start gap-2 px-3 py-2 rounded-xl text-sm',
                           oi === q.correctAnswer
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                            ? 'bg-logrado-fondo dark:bg-logrado-fondo/40 border border-logrado dark:border-logrado text-logrado dark:text-logrado'
                             : 'bg-secondary/40 text-muted-foreground'
                         )}
                       >
@@ -472,17 +475,17 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
                       </div>
                     ))}
                     {q.type === 'true_false' && (
-                      <div className="px-3 py-2 rounded-xl text-sm bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
+                      <div className="px-3 py-2 rounded-xl text-sm bg-logrado-fondo dark:bg-logrado-fondo/40 border border-logrado dark:border-logrado text-logrado dark:text-logrado">
                         Respuesta correcta: {q.correctAnswer ? 'Verdadero' : 'Falso'}
                       </div>
                     )}
                     {q.type === 'numeric' && (
-                      <div className="px-3 py-2 rounded-xl text-sm bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
+                      <div className="px-3 py-2 rounded-xl text-sm bg-logrado-fondo dark:bg-logrado-fondo/40 border border-logrado dark:border-logrado text-logrado dark:text-logrado">
                         Respuesta correcta: {q.correctAnswer}{q.tolerance ? ` (± ${q.tolerance})` : ''}
                       </div>
                     )}
                     {q.type === 'short_answer' && (
-                      <div className="px-3 py-2 rounded-xl text-sm bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
+                      <div className="px-3 py-2 rounded-xl text-sm bg-logrado-fondo dark:bg-logrado-fondo/40 border border-logrado dark:border-logrado text-logrado dark:text-logrado">
                         Respuestas aceptadas: {q.acceptedAnswers.join(' / ')}
                       </div>
                     )}
@@ -517,13 +520,13 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
 
         {/* Moodle GIFT Import Guide Modal */}
         <Dialog open={showMoodleModal} onOpenChange={setShowMoodleModal}>
-          <DialogContent className="sm:max-w-md rounded-3xl border-2 border-orange-500/30 p-6 bg-card">
+          <DialogContent className="sm:max-w-md rounded-3xl border-2 border-flojo/30 p-6 bg-card">
             <DialogHeader className="space-y-3 text-center sm:text-left">
-              <div className="w-12 h-12 rounded-2xl bg-orange-500/15 text-orange-600 flex items-center justify-center mx-auto sm:mx-0">
-                <Sparkles className="w-6 h-6 text-orange-500" />
+              <div className="w-12 h-12 rounded-2xl bg-flojo/15 text-flojo flex items-center justify-center mx-auto sm:mx-0">
+                <Sparkles className="w-6 h-6 text-flojo" />
               </div>
               <DialogTitle className="text-xl font-bold text-foreground leading-snug">
-                ¡Qué genial! 🚀 Tu cuestionario se descargó con éxito
+                Tu cuestionario se descargó
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground leading-relaxed pt-1">
                 El archivo ha sido generado en <strong className="text-foreground font-semibold">formato GIFT</strong> (<code className="text-xs bg-muted px-1.5 py-0.5 rounded border border-border text-foreground font-mono">.gift.txt</code>). Podés subirlo directamente a tu aula virtual Moodle para evaluarlo con tus alumnos.
@@ -531,28 +534,28 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
             </DialogHeader>
 
             <div className="space-y-3.5 py-4 border-y border-border/60 my-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+              <p className="text-xs font-bold uppercase tracking-wider text-flojo dark:text-flojo">
                 Paso a paso para importar en Moodle:
               </p>
 
               <div className="flex items-start gap-3 text-xs text-foreground">
-                <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-700 dark:text-orange-300 font-bold flex items-center justify-center shrink-0">1</span>
+                <span className="w-6 h-6 rounded-full bg-flojo/20 text-flojo dark:text-flojo font-bold flex items-center justify-center shrink-0">1</span>
                 <p className="pt-0.5 leading-relaxed">
                   Ingresá a tu curso en Moodle y abrí la sección <strong>Banco de preguntas</strong> en el menú de administración del curso.
                 </p>
               </div>
 
               <div className="flex items-start gap-3 text-xs text-foreground">
-                <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-700 dark:text-orange-300 font-bold flex items-center justify-center shrink-0">2</span>
+                <span className="w-6 h-6 rounded-full bg-flojo/20 text-flojo dark:text-flojo font-bold flex items-center justify-center shrink-0">2</span>
                 <p className="pt-0.5 leading-relaxed">
                   Hacé click en la pestaña <strong>Importar</strong> y seleccioná la opción <strong>Formato GIFT</strong>.
                 </p>
               </div>
 
               <div className="flex items-start gap-3 text-xs text-foreground">
-                <span className="w-6 h-6 rounded-full bg-orange-500/20 text-orange-700 dark:text-orange-300 font-bold flex items-center justify-center shrink-0">3</span>
+                <span className="w-6 h-6 rounded-full bg-flojo/20 text-flojo dark:text-flojo font-bold flex items-center justify-center shrink-0">3</span>
                 <p className="pt-0.5 leading-relaxed">
-                  Arrastrá el archivo descargado (<code className="text-[11px] bg-muted px-1 rounded">.gift.txt</code>), hacé click en <strong>Importar</strong> y ¡listo! ✨
+                  Arrastrá el archivo descargado (<code className="text-[11px] bg-muted px-1 rounded">.gift.txt</code>), hacé click en <strong>Importar</strong> y listo.
                 </p>
               </div>
             </div>
@@ -560,7 +563,7 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
             <DialogFooter className="pt-2 sm:justify-end">
               <button
                 onClick={() => setShowMoodleModal(false)}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-flojo hover:bg-flojo text-texto-sobre-accion font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
               >
                 ¡Entendido, a enseñar!
               </button>

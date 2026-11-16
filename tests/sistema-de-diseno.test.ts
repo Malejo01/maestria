@@ -5,9 +5,9 @@
  * que una pantalla se vea bien, prueban que no se cuele lo que el sistema
  * prohíbe (design-reference/README.md, "Las tres reglas que más se incumplen").
  *
- * El alcance es lo que el rediseño ya rehízo. Las pantallas viejas todavía
- * tienen hexadecimales y sombras propias; cada bloque que rehace una pantalla
- * suma su carpeta a ZONAS_REDISENADAS.
+ * Desde el bloque 6 el alcance es toda la app: `app/` y `components/` enteros,
+ * menos los primitivos vendored de `components/ui/`. El pase que llevó las
+ * pantallas viejas a los tokens está en scripts/codemod-tokens.py.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
@@ -16,21 +16,25 @@ import { COLOR_DE_BARRA_DEL_NAVEGADOR } from '@/lib/tema'
 
 const RAIZ = join(__dirname, '..')
 
-const ZONAS_REDISENADAS = [
-  'components/sistema',
-  'components/entrada',
-  'components/caparazon',
-  'components/docente',
-  'components/teacher-onboarding-modal.tsx',
-  'components/share-quiz-dialog.tsx',
-  'app/(entrada)',
-  'app/(app)/layout.tsx',
-  'app/layout.tsx',
-  'components/legal-notice.tsx',
-  'components/onboarding-gate.tsx',
-  'lib/textos.ts',
-  'lib/navegacion.ts',
+const ZONAS_REDISENADAS = ['app', 'components', 'lib/textos.ts', 'lib/navegacion.ts']
+
+/** Los primitivos de shadcn son vendored: no se reescriben ni se revisan acá. */
+const VENDORED = 'components/ui/'
+
+/**
+ * Lo que queda afuera, y por qué. La lista no crece sin un motivo escrito.
+ */
+const FUERA_DE_ALCANCE = [
+  // Es la paleta: el único lugar donde los hexadecimales son el contenido.
+  'app/tokens.css',
+  // Conecta roles con tokens y anula las sombras del tema; tiene su propio test abajo.
+  'app/globals.css',
+  // Se muestra cuando la hoja de estilos no cargó: no hay variables que leer.
+  'app/global-error.tsx',
 ]
+
+/** Las rutas de la API no dibujan nada: sus cadenas son prompts y mensajes, no interfaz. */
+const NO_ES_INTERFAZ = 'app/api/'
 
 function archivosDe(ruta: string): string[] {
   const absoluta = join(RAIZ, ruta)
@@ -49,7 +53,15 @@ const TODAVIA_VIEJOS: string[] = [
 const FUENTES = ZONAS_REDISENADAS.flatMap(archivosDe)
   // En Windows `join` devuelve barras invertidas.
   .map((ruta) => ruta.split('\\').join('/'))
-  .filter((ruta) => /\.(tsx?|css)$/.test(ruta) && !/\.test\.tsx?$/.test(ruta) && !TODAVIA_VIEJOS.includes(ruta))
+  .filter(
+    (ruta) =>
+      /\.(tsx?|css)$/.test(ruta) &&
+      !/\.test\.tsx?$/.test(ruta) &&
+      !TODAVIA_VIEJOS.includes(ruta) &&
+      !FUERA_DE_ALCANCE.includes(ruta) &&
+      !ruta.startsWith(VENDORED) &&
+      !ruta.startsWith(NO_ES_INTERFAZ),
+  )
 
 /** Saca comentarios: una regla citada en un comentario no es una violación. */
 function sinComentarios(codigo: string): string {

@@ -114,13 +114,13 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
     <section className="space-y-3">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center text-white shadow-sm">
-            <Zap className="w-4 h-4 fill-white" />
+          <div className="w-8 h-8 rounded-xl bg-flojo flex items-center justify-center text-texto-sobre-accion">
+            <Zap className="w-4 h-4 fill-texto-sobre-accion" />
           </div>
           <h3 className="font-bold text-foreground text-lg">Temas a Reforzar</h3>
         </div>
         {variant === 'preview' && (
-          <Link href="/history?tab=reforzar" className="flex items-center gap-1 text-xs font-bold text-orange-600 dark:text-orange-400 hover:translate-x-0.5 transition-transform shrink-0">
+          <Link href="/history?tab=reforzar" className="flex items-center gap-1 text-xs font-bold text-flojo dark:text-flojo hover:translate-x-0.5 transition-transform shrink-0">
             Ver todos
             <ChevronRight className="w-4 h-4" />
           </Link>
@@ -135,19 +135,19 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
             <Card
               key={subjectId}
               onClick={() => setActiveSubjectModal(subjectId)}
-              className="p-4 border-2 border-orange-200/80 bg-gradient-to-br from-orange-50/70 to-red-50/50 hover:border-orange-400 hover:shadow-md transition-all cursor-pointer group rounded-2xl flex items-center justify-between"
+              className="p-4 border-2 border-flojo/80 bg-flojo-fondo/70 hover:border-flojo transition-all cursor-pointer group rounded-2xl flex items-center justify-between"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-600 dark:text-orange-400 group-hover:scale-105 transition-transform shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-flojo/10 border border-flojo/20 flex items-center justify-center text-flojo dark:text-flojo group-hover:scale-105 transition-transform shrink-0">
                   <Target className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="font-bold text-foreground text-sm group-hover:text-orange-600 transition-colors">
+                    <h4 className="font-bold text-foreground text-sm group-hover:text-flojo transition-colors">
                       {subjectId}
                     </h4>
                     {firstGrado && (
-                      <span className="px-2 py-0.5 rounded-md bg-orange-200/60 dark:bg-orange-950 text-orange-800 dark:text-orange-300 text-[10px] font-bold">
+                      <span className="px-2 py-0.5 rounded-md bg-flojo-fondo/60 dark:bg-flojo-fondo text-flojo dark:text-flojo text-[10px] font-bold">
                         {firstGrado}
                       </span>
                     )}
@@ -161,7 +161,7 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 px-2.5 text-xs font-bold text-orange-600 dark:text-orange-400 gap-1 group-hover:translate-x-0.5 transition-transform"
+                className="h-8 px-2.5 text-xs font-bold text-flojo dark:text-flojo gap-1 group-hover:translate-x-0.5 transition-transform"
               >
                 <span>Ver</span>
                 <ChevronRight className="w-4 h-4" />
@@ -181,15 +181,15 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
             open={isOpen}
             onOpenChange={(open) => setActiveSubjectModal(open ? subjectId : null)}
           >
-            <DialogContent className="max-w-xl mx-4 max-h-[85vh] overflow-y-auto rounded-3xl p-6 shadow-2xl border-2 border-orange-200">
+            <DialogContent className="max-w-xl mx-4 max-h-[85vh] overflow-y-auto rounded-3xl p-6 border-2 border-flojo">
               <DialogHeader className="space-y-1 text-left">
                 <DialogTitle className="flex items-center gap-2.5 text-xl font-bold text-foreground">
-                  <div className="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-flojo/10 flex items-center justify-center text-flojo shrink-0">
                     <Target className="w-5 h-5" />
                   </div>
                   <span>Temas a reforzar — {subjectId}</span>
                   {firstGrado && (
-                    <span className="px-2.5 py-0.5 rounded-lg bg-orange-500/15 text-orange-600 text-xs font-extrabold ml-1">
+                    <span className="px-2.5 py-0.5 rounded-lg bg-flojo/15 text-flojo text-xs font-extrabold ml-1">
                       {firstGrado}
                     </span>
                   )}
@@ -200,8 +200,8 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
               </DialogHeader>
 
               <div className="space-y-4 mt-2">
-                <div className="flex items-center justify-between p-3.5 bg-orange-50 rounded-2xl border border-orange-200/60">
-                  <span className="text-xs font-semibold text-orange-900 dark:text-orange-200">
+                <div className="flex items-center justify-between p-3.5 bg-flojo-fondo rounded-2xl border border-flojo/60">
+                  <span className="text-xs font-semibold text-flojo dark:text-flojo">
                     Practicar todos los temas de esta materia ({points.length})
                   </span>
                   <Button
@@ -210,7 +210,7 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
                       setActiveSubjectModal(null)
                       setPracticeModalSubjectId(subjectId)
                     }}
-                    className="h-8 px-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs gap-1"
+                    className="h-8 px-3 rounded-xl bg-flojo hover:bg-flojo text-texto-sobre-accion font-bold text-xs gap-1"
                   >
                     Practicar todo
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -221,7 +221,7 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
                   {points.map((wp) => (
                     <div
                       key={wp.topic}
-                      className="p-4 bg-card rounded-2xl border-2 border-orange-200/80 shadow-sm space-y-2.5"
+                      className="p-4 bg-card rounded-2xl border-2 border-flojo/80 space-y-2.5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -230,22 +230,22 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
                               {wp.topicName || wp.topic}
                             </h5>
                             {wp.grado && (
-                              <span className="px-2 py-0.5 rounded-md bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 text-[10px] font-bold">
+                              <span className="px-2 py-0.5 rounded-md bg-flojo-fondo dark:bg-flojo-fondo text-flojo dark:text-flojo text-[10px] font-bold">
                                 {wp.grado}
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-orange-600 dark:text-orange-400 font-medium mt-0.5">
-                            ⚠️ {wp.misconceptionType || 'Necesita refuerzo conceptual'}
+                          <p className="text-xs text-flojo dark:text-flojo font-medium mt-0.5">
+                            {wp.misconceptionType || 'Necesita refuerzo conceptual'}
                           </p>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full font-bold">
+                          <span className="text-[10px] bg-flojo text-texto-sobre-accion px-2 py-0.5 rounded-full font-bold">
                             {wp.count} fallas
                           </span>
                           <button
                             onClick={() => removeWeakPoint(wp.topic)}
-                            className="text-muted-foreground hover:text-red-500 transition-colors p-1"
+                            className="text-muted-foreground hover:text-flojo transition-colors p-1"
                             title="Eliminar de temas a reforzar"
                           >
                             <X className="w-3.5 h-3.5" />
@@ -257,10 +257,10 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
                         size="sm"
                         onClick={() => handlePractice(subjectId, [wp], 'practico')}
                         disabled={loadingSubjectId === subjectId}
-                        className="w-full h-9 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs gap-1.5 shadow-sm active:scale-95"
+                        className="w-full h-9 rounded-xl bg-flojo hover:bg-flojo text-texto-sobre-accion font-bold text-xs gap-1.5 active:scale-95"
                       >
-                        <Zap className="w-3.5 h-3.5 fill-white" />
-                        🎯 Entrenar (3 preguntas)
+                        <Zap className="w-3.5 h-3.5 fill-texto-sobre-accion" />
+                        Entrenar (3 preguntas)
                       </Button>
                     </div>
                   ))}

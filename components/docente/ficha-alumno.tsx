@@ -1,12 +1,14 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useCallback, useEffect, useId, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { CargaFallida } from '@/components/carga-fallida'
 import { Boton } from '@/components/sistema/boton'
-import { Cargando } from '@/components/sistema/cargando'
 import { ChipTema } from '@/components/sistema/chip-tema'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { haceCuanto, type EstadoTema, type TemaDeAlumno } from '@/lib/alumnos-docente'

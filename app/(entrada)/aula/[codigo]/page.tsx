@@ -1,10 +1,12 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useEffect, useId, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { signIn, useSession } from 'next-auth/react'
-import { Cargando } from '@/components/sistema/cargando'
 import { LegalNotice } from '@/components/legal-notice'
 import {
   BajadaEntrada,
