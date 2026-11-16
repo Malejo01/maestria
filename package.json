@@ -71,7 +71,6 @@
     "recharts": "2.15.0",
     "sonner": "^1.7.1",
     "tailwind-merge": "^3.3.1",
-    "tesseract.js": "^7.0.0",
     "vaul": "^1.1.2",
     "word-extractor": "^1.0.4",
     "zod": "^3.24.1",

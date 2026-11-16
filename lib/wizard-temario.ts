@@ -130,6 +130,11 @@ export type EventoDeLectura =
    * solo a los cinco segundos enseña a no creerle al siguiente.
    */
   | { etapa: 'leido' }
+  /**
+   * I1: era una imagen o un escaneo y va entero al modelo. Tarda más que un
+   * PDF con texto, y el docente tiene que saber por qué.
+   */
+  | { etapa: 'leyendo-con-ia' }
   | { etapa: 'ordenando' }
   | { etapa: 'listo'; resultado: Record<string, unknown> }
   | { etapa: 'error'; error: string; status: number }

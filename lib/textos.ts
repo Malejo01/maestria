@@ -400,6 +400,8 @@ export const LECTURA_DE_ARCHIVO = {
   subiendo: 'Subiendo el archivo…',
   leyendo: 'Leyendo el archivo…',
   leido: 'Ya lo leí. Busco dónde están los contenidos.',
+  /** I1: una imagen o un escaneo van enteros al modelo, y tardan más. */
+  leyendoConIA: 'Es una imagen: la estoy leyendo con IA…',
   ordenando: 'Separando las unidades y sus temas…',
   listo: (unidades: number, temas: number) =>
     `Listo: ${unidades} ${unidades === 1 ? 'unidad' : 'unidades'} y ${temas} ${temas === 1 ? 'tema' : 'temas'}. Revisalos abajo.`,

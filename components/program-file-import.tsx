@@ -206,6 +206,7 @@ export function ProgramFileImport({
           const evento = JSON.parse(linea) as EventoDeLectura
           if (evento.etapa === 'leyendo') setPasos((previos) => [...previos, T.leyendo])
           else if (evento.etapa === 'leido') setPasos((previos) => [...previos, T.leido])
+          else if (evento.etapa === 'leyendo-con-ia') setPasos((previos) => [...previos, T.leyendoConIA])
           else if (evento.etapa === 'ordenando') setPasos((previos) => [...previos, T.ordenando])
           else if (evento.etapa === 'error') throw new Error(evento.error)
           else if (evento.etapa === 'listo') data = evento.resultado

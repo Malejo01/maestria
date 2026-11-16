@@ -186,7 +186,7 @@ export function captureGuestJoinCapReached(context: { classroomId: number; newGu
 export function captureFileParsingFailure(
   error: unknown,
   context: {
-    parser: 'mammoth' | 'pdf-parse' | 'tesseract' | 'word-extractor'
+    parser: 'mammoth' | 'pdf-parse' | 'modelo' | 'word-extractor'
     mimeType?: string
     sizeBytes?: number
   }

@@ -9,8 +9,23 @@ import { guardAiCall } from '@/lib/ai-guard'
 import { captureAiSchemaFailure, captureFileParsingFailure, captureRouteFailure } from '@/lib/observability'
 import { AI_MODEL } from '@/lib/ai-model'
 import { bloqueoParaGenerar } from '@/lib/planes-server'
+import {
+  NO_SE_PUDO_LEER,
+  TIEMPO_MAXIMO_DEL_MODELO_MS,
+  comoLeerPrograma,
+  elModeloLoLee,
+  esTiempoAgotado,
+} from '@/lib/lectura-programa'
+import {
+  extraerTextoDePrograma,
+  normalizarMimeDePrograma,
+  parserPara,
+  parteDelArchivo,
+} from '@/lib/lectura-programa-server'
 
 export const runtime = 'nodejs'
+// Como /extract: una imagen o un escaneo van enteros al modelo, con 60 s (I1).
+export const maxDuration = 90
 
 const continuationSchema = z.object({
   units: z.array(
@@ -94,113 +109,6 @@ function extractCurriculumSection(rawText: string): string {
   return section.length > 0 ? section : rawText.slice(0, 18000)
 }
 
-function normalizeStoredMimeType(fileName: string, mimeType: string): string {
-  const lowerName = fileName.toLowerCase()
-  if (lowerName.endsWith('.doc') || mimeType === 'application/msword') {
-    return 'application/msword'
-  }
-  if (lowerName.endsWith('.png') || mimeType === 'image/png') {
-    return 'image/png'
-  }
-  if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || mimeType === 'image/jpeg') {
-    return 'image/jpeg'
-  }
-  if (lowerName.endsWith('.docx')) {
-    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  }
-  if (lowerName.endsWith('.pdf')) {
-    return 'application/pdf'
-  }
-
-  return mimeType
-}
-
-async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const pdfModule = await import('pdf-parse')
-  const legacyParse = (pdfModule as unknown as { default?: (data: Buffer) => Promise<{ text?: string }> }).default
-
-  if (typeof legacyParse === 'function') {
-    const parsed = await legacyParse(buffer)
-    return (parsed?.text || '').trim()
-  }
-
-  const PDFParseClass = (pdfModule as unknown as {
-    PDFParse?: new (params: { data: Buffer }) => {
-      getText: () => Promise<{ text?: string }>
-      destroy?: () => Promise<void>
-    }
-  }).PDFParse
-
-  if (typeof PDFParseClass !== 'function') {
-    throw new Error('PDF parser no disponible: exportacion invalida de pdf-parse')
-  }
-
-  const parserWithWorker = pdfModule as unknown as {
-    PDFParse?: {
-      new (params: { data: Buffer }): { getText: () => Promise<{ text?: string }>; destroy?: () => Promise<void> }
-      setWorker?: (workerSrc?: string) => string
-    }
-  }
-
-  if (typeof parserWithWorker.PDFParse?.setWorker === 'function') {
-    parserWithWorker.PDFParse.setWorker('pdfjs-dist/legacy/build/pdf.worker.mjs')
-  }
-
-  const parser = new PDFParseClass({ data: buffer })
-  try {
-    const parsed = await parser.getText()
-    return (parsed?.text || '').trim()
-  } finally {
-    if (typeof parser.destroy === 'function') {
-      await parser.destroy()
-    }
-  }
-}
-
-async function extractTextFromDocx(buffer: Buffer): Promise<string> {
-  const mammoth = await import('mammoth')
-  const result = await mammoth.extractRawText({ buffer })
-  return (result.value || '').trim()
-}
-
-async function extractTextFromDoc(buffer: Buffer): Promise<string> {
-  const wordExtractorModule = await import('word-extractor')
-  const WordExtractor = wordExtractorModule.default
-  const extractor = new WordExtractor()
-  const document = await extractor.extract(buffer)
-  return String(document.getBody() || '').trim()
-}
-
-async function extractTextFromImage(buffer: Buffer): Promise<string> {
-  const tesseract = await import('tesseract.js')
-  const result = await tesseract.recognize(buffer, 'spa+eng')
-  return String(result?.data?.text || '').trim()
-}
-
-/** Qué librería atiende cada formato, para etiquetar el error en Sentry. */
-function parserForMime(mimeType: string): 'pdf-parse' | 'mammoth' | 'word-extractor' | 'tesseract' {
-  if (mimeType === 'application/pdf') return 'pdf-parse'
-  if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return 'mammoth'
-  if (mimeType === 'application/msword') return 'word-extractor'
-  return 'tesseract'
-}
-
-async function extractTextByMime(buffer: Buffer, mimeType: string): Promise<string> {
-  if (mimeType === 'application/pdf') {
-    return extractTextFromPdf(buffer)
-  }
-  if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-    return extractTextFromDocx(buffer)
-  }
-  if (mimeType === 'application/msword') {
-    return extractTextFromDoc(buffer)
-  }
-  if (mimeType === 'image/png' || mimeType === 'image/jpeg') {
-    return extractTextFromImage(buffer)
-  }
-
-  throw new Error('Tipo de archivo no soportado para guiado')
-}
 
 function tokenize(input: string): string[] {
   return input
@@ -513,26 +421,27 @@ export async function POST(req: Request) {
     if (!guard.ok) return guard.response
 
     const upload = uploads[0] as { file_name: string; mime_type: string; file_data: Buffer | Uint8Array }
-    const mimeType = normalizeStoredMimeType(upload.file_name, upload.mime_type)
+    const mimeType = normalizarMimeDePrograma(upload.file_name, upload.mime_type)
     const fileBuffer = Buffer.isBuffer(upload.file_data) ? upload.file_data : Buffer.from(upload.file_data)
 
-    const extractedText = await extractTextByMime(fileBuffer, mimeType).catch((parsingError) => {
+    const { texto: extractedText, paginas } = await extraerTextoDePrograma(fileBuffer, mimeType).catch((parsingError) => {
       captureFileParsingFailure(parsingError, {
-        parser: parserForMime(mimeType),
+        parser: parserPara(mimeType),
         mimeType,
         sizeBytes: fileBuffer.length,
       })
       // Devolver vacío deja que el chequeo de abajo responda el 422 de siempre,
       // en vez de que el error caiga en el catch genérico como un 500.
-      return ''
+      return { texto: '', paginas: 0 }
     })
 
-    if (!extractedText || extractedText.length < 100) {
+    // Una imagen o un escaneo no tienen texto para buscar el ancla: van
+    // enteros al modelo, como en /extract (I1).
+    const modo = elModeloLoLee(mimeType) ? comoLeerPrograma({ mimeType, texto: extractedText, paginas }) : 'texto'
+
+    if (modo === 'texto' && (!extractedText || extractedText.length < 100)) {
       await guard.fail()
-      return NextResponse.json(
-        { error: 'No se pudo extraer suficiente texto para guiado' },
-        { status: 422 }
-      )
+      return NextResponse.json({ error: NO_SE_PUDO_LEER }, { status: 422 })
     }
 
     const section = extractCurriculumSection(extractedText)
@@ -558,14 +467,7 @@ export async function POST(req: Request) {
     let parsed: ParsedProgram
     let extractionMethod: 'ai' | 'heuristic' = 'ai'
 
-    try {
-      const { object, usage } = await generateObject({
-        model: google(AI_MODEL),
-        schema: continuationSchema,
-        schemaName: 'guidedProgramContinuation',
-        schemaDescription: 'Continuacion curricular en formato unidades y temas',
-        system: 'Eres un asistente academico experto en programas anuales en espanol. Continua estructuras sin inventar.',
-        prompt: `Tomando como ancla esta unidad validada por docente:
+    const pedido = `Tomando como ancla esta unidad validada por docente:
 Unidad: ${payload.seedUnitName}
 Temas verificados: ${payload.seedTopics.join('; ')}
 
@@ -575,26 +477,61 @@ Devuelve solo estructura Unidad -> Temas.
       ${rejectedUnitNames.length > 0 ? `No repitas ni propongas estas unidades marcadas como incorrectas: ${rejectedUnitNames.join('; ')}` : ''}
       ${rejectedTopicNames.length > 0 ? `No repitas ni propongas estos temas marcados como incorrectos: ${rejectedTopicNames.join('; ')}` : ''}
       ${guidanceNote ? `Correccion adicional del docente: ${guidanceNote}` : ''}
-      ${retryCount > 0 ? `Este es un reintento numero ${retryCount + 1}. Debes variar estrategia y proponer alternativa distinta a la previa.` : ''}
+      ${retryCount > 0 ? `Este es un reintento numero ${retryCount + 1}. Debes variar estrategia y proponer alternativa distinta a la previa.` : ''}`
+
+    const entrada =
+      modo === 'archivo'
+        ? {
+            messages: [
+              {
+                role: 'user' as const,
+                content: [
+                  { type: 'text' as const, text: `${pedido}\n\nEl programa va adjunto (es una imagen o un escaneo).` },
+                  parteDelArchivo(fileBuffer, mimeType),
+                ],
+              },
+            ],
+          }
+        : {
+            prompt: `${pedido}
 
 Fragmento del documento alrededor del ancla:
 ${aroundAnchor.slice(0, 18000)}
 
 Contexto de seccion curricular:
 ${section.slice(0, 12000)}`,
+          }
+
+    try {
+      const { object, usage } = await generateObject({
+        model: google(AI_MODEL),
+        schema: continuationSchema,
+        schemaName: 'guidedProgramContinuation',
+        schemaDescription: 'Continuacion curricular en formato unidades y temas',
+        system: 'Eres un asistente academico experto en programas anuales en espanol. Continua estructuras sin inventar.',
+        ...entrada,
         temperature: 0.2,
         maxOutputTokens: 2200,
+        abortSignal: AbortSignal.timeout(TIEMPO_MAXIMO_DEL_MODELO_MS),
       })
 
       parsed = continuationSchema.parse(object)
       await guard.finish(usage)
     } catch (schemaError) {
-      captureAiSchemaFailure(schemaError, {
-        endpoint: '/api/teacher/programs/guide',
-        fallback: 'heuristic',
-      })
+      if (esTiempoAgotado(schemaError)) {
+        captureRouteFailure(schemaError, { endpoint: '/api/teacher/programs/guide', status: 504, operation: 'guide_program_timeout' })
+      } else {
+        captureAiSchemaFailure(schemaError, {
+          endpoint: '/api/teacher/programs/guide',
+          fallback: modo === 'archivo' ? 'none' : 'heuristic',
+        })
+      }
       // El heurístico no llama al modelo; el intento fallido igual se facturó.
       await guard.fail()
+      // Sin texto no hay heurístico: la imagen o el escaneo sólo los lee el modelo.
+      if (modo === 'archivo') {
+        return NextResponse.json({ error: NO_SE_PUDO_LEER }, { status: 422 })
+      }
       parsed = parseHeuristicProgram(aroundAnchor)
       extractionMethod = 'heuristic'
     }
