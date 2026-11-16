@@ -450,6 +450,7 @@ export const MIS_TAREAS = {
   /** Mientras se lee: sin número. "(0)" sería afirmar algo que todavía no se sabe. */
   guardadasSinContar: 'Guardadas',
   hechasSinContar: 'Las que probé yo',
+  masTemas: (n: number) => (n === 1 ? 'y 1 tema más' : `y ${n} temas más`),
   sinHechas: 'Todavía no probaste ninguna.',
   vacio: {
     titulo: 'Todavía no armaste ninguna tarea',

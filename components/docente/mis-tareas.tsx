@@ -10,6 +10,7 @@ import { TeacherQuizReview } from '@/components/teacher-quiz-review'
 import { ShareQuizDialog } from '@/components/share-quiz-dialog'
 import type { PanelDocente } from '@/components/docente/use-panel-docente'
 import { EsqueletoListaDeTareas } from '@/components/docente/esqueletos'
+import { resumirTemas } from '@/lib/alumnos-docente'
 
 /**
  * "Mis tareas": las tareas guardadas y las realizadas, con revisar, editar,
@@ -144,11 +145,7 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                         <p className="nota text-texto-suave">
                           {quiz.subjectName} · {T.preguntas(quiz.questionCount)} · {T.modo[quiz.mode]}
                         </p>
-                        {quiz.selectedTopics.length > 0 && (
-                          <p className="nota mt-1 text-texto-suave">
-                            {quiz.selectedTopics.map((topic) => topic.name).join(', ')}
-                          </p>
-                        )}
+                        <TemasDeTarea temas={quiz.selectedTopics.map((topic) => topic.name)} />
                       </div>
 
                       {/* Una sola acción principal por tarea: mandarla. */}
@@ -234,5 +231,25 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
         isExporting={exportingQuizId === sharingQuiz?.id}
       />
     </>
+  )
+}
+
+/**
+ * Los temas de una tarea, en su tarjeta: los primeros con su nombre corto y el
+ * resto contado. Escritos enteros y separados por coma eran nueve renglones a
+ * 390 px antes de llegar al botón de mandarla, que es para lo que está la
+ * tarjeta. El detalle queda en `title` y para lector de pantalla.
+ */
+function TemasDeTarea({ temas }: { temas: string[] }) {
+  const { visibles, resto, completo } = resumirTemas(temas)
+  if (visibles.length === 0) return null
+  return (
+    <p className="nota mt-1 text-texto-suave" title={completo}>
+      <span aria-hidden="true">
+        {visibles.join(' · ')}
+        {resto > 0 && <span className="whitespace-nowrap"> {T.masTemas(resto)}</span>}
+      </span>
+      <span className="sr-only">{completo}</span>
+    </p>
   )
 }

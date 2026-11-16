@@ -181,7 +181,9 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
             open={isOpen}
             onOpenChange={(open) => setActiveSubjectModal(open ? subjectId : null)}
           >
-            <DialogContent className="max-w-xl mx-4 max-h-[85vh] overflow-y-auto rounded-3xl p-6 border-2 border-flojo">
+            {/* Sin `mx-4`: corría el diálogo 16 px fuera de la pantalla a 390 px (el
+                mismo defecto que tenía el modal de explicación). */}
+            <DialogContent className="max-h-[85dvh] overflow-y-auto rounded-3xl border-2 border-flojo p-5 sm:max-w-xl sm:p-6">
               <DialogHeader className="space-y-1 text-left">
                 <DialogTitle className="flex items-center gap-2.5 text-xl font-bold text-foreground">
                   <div className="w-9 h-9 rounded-xl bg-flojo/10 flex items-center justify-center text-flojo shrink-0">
