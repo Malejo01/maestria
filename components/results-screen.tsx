@@ -286,23 +286,23 @@ export function ResultsScreen() {
     if (results.score < 6) {
       return {
         badgeText: 'A seguir practicando',
-        title: isPrimario ? '¡A no desanimarse!' : '¡Sigue practicando!',
-        subtitle: isPrimario ? 'Cada error es una oportunidad para aprender. ¡Mirá tus recomendaciones abajo!' : 'Repasá los temas fallados para mejorar tu rendimiento.',
+        title: isPrimario ? 'A no desanimarse' : 'Seguí practicando',
+        subtitle: isPrimario ? 'Cada error es una oportunidad para aprender. Mirá tus recomendaciones abajo.' : 'Repasá los temas fallados para mejorar tu rendimiento.',
         badgeClass: 'bg-flojo/10 text-flojo dark:text-flojo border border-flojo/30',
       }
     }
     if (results.score < 9) {
       return {
-        badgeText: '¡Buen trabajo!',
-        title: isPrimario ? '¡Muy bien hecho!' : '¡Buen trabajo!',
-        subtitle: isPrimario ? '¡Estás aprendiendo muchísimo! Mirá los detalles para perfeccionarlo.' : '¡Gran avance en la materia!',
+        badgeText: 'Buen trabajo',
+        title: isPrimario ? 'Muy bien hecho' : 'Buen trabajo',
+        subtitle: isPrimario ? 'Estás aprendiendo muchísimo. Mirá los detalles para perfeccionarlo.' : 'Gran avance en la materia.',
         badgeClass: 'bg-logrado/10 text-logrado dark:text-logrado border border-logrado/30',
       }
     }
     return {
-      badgeText: '¡Excelente!',
-      title: isPrimario ? '¡Espectacular!' : '¡Excelente trabajo!',
-      subtitle: isPrimario ? '¡Sos un/a genio/a! Dominaste este cuestionario por completo.' : '¡Rendimiento sobresaliente!',
+      badgeText: 'Excelente',
+      title: isPrimario ? 'Espectacular' : 'Excelente trabajo',
+      subtitle: isPrimario ? 'Dominaste este cuestionario por completo.' : 'Rendimiento sobresaliente.',
       badgeClass: 'bg-accion/10 text-accion dark:text-accion border border-accion/30',
     }
   }
@@ -397,13 +397,13 @@ export function ResultsScreen() {
         <Card className="p-5 border-2 border-border bg-card/90">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-bold text-foreground">Tu Racha</h3>
+              <h3 className="font-bold text-foreground">Tu racha</h3>
               <p className="text-sm text-muted-foreground mt-1">
                 {userProgress.streak >= 2 
-                  ? '¡Racha activa, seguí así!' 
+                  ? 'Racha activa, seguí así' 
                   : userProgress.streak === 1
                     ? 'Una más para activar la racha'
-                    : 'Aprueba 2 seguidos para activar'}
+                    : 'Aprobá 2 seguidos para activarla'}
               </p>
             </div>
             <StreakBadge streak={userProgress.streak} size="lg" />

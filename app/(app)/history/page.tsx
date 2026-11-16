@@ -336,9 +336,9 @@ function HistoryPageContent() {
     return (
       <div className="flex flex-col items-center justify-center py-24">
         <Card className="p-8 text-center border-2 bg-card/80">
-          <h1 className="text-2xl font-bold mb-4">Inicia sesion</h1>
+          <h1 className="text-2xl font-bold mb-4">Iniciá sesión</h1>
           <p className="text-muted-foreground mb-6">
-            Debes iniciar sesion para ver tu historial de evaluaciones.
+            Iniciá sesión para ver tu historial de prácticas.
           </p>
           <Link href="/sign-in">
             <Button className="w-full">Iniciar Sesion</Button>

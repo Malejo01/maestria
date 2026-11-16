@@ -99,7 +99,7 @@ describe('QuizEngine — advancing between questions of different types', () => 
     render(<QuizEngine />)
 
     answerMultipleChoice(1)
-    expect(screen.getByText('Correcto!')).toBeTruthy()
+    expect(screen.getByText('Correcto')).toBeTruthy()
 
     // This is the click that crashes in production.
     expect(() => {

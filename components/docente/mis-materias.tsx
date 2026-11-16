@@ -256,8 +256,8 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
                 be the extra step this was meant to remove. */}
             {!selectedSubject && (
               <div className="space-y-3">
-                <h2 className="text-lg font-bold">Selecciona una materia</h2>
-                <p className="text-sm text-muted-foreground">Elige una de tus materias para comenzar a crear el cuestionario.</p>
+                <h2 className="text-lg font-bold">Elegí una materia</h2>
+                <p className="text-sm text-muted-foreground">Elegí una de tus materias para armar el cuestionario.</p>
 
                 {teacherPrograms.length === 0 && (
                   <div className="space-y-2">

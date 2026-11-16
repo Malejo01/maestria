@@ -333,8 +333,8 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
   const handleStartQuiz = async (mode: 'teorico' | 'practico' | 'mixto') => {
     if (!isQuestionCountValid) {
       toast({
-        title: 'Cantidad invalida',
-        description: `Ingresa un numero entero entre ${MIN_QUESTION_COUNT} y ${MAX_QUESTION_COUNT}.`,
+        title: 'Cantidad inválida',
+        description: `Ingresá un número entero entre ${MIN_QUESTION_COUNT} y ${MAX_QUESTION_COUNT}.`,
       })
       return
     }
@@ -438,7 +438,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
     try {
       setIsExportingMoodle(true)
       const fileName = exportQuizToMoodleGift(pendingSharedQuiz)
-      toast({ title: 'Exportacion lista', description: `Se descargo ${fileName}` })
+      toast({ title: 'Exportación lista', description: `Se descargó ${fileName}` })
       setShowShareDialog(false)
     } catch (error) {
       toast({
@@ -496,7 +496,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
       {/* Units List */}
       <div className="space-y-1">
         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Elegir temas para el cuestionario</h3>
-        <p className="text-sm text-muted-foreground">Selecciona los temas que quieras incluir en la generacion.</p>
+        <p className="text-sm text-muted-foreground">Elegí los temas que quieras incluir.</p>
       </div>
 
       <div className="space-y-6">
@@ -684,7 +684,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
               <span>Generar cuestionario</span>
               <span className="text-xs font-medium opacity-90">
                 {selectedTopics.length === 0
-                  ? 'Selecciona al menos 1 tema arriba para continuar'
+                  ? 'Elegí al menos 1 tema arriba para seguir'
                   : `${selectedTopics.length} tema${selectedTopics.length > 1 ? 's' : ''} seleccionado${selectedTopics.length > 1 ? 's' : ''}`}
               </span>
             </span>
@@ -698,7 +698,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
         onSelectMode={handleStartQuiz}
         isLoading={isLoading}
         title="Empezar cuestionario"
-        description="Selecciona la cantidad y el tipo de examen para generar el cuestionario."
+        description="Elegí la cantidad de preguntas y el tipo de cuestionario."
         questionCountValue={questionCountValue}
         onQuestionCountValueChange={setQuestionCountValue}
         onDecreaseQuestionCount={() => adjustQuestionCount(-1)}

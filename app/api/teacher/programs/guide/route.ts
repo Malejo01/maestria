@@ -501,7 +501,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: 'No se encontro el archivo temporal para guiado',
-          details: 'Vuelve a cargar el archivo y reintenta el autocompletado.',
+          details: 'Volvé a cargar el archivo y probá de nuevo el autocompletado.',
         },
         { status: 404 }
       )

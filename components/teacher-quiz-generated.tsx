@@ -408,7 +408,7 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
                         value={editQuestionText}
                         onChange={(e) => setEditQuestionText(e.target.value)}
                         className="w-full min-h-[80px] px-3 py-2 text-sm rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="Escribe la pregunta..."
+                        placeholder="Escribí la pregunta…"
                       />
                     </div>
 
@@ -447,7 +447,7 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
                         value={editExplanation}
                         onChange={(e) => setEditExplanation(e.target.value)}
                         className="w-full min-h-[60px] px-3 py-1.5 text-sm rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                        placeholder="Escribe la explicación..."
+                        placeholder="Escribí la explicación…"
                       />
                     </div>
 

@@ -53,7 +53,7 @@ const patchSchema = z
     grado: z.string().min(1).max(50).optional(),
   })
   .refine((data) => data.role !== undefined || data.nivel !== undefined || data.grado !== undefined, {
-    message: 'Debes enviar al menos un campo (role, nivel o grado).',
+    message: 'Falta al menos un campo (role, nivel o grado).',
   })
 
 export async function PATCH(req: Request) {

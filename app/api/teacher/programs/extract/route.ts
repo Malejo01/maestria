@@ -361,7 +361,7 @@ async function procesarArchivo({
 
     if (!extractedText || extractedText.length < 100) {
       await guard.fail()
-      return { status: 422, body: { error: 'No se pudo extraer contenido util del archivo. Intenta con otro documento.' } }
+      return { status: 422, body: { error: 'No pudimos leer contenido útil del archivo. Probá con otro documento.' } }
     }
 
     const curriculumSection = extractCurriculumSection(extractedText)
@@ -487,7 +487,7 @@ export async function POST(req: Request) {
     const file = formData.get('file') as File | null
 
     if (!file) {
-      return NextResponse.json({ error: 'Debes subir un archivo' }, { status: 400 })
+      return NextResponse.json({ error: 'Falta subir un archivo' }, { status: 400 })
     }
 
     const validTypes = [

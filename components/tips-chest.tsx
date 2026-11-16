@@ -68,7 +68,7 @@ export function TipsChest({ tips, limit }: TipsChestProps) {
                     </p>
                     <h4 className="font-bold text-foreground leading-snug mt-0.5">{tipItem.topicName}</h4>
                   </div>
-                  <p className="text-[11px] text-muted-foreground font-medium">Toca para ver el tip</p>
+                  <p className="text-[11px] text-muted-foreground font-medium">Tocá para ver el tip</p>
                 </Card>
               }
               back={
@@ -83,7 +83,7 @@ export function TipsChest({ tips, limit }: TipsChestProps) {
                       <LaTeXRenderer content={tipItem.tip} />
                     </div>
                   </div>
-                  <p className="text-[11px] text-muted-foreground font-medium">Toca para volver</p>
+                  <p className="text-[11px] text-muted-foreground font-medium">Tocá para volver</p>
                 </Card>
               }
             />
