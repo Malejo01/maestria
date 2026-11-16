@@ -364,6 +364,8 @@ Objetivo: cobrarle a un docente esta semana sin facturación automática. Orden:
   - Para Mauro: no hay link a `/admin/planes` desde ningún lado (tampoco lo hay a `/admin/ai-usage`); se entra por la dirección. Falta generar los diez links en MercadoPago y cargarlos en Vercel.
 - [x] **G8 · Datos de prueba de staging, limpios.** Sofía Ramírez vuelve a lo que dejó la siembra del 16/11 (01:54 UTC): se borraron los **18 intentos** y los **21 "errores que se repiten"** posteriores —los "Captura" de A1, dos explicaciones enteras guardadas como tipo de error por las verificaciones de A2, y las prácticas y la revancha de G0—, con sus respuestas en cascada. También la tarea que mandó Irina en G0 y las invitaciones y el invitado de las pruebas de G1 y G6. Los docentes de staging vuelven al plan de fábrica (nivel 0, prueba sin arrancar), así el aviso de G2 se puede mostrar en una demo. Sin código.
   - Queda: `topic_mastery` de Sofía conserva lo que esas prácticas sumaron (no se puede deshacer sin saber el valor anterior). Si molesta, la salida limpia es volver a correr la siembra.
+- [ ] **G9 · Migración a Claude (C1) — fuera de esta tanda, a propósito.** `ANTHROPIC_API_KEY` ya está en Vercel, pero se hace con Mauro presente y en su propio PR: lo que hace falta saber está en C1, más arriba.
+- [ ] **G10 · Ingreso por email (D1) — sigue bloqueada.** No hay variable de Resend en ningún archivo local ni en el proyecto de Vercel (mirado el 16/11, sólo nombres).
 
 ---
 
