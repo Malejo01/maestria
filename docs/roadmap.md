@@ -152,6 +152,33 @@ Pendiente, a propósito:
 - [ ] **Cerrar el ciclo de "errores que se le repiten"**: la ficha muestra los `student_misconceptions` sin resolver, y sigue sin haber quién los resuelva (ítem 🔺 del backlog). La ficha del docente es el lugar natural para ese botón.
 - [ ] La ficha no se probó con un alumno en dos materias del mismo docente; la regla está en los tests.
 
+### Bloque 4 — Wizard de temario (rama `rediseno/4-wizard-temario`)
+
+Sin migraciones.
+
+- [x] **"Nivel y año" pasó al final** en las rutas de archivo y manual: Materia → Temario → Nivel y año → Cómo das la materia. Con el plan oficial el nivel sigue primero, porque hace falta para filtrar. Al editar se conserva el orden de siempre. La regla está en [lib/wizard-temario.ts](../lib/wizard-temario.ts), con tests; los pasos se identifican por su contenido y el orden es un dato.
+- [x] **El nivel y el año se leen del archivo, y el docente confirma.** La extracción le pide a la IA el nivel y el año **sólo si el documento los dice de forma explícita**; el paso llega prellenado con un aviso ("Esto lo leímos de tu archivo. Confirmalo o cambialo."). Nunca pisa lo que el docente ya eligió.
+- [x] **Se ve qué está pasando durante la lectura.** `/api/teacher/programs/extract` responde, si se le pide con `Accept: application/x-ndjson`, una línea JSON por etapa a medida que ocurren: leyendo, leído, separando unidades y temas, listo. Sin ese encabezado responde como siempre. El componente muestra los renglones uno debajo del otro, sin porcentaje.
+- [x] **Mis materias con los tokens**: las tarjetas perdieron el círculo rojo de borrar, el chip de color por materia y las sombras. Salió de `TODAVIA_VIEJOS`.
+- [x] Vocabulario: "plan oficial de la provincia" en lugar de "diseño curricular", "Cómo das la materia" en lugar de "Ajustes", y la jurisdicción ya no se nombra en el wizard.
+
+Decisiones:
+
+- **Nivel va antes de "Cómo das la materia" y no último de todo**, que es lo que decía el encargo al pie de la letra: ese paso pregunta la carrera sólo si el nivel es Superior.
+- **Sin "encontré 6 unidades" a mitad de camino.** Se probó una pasada rápida sin IA para poder decirlo: daba 4 donde la IA después encontraba 3. Un número que se corrige solo a los cinco segundos enseña a no creerle al siguiente, así que la etapa intermedia no da conteo y el final sí, que es el verdadero.
+- **Los errores de lectura quedan escritos junto al archivo**, no en un aviso que desaparece.
+- **El plan oficial no se ofrece en el paso de temario hasta que haya nivel y año.** Subiendo un archivo, aparece solo en cuanto la IA los lee.
+- Descartado: una barra de porcentaje (no hay forma honesta de calcularla) y convertir la ruta entera a streaming obligatorio (rompía a cualquier otro cliente).
+
+Verificado en browser contra staging con un PDF de ejemplo y la IA real: orden de pasos, los cinco renglones de progreso, 3 unidades y 9 temas cargados, y "5to anio" del archivo llevado a la opción "5to Año".
+
+Pendiente, a propósito:
+
+- [ ] **El interior de los pasos del wizard sigue con la presentación vieja** (1.300 líneas): se cambió el marco, el indicador de pasos, los botones y el vocabulario. Rehacer cada paso por dentro es trabajo aparte.
+- [ ] Las tarjetas de Mis materias siguen siendo un `Card` con `onClick` y doble click para el detalle: no se alcanzan con Tab. El lápiz y el tacho sí son botones.
+- [ ] No hay capturas del wizard: el script de capturas no maneja diálogos.
+- [ ] No se probó con un Word ni con una foto, sólo con PDF.
+
 ---
 
 ## ⏸️ PENDIENTE ESPERANDO PRESUPUESTO
