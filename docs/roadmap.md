@@ -179,6 +179,33 @@ Pendiente, a propósito:
 - [ ] No hay capturas del wizard: el script de capturas no maneja diálogos.
 - [ ] No se probó con un Word ni con una foto, sólo con PDF.
 
+### Bloque 5 — Compartir tarea (rama `rediseno/5-compartir-tarea`)
+
+Sin migraciones.
+
+- [x] **Mandar y compartir, en dos pasos del mismo diálogo** ([components/share-quiz-dialog.tsx](../components/share-quiz-dialog.tsx)). Paso 1: un solo botón, "Mandar la tarea"; las fechas y el límite de intentos están plegados porque casi nunca hacen falta. Paso 2, la pantalla de compartir: el link del grupo, grande, con su botón de copiar; un mensaje ya escrito para WhatsApp, editable, con "Copiar el mensaje" y "Abrir WhatsApp"; y el recordatorio de que el alumno entra con su nombre, sin cuenta.
+- [x] **El grupo aparece solo.** Si la materia todavía no tiene grupo, se crea al abrir el diálogo. Se fue el callejón sin salida "Todavía no tenés un aula… Ir a Aulas".
+- [x] **El mensaje no inventa** ([lib/compartir-tarea.ts](../lib/compartir-tarea.ts), con tests): no dice "para esta semana" si no hay fecha, y sólo saluda por el nombre si en esa materia hay exactamente un alumno. Nombra el tema si la tarea tiene uno o dos; con más, la materia.
+- [x] **Mis tareas con los tokens**: una acción principal por tarea ("Mandar a mi grupo") y el resto secundarias. Borrar pide confirmación en el lugar; antes borraba al primer click. Salió de `TODAVIA_VIEJOS`, que quedó vacío.
+- [x] Vocabulario: tarea, grupo, Desde / Hasta.
+
+Decisiones:
+
+- **Las fechas van plegadas**, no afuera: la decisión de esta pantalla es mandar. El encargo pedía "una decisión por pantalla".
+- **El mensaje es editable**: el docente conoce a su alumno mejor que una plantilla.
+- **"Abrir WhatsApp" usa `wa.me/?text=`**, que deja elegir el destinatario. No se pide ni se guarda ningún teléfono.
+- **El estado vacío de Mis tareas espera a que termine la primera lectura.** Mostraba "Todavía no armaste ninguna tarea" durante el instante de carga: un estado que todavía no se sabe, dibujado como un hecho. Apareció mirando una captura.
+- Descartado: una página aparte para compartir (se pierde el contexto de la tarea) y mandar el mensaje desde la app (necesita teléfonos y un proveedor).
+
+Verificado en browser contra staging: se mandó una tarea real al grupo de Lengua, la pantalla de compartir mostró el link y el mensaje, y la tarjeta de primeros pasos pasó a "¡Listo! Ya mandaste tu primera tarea." (4 de 4).
+
+Pendiente, a propósito:
+
+- [ ] **"Mis grupos"** (la gestión vieja por grupo, plegada en Mis alumnos) sigue existiendo: es donde se ve quién entregó cada tarea, se cierra un grupo o se regenera su código. Mandar tareas ya no pasa por ahí.
+- [ ] El paso de compartir no se puede reabrir para una tarea ya mandada sin volver a mandarla (lo cual es inofensivo: la asignación se actualiza, no se duplica).
+- [ ] Sin capturas del diálogo: el script no maneja diálogos. Hay capturas de Mis tareas.
+- [ ] No se probó con fecha "Hasta" en pantalla; el texto con fecha está cubierto por tests.
+
 ---
 
 ## ⏸️ PENDIENTE ESPERANDO PRESUPUESTO
