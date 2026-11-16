@@ -367,6 +367,7 @@ export const FICHA_ALUMNO = {
     resultado: 'Resultado',
     practicaLibre: 'Práctica libre',
     sinCalificar: (n: number) => `${n} sin calificar`,
+    masTemas: (n: number) => (n === 1 ? 'y 1 tema más' : `y ${n} temas más`),
   },
 } as const
 

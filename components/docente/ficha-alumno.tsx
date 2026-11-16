@@ -11,7 +11,7 @@ import { CargaFallida } from '@/components/carga-fallida'
 import { Boton } from '@/components/sistema/boton'
 import { ChipTema } from '@/components/sistema/chip-tema'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
-import { haceCuanto, type EstadoTema, type TemaDeAlumno } from '@/lib/alumnos-docente'
+import { haceCuanto, resumirTemas, type EstadoTema, type TemaDeAlumno } from '@/lib/alumnos-docente'
 import type { FichaAlumno as Ficha } from '@/lib/alumnos-docente-server'
 import { CHIP_TEMA, FICHA_ALUMNO as T } from '@/lib/textos'
 import { cn } from '@/lib/utils'
@@ -156,7 +156,9 @@ export function FichaAlumno({ userId }: { userId: string }) {
                       {new Date(intento.completadoEl).toLocaleDateString('es-AR', { day: 'numeric', month: 'numeric' })}
                     </td>
                     <td className="py-3 pr-3 align-top text-texto">{intento.tarea ?? T.planilla.practicaLibre}</td>
-                    <td className="py-3 pr-3 align-top text-texto-suave">{intento.temas.join(', ')}</td>
+                    <td className="py-3 pr-3 align-top text-texto-suave">
+                      <TemasDeIntento temas={intento.temas} />
+                    </td>
                     <td className="whitespace-nowrap py-3 align-top tabular-nums text-texto">
                       {T.temas.aciertos(intento.correctas, intento.calificadas)}
                       {intento.sinCalificar > 0 && (
@@ -171,6 +173,25 @@ export function FichaAlumno({ userId }: { userId: string }) {
         )}
       </section>
     </div>
+  )
+}
+
+/**
+ * Los temas de una práctica, en la celda de la planilla: los primeros con su
+ * nombre corto y el resto contado. El detalle entero queda en `title` (mouse)
+ * y en el texto para lector de pantalla; no se pierde, sólo no ocupa la fila.
+ */
+function TemasDeIntento({ temas }: { temas: string[] }) {
+  const { visibles, resto, completo } = resumirTemas(temas)
+  if (visibles.length === 0) return null
+  return (
+    <span title={completo}>
+      <span aria-hidden="true">
+        {visibles.join(' · ')}
+        {resto > 0 && <span className="whitespace-nowrap"> {T.planilla.masTemas(resto)}</span>}
+      </span>
+      <span className="sr-only">{completo}</span>
+    </span>
   )
 }
 
@@ -208,12 +229,17 @@ function GraficoDeTemas({ temas }: { temas: TemaDeAlumno[] }) {
         const porcentaje = Math.round(proporcion(tema) * 100)
         return (
           <li key={tema.tema}>
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            {/* En celular el resultado baja a su propio renglón; desde `sm` va
+                a la derecha y NO se achica: el nombre largo es el que cede, a
+                dos renglones como mucho, con el nombre entero en `title`. */}
+            <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 sm:flex-nowrap">
               <span className="flex min-w-0 items-start gap-2">
-                <span className="cuerpo-s min-w-0 font-semibold text-texto">{tema.tema}</span>
+                <span className="cuerpo-s line-clamp-2 min-w-0 font-semibold text-texto" title={tema.tema}>
+                  {tema.tema}
+                </span>
                 <ChipTema tema={CHIP_TEMA[tema.estado]} estado={tema.estado} className="shrink-0" />
               </span>
-              <span className="nota tabular-nums text-texto-suave">
+              <span className="nota shrink-0 whitespace-nowrap tabular-nums text-texto-suave sm:pt-0.5">
                 {tema.calificadas > 0
                   ? `${T.temas.porcentaje(porcentaje)} · ${T.temas.aciertos(tema.correctas, tema.calificadas)}`
                   : T.temas.aciertos(0, 0)}
