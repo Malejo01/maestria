@@ -12,6 +12,7 @@ import { TeacherOnboardingModal } from '@/components/teacher-onboarding-modal'
 import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import type { TeacherProgram } from '@/lib/types'
 import { ASSESSMENT_STYLE_LABELS, type PanelDocente } from '@/components/docente/use-panel-docente'
+import { EsqueletoTarjetasDeMateria } from '@/components/docente/esqueletos'
 
 /**
  * "Mis materias": el listado de materias del docente, el armado de una tarea
@@ -49,6 +50,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
     showFilters,
     setShowFilters,
     teacherPrograms,
+    materiasLeidas,
     teacherProgramFilters,
     teacherSection,
     addTeacherProgram,
@@ -224,12 +226,20 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
                   Ayuda para crear
                 </Button>
               </div>
-              {teacherPrograms.length === 0 && (
-                <p className="text-sm text-muted-foreground">Todavia no cargaste materias propias.</p>
+              {/* "Todavía no cargaste materias" es un hecho: no se dice hasta
+                  que la primera lectura terminó. Mientras tanto, el esqueleto. */}
+              {!materiasLeidas && teacherPrograms.length === 0 ? (
+                <EsqueletoTarjetasDeMateria />
+              ) : (
+                <>
+                  {teacherPrograms.length === 0 && (
+                    <p className="text-sm text-muted-foreground">Todavia no cargaste materias propias.</p>
+                  )}
+                  <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+                    {teacherPrograms.map((program) => renderTeacherProgramCard(program, { showCreateQuizAction: true }))}
+                  </div>
+                </>
               )}
-              <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
-                {teacherPrograms.map((program) => renderTeacherProgramCard(program, { showCreateQuizAction: true }))}
-              </div>
             </div>
           </Card>
         )}

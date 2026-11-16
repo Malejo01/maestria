@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { X } from 'lucide-react'
 import { CargaFallida } from '@/components/carga-fallida'
 import { AgregarAlumno } from '@/components/docente/agregar-alumno'
+import { EsqueletoMisAlumnos } from '@/components/docente/esqueletos'
 import { Aparecer } from '@/components/sistema/aparecer'
 import { Boton } from '@/components/sistema/boton'
 import { ChipTema } from '@/components/sistema/chip-tema'
@@ -64,7 +65,9 @@ export function MisAlumnos({
   }
 
   if (error && !datos) return <CargaFallida que={T.queCargamos} detalle={error} onReintentar={leer} />
-  if (!datos || !ahora) return null
+  // Antes devolvía null: la pantalla de inicio del docente quedaba en blanco
+  // mientras respondía el servidor.
+  if (!datos || !ahora) return <EsqueletoMisAlumnos />
 
   const { alumnos, sugerencia, resumen, materias } = datos
 

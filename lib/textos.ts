@@ -158,6 +158,12 @@ export const LEGALES = {
 export const PANEL_DOCENTE = {
   /** Sub-entradas de "Mis tareas" hasta que el bloque 3 parta el panel. */
   tareas: { guardadas: 'Tareas guardadas', armar: 'Armar tarea' },
+  /** Lo que escucha un lector de pantalla mientras se ve el esqueleto. */
+  cargando: {
+    alumnos: 'Cargando tus alumnos…',
+    materias: 'Cargando tus materias…',
+    tareas: 'Cargando tus tareas…',
+  },
 } as const
 
 export const ONBOARDING_DOCENTE = {
@@ -439,6 +445,9 @@ export const MIS_TAREAS = {
   todas: 'Todas las materias',
   guardadas: (n: number) => `Guardadas (${n})`,
   hechas: (n: number) => `Las que probé yo (${n})`,
+  /** Mientras se lee: sin número. "(0)" sería afirmar algo que todavía no se sabe. */
+  guardadasSinContar: 'Guardadas',
+  hechasSinContar: 'Las que probé yo',
   sinHechas: 'Todavía no probaste ninguna.',
   vacio: {
     titulo: 'Todavía no armaste ninguna tarea',
