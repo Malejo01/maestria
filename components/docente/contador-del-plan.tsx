@@ -7,14 +7,30 @@ const T = PLAN.contador
 
 const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })
 
-/** El texto del contador, o null si no corresponde mostrar nada. */
+/**
+ * El texto del contador, o null si no corresponde mostrar nada.
+ *
+ *   gratis   "2 de 2 alumnos · plan gratis"
+ *   prueba   "6 de 10 alumnos · prueba, quedan 18 días"
+ *   activo   "12 de 15 alumnos · tu plan vence el 15/12"
+ *   vencido  "12 de 15 alumnos · tu plan venció el 15/12"
+ */
 export function textoDelContador(datos: PlanDelPanel | null): string | null {
   const plan = datos?.plan
   if (!plan || plan.estado === 'exento' || plan.cupo === null) return null
   const alumnos = T.alumnos(plan.alumnos, plan.cupo)
+  if (plan.estado === 'gratis') return `${alumnos} · ${T.gratis}`
+  if (plan.estado === 'prueba') return `${alumnos} · ${T.prueba(plan.venceEl ? plan.diasRestantes : null)}`
+  if (plan.estado === 'vencido') {
+    // En solo lectura el cupo del plan que terminó ya no rige ("3 de 10"
+    // confunde): sólo cuántos tiene y cuándo terminó.
+    const cuantos = T.soloAlumnos(plan.alumnos)
+    if (!plan.venceEl) return cuantos
+    const fecha = fechaCorta(plan.venceEl)
+    return `${cuantos} · ${plan.nivel === 0 ? T.pruebaTermino(fecha) : T.vencio(fecha)}`
+  }
   if (!plan.venceEl) return alumnos
-  const fecha = fechaCorta(plan.venceEl)
-  return `${alumnos} · ${plan.estado === 'vencido' ? T.vencio(fecha) : plan.nivel === 0 ? T.pruebaVence(fecha) : T.vence(fecha)}`
+  return `${alumnos} · ${T.vence(fechaCorta(plan.venceEl))}`
 }
 
 /**

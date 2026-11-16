@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  contarEnVentana,
   cuerpoDeBloqueo,
+  cuestionariosGratisPorMes,
+  cupoGratis,
   cupoDeNivel,
   diasRestantes,
   estadoDelPlan,
@@ -13,6 +16,7 @@ import {
   precioMensual,
   precioPase,
   puedeGenerar,
+  puedeQuitarAlumno,
   puedeSumarAlumno,
   sumarDias,
   type DatosDelPlan,
@@ -35,6 +39,8 @@ const datos = (parcial: Partial<DatosDelPlan>): DatosDelPlan => ({
   pruebaIniciadaEl: null,
   esExento: false,
   ahora: AHORA,
+  // Más que el cupo gratis: así un vencimiento es solo lectura salvo que el test diga otra cosa.
+  alumnosActuales: 5,
   ...parcial,
 })
 
@@ -192,6 +198,9 @@ describe('cuerpoDeBloqueo', () => {
     venceEl: null,
     diasRestantes: null,
     avisoDePruebaPendiente: false,
+    cupoGratis: 2,
+    topeCuestionarios: 20,
+    cuestionarios: null,
   }
 
   it('sin cupo: ofrece el nivel que alcanza para uno más, con los dos montos', () => {
@@ -214,5 +223,116 @@ describe('cuerpoDeBloqueo', () => {
     expect(leerBloqueo(cuerpoDeBloqueo(resumen, 'sin_cupo', ENV))?.plan.motivo).toBe('sin_cupo')
     expect(leerBloqueo({ error: 'otra cosa' })).toBeNull()
     expect(leerBloqueo(null)).toBeNull()
+  })
+
+  it('tope de cuestionarios del gratis: ofrece 1 bloque y dice el tope', () => {
+    const cuerpo = cuerpoDeBloqueo(
+      { ...resumen, estado: 'gratis', nivel: 0, cupo: 2, alumnos: 2, cuestionarios: 20 },
+      'tope_cuestionarios',
+      ENV,
+    )
+    expect(cuerpo.plan.siguiente?.nivel).toBe(1)
+    expect(cuerpo.error).toMatch(/20 cuestionarios/)
+    expect(leerBloqueo(cuerpo)?.plan.motivo).toBe('tope_cuestionarios')
+  })
+
+  it('gratis lleno: para el 3.º ofrece 1 bloque (5 en total, no 2 + 5)', () => {
+    const cuerpo = cuerpoDeBloqueo({ ...resumen, estado: 'gratis', nivel: 0, cupo: 2, alumnos: 2 }, 'sin_cupo', ENV)
+    expect(cuerpo.plan.siguiente).toMatchObject({ nivel: 1, cupo: 5 })
+  })
+})
+
+// ─── H7 · Plan gratis ────────────────────────────────────────────────────────
+
+describe('plan gratis', () => {
+  const vencida = { nivel: 0, pruebaIniciadaEl: sumarDias(AHORA, -31) }
+  const pagoVencido = { nivel: 2, venceEl: sumarDias(AHORA, -1) }
+
+  it('prueba vencida con 2 alumnos: gratis; con 3, vencido', () => {
+    expect(estadoDelPlan(datos({ ...vencida, alumnosActuales: 2 }), {})).toBe('gratis')
+    expect(estadoDelPlan(datos({ ...vencida, alumnosActuales: 3 }), {})).toBe('vencido')
+  })
+
+  it('plan pago vencido con 2 alumnos: gratis', () => {
+    expect(estadoDelPlan(datos({ ...pagoVencido, alumnosActuales: 2 }), {})).toBe('gratis')
+  })
+
+  it('con la prueba o el plan vigentes, los alumnos no cambian nada', () => {
+    expect(estadoDelPlan(datos({ nivel: 0, pruebaIniciadaEl: sumarDias(AHORA, -3), alumnosActuales: 1 }), {})).toBe('prueba')
+    expect(estadoDelPlan(datos({ nivel: 2, venceEl: sumarDias(AHORA, 3), alumnosActuales: 1 }), {})).toBe('activo')
+  })
+
+  it('el gratis no vence: sin días restantes', () => {
+    expect(diasRestantes(datos({ ...vencida, alumnosActuales: 2 }), {})).toBeNull()
+  })
+
+  it('en gratis se suma el 2.º alumno; el 3.º se frena', () => {
+    expect(puedeSumarAlumno('gratis', 1, 0, {})).toBe(true)
+    expect(puedeSumarAlumno('gratis', 2, 0, {})).toBe(false)
+    // Venía de un plan pago: el cupo es el del gratis, no el del nivel que tenía.
+    expect(puedeSumarAlumno('gratis', 2, 4, {})).toBe(false)
+  })
+
+  it('en vencido con 3 alumnos, quitar uno lo devuelve al gratis', () => {
+    expect(estadoDelPlan(datos({ ...vencida, alumnosActuales: 3 }), {})).toBe('vencido')
+    expect(puedeQuitarAlumno(true)).toBe(true)
+    expect(estadoDelPlan(datos({ ...vencida, alumnosActuales: 2 }), {})).toBe('gratis')
+  })
+
+  it('quitar alumnos: en cualquier estado, salvo que el grupo no sea suyo', () => {
+    expect(puedeQuitarAlumno(true)).toBe(true)
+    expect(puedeQuitarAlumno(false)).toBe(false)
+  })
+
+  it('en gratis el cuestionario 20 se genera y el 21 se frena', () => {
+    // Llevando 19 generados, el que pide es el 20: pasa. Con 20, el 21 no.
+    expect(puedeGenerar('gratis', 19, {})).toBe(true)
+    expect(puedeGenerar('gratis', 20, {})).toBe(false)
+  })
+
+  it('crear una materia o un grupo en el gratis no consume el tope', () => {
+    expect(puedeGenerar('gratis', undefined, {})).toBe(true)
+  })
+
+  it('el tope de cuestionarios es sólo del gratis', () => {
+    expect(puedeGenerar('prueba', 500, {})).toBe(true)
+    expect(puedeGenerar('activo', 500, {})).toBe(true)
+    expect(puedeGenerar('vencido', 0, {})).toBe(false)
+  })
+
+  it('la ventana: uno de hace 31 días no cuenta; uno de hace 29, sí', () => {
+    const fechas = [sumarDias(AHORA, -31), sumarDias(AHORA, -29), sumarDias(AHORA, -1), AHORA.toISOString()]
+    expect(contarEnVentana(fechas, AHORA)).toBe(3)
+    expect(contarEnVentana([sumarDias(AHORA, -30)], AHORA)).toBe(0)
+    expect(contarEnVentana(['basura'], AHORA)).toBe(0)
+  })
+
+  it('las variables: 2 y 20 si faltan o traen basura', () => {
+    expect(cupoGratis({})).toBe(2)
+    expect(cuestionariosGratisPorMes({})).toBe(20)
+    for (const basura of ['', 'dos', '2.5', '-1', '1e3', ' ']) {
+      expect(cupoGratis({ MAESTRIA_CUPO_GRATIS: basura })).toBe(2)
+      expect(cuestionariosGratisPorMes({ MAESTRIA_GRATIS_CUESTIONARIOS_MES: basura })).toBe(20)
+    }
+    expect(cupoGratis({ MAESTRIA_CUPO_GRATIS: ' 3 ' })).toBe(3)
+    expect(cuestionariosGratisPorMes({ MAESTRIA_GRATIS_CUESTIONARIOS_MES: '40' })).toBe(40)
+  })
+
+  it('el cupo gratis sale de la variable', () => {
+    expect(estadoDelPlan(datos({ ...vencida, alumnosActuales: 3 }), { MAESTRIA_CUPO_GRATIS: '3' })).toBe('gratis')
+  })
+
+  it('la cuenta exenta nunca es gratis ni vencido', () => {
+    for (const alumnos of [0, 2, 3, 500]) {
+      expect(estadoDelPlan(datos({ ...vencida, esExento: true, alumnosActuales: alumnos }), {})).toBe('exento')
+      expect(estadoDelPlan(datos({ ...pagoVencido, esExento: true, alumnosActuales: alumnos }), {})).toBe('exento')
+    }
+  })
+
+  it('sin la columna del plan: exento, como antes (la válvula no se toca)', () => {
+    for (const alumnos of [0, 2, 3, 500]) {
+      expect(estadoDelPlan(datos({ nivel: undefined, venceEl: '2020-01-01', alumnosActuales: alumnos }), {})).toBe('exento')
+      expect(estadoDelPlan(datos({ nivel: null, alumnosActuales: alumnos }), {})).toBe('exento')
+    }
   })
 })

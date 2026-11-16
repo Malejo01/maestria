@@ -594,37 +594,64 @@ export const PLAN = {
   limite: {
     titulo: (alumnos: number, cupo: number) => `Tenés ${alumnos} de ${cupo} alumnos`,
     detalle: (nivel: number) =>
-      `Para sumar a uno más pasá a ${nivel === 5 ? 'el tope, de hasta 150 alumnos' : `${nivel} bloques`}. Pagás una clase por cada cinco alumnos que seguís.`,
-    vencido: 'Tu plan venció, así que por ahora no se pueden sumar alumnos.',
+      `Para sumar a uno más pasá a ${nivel === 5 ? 'el tope, de hasta 150 alumnos' : nombreDeNivel(nivel)}. Pagás una clase por cada cinco alumnos que seguís.`,
+    /** H7: el docente en el plan gratis quiere sumar al que no entra. */
+    detalleGratis: (cupo: number, nivel: number, cupoDelNivel: number) =>
+      `El plan gratis llega hasta ${cupo} alumnos. Para sumar a uno más pasá a ${nombreDeNivel(nivel)}: son ${cupoDelNivel} alumnos en total, no se suman a los ${cupo} gratis.`,
+    /** H7: el tope de cuestionarios del gratis. */
+    tituloCuestionarios: (generados: number, tope: number) => `Generaste ${generados} de ${tope} cuestionarios`,
+    detalleCuestionarios: (tope: number, nivel: number | null) =>
+      `El plan gratis genera hasta ${tope} cuestionarios cada 30 días.${nivel === null ? '' : ` Con ${nombreDeNivel(nivel)} generás sin ese tope.`}`,
+    vencido: (cupoGratis: number) =>
+      `Tu plan venció, así que por ahora no se puede generar ni sumar alumnos. Con ${cupoGratis} alumnos o menos, seguís gratis.`,
     sinNivel: 'Llegaste al tope de 150 alumnos.',
     volver: 'Volver',
   },
   vencimiento: {
     banner: (dias: number, esPrueba: boolean) =>
-      `${esPrueba ? 'Tu prueba' : 'Tu plan'} termina ${dias <= 1 ? 'mañana' : `en ${dias} días`}.`,
-    bannerDetalle: 'Después vas a poder ver todo, pero no generar ni sumar alumnos.',
+      esPrueba
+        ? `Te ${dias <= 1 ? 'queda 1 día' : `quedan ${dias} días`} de prueba.`
+        : `Tu plan termina ${dias <= 1 ? 'mañana' : `en ${dias} días`}.`,
+    /** H7: lo que pasa después depende de cuántos alumnos tiene. */
+    despuesGratis: (cupo: number) => `Después seguís gratis con hasta ${cupo} alumnos.`,
+    despuesPlan: (alumnos: number, esPrueba: boolean) =>
+      `Después, con ${alumnos} alumnos, ${esPrueba ? 'necesitás un plan' : 'necesitás renovarlo'}.`,
+    mirarPrecios: 'Mirá los precios.',
     verPlanes: 'Ver planes',
     planesTitulo: 'Elegí cómo seguir',
     tituloPrueba: 'Terminó tu prueba de 30 días',
     tituloPlan: 'Tu plan venció',
     detalle: (fecha: string) => `Venció el ${fecha}. Nada se borró.`,
+    /** H7: por qué está en solo lectura y cómo volver al gratis sin pagar. */
+    detalleGratis: (alumnos: number, cupo: number) =>
+      `Tenés ${alumnos} alumnos y el plan gratis llega hasta ${cupo}. Elegí un plan, o quitá alumnos hasta quedar en ${cupo} y seguís gratis.`,
     podes: 'Podés seguir',
-    puede: [
+    puede: (cupo: number) => [
       'Viendo tus materias, tus grupos y tus tareas.',
       'Viendo cómo le va a cada alumno.',
       'Tus alumnos responden las tareas que ya les mandaste.',
+      `Quitando alumnos: con ${cupo} o menos, volvés al plan gratis.`,
     ],
-    noPodes: 'Para esto hace falta renovar',
+    noPodes: 'Para esto hace falta un plan',
     noPuede: ['Generar cuestionarios.', 'Crear materias o grupos.', 'Sumar alumnos.'],
   },
   /** G6: el contador discreto de arriba del panel. */
   contador: {
     alumnos: (alumnos: number, cupo: number) => `${alumnos} de ${cupo} alumnos`,
+    gratis: 'plan gratis',
+    prueba: (dias: number | null) =>
+      dias === null ? 'prueba' : `prueba, ${dias <= 1 ? 'queda 1 día' : `quedan ${dias} días`}`,
     vence: (fecha: string) => `tu plan vence el ${fecha}`,
-    pruebaVence: (fecha: string) => `tu prueba termina el ${fecha}`,
     vencio: (fecha: string) => `tu plan venció el ${fecha}`,
+    pruebaTermino: (fecha: string) => `tu prueba terminó el ${fecha}`,
+    soloAlumnos: (alumnos: number) => (alumnos === 1 ? '1 alumno' : `${alumnos} alumnos`),
   },
 } as const
+
+/** "1 bloque", "3 bloques", "el tope". */
+function nombreDeNivel(nivel: number): string {
+  return nivel === 5 ? 'el tope' : nivel === 1 ? '1 bloque' : `${nivel} bloques`
+}
 
 /** G5: /precios. Lo que un docente lee en el celular cuando Mauro le pasa el link. */
 export const PRECIOS = {

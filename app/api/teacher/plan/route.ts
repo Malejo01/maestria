@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { captureRouteFailure } from '@/lib/observability'
-import { opcionDePago, nivelQueAlcanza } from '@/lib/planes'
+import {
+  cuestionariosGratisPorMes,
+  cupoGratis,
+  nivelQueAlcanza,
+  opcionDePago,
+  type ResumenDelPlan,
+} from '@/lib/planes'
 import { iniciarPrueba, resumenDelPlan } from '@/lib/planes-server'
 
 export const dynamic = 'force-dynamic'
@@ -35,7 +41,10 @@ export async function GET() {
         venceEl: null,
         diasRestantes: null,
         avisoDePruebaPendiente: false,
-      },
+        cupoGratis: cupoGratis(),
+        topeCuestionarios: cuestionariosGratisPorMes(),
+        cuestionarios: null,
+      } satisfies ResumenDelPlan,
       renovar: null,
     })
   }

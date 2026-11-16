@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   // se los toca: no se castiga al alumno por algo del docente.
   const viewer = await getViewer()
   if (viewer && !viewer.isGuest && viewer.role === 'DOCENTE') {
-    const bloqueo = await bloqueoParaGenerar(viewer.id, viewer.email, { questions: [] })
+    const bloqueo = await bloqueoParaGenerar(viewer.id, viewer.email, { questions: [] }, { cuestionario: true })
     if (bloqueo) return bloqueo
   }
 

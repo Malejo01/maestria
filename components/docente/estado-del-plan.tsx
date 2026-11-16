@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Clock, Check, Lock } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Boton } from '@/components/sistema/boton'
@@ -35,32 +36,51 @@ export function EstadoDelPlan({ datos }: { datos: PlanDelPanel | null }) {
   if (modo === 'nada' || !datos) return null
   const { plan, renovar } = datos
   const esPrueba = plan.nivel === 0
+  // H7: con el cupo gratis o menos, al terminar sigue gratis y no hace falta
+  // vender nada; con más, necesita un plan.
+  const entraEnGratis = plan.alumnos <= plan.cupoGratis
 
   if (modo === 'por-vencer') {
+    const titulo = T.banner(plan.diasRestantes ?? 0, esPrueba)
+    const despues = entraEnGratis ? T.despuesGratis(plan.cupoGratis) : T.despuesPlan(plan.alumnos, esPrueba)
     return (
       <section
-        aria-label={T.banner(plan.diasRestantes ?? 0, esPrueba)}
+        aria-label={titulo}
         className="flex flex-col gap-3 rounded-lg border border-flojo bg-flojo-fondo p-4 sm:flex-row sm:items-center sm:justify-between"
       >
         <div className="flex gap-3">
           <Clock className="mt-0.5 h-5 w-5 shrink-0 text-flojo" aria-hidden="true" strokeWidth={TRAZO_ICONO} />
           <div>
-            <p className="cuerpo-s font-bold text-texto">{T.banner(plan.diasRestantes ?? 0, esPrueba)}</p>
-            <p className="nota text-texto-suave">{T.bannerDetalle}</p>
+            <p className="cuerpo-s font-bold text-texto">{titulo}</p>
+            <p className="nota text-texto-suave">
+              {despues}
+              {!entraEnGratis && (
+                <>
+                  {' '}
+                  <Link href="/precios" className="font-semibold text-texto underline underline-offset-2">
+                    {T.mirarPrecios}
+                  </Link>
+                </>
+              )}
+            </p>
           </div>
         </div>
-        <Boton variante="secundario" onClick={() => setPlanesAbiertos(true)} className="shrink-0">
-          {T.verPlanes}
-        </Boton>
-        <Dialog open={planesAbiertos} onOpenChange={setPlanesAbiertos}>
-          <DialogContent className="rounded-lg border-borde sm:max-w-[560px]">
-            <DialogTitle className="titulo-m text-texto">{T.planesTitulo}</DialogTitle>
-            <DialogDescription className="cuerpo-s text-texto-suave">
-              {T.banner(plan.diasRestantes ?? 0, esPrueba)} {T.bannerDetalle}
-            </DialogDescription>
-            <OpcionesDePago opcion={renovar} />
-          </DialogContent>
-        </Dialog>
+        {!entraEnGratis && (
+          <>
+            <Boton variante="secundario" onClick={() => setPlanesAbiertos(true)} className="shrink-0">
+              {T.verPlanes}
+            </Boton>
+            <Dialog open={planesAbiertos} onOpenChange={setPlanesAbiertos}>
+              <DialogContent className="rounded-lg border-borde sm:max-w-[560px]">
+                <DialogTitle className="titulo-m text-texto">{T.planesTitulo}</DialogTitle>
+                <DialogDescription className="cuerpo-s text-texto-suave">
+                  {titulo} {despues}
+                </DialogDescription>
+                <OpcionesDePago opcion={renovar} />
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
       </section>
     )
   }
@@ -75,9 +95,10 @@ export function EstadoDelPlan({ datos }: { datos: PlanDelPanel | null }) {
           {esPrueba ? T.tituloPrueba : T.tituloPlan}
         </h2>
         {plan.venceEl && <p className="cuerpo-s text-texto-suave">{T.detalle(fechaCorta(plan.venceEl))}</p>}
+        <p className="cuerpo-s text-texto">{T.detalleGratis(plan.alumnos, plan.cupoGratis)}</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Lista titulo={T.podes} items={T.puede} icono="si" />
+        <Lista titulo={T.podes} items={T.puede(plan.cupoGratis)} icono="si" />
         <Lista titulo={T.noPodes} items={T.noPuede} icono="no" />
       </div>
       <OpcionesDePago opcion={renovar} />

@@ -26,9 +26,19 @@
  * producto no se cierra por un dato que falta. Eso es lo que permite que este
  * código llegue a `main` antes de que la 026 corra en producción; correrla es
  * lo que enciende el cobro.
+ *
+ * EL PLAN GRATIS (tanda H, 16/11/2026)
+ *
+ * No es un nivel guardado: es un estado DERIVADO. Cuando termina la prueba o
+ * vence un plan pago, el docente con `cupoGratis()` alumnos o menos sigue
+ * gratis y sin vencimiento; con más, queda en solo lectura (`vencido`). Si
+ * desde ahí quita alumnos hasta entrar en el cupo, vuelve solo al gratis. En
+ * el gratis se hace todo, con dos topes: los alumnos y los cuestionarios
+ * generados en los últimos 30 días corridos. Los 2 gratis no se suman a los
+ * bloques: 1 bloque son 5 alumnos en total.
  */
 
-export type EstadoPlan = 'exento' | 'prueba' | 'activo' | 'vencido'
+export type EstadoPlan = 'exento' | 'prueba' | 'activo' | 'gratis' | 'vencido'
 export type NivelPlan = 0 | 1 | 2 | 3 | 4 | 5
 export type TipoDePago = 'mensual' | 'pase'
 
@@ -139,6 +149,42 @@ export function nivelQueAlcanza(alumnos: number): NivelPlan | null {
   return null
 }
 
+// ─── Plan gratis ─────────────────────────────────────────────────────────────
+
+export const CUPO_GRATIS_POR_DEFECTO = 2
+export const CUESTIONARIOS_GRATIS_POR_DEFECTO = 20
+/** La ventana del tope de cuestionarios del gratis: 30 días corridos, no el mes calendario. */
+export const DIAS_VENTANA_GRATIS = 30
+
+function enteroDe(env: Entorno, clave: string, porDefecto: number): number {
+  const crudo = env[clave]?.trim()
+  if (!crudo || !/^\d+$/.test(crudo)) return porDefecto
+  return Number(crudo)
+}
+
+/** Cuántos alumnos entran en el plan gratis (`MAESTRIA_CUPO_GRATIS`, si no 2). */
+export function cupoGratis(env: Entorno = process.env): number {
+  return enteroDe(env, 'MAESTRIA_CUPO_GRATIS', CUPO_GRATIS_POR_DEFECTO)
+}
+
+/** Cuántos cuestionarios genera el plan gratis cada 30 días (`MAESTRIA_GRATIS_CUESTIONARIOS_MES`, si no 20). */
+export function cuestionariosGratisPorMes(env: Entorno = process.env): number {
+  return enteroDe(env, 'MAESTRIA_GRATIS_CUESTIONARIOS_MES', CUESTIONARIOS_GRATIS_POR_DEFECTO)
+}
+
+/**
+ * Cuántas de esas fechas caen en la ventana del gratis (los últimos 30 días
+ * hasta `ahora`). La consulta de lib/planes-server.ts cuenta con la misma
+ * ventana en SQL; esto la deja escrita y probada en un solo lugar.
+ */
+export function contarEnVentana(fechas: readonly (Date | string)[], ahora: Date): number {
+  const desde = sumarDias(ahora, -DIAS_VENTANA_GRATIS).getTime()
+  return fechas.filter((valor) => {
+    const t = (valor instanceof Date ? valor : new Date(valor)).getTime()
+    return Number.isFinite(t) && t > desde && t <= ahora.getTime()
+  }).length
+}
+
 // ─── Estado ──────────────────────────────────────────────────────────────────
 
 export interface DatosDelPlan {
@@ -148,6 +194,11 @@ export interface DatosDelPlan {
   pruebaIniciadaEl: Date | string | null | undefined
   esExento: boolean
   ahora: Date
+  /**
+   * Los alumnos que ocupan lugar hoy (como en G1). Sólo decide algo cuando la
+   * prueba o el plan ya terminaron: gratis o solo lectura.
+   */
+  alumnosActuales: number
 }
 
 function aFecha(valor: Date | string | null | undefined): Date | null {
@@ -177,39 +228,87 @@ export function venceElEfectivo(datos: DatosDelPlan): Date | null {
   return null
 }
 
-export function estadoDelPlan(datos: DatosDelPlan): EstadoPlan {
+/**
+ * Si la prueba o el plan pago ya terminaron (y entonces lo que decide es el
+ * plan gratis). Falso para el exento, con la válvula, o sin fecha.
+ */
+export function terminoElPeriodo(datos: DatosDelPlan): boolean {
+  if (datos.esExento || normalizarNivel(datos.nivel) === null) return false
+  const vence = venceElEfectivo(datos)
+  return vence !== null && datos.ahora.getTime() >= vence.getTime()
+}
+
+/**
+ * Orden: exento → plan pago vigente (`activo`) → prueba vigente (`prueba`) →
+ * con `cupoGratis` alumnos o menos, `gratis`; si no, `vencido`.
+ */
+export function estadoDelPlan(datos: DatosDelPlan, env: Entorno = process.env): EstadoPlan {
   if (datos.esExento) return 'exento'
   const nivel = normalizarNivel(datos.nivel)
   // La válvula: sin un nivel que se pueda leer, el docente no se toca.
   if (nivel === null) return 'exento'
 
-  const vence = venceElEfectivo(datos)
   // Un plan sin fecha no vence: una prueba que todavía no arrancó (el docente
   // no vio el aviso), o un nivel pago que se acreditó sin vencimiento.
-  if (vence === null) return nivel === 0 ? 'prueba' : 'activo'
-  if (datos.ahora.getTime() >= vence.getTime()) return 'vencido'
-  return nivel === 0 ? 'prueba' : 'activo'
+  if (!terminoElPeriodo(datos)) return nivel === 0 ? 'prueba' : 'activo'
+  return datos.alumnosActuales <= cupoGratis(env) ? 'gratis' : 'vencido'
 }
 
-export function puedeGenerar(estado: EstadoPlan): boolean {
-  return estado !== 'vencido'
+/**
+ * Si puede generar. `cuestionariosEnVentana` es la cuenta de los últimos 30
+ * días y se pasa sólo cuando lo que se pide ES generar un cuestionario (o
+ * regenerar una pregunta): crear una materia o un grupo no consume ese tope.
+ */
+export function puedeGenerar(
+  estado: EstadoPlan,
+  cuestionariosEnVentana?: number,
+  env: Entorno = process.env,
+): boolean {
+  if (estado === 'vencido') return false
+  if (estado === 'gratis' && cuestionariosEnVentana !== undefined) {
+    return cuestionariosEnVentana < cuestionariosGratisPorMes(env)
+  }
+  return true
+}
+
+/** El cupo de alumnos que rige hoy: el del nivel, o el del gratis. null si no hay tope. */
+export function cupoVigente(estado: EstadoPlan, nivel: unknown, env: Entorno = process.env): number | null {
+  if (estado === 'exento') return null
+  if (estado === 'gratis') return cupoGratis(env)
+  const n = normalizarNivel(nivel)
+  return n === null ? null : cupoDeNivel(n)
 }
 
 /** Si puede sumar UN alumno más a los que ya tiene. */
-export function puedeSumarAlumno(estado: EstadoPlan, alumnosActuales: number, nivel: unknown): boolean {
+export function puedeSumarAlumno(
+  estado: EstadoPlan,
+  alumnosActuales: number,
+  nivel: unknown,
+  env: Entorno = process.env,
+): boolean {
   if (estado === 'exento') return true
   if (estado === 'vencido') return false
-  const n = normalizarNivel(nivel)
-  if (n === null) return true
-  return alumnosActuales < cupoDeNivel(n)
+  const cupo = cupoVigente(estado, nivel, env)
+  if (cupo === null) return true
+  return alumnosActuales < cupo
+}
+
+/**
+ * Quitar alumnos se puede en cualquier estado, también en solo lectura: es
+ * la forma de volver al plan gratis. Lo único que lo impide es no ser el
+ * dueño del grupo.
+ */
+export function puedeQuitarAlumno(esDuenoDelGrupo: boolean): boolean {
+  return esDuenoDelGrupo
 }
 
 /**
  * Días que le quedan, redondeando para arriba (vence mañana a cualquier hora:
- * 1). Cero si ya venció; null si no vence.
+ * 1). Cero si ya venció; null si no vence (exento, gratis, sin fecha).
  */
-export function diasRestantes(datos: DatosDelPlan): number | null {
-  if (estadoDelPlan(datos) === 'exento') return null
+export function diasRestantes(datos: DatosDelPlan, env: Entorno = process.env): number | null {
+  const estado = estadoDelPlan(datos, env)
+  if (estado === 'exento' || estado === 'gratis') return null
   const vence = venceElEfectivo(datos)
   if (vence === null) return null
   const falta = vence.getTime() - datos.ahora.getTime()
@@ -218,18 +317,27 @@ export function diasRestantes(datos: DatosDelPlan): number | null {
 
 // ─── Lo que viaja a la UI ────────────────────────────────────────────────────
 
-export type MotivoDeBloqueo = 'vencido' | 'sin_cupo'
+export type MotivoDeBloqueo = 'vencido' | 'sin_cupo' | 'tope_cuestionarios'
 
 /** El resumen que devuelve GET /api/teacher/plan y el cuerpo de un 402. */
 export interface ResumenDelPlan {
   estado: EstadoPlan
+  /** El nivel guardado. En `gratis` sigue siendo el que tenía (0 o el pago que venció). */
   nivel: NivelPlan | null
+  /** El cupo que rige hoy: el del nivel, o el del gratis. */
   cupo: number | null
   alumnos: number
+  /** null en `gratis`: no vence. */
   venceEl: string | null
   diasRestantes: number | null
   /** El aviso de G2: todavía no arrancó la prueba. */
   avisoDePruebaPendiente: boolean
+  /** El cupo del plan gratis, para los textos de "después seguís gratis con hasta N". */
+  cupoGratis: number
+  /** El tope de cuestionarios del gratis cada 30 días. */
+  topeCuestionarios: number
+  /** Cuestionarios generados en los últimos 30 días; null si no se contó (fuera del gratis). */
+  cuestionarios: number | null
 }
 
 export interface CuerpoDeBloqueo {
@@ -241,8 +349,9 @@ export interface CuerpoDeBloqueo {
   }
 }
 
-export const MENSAJE_VENCIDO =
-  'Tu plan venció. Podés seguir viendo tus materias, tus grupos y cómo le va a cada alumno, pero para generar, crear o sumar alumnos hace falta renovarlo.'
+export function mensajeVencido(cupoGratisVigente: number): string {
+  return `Tu plan venció. Podés seguir viendo tus materias, tus grupos y cómo le va a cada alumno, pero para generar, crear o sumar alumnos hace falta un plan. Si quedás con ${cupoGratisVigente} alumnos o menos, seguís gratis.`
+}
 export const MENSAJE_SIN_CUPO = 'Llegaste al cupo de alumnos de tu plan.'
 /** Lo que ve un alumno que intenta entrar a un grupo de un docente sin lugar. */
 export const MENSAJE_GRUPO_SIN_LUGAR =
@@ -255,16 +364,27 @@ export function cuerpoDeBloqueo(
 ): CuerpoDeBloqueo {
   // Vencido: se le ofrece renovar lo que tenía (o el nivel que alcanza para
   // los alumnos que ya sigue, si venía de la prueba). Sin cupo: el que alcanza
-  // para uno más.
+  // para uno más. Tope de cuestionarios del gratis: el que alcanza para los
+  // alumnos que ya tiene (con 2, 1 bloque).
   const necesita = motivo === 'sin_cupo' ? resumen.alumnos + 1 : Math.max(resumen.alumnos, 1)
   const deseado =
     motivo === 'vencido' && resumen.nivel !== null && resumen.nivel > 0 && cupoDeNivel(resumen.nivel) >= necesita
       ? resumen.nivel
       : nivelQueAlcanza(necesita)
+  const error =
+    motivo === 'vencido'
+      ? mensajeVencido(resumen.cupoGratis)
+      : motivo === 'tope_cuestionarios'
+        ? mensajeTopeCuestionarios(resumen.topeCuestionarios)
+        : MENSAJE_SIN_CUPO
   return {
-    error: motivo === 'vencido' ? MENSAJE_VENCIDO : MENSAJE_SIN_CUPO,
+    error,
     plan: { ...resumen, motivo, siguiente: deseado === null ? null : opcionDePago(deseado, env) },
   }
+}
+
+export function mensajeTopeCuestionarios(tope: number): string {
+  return `El plan gratis genera hasta ${tope} cuestionarios cada 30 días, y ya llegaste.`
 }
 
 /** Para la UI: lee un 402 y devuelve el bloqueo, o null si el cuerpo no es eso. */
@@ -273,6 +393,6 @@ export function leerBloqueo(cuerpo: unknown): CuerpoDeBloqueo | null {
   const plan = (cuerpo as { plan?: unknown }).plan
   if (!plan || typeof plan !== 'object') return null
   const motivo = (plan as { motivo?: unknown }).motivo
-  if (motivo !== 'vencido' && motivo !== 'sin_cupo') return null
+  if (motivo !== 'vencido' && motivo !== 'sin_cupo' && motivo !== 'tope_cuestionarios') return null
   return cuerpo as CuerpoDeBloqueo
 }

@@ -85,6 +85,82 @@ describe('con la 026 corrida', () => {
   })
 })
 
+describe('plan gratis (H7)', () => {
+  /** El doble de la base: la fila del plan y la cuenta de cuestionarios. */
+  function base(plan: Record<string, unknown>, cuestionarios: number) {
+    sqlMock.mockImplementation(async (partes: TemplateStringsArray) => {
+      const consulta = partes.join('?')
+      if (consulta.includes('ai_usage_log')) return [{ total: cuestionarios }]
+      return [plan]
+    })
+  }
+  const pruebaVencida = { plan_nivel: 0, plan_vence_el: '2020-01-31T00:00:00Z', prueba_iniciada_el: '2020-01-01T00:00:00Z' }
+
+  it('prueba vencida con 2 alumnos: gratis, sin fecha, y genera', async () => {
+    base(pruebaVencida, 5)
+    contarAlumnosDelDocente.mockResolvedValue(2)
+    const resumen = await resumenDelPlan('d1', 'd@x.com')
+    expect(resumen).toMatchObject({ estado: 'gratis', cupo: 2, alumnos: 2, venceEl: null, diasRestantes: null, cuestionarios: 5 })
+    expect(await bloqueoParaGenerar('d1', 'd@x.com', {}, { cuestionario: true })).toBeNull()
+  })
+
+  it('en el tope de cuestionarios: 402 tope_cuestionarios, ofreciendo 1 bloque', async () => {
+    base(pruebaVencida, 20)
+    contarAlumnosDelDocente.mockResolvedValue(2)
+    const respuesta = await bloqueoParaGenerar('d1', 'd@x.com', { questions: [] }, { cuestionario: true })
+    expect(respuesta?.status).toBe(402)
+    expect((await respuesta!.json()).plan).toMatchObject({ motivo: 'tope_cuestionarios', siguiente: { nivel: 1 } })
+  })
+
+  it('crear una materia o un grupo no consume el tope, ni lo consulta', async () => {
+    base(pruebaVencida, 20)
+    contarAlumnosDelDocente.mockResolvedValue(2)
+    expect(await bloqueoParaGenerar('d1', 'd@x.com')).toBeNull()
+    const consultas = sqlMock.mock.calls.map((c) => (c[0] as TemplateStringsArray).join('?'))
+    expect(consultas.some((q) => q.includes('ai_usage_log'))).toBe(false)
+  })
+
+  it('la cuenta de cuestionarios mira 30 días, quiz_generation y no los errores', async () => {
+    base(pruebaVencida, 0)
+    contarAlumnosDelDocente.mockResolvedValue(2)
+    await bloqueoParaGenerar('d1', 'd@x.com', {}, { cuestionario: true })
+    const llamada = sqlMock.mock.calls.find((c) => (c[0] as TemplateStringsArray).join('?').includes('ai_usage_log'))!
+    const consulta = (llamada[0] as TemplateStringsArray).join('?')
+    expect(consulta).toMatch(/endpoint = 'quiz_generation'/)
+    expect(consulta).toMatch(/status <> 'error'/)
+    expect(llamada).toContain(30)
+  })
+
+  it('con 3 alumnos: solo lectura, 402 vencido', async () => {
+    base(pruebaVencida, 0)
+    contarAlumnosDelDocente.mockResolvedValue(3)
+    const respuesta = await bloqueoParaGenerar('d1', 'd@x.com')
+    expect((await respuesta!.json()).plan).toMatchObject({ motivo: 'vencido', estado: 'vencido' })
+  })
+
+  it('gratis con 2: el 3.º alumno recibe 402 sin_cupo', async () => {
+    base(pruebaVencida, 0)
+    contarAlumnosDelDocente.mockResolvedValue(2)
+    const respuesta = await bloqueoParaSumarAlumno('d1', 'd@x.com')
+    expect((await respuesta!.json()).plan).toMatchObject({ motivo: 'sin_cupo', estado: 'gratis', cupo: 2 })
+  })
+
+  it('con la prueba vigente, generar no cuenta alumnos ni cuestionarios', async () => {
+    base({ plan_nivel: 0, plan_vence_el: '2099-01-01T00:00:00Z', prueba_iniciada_el: '2098-12-02T00:00:00Z' }, 99)
+    expect(await bloqueoParaGenerar('d1', 'd@x.com', {}, { cuestionario: true })).toBeNull()
+    expect(contarAlumnosDelDocente).not.toHaveBeenCalled()
+    expect(sqlMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('sin la 026, sigue exento: ni cuenta ni frena', async () => {
+    sqlMock.mockRejectedValue(columnaInexistente)
+    contarAlumnosDelDocente.mockResolvedValue(500)
+    expect((await resumenDelPlan('d1', 'd@x.com')).estado).toBe('exento')
+    expect(await bloqueoParaGenerar('d1', 'd@x.com', {}, { cuestionario: true })).toBeNull()
+    expect(await bloqueoParaSumarAlumno('d1', 'd@x.com')).toBeNull()
+  })
+})
+
 describe('lineaDeAcreditacion', () => {
   it('dice quién, cuándo, qué nivel, hasta cuándo y la nota', () => {
     const linea = lineaDeAcreditacion({

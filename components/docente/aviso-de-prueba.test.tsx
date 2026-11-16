@@ -17,6 +17,9 @@ const pendiente: ResumenDelPlan = {
   venceEl: null,
   diasRestantes: null,
   avisoDePruebaPendiente: true,
+  cupoGratis: 2,
+  topeCuestionarios: 20,
+  cuestionarios: null,
 }
 
 afterEach(() => {
