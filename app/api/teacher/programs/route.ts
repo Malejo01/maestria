@@ -6,6 +6,7 @@ import { DEFAULT_JURISDICTION } from '@/lib/curriculum-config'
 import { resolveGradoForNivel } from '@/lib/grado-server'
 import { parseCreatedFrom, parseNivel, withDerivedPedagogyProfile } from '@/lib/teacher-programs'
 import type { PedagogyProfile, ProgramUnit, SubjectColorName, SubjectIconName } from '@/lib/types'
+import { bloqueoParaGenerar } from '@/lib/planes-server'
 
 function isTeacherRole(role: unknown): boolean {
   return role === 'DOCENTE'
@@ -113,6 +114,10 @@ export async function POST(req: Request) {
     if (!isTeacher) {
       return NextResponse.json({ error: 'Solo docentes pueden crear programas' }, { status: 403 })
     }
+
+    // Plan vencido: modo solo lectura (lib/planes.ts).
+    const bloqueo = await bloqueoParaGenerar(userId, session?.user?.email ?? null)
+    if (bloqueo) return bloqueo
 
     const body = await req.json()
     const subjectName = String(body?.subjectName ?? '').trim()

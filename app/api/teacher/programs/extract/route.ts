@@ -8,6 +8,7 @@ import { TIPO_DE_PROGRESO, leerNivelSugerido, type EventoDeLectura } from '@/lib
 import { google } from '@ai-sdk/google'
 import { sql } from '@/lib/db'
 import { AI_MODEL } from '@/lib/ai-model'
+import { bloqueoParaGenerar } from '@/lib/planes-server'
 
 export const runtime = 'nodejs'
 
@@ -477,6 +478,10 @@ export async function POST(req: Request) {
     if (!isTeacher) {
       return NextResponse.json({ error: 'Solo docentes pueden subir programas' }, { status: 403 })
     }
+
+    // Plan vencido: modo solo lectura (lib/planes.ts).
+    const bloqueo = await bloqueoParaGenerar(userId, session?.user?.email ?? null)
+    if (bloqueo) return bloqueo
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null

@@ -221,6 +221,33 @@ export interface FilaAlumno {
 }
 
 /**
+ * Cuántos lugares ocupa el docente, con la MISMA regla de fusión que
+ * `armarFilas`: una persona en dos grupos es un lugar, y una invitación cuyo
+ * nombre coincide con un miembro de su grupo no suma aparte. Las invitaciones
+ * pendientes sí ocupan: el docente ya sumó a ese alumno. Es el número contra el
+ * que se mide el cupo del plan (lib/planes.ts).
+ */
+export function contarLugares(
+  miembros: Pick<MiembroCrudo, 'userId' | 'nombre' | 'grupoId'>[],
+  invitaciones: Pick<InvitacionCruda, 'id' | 'nombre' | 'grupoId'>[],
+): number {
+  const porPersona = new Map<string, Pick<MiembroCrudo, 'nombre' | 'grupoId'>[]>()
+  for (const miembro of miembros) {
+    porPersona.set(miembro.userId, [...(porPersona.get(miembro.userId) ?? []), miembro])
+  }
+  const usadas = new Set<number>()
+  for (const membresias of porPersona.values()) {
+    const suya = invitaciones.find((invitacion) =>
+      membresias.some(
+        (m) => m.grupoId === invitacion.grupoId && normalizarNombre(m.nombre) === normalizarNombre(invitacion.nombre),
+      ),
+    )
+    if (suya) usadas.add(suya.id)
+  }
+  return porPersona.size + invitaciones.filter((invitacion) => !usadas.has(invitacion.id)).length
+}
+
+/**
  * Una fila por persona. Un alumno que está en dos grupos del mismo docente es
  * UNA fila; una invitación cuyo nombre coincide con un miembro de ese grupo no
  * se muestra aparte: el miembro hereda su contexto.

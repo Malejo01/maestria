@@ -2,6 +2,7 @@ import { sql } from '@/lib/db'
 import {
   armarFilas,
   armarTemas,
+  contarLugares,
   elegirSugerencia,
   resumir,
   type ActividadCruda,
@@ -106,6 +107,12 @@ async function leerTemas(teacherId: string, soloDe: string | null = null): Promi
   }
 
   return new Map([...porAlumno].map(([userId, temas]) => [userId, armarTemas(temas)]))
+}
+
+/** Los alumnos distintos del docente, invitados incluidos: lo que mide el cupo. */
+export async function contarAlumnosDelDocente(teacherId: string): Promise<number> {
+  const [miembros, invitaciones] = await Promise.all([leerMiembros(teacherId), leerInvitaciones(teacherId)])
+  return contarLugares(miembros, invitaciones)
 }
 
 export interface MisAlumnos {

@@ -29,7 +29,11 @@ const {
   captureAiSchemaFailure,
   captureRouteFailure,
   sqlMock,
+  getViewer,
+  bloqueoParaGenerar,
 } = vi.hoisted(() => ({
+  getViewer: vi.fn(),
+  bloqueoParaGenerar: vi.fn(),
   generateObject: vi.fn(),
   generateText: vi.fn(),
   guardFinish: vi.fn(),
@@ -51,6 +55,10 @@ vi.mock('@/lib/ai-guard', () => ({ guardAiCall }))
 vi.mock('@/lib/observability', () => ({ captureAiSchemaFailure, captureRouteFailure }))
 
 vi.mock('@/lib/db', () => ({ sql: sqlMock }))
+
+vi.mock('@/lib/auth-session', () => ({ getViewer }))
+
+vi.mock('@/lib/planes-server', () => ({ bloqueoParaGenerar }))
 
 import { POST } from './route'
 
@@ -91,6 +99,8 @@ beforeEach(() => {
   vi.spyOn(console, 'log').mockImplementation(() => {})
   vi.spyOn(console, 'warn').mockImplementation(() => {})
   vi.spyOn(console, 'error').mockImplementation(() => {})
+  getViewer.mockResolvedValue(null)
+  bloqueoParaGenerar.mockResolvedValue(null)
 
   guardAiCall.mockResolvedValue({
     ok: true,
@@ -132,6 +142,26 @@ describe('POST — corte por guard', () => {
     const response = await POST(request())
     expect(response.status).toBe(401)
     expect(generateObject).not.toHaveBeenCalled()
+  })
+})
+
+describe('POST — plan del docente', () => {
+  it('un docente con el plan vencido recibe 402 con questions: [] y no se llama al modelo', async () => {
+    getViewer.mockResolvedValue({ id: 'd1', role: 'DOCENTE', isGuest: false, displayName: 'D', email: 'd@x.com' })
+    bloqueoParaGenerar.mockResolvedValue(
+      Response.json({ questions: [], error: 'Tu plan venció.', plan: { motivo: 'vencido' } }, { status: 402 }),
+    )
+    const response = await POST(request())
+    expect(response.status).toBe(402)
+    expect((await response.json()).questions).toEqual([])
+    expect(generateObject).not.toHaveBeenCalled()
+    expect(guardAiCall).not.toHaveBeenCalled()
+  })
+
+  it('a un alumno no se le mira el plan de nadie', async () => {
+    getViewer.mockResolvedValue({ id: 'a1', role: 'ALUMNO', isGuest: false, displayName: 'A', email: null })
+    await POST(request())
+    expect(bloqueoParaGenerar).not.toHaveBeenCalled()
   })
 })
 

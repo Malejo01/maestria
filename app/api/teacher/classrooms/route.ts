@@ -4,6 +4,7 @@ import { getTeacherViewer } from '@/lib/auth-session'
 import { createUniqueJoinCode } from '@/lib/classrooms-server'
 import { captureRouteFailure } from '@/lib/observability'
 import { classroomDailyNewGuestLimit, countNewGuestsInClassroom } from '@/lib/classroom-guest-cap'
+import { bloqueoParaGenerar } from '@/lib/planes-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,6 +69,10 @@ export async function POST(req: Request) {
   if (!teacher) {
     return NextResponse.json({ error: 'Solo docentes pueden crear aulas' }, { status: 403 })
   }
+
+  // Plan vencido: modo solo lectura (lib/planes.ts).
+  const bloqueo = await bloqueoParaGenerar(teacher.id, teacher.email)
+  if (bloqueo) return bloqueo
 
   try {
     const body = await req.json()

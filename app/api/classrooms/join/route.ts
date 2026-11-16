@@ -14,6 +14,8 @@ import {
   newGuestId,
   signGuestToken,
 } from '@/lib/guest-session'
+import { grupoTieneLugarPara } from '@/lib/planes-server'
+import { MENSAJE_GRUPO_SIN_LUGAR } from '@/lib/planes'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,7 +92,7 @@ export async function POST(req: Request) {
     }
 
     const classroomRows = await sql`
-      SELECT c.id, c.name, c.status, c.teacher_program_id, p.subject_name
+      SELECT c.id, c.name, c.status, c.teacher_program_id, c.teacher_id, p.subject_name
       FROM classrooms c
       JOIN teacher_programs p ON p.id = c.teacher_program_id
       WHERE c.join_code = ${code}
@@ -111,6 +113,18 @@ export async function POST(req: Request) {
     // Already identified (Google account or an existing guest cookie).
     if (viewer) {
       const displayName = requestedName || viewer.displayName || 'Alumno/a'
+
+      // Cupo del plan del docente (lib/planes.ts): sólo frena a quien ocuparía
+      // un lugar nuevo.
+      const hayLugar = await grupoTieneLugarPara({
+        teacherId: String(classroom.teacher_id),
+        classroomId: Number(classroom.id),
+        userId: viewer.id,
+        nombre: displayName,
+      })
+      if (!hayLugar) {
+        return NextResponse.json({ error: MENSAJE_GRUPO_SIN_LUGAR, grupoSinLugar: true }, { status: 402 })
+      }
 
       await sql`
         INSERT INTO classroom_members (classroom_id, user_id, display_name, is_verified, status, joined_at, updated_at)
@@ -149,6 +163,16 @@ export async function POST(req: Request) {
     // El rechazo no se disfraza: el alumno ve por qué y cómo entrar igual
     // (con Google, que en esta pantalla está al lado), el docente lo ve en su
     // panel y a nosotros nos llega a Sentry.
+    const hayLugar = await grupoTieneLugarPara({
+      teacherId: String(classroom.teacher_id),
+      classroomId: Number(classroom.id),
+      userId: null,
+      nombre: requestedName,
+    })
+    if (!hayLugar) {
+      return NextResponse.json({ error: MENSAJE_GRUPO_SIN_LUGAR, grupoSinLugar: true }, { status: 402 })
+    }
+
     const limit = classroomDailyNewGuestLimit()
     const newGuests = await countNewGuestsInClassroom(classroom.id)
     if (newGuests >= limit) {

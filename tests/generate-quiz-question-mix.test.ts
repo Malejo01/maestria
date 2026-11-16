@@ -30,6 +30,10 @@ vi.mock('@ai-sdk/google', () => ({
 
 vi.mock('@/lib/db', () => ({ sql: vi.fn() }))
 
+vi.mock('@/lib/auth-session', () => ({ getViewer: async () => null }))
+
+vi.mock('@/lib/planes-server', () => ({ bloqueoParaGenerar: async () => null }))
+
 vi.mock('@/lib/ai-guard', () => ({
   guardAiCall: vi.fn(async () => ({
     ok: true as const,

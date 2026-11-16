@@ -8,6 +8,7 @@ import { sql } from '@/lib/db'
 import { guardAiCall } from '@/lib/ai-guard'
 import { captureAiSchemaFailure, captureFileParsingFailure, captureRouteFailure } from '@/lib/observability'
 import { AI_MODEL } from '@/lib/ai-model'
+import { bloqueoParaGenerar } from '@/lib/planes-server'
 
 export const runtime = 'nodejs'
 
@@ -474,6 +475,10 @@ export async function POST(req: Request) {
     if (!isTeacher) {
       return NextResponse.json({ error: 'Solo docentes pueden usar guiado' }, { status: 403 })
     }
+
+    // Plan vencido: modo solo lectura (lib/planes.ts).
+    const bloqueo = await bloqueoParaGenerar(userId, session?.user?.email ?? null)
+    if (bloqueo) return bloqueo
 
     const body = await req.json()
     const payload = guideRequestSchema.parse(body)
