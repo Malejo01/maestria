@@ -75,16 +75,20 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
     return (
       <Card
         key={program.id}
-        className={`relative w-full p-4 pt-6 min-h-[170px] border-2 cursor-pointer transition-all ${isSelected ? 'border-accion bg-accion-tenue' : 'border-border hover:border-primary/40'}`}
+        className={`relative w-full p-4 pt-4 min-h-[170px] border-2 cursor-pointer transition-all ${isSelected ? 'border-accion bg-accion-tenue' : 'border-border hover:border-primary/40'}`}
         onClick={() => handleSubjectChange(subjectId)}
         onDoubleClick={() => {
           handleSubjectChange(subjectId)
           setShowDetailDialog(true)
         }}
       >
+        {/* El lápiz y la X van ADENTRO de la tarjeta, en sus esquinas. Estaban
+            colgados afuera (-top-3 / -left-3) y pisaban el título de la sección
+            y la tarjeta de arriba. Siguen midiendo 44 px, que es el mínimo
+            táctil; el ícono de la materia va centrado y no los toca. */}
         <button
           type="button"
-          className="absolute -top-3 -left-3 size-11 rounded-md bg-superficie-tarjeta text-texto-suave border border-borde-fuerte flex items-center justify-center hover:border-texto hover:text-texto"
+          className="absolute left-1 top-1 flex size-11 items-center justify-center rounded-md border border-transparent text-texto-suave hover:border-borde-fuerte hover:text-texto"
           onClick={(event) => {
             event.stopPropagation()
             handleSubjectChange(subjectId)
@@ -96,7 +100,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
         </button>
         <button
           type="button"
-          className="absolute -top-3 -right-3 size-11 rounded-md bg-superficie-tarjeta text-texto-suave border border-borde-fuerte flex items-center justify-center hover:border-texto hover:text-texto"
+          className="absolute right-1 top-1 flex size-11 items-center justify-center rounded-md border border-transparent text-texto-suave hover:border-borde-fuerte hover:text-texto"
           onClick={(event) => {
             event.stopPropagation()
             handleSubjectChange(subjectId)
