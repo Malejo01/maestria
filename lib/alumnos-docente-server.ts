@@ -119,8 +119,8 @@ export interface MisAlumnos {
   alumnos: FilaAlumno[]
   sugerencia: Sugerencia | null
   resumen: ResumenAlumnos
-  /** Las materias del docente, para elegir a cuál sumar a un alumno nuevo. */
-  materias: { id: number; nombre: string }[]
+  /** Las materias del docente, para elegir a cuál sumar a un alumno nuevo. Nivel y año, para H6. */
+  materias: { id: number; nombre: string; nivel: string | null; grado: string | null }[]
 }
 
 export async function leerMisAlumnos(teacherId: string, ahora: Date = new Date()): Promise<MisAlumnos> {
@@ -151,7 +151,7 @@ export async function leerMisAlumnos(teacherId: string, ahora: Date = new Date()
         AND att.completed_at >= NOW() - INTERVAL '7 days'
     ` as unknown as Promise<Fila[]>,
     sql`
-      SELECT id, subject_name
+      SELECT id, subject_name, nivel, grado
       FROM teacher_programs
       WHERE user_id = ${teacherId} AND status = 'active'
       ORDER BY created_at ASC, id ASC
@@ -178,7 +178,12 @@ export async function leerMisAlumnos(teacherId: string, ahora: Date = new Date()
     alumnos,
     sugerencia: elegirSugerencia(alumnos, ahora),
     resumen: resumir(temasDeAlumnos, Number(semanaFilas[0]?.total ?? 0)),
-    materias: materiaFilas.map((fila) => ({ id: Number(fila.id), nombre: String(fila.subject_name) })),
+    materias: materiaFilas.map((fila) => ({
+      id: Number(fila.id),
+      nombre: String(fila.subject_name),
+      nivel: typeof fila.nivel === 'string' ? fila.nivel : null,
+      grado: typeof fila.grado === 'string' ? fila.grado : null,
+    })),
   }
 }
 

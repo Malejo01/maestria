@@ -11,6 +11,7 @@ import { ShareQuizDialog } from '@/components/share-quiz-dialog'
 import type { PanelDocente } from '@/components/docente/use-panel-docente'
 import { EsqueletoListaDeTareas } from '@/components/docente/esqueletos'
 import { resumirTemas } from '@/lib/alumnos-docente'
+import { etiquetaDeMateria, materiaDePrograma } from '@/lib/etiqueta-materia'
 
 /**
  * "Mis tareas": las tareas guardadas y las realizadas, con revisar, editar,
@@ -41,6 +42,13 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
     setTeacherQuizzes,
     setTeacherSection,
   } = panel
+
+  // H6: con dos materias del mismo nombre, el filtro y la tarjeta suman nivel y año.
+  const materias = teacherPrograms.map(materiaDePrograma)
+  const materiaDeTarea = (quiz: (typeof teacherQuizzes)[number]) => {
+    const programa = teacherPrograms.find((p) => p.id === quiz.teacherProgramId)
+    return programa ? etiquetaDeMateria(materiaDePrograma(programa), materias) : quiz.subjectName
+  }
 
   /** La tarea que está pidiendo confirmación para borrarse, o null. */
   const [borrando, setBorrando] = useState<number | null>(null)
@@ -93,7 +101,7 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                       className="aria-pressed:border-texto"
                       onClick={() => setQuizSubjectFilter(`teacher-${program.id}`)}
                     >
-                      {program.subjectName}
+                      {etiquetaDeMateria(materiaDePrograma(program), materias)}
                     </Boton>
                   ))}
                 </div>
@@ -143,7 +151,7 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                       <div>
                         <h2 className="cuerpo text-texto">{quiz.title}</h2>
                         <p className="nota text-texto-suave">
-                          {quiz.subjectName} · {T.preguntas(quiz.questionCount)} · {T.modo[quiz.mode]}
+                          {materiaDeTarea(quiz)} · {T.preguntas(quiz.questionCount)} · {T.modo[quiz.mode]}
                         </p>
                         <TemasDeTarea temas={quiz.selectedTopics.map((topic) => topic.name)} />
                       </div>
