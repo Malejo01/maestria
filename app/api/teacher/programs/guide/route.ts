@@ -23,6 +23,7 @@ import {
   parteDelArchivo,
 } from '@/lib/lectura-programa-server'
 import { REGLAS_DE_TEMAS, granularizarUnidades } from '@/lib/temas-granulares'
+import { normalizarNombreDeUnidad } from '@/lib/nombre-de-unidad'
 
 export const runtime = 'nodejs'
 // Como /extract: una imagen o un escaneo van enteros al modelo, con 60 s (I1).
@@ -228,7 +229,8 @@ function parseHeuristicProgram(rawText: string): ParsedProgram {
 function normalizeUnits(parsed: ParsedProgram) {
   return parsed.units.map((unit, unitIndex) => ({
     id: `gp-u-${unitIndex + 1}`,
-    name: unit.name,
+    // I3: "1" → "Unidad 1"; "UNIDAD I: LÓGICA" → "Unidad I: Lógica". El resto, tal cual.
+    name: normalizarNombreDeUnidad(unit.name),
     topics: unit.topics.map((topic, topicIndex) => ({
       id: `gp-u-${unitIndex + 1}-t-${topicIndex + 1}`,
       name: topic.name,
