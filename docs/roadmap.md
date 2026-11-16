@@ -123,6 +123,35 @@ Pendiente, a propósito:
 - [ ] **Nombre del alumno y "qué prepara"** al invitarlo: bloque 3, que sí necesita migración.
 - [ ] No se probó un alumno entrando de verdad para ver el hito 3 completarse en pantalla: la regla está cubierta por tests, el recorrido no.
 
+### Bloque 3 — Panel: Mis alumnos (rama `rediseno/3-mis-alumnos`)
+
+> ⚠️ **Trae la migración 025 y está corrida SÓLO en staging.** Antes de mergear este bloque a `main` hay que correrla contra producción (`npx tsx scripts/run-migration-025.ts`), con el OK de Mauro. Sin ella, Mis alumnos responde 500 — es exactamente el incidente de la 023. El job `schema-gate` lo marca en rojo si se mergea sin correrla, pero Vercel despliega igual.
+
+- [x] **Migración 025** ([scripts/025-alumnos-contexto-e-invitaciones.sql](../scripts/025-alumnos-contexto-e-invitaciones.sql)): `classroom_members.contexto` (qué prepara el alumno, texto libre del docente) y la tabla `classroom_invitations` (alumnos agregados por nombre que todavía no entraron). Aditiva: una columna que admite NULL y una tabla nueva. El archivo nombra quién escribe cada cosa.
+- [x] **Mis alumnos** ([components/docente/mis-alumnos.tsx](../components/docente/mis-alumnos.tsx)): una fila por persona cruzando grupos — inicial, nombre, qué prepara, hasta dos chips (el mejor tema y el peor) y la última práctica. Cierra con **una** sugerencia que termina en un botón, y con dos números de la semana. Es la pantalla de inicio del docente.
+- [x] **Vista de planilla** del mismo listado, con todos los números en columnas (pedido de Mauro).
+- [x] **Ficha de alumno** (`/teacher/alumnos/[userId]`): qué prepara (editable en el lugar), aciertos por tema en barras con su estado escrito, errores que se le repiten, la planilla de sus últimas 50 prácticas y el botón "Asignarle una tarea" con la materia ya elegida.
+- [x] **"+ Alumno"** en la barra del docente: nombre, qué prepara y materia. El grupo se crea detrás; no hay botón "crear aula".
+- [x] **`ChipTema`** con sus tres estados: dominado, flojo (naranja) y sin datos.
+- [x] **El panel se partió.** `app/(app)/teacher/page.tsx` pasó de 1.025 líneas a 115: el estado quedó en `components/docente/use-panel-docente.ts` y cada pestaña en su componente. La presentación de Mis materias y Mis tareas se movió **tal cual**, sin cambiar lógica; se rediseñan en los bloques 4 y 5.
+- [x] `scripts/seed-staging-alumnos.ts`: tres alumnos de ejemplo con actividad, para mirar el panel con algo adentro. Se niega a correr fuera de staging.
+
+Decisiones:
+
+- **"Cómo le va en un tema" sale de `quiz_attempts.topics[]`**, no de `quiz_answers.topic_name` ni de `topic_mastery` (las dos que este documento ya midió como inservibles). El costo: la cuenta es por intento, así que un intento de tres temas le suma a los tres.
+- **Umbrales, en `lib/alumnos-docente.ts`**: menos de 5 respuestas calificadas es "sin datos"; desde 70 % de aciertos es dominado y por debajo flojo. **Es un criterio de producto y lo decide Mauro**; se cambia en dos constantes.
+- **Privacidad:** todo se filtra por los grupos del docente. Lo que el alumno practicó por su cuenta o con otro docente no aparece.
+- **Las invitaciones no tienen columna de "aceptada".** Cuando entra al grupo alguien con el mismo nombre, el listado los funde al leer y el alumno hereda el contexto. Marcarla obligaba a tocar el ingreso al grupo, que está en uso. Si el alumno entra con otro nombre ("Sofi"), el docente ve dos filas y quita la pendiente.
+- **Sin sugerencia cuando no hace falta.** Si a todos les va bien y practicaron hace poco, la tarjeta no aparece.
+- **Los nombres largos de tema se acortan** en chips y frases (lo que va antes de los dos puntos); la ficha muestra el nombre entero.
+- Descartado: una tabla de dominio por tema precalculada (otra `topic_mastery`), y fotos de perfil.
+
+Pendiente, a propósito:
+
+- [ ] **"Mis grupos" sigue siendo la gestión vieja**, plegada debajo del listado: códigos, tareas mandadas y seguimiento por grupo. Se va cuando el bloque 5 rehaga el envío de tareas.
+- [ ] **Cerrar el ciclo de "errores que se le repiten"**: la ficha muestra los `student_misconceptions` sin resolver, y sigue sin haber quién los resuelva (ítem 🔺 del backlog). La ficha del docente es el lugar natural para ese botón.
+- [ ] La ficha no se probó con un alumno en dos materias del mismo docente; la regla está en los tests.
+
 ---
 
 ## ⏸️ PENDIENTE ESPERANDO PRESUPUESTO
