@@ -35,8 +35,14 @@ describe('refrescar la sesión', () => {
     const hook = readFileSync(join(RAIZ, 'hooks/use-refrescar-sesion.ts'), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/\/\/.*$/gm, '')
-    expect(hook).toMatch(/await update\(\{\}\)/)
+    expect(hook).toMatch(/await ultima\.current\(\{\}\)/)
     expect(hook).not.toMatch(/update\(\)/)
+  })
+
+  it('usa la update del último render, no la del primero', () => {
+    // La del primer render nace con `loading: true` y no hace nada al llamarla.
+    const hook = readFileSync(join(RAIZ, 'hooks/use-refrescar-sesion.ts'), 'utf8')
+    expect(hook).toMatch(/ultima\.current = update/)
   })
 
   it('auth.ts sigue re-leyendo la base ante ese trigger', () => {

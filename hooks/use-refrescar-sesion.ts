@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 
 /**
@@ -34,9 +34,20 @@ import { useSession } from 'next-auth/react'
 export function useRefrescarSesion(): () => Promise<void> {
   const { update } = useSession()
 
+  // Siempre la `update` del último render. next-auth la recrea cada vez que
+  // cambia su estado interno, y la del primer render nace con `loading: true`
+  // adentro: llamada más tarde, sale por su `if (loading) return` sin hacer
+  // nada. Guardarla una sola vez (un useCallback con dependencias vacías) fue
+  // el segundo intento de este arreglo, y fallaba en silencio igual que el
+  // `update()` sin argumento. Lo mostró la pestaña de red: después de guardar
+  // el rol no salía ningún POST a /api/auth/session.
+  const ultima = useRef(update)
+  useEffect(() => {
+    ultima.current = update
+  }, [update])
+
+  // La función que se devuelve sí es estable, para poder usarla en efectos.
   return useCallback(async () => {
-    await update({})
-    // `update` se omite: next-auth la recrea en cada render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    await ultima.current({})
   }, [])
 }
