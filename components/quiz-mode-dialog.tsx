@@ -45,7 +45,7 @@ interface QuizModeDialogProps {
 const modeCards = [
   {
     mode: 'teorico' as const,
-    title: 'Examen Teorico',
+    title: 'Examen teórico',
     description: 'Conceptos, definiciones, propiedades y fundamentos.',
     icon: BookOpen,
     accent: 'bg-accion',
@@ -54,7 +54,7 @@ const modeCards = [
   },
   {
     mode: 'practico' as const,
-    title: 'Examen Practico',
+    title: 'Examen práctico',
     description: 'Resolucion de ejercicios, cuentas y aplicacion directa.',
     icon: Calculator,
     accent: 'bg-flojo',

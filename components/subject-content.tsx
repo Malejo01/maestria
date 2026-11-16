@@ -15,6 +15,7 @@ import { exportQuizToMoodleGift } from '@/lib/moodle-export'
 import type { ProgramUnit, Question, QuestionType, QuizActionMode, SubjectColorName, SubjectIconName, TeacherQuiz } from '@/lib/types'
 import { DEFAULT_QUESTION_TYPES } from '@/lib/question-types'
 import { useToast } from '@/hooks/use-toast'
+import { contar } from '@/lib/textos'
 
 interface SubjectContentProps {
   subject: Subject
@@ -270,7 +271,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         teacherProgramId,
-        title: `${subject.name} - ${mode === 'teorico' ? 'Teorico' : mode === 'practico' ? 'Practico' : 'Mixto'} - ${new Date().toLocaleDateString('es-AR')}`,
+        title: `${subject.name} - ${mode === 'teorico' ? 'Teórico' : mode === 'practico' ? 'Práctico' : 'Mixto'} - ${new Date().toLocaleDateString('es-AR')}`,
         subjectName: subject.name,
         mode,
         status,
@@ -306,10 +307,10 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
     addTeacherQuiz(mappedQuiz)
 
     toast({
-      title: '¡Tu cuestionario ya fue creado!',
+      title: 'Cuestionario creado',
       description: status === 'saved'
-        ? 'Lo veras debajo de esta materia en la pestana Guardados.'
-        : 'Quedo marcado como pendiente para compartir.',
+        ? 'Lo vas a ver debajo de esta materia, en Guardados.'
+        : 'Quedó marcado como pendiente para compartir.',
     })
 
     return mappedQuiz
@@ -451,7 +452,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold">{subject.name}</h2>
-              <p className="text-texto-sobre-accion/80 text-sm">{subject.units.length} unidades</p>
+              <p className="text-texto-sobre-accion/80 text-sm">{contar(subject.units.length, 'unidad', 'unidades')}</p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-black">{Math.round(progressPercentage)}%</div>

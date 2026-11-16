@@ -31,7 +31,7 @@ import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import { Boton } from '@/components/sistema/boton'
 import { ProgramFileImport, type ProgramSourceMeta } from '@/components/program-file-import'
 import { elegirGrado, ordenDePasos, pasoVecino, puedeLlegarA, type NivelSugerido, type PasoId } from '@/lib/wizard-temario'
-import { WIZARD_TEMARIO } from '@/lib/textos'
+import { WIZARD_TEMARIO, contar } from '@/lib/textos'
 import type {
   Nivel,
   PedagogyProfile,
@@ -622,7 +622,7 @@ export function TeacherSubjectWizard({
 
       toast({
         title: isEditing ? 'Materia actualizada' : 'Materia creada',
-        description: `${normalizedProgram.subjectName} · ${cleanUnits.length} unidades listas para generar cuestionarios.`,
+        description: `${normalizedProgram.subjectName} · ${contar(cleanUnits.length, 'unidad lista', 'unidades listas')} para generar cuestionarios.`,
       })
       onOpenChange(false)
     } catch (error) {
@@ -1004,7 +1004,7 @@ export function TeacherSubjectWizard({
       <div>
         <h3 className="font-semibold text-sm">Tu temario</h3>
         <p className="text-xs text-muted-foreground">
-          {units.length} unidades · {topicCount} temas
+          {contar(units.length, 'unidad', 'unidades')} · {contar(topicCount, 'tema', 'temas')}
         </p>
       </div>
 
@@ -1224,7 +1224,7 @@ export function TeacherSubjectWizard({
           <strong>{subjectName}</strong> · {nivel} · {grado}
         </p>
         <p className="text-sm text-muted-foreground">
-          {units.length} unidades y {topicCount} temas.
+          {contar(units.length, 'unidad', 'unidades')} y {contar(topicCount, 'tema', 'temas')}.
         </p>
       </Card>
     </div>
@@ -1234,7 +1234,7 @@ export function TeacherSubjectWizard({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[92vh] overflow-y-auto">
+      <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-5xl max-h-[92vh] overflow-y-auto [&>*]:min-w-0">
         <DialogHeader>
           <DialogTitle className="titulo-m text-texto">
             {isEditing ? WIZARD_TEMARIO.tituloEditar : WIZARD_TEMARIO.tituloCrear}

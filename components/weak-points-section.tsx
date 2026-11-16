@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { contar } from '@/lib/textos'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -243,7 +244,7 @@ export function WeakPointsSection({ weakPoints, variant = 'full', limit }: WeakP
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className="text-[10px] bg-flojo text-texto-sobre-accion px-2 py-0.5 rounded-full font-bold">
-                            {wp.count} fallas
+                            {contar(wp.count, 'falla', 'fallas')}
                           </span>
                           <button
                             onClick={() => removeWeakPoint(wp.topic)}

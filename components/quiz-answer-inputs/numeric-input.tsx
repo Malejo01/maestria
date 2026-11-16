@@ -64,7 +64,7 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
           onChange(parseNumericAnswer(next))
         }}
         disabled={submitted || disabled}
-        placeholder="Escribí tu respuesta (podés usar coma o fracción)"
+        placeholder="Tu respuesta (coma o fracción)"
         aria-invalid={noSeEntiende}
         aria-describedby={noSeEntiende ? 'numeric-input-error' : undefined}
         className={cn(

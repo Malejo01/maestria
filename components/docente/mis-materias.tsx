@@ -13,6 +13,7 @@ import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import type { TeacherProgram } from '@/lib/types'
 import { ASSESSMENT_STYLE_LABELS, type PanelDocente } from '@/components/docente/use-panel-docente'
 import { EsqueletoTarjetasDeMateria } from '@/components/docente/esqueletos'
+import { contar } from '@/lib/textos'
 
 /**
  * "Mis materias": el listado de materias del docente, el armado de una tarea
@@ -136,7 +137,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
               {program.nivel} · {program.grado}
             </p>
           )}
-          <p className="text-xs text-muted-foreground">{program.units.length} unidades</p>
+          <p className="text-xs text-muted-foreground">{contar(program.units.length, 'unidad', 'unidades')}</p>
 
           {showCreateQuizAction && (
             <Button
@@ -343,7 +344,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
                   </div>
                   <div className="rounded-xl border p-3">
                     <p className="text-xs text-muted-foreground">Unidades</p>
-                    <p className="font-semibold">{activeTeacherProgram.units.length} unidades</p>
+                    <p className="font-semibold">{contar(activeTeacherProgram.units.length, 'unidad', 'unidades')}</p>
                   </div>
                 </div>
 
