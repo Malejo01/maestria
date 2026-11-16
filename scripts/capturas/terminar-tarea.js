@@ -71,6 +71,8 @@
   const incorrectas = [...document.querySelectorAll('[data-slot="card"], div')].find(
     (d) => d.className.includes('cursor-pointer') && d.textContent.includes('Incorrectas'),
   )
+  // Con `resultados-sin-abrir.js` antes, la foto es de la pantalla tal como llega.
+  if (window.__capturaSinAbrir) return 'ok'
   if (incorrectas) incorrectas.click()
   await esperar(600)
   const lista = [...document.querySelectorAll('h3')].find((h) => h.textContent.includes('Respuestas Incorrectas'))
