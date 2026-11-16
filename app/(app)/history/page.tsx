@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LaTeXRenderer } from '@/components/latex-renderer'
+import { ExplicacionMarkdown } from '@/components/explicacion-markdown'
 import { WeakPointsSection } from '@/components/weak-points-section'
 import { TipsDelAlumno } from '@/components/alumno/tips-del-alumno'
 import { MI_PROGRESO } from '@/lib/textos'
@@ -643,9 +644,7 @@ function HistoryPageContent() {
                                               <Card className="p-3 border border-[var(--algebra)]/30 bg-[var(--algebra-light)]">
                                                 <div className="flex items-start gap-2">
                                                   <Lightbulb className="w-4 h-4 text-[var(--algebra)] shrink-0 mt-0.5" />
-                                                  <div className="text-xs text-foreground/80 whitespace-pre-wrap">
-                                                    <LaTeXRenderer content={explanations[answer.id]} />
-                                                  </div>
+                                                  <ExplicacionMarkdown content={explanations[answer.id]} tamano="compacto" className="flex-1" />
                                                 </div>
                                               </Card>
                                             ) : answer.question_type === 'short_answer' ? null : (

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { LaTeXRenderer } from './latex-renderer'
+import { ExplicacionMarkdown } from './explicacion-markdown'
 import { Sparkles, XCircle, CheckCircle2, Zap, Award } from 'lucide-react'
 import type { MultipleChoiceQuestion } from '@/lib/types'
 import { useToast } from '@/hooks/use-toast'
@@ -203,7 +204,11 @@ export function ExplanationModal({
 
   return (
     <Dialog open={open} onOpenChange={handleCloseAll}>
-      <DialogContent className="max-w-lg mx-4 max-h-[88vh] overflow-y-auto rounded-3xl p-6 border-2 border-primary/20">
+      {/* Sin `max-w-lg mx-4`: pisaba el `max-w-[calc(100%-2rem)]` del primitivo y
+          a 390 px el diálogo medía el ancho entero corrido 16 px, con el borde
+          derecho y la X fuera de la pantalla. El primitivo ya limita a
+          `sm:max-w-lg`. */}
+      <DialogContent className="max-h-[88dvh] overflow-y-auto rounded-3xl p-5 sm:p-6 border-2 border-primary/20">
         <DialogHeader className="space-y-1 text-left">
           <DialogTitle className="flex items-center gap-2.5 text-xl font-bold text-foreground">
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
@@ -228,7 +233,7 @@ export function ExplanationModal({
 
         {/* ── MODE: IDLE (EXPLICACIÓN PRINCIPAL) ────────────────────────────────── */}
         {revanchaState === 'idle' && (
-          <div className="space-y-5 mt-3">
+          <div className="min-w-0 space-y-5 mt-3">
             {/* Question Recap */}
             <div className="p-4 bg-muted/60 rounded-2xl border border-border/60">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Pregunta:</p>
@@ -283,9 +288,7 @@ export function ExplanationModal({
                   <Sparkles className="w-4 h-4" />
                   <span>Explicación guiada por la IA:</span>
                 </div>
-                <div className="text-sm text-foreground/90 leading-relaxed space-y-3 whitespace-pre-wrap">
-                  <LaTeXRenderer content={displayedText || explanation} />
-                </div>
+                <ExplicacionMarkdown content={displayedText || explanation} />
               </div>
             )}
 
@@ -294,7 +297,7 @@ export function ExplanationModal({
               {allowRevancha && (
                 <Button
                   onClick={handleStartRevancha}
-                  className="w-full h-13 rounded-2xl bg-flojo text-texto-sobre-accion font-bold text-base hover:bg-flojo transition-all active:scale-95 gap-2"
+                  className="w-full h-auto min-h-13 whitespace-normal py-3 rounded-2xl bg-flojo text-texto-sobre-accion font-bold text-base hover:bg-flojo transition-all active:scale-95 gap-2"
                 >
                   <Zap className="w-5 h-5 fill-texto-sobre-accion" />
                   ¡Tomarme la Revancha! (1 pregunta nueva)
