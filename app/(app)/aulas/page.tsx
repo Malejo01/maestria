@@ -155,6 +155,10 @@ export default function MisAulasPage() {
         {
           subject: `classroom-${classroom.id}`,
           subjectName: assignment.subjectName || classroom.subjectName,
+          // El nivel es el del grupo, no el del perfil del alumno: es lo que
+          // decide con qué registro se le explica un error.
+          nivel: classroom.nivel ?? undefined,
+          grado: classroom.grado ?? undefined,
           topics: assignment.selectedTopics ?? [],
           mode: assignment.mode,
           questionCount: assignment.questions.length,

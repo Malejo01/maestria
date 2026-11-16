@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { buildEducationSystemPrompt, type ContextoProfesionalCarrera } from './education-context'
+import {
+  buildEducationSystemPrompt,
+  buildExplainErrorPrompt,
+  getEducationContext,
+  normalizarNivel,
+  quitarEmojis,
+  resolverNivelYGrado,
+  type ContextoProfesionalCarrera,
+} from './education-context'
 
 /**
  * El contexto profesional es la diferencia entre que un alumno de una
@@ -95,5 +103,174 @@ describe('buildEducationSystemPrompt · contexto profesional', () => {
 
     expect(prompt).toContain('Optimización de recursos')
     expect(prompt).not.toContain('Herramientas de la cátedra:')
+  })
+})
+
+/**
+ * A2 (16/11/2026): una explicación de un tema de 4.º año salió con el tono y
+ * los emojis de Primario. No era el nivel por defecto —ese siempre fue
+ * Secundario—: el formato de la explicación traía los emojis escritos a mano
+ * para todos los niveles, y el nivel del grupo no llegaba a la ruta.
+ */
+const HAY_EMOJI = /\p{Extended_Pictographic}/u
+
+function promptDeExplicacion(nivel: string, grado: string, materia = 'Lengua') {
+  return buildExplainErrorPrompt({
+    ctx: getEducationContext(nivel, grado, materia),
+    question: '¿En qué tiempo verbal está "comió"?',
+    selectedText: 'Futuro',
+    correctText: 'Pasado',
+    topic: 'El verbo',
+    subject: materia,
+  })
+}
+
+describe('registro de la explicación, por nivel', () => {
+  it('Primario: registro infantil, con emojis pedidos', () => {
+    const ctx = getEducationContext('Primario', '2do Grado', 'Lengua')
+    const prompt = promptDeExplicacion('Primario', '2do Grado')
+    expect(ctx.permiteEmojis).toBe(true)
+    expect(prompt).toContain('LENGUAJE PARA NIÑOS')
+    expect(prompt).toContain('Usa emojis sutiles')
+    expect(prompt).toMatch(HAY_EMOJI)
+  })
+
+  it('Secundario: registro adolescente, sin un solo emoji en el prompt', () => {
+    const ctx = getEducationContext('Secundario', '4to Año', 'Lengua')
+    const prompt = promptDeExplicacion('Secundario', '4to Año')
+    expect(ctx.permiteEmojis).toBe(false)
+    expect(prompt).toContain('LENGUAJE PARA ADOLESCENTES DE 15 A 16 AÑOS')
+    expect(prompt).toContain('TONO DE EXPLICACIÓN (SECUNDARIO)')
+    expect(prompt).toContain('NO uses emojis')
+    // Ni siquiera como ejemplo: un emoji en el prompt es una invitación.
+    expect(prompt).not.toMatch(HAY_EMOJI)
+    expect(prompt).not.toContain('a su edad')
+  })
+
+  it('Superior (terciario): registro académico, sin un solo emoji en el prompt', () => {
+    const ctx = getEducationContext('Superior', '1er Año', 'Matemática')
+    const prompt = promptDeExplicacion('Superior', '1er Año', 'Matemática')
+    expect(ctx.permiteEmojis).toBe(false)
+    expect(prompt).toContain('LENGUAJE DE EDUCACIÓN SUPERIOR')
+    expect(prompt).toContain('TONO DE EXPLICACIÓN (SUPERIOR)')
+    expect(prompt).toContain('Educación Superior')
+    expect(prompt).toContain('NO uses emojis')
+    expect(prompt).not.toMatch(HAY_EMOJI)
+  })
+
+  it('los cuatro títulos conservan su numeración en todos los niveles (la ruta los busca)', () => {
+    for (const [nivel, grado] of [['Primario', '2do'], ['Secundario', '4to'], ['Superior', '1er']]) {
+      const prompt = promptDeExplicacion(nivel, grado)
+      for (const n of [1, 2, 3, 4]) expect(prompt, `${nivel} · sección ${n}`).toContain(`## ${n}. `)
+    }
+  })
+
+  it('la generación de preguntas de Secundario y Superior también prohíbe los emojis', () => {
+    for (const nivel of ['Secundario', 'Superior']) {
+      const prompt = buildEducationSystemPrompt({ nivel, grado: '1er Año', materia: 'Historia' })
+      expect(prompt, nivel).toContain('PROHIBIDO usar emojis')
+      expect(prompt, nivel).not.toMatch(HAY_EMOJI)
+    }
+  })
+})
+
+describe('normalizarNivel', () => {
+  it.each([
+    ['Primario', 'Primario'],
+    ['primaria', 'Primario'],
+    ['Nivel Primario', 'Primario'],
+    ['Secundario', 'Secundario'],
+    ['SECUNDARIA', 'Secundario'],
+    ['Superior', 'Superior'],
+    ['Terciario', 'Superior'],
+    ['Universitario', 'Superior'],
+  ])('%s → %s', (entrada, esperado) => {
+    expect(normalizarNivel(entrada)).toBe(esperado)
+  })
+
+  it('lo que no reconoce es null, no un nivel inventado', () => {
+    expect(normalizarNivel('')).toBeNull()
+    expect(normalizarNivel(undefined)).toBeNull()
+    expect(normalizarNivel('4to Año')).toBeNull()
+  })
+
+  it('un nivel que antes caía al default ahora se respeta', () => {
+    expect(getEducationContext('Terciario', '1er Año', 'Matemática').nivel).toBe('Superior')
+    expect(getEducationContext('primaria', '3er Grado', 'Lengua').nivel).toBe('Primario')
+  })
+
+  it('sin nivel, el default es Secundario: nunca Primario', () => {
+    expect(getEducationContext(undefined, undefined, 'Lengua').nivel).toBe('Secundario')
+    expect(getEducationContext('cualquier cosa', '2do', 'Lengua').permiteEmojis).toBe(false)
+  })
+})
+
+describe('resolverNivelYGrado: el grupo manda sobre el perfil', () => {
+  const perfilPrimario = { nivel: 'Primario', grado: '4to Grado' }
+
+  it('lo que manda el cuestionario gana', () => {
+    expect(
+      resolverNivelYGrado({ nivel: 'Secundario', grado: '4to Año', perfil: perfilPrimario }),
+    ).toEqual({ nivel: 'Secundario', grado: '4to Año' })
+  })
+
+  it('sin eso, el contexto del programa gana sobre el perfil, y trae su propio año', () => {
+    expect(
+      resolverNivelYGrado({
+        pedagogyContext: 'Nivel: Superior\nGrado/Año: 1er Año\nCarrera: Análisis de Sistemas',
+        perfil: perfilPrimario,
+      }),
+    ).toEqual({ nivel: 'Superior', grado: '1er Año' })
+  })
+
+  it('el nivel del programa escrito a su manera también vale', () => {
+    expect(resolverNivelYGrado({ pedagogyContext: 'Nivel: Terciario | Grado: 2do' })).toEqual({
+      nivel: 'Superior',
+      grado: '2do',
+    })
+  })
+
+  it('sin grupo ni programa, el perfil (Mi progreso no manda nada más)', () => {
+    expect(resolverNivelYGrado({ perfil: perfilPrimario })).toEqual({ nivel: 'Primario', grado: '4to Grado' })
+  })
+
+  it('sin nada, Secundario', () => {
+    expect(resolverNivelYGrado({})).toEqual({ nivel: 'Secundario', grado: undefined })
+    expect(resolverNivelYGrado({ perfil: { nivel: null, grado: null } }).nivel).toBe('Secundario')
+  })
+})
+
+describe('quitarEmojis', () => {
+  it('limpia títulos, texto y listas sin dejar huecos', () => {
+    const sucio = [
+      '## 1. 🧠 ¿Por qué elegiste esta opción?',
+      '¡Casi! Elegiste futuro ☀️. Imaginá una manzana 🍎:',
+      '- 🍎 **Presente:** la comés ahora 😋',
+      '🔍✨ Un truco',
+      '1️⃣ Primero',
+    ].join('\n')
+    expect(quitarEmojis(sucio)).toBe(
+      [
+        '## 1. ¿Por qué elegiste esta opción?',
+        '¡Casi! Elegiste futuro. Imaginá una manzana:',
+        '- **Presente:** la comés ahora',
+        'Un truco',
+        '1 Primero',
+      ].join('\n'),
+    )
+    expect(quitarEmojis(sucio)).not.toMatch(HAY_EMOJI)
+  })
+
+  it('no toca lo que es contenido: fórmulas, flechas, símbolos y sangrías', () => {
+    const contenido = [
+      'Si $p \\rightarrow q$ entonces p → q, y p ↔ q ✓',
+      '  - sublista con sangría © 2026 ™',
+      'x² ≥ 0, ½ + ¼ = ¾ (100%)',
+    ].join('\n')
+    expect(quitarEmojis(contenido)).toBe(contenido)
+  })
+
+  it('emojis compuestos (familia, tono de piel, bandera) salen enteros', () => {
+    expect(quitarEmojis('Hola 👨‍👩‍👧 y 👍🏽 desde 🇦🇷.')).toBe('Hola y desde.')
   })
 })
