@@ -1,0 +1,39 @@
+<!-- @dsCard group="Datos" height=140 subtitle="Cómo le va al alumno en un tema: verde, naranja o neutro" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  body { margin: 0; font-family: var(--font-texto, Inter, system-ui, sans-serif); background: var(--superficie-base); color: var(--texto); }
+  .marco { padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; }
+  .fila { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .chip { font-size: 11px; font-weight: 600; padding: 5px 9px; border-radius: var(--radio-sm); }
+  .logrado { background: var(--logrado-fondo); color: var(--logrado); }
+  .flojo { background: var(--flojo-fondo); color: var(--flojo); }
+  .neutro { background: var(--superficie-tarjeta); color: var(--texto-suave); border: 1px solid var(--borde); }
+  .pie { font-size: 11px; color: var(--texto-suave); }
+</style>
+</head>
+<body>
+<div class="marco">
+  <div class="fila">
+    <span class="chip logrado">Límites</span>
+    <span class="chip logrado">Conjuntos</span>
+    <span class="chip logrado">Lógica</span>
+    <span class="pie">Domina el tema</span>
+  </div>
+  <div class="fila">
+    <span class="chip flojo">Derivadas</span>
+    <span class="chip flojo">Cinemática</span>
+    <span class="pie">Falla ahí — naranja, nunca rojo</span>
+  </div>
+  <div class="fila">
+    <span class="chip neutro">Combinatoria</span>
+    <span class="chip neutro">Integrales</span>
+    <span class="pie">Todavía sin datos suficientes</span>
+  </div>
+</div>
+</body>
+</html>

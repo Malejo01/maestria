@@ -1,0 +1,68 @@
+<!-- @dsCard group="Datos" height=260 subtitle="La fila del listado y la tarjeta de sugerencia que cierra con una acción" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  body { margin: 0; font-family: var(--font-texto, Inter, system-ui, sans-serif); background: var(--superficie-base); color: var(--texto); }
+  .marco { padding: 24px 28px; display: flex; flex-direction: column; gap: 11px; max-width: 760px; }
+  .fila { border: 1px solid var(--borde); border-radius: var(--radio-lg); padding: 15px 17px; display: flex; align-items: center; gap: 15px; background: var(--superficie-tarjeta); }
+  .inicial { width: 42px; height: 42px; flex: none; border-radius: 12px; background: var(--superficie-suave); color: var(--accion); display: flex; align-items: center; justify-content: center; font-family: var(--font-display, "Plus Jakarta Sans", sans-serif); font-size: 17px; font-weight: 800; }
+  .quien { flex-grow: 1; min-width: 0; }
+  .nombre { font-size: 15px; font-weight: 700; }
+  .meta { font-size: 12.5px; color: var(--texto-suave); margin-top: 2px; }
+  .chips { display: flex; gap: 6px; flex: none; }
+  .chip { font-size: 11px; font-weight: 600; padding: 5px 9px; border-radius: var(--radio-sm); }
+  .logrado { background: var(--logrado-fondo); color: var(--logrado); }
+  .flojo { background: var(--flojo-fondo); color: var(--flojo); }
+  .cuando { font-size: 12.5px; color: var(--texto-suave); width: 72px; text-align: right; flex: none; }
+  .sugerencia { background: var(--accion-tenue); border: 1px solid var(--accion-tenue-borde); border-radius: var(--radio-lg); padding: 16px 17px; display: flex; align-items: center; gap: 14px; }
+  .sugerencia .t { font-size: 14px; font-weight: 700; }
+  .sugerencia .d { font-size: 12.5px; color: var(--texto-suave); margin-top: 3px; }
+  .accionar { font-family: inherit; font-size: 13.5px; font-weight: 700; padding: 11px 16px; border: none; border-radius: var(--radio-md); background: var(--accion); color: var(--texto-sobre-accion); cursor: pointer; flex: none; }
+  .accionar:hover { background: var(--accion-hover); }
+  .accionar:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="marco">
+
+  <div class="fila">
+    <div class="inicial" aria-hidden="true">S</div>
+    <div class="quien">
+      <div class="nombre">Sofía Ramírez</div>
+      <div class="meta">Análisis I · rinde el 12/12</div>
+    </div>
+    <div class="chips">
+      <span class="chip logrado">Límites</span>
+      <span class="chip flojo">Derivadas</span>
+    </div>
+    <div class="cuando">hace 2 d</div>
+  </div>
+
+  <div class="fila">
+    <div class="inicial" aria-hidden="true">T</div>
+    <div class="quien">
+      <div class="nombre">Tomás Villa</div>
+      <div class="meta">Ingreso a Exactas · marzo</div>
+    </div>
+    <div class="chips">
+      <span class="chip logrado">Conjuntos</span>
+      <span class="chip logrado">Lógica</span>
+    </div>
+    <div class="cuando">ayer</div>
+  </div>
+
+  <div class="sugerencia">
+    <div style="flex-grow: 1">
+      <div class="t">Julieta no practica hace 6 días</div>
+      <div class="d">Sigue floja en cinemática. ¿Le mandamos una tarea corta?</div>
+    </div>
+    <button type="button" class="accionar">Armar tarea</button>
+  </div>
+
+</div>
+</body>
+</html>

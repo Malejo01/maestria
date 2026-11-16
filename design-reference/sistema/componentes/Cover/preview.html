@@ -1,0 +1,62 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&family=Inter:wght@400&display=swap">
+<style>
+  body { margin: 0; background: var(--superficie-base); }
+  .tapa { position: relative; width: 960px; height: 288px; overflow: hidden; }
+  .dibujo { position: absolute; inset: 0; }
+  .texto { position: absolute; left: 48px; bottom: 40px; width: 440px; }
+  .nombre { font-family: var(--font-display, "Plus Jakarta Sans", system-ui, sans-serif); font-weight: 800; font-size: 88px; line-height: .92; letter-spacing: -0.03em; color: var(--texto); margin: 0; }
+  .nombre .ia { color: var(--accion); }
+  .bajada { font-family: var(--font-texto, Inter, system-ui, sans-serif); font-size: 14px; line-height: 1.45; color: var(--texto-suave); margin: 14px 0 0; }
+  .accion { fill: var(--accion); }
+  .tinta { fill: var(--texto); }
+  .ok { fill: var(--logrado); }
+  .flojo { fill: var(--flojo); }
+  .nodo { fill: var(--texto-sobre-accion); }
+  .arista { stroke: var(--texto-sobre-accion); fill: none; stroke-width: 2; stroke-linecap: round; }
+</style>
+</head>
+<body>
+<div class="tapa">
+
+  <!-- Bloques: accion 232x288 · texto 232x160 · logrado 108x112 · flojo 108x112, radios radio-lg (14). -->
+  <!-- Arreglo: una losa alta de marca a la izquierda del bloque, satelites a la derecha; los dos colores de estado chicos, porque solo significan estado. -->
+  <!-- Patron: nodos y aristas. El isotipo ES un grafo de cinco nodos, asi que la tapa repite esa lengua: puntos a paso espacio-7 (48) con tres aristas sueltas. -->
+  <!-- Escalas: paso 48 = espacio-7, separacion 16 = espacio-4, radio 14 = radio-lg, nodo r=4 = mitad de espacio-2. -->
+  <svg class="dibujo" viewBox="0 0 960 288" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+
+    <rect class="accion" x="480" y="0" width="232" height="288" rx="14"></rect>
+    <rect class="tinta" x="728" y="0" width="232" height="160" rx="14"></rect>
+    <rect class="ok" x="728" y="176" width="108" height="112" rx="14"></rect>
+    <rect class="flojo" x="852" y="176" width="108" height="112" rx="14"></rect>
+
+    <g class="arista">
+      <path d="M504 24 L552 72"></path>
+      <path d="M600 120 L648 168"></path>
+      <path d="M552 216 L600 264"></path>
+    </g>
+
+    <g class="nodo">
+      <circle cx="504" cy="24" r="4"></circle><circle cx="552" cy="24" r="4"></circle><circle cx="600" cy="24" r="4"></circle><circle cx="648" cy="24" r="4"></circle>
+      <circle cx="504" cy="72" r="4"></circle><circle cx="552" cy="72" r="4"></circle><circle cx="600" cy="72" r="4"></circle><circle cx="648" cy="72" r="4"></circle>
+      <circle cx="504" cy="120" r="4"></circle><circle cx="552" cy="120" r="4"></circle><circle cx="600" cy="120" r="4"></circle><circle cx="648" cy="120" r="4"></circle>
+      <circle cx="504" cy="168" r="4"></circle><circle cx="552" cy="168" r="4"></circle><circle cx="600" cy="168" r="4"></circle><circle cx="648" cy="168" r="4"></circle>
+      <circle cx="504" cy="216" r="4"></circle><circle cx="552" cy="216" r="4"></circle><circle cx="600" cy="216" r="4"></circle><circle cx="648" cy="216" r="4"></circle>
+      <circle cx="504" cy="264" r="4"></circle><circle cx="552" cy="264" r="4"></circle><circle cx="600" cy="264" r="4"></circle><circle cx="648" cy="264" r="4"></circle>
+    </g>
+
+  </svg>
+
+  <div class="texto">
+    <p class="nombre">Maestr<span class="ia">IA</span></p>
+    <p class="bajada">La IA que diagnostica el error, no la que da la respuesta.</p>
+  </div>
+
+</div>
+</body>
+</html>

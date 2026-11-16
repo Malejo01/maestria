@@ -1,0 +1,85 @@
+<!-- @dsCard group="Marca" height=220 subtitle="Isotipo y logotipo, con la regla de trazo por tamaño" -->
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../../tokens.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  body { margin: 0; font-family: var(--font-texto, Inter, system-ui, sans-serif); background: var(--superficie-base); color: var(--texto); }
+  .marco { padding: 24px 28px; display: flex; align-items: center; gap: 40px; flex-wrap: wrap; }
+  .pieza { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .pie { font-size: 11px; color: var(--texto-suave); }
+  .logotipo { font-family: var(--font-display, "Plus Jakarta Sans", system-ui, sans-serif); font-weight: 800; letter-spacing: -0.025em; font-size: 34px; }
+  .ia { color: var(--accion); }
+  .favicon { width: 34px; height: 34px; border-radius: var(--radio-sm); background: var(--accion); display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+<div class="marco">
+
+  <div class="pieza">
+    <div style="display: flex; align-items: center; gap: var(--espacio-3);">
+      <svg viewBox="-22.2 -29.7 144.4 144.4" width="48" height="48" role="img" aria-label="MaestrIA" style="color: var(--accion); flex: none">
+        <g fill="none" stroke="currentColor" stroke-width="4.8" stroke-linejoin="round">
+          <path d="M-11.8 0 L-11.8 85 A11.8 11.8 0 0 0 11.8 85 L11.8 0 A11.8 11.8 0 0 0 -11.8 0 Z"></path>
+          <path d="M88.2 0 L88.2 85 A11.8 11.8 0 0 0 111.8 85 L111.8 0 A11.8 11.8 0 0 0 88.2 0 Z"></path>
+          <path d="M-8.34 8.34 L41.66 58.34 A11.8 11.8 0 0 0 58.34 41.66 L8.34 -8.34 A11.8 11.8 0 0 0 -8.34 8.34 Z"></path>
+          <path d="M91.66 -8.34 L41.66 41.66 A11.8 11.8 0 0 0 58.34 58.34 L108.34 8.34 A11.8 11.8 0 0 0 91.66 -8.34 Z"></path>
+          <circle cx="0" cy="0" r="9.8"></circle><circle cx="0" cy="85" r="9.8"></circle>
+          <circle cx="100" cy="0" r="9.8"></circle><circle cx="100" cy="85" r="9.8"></circle>
+          <circle cx="50" cy="50" r="9.8"></circle>
+        </g>
+      </svg>
+      <span class="logotipo">Maestr<span class="ia">IA</span></span>
+    </div>
+    <div class="pie">Logotipo completo</div>
+  </div>
+
+  <div class="pieza">
+    <svg viewBox="-22.2 -29.7 144.4 144.4" width="40" height="40" role="img" aria-label="Isotipo a 40 px" style="color: var(--accion); flex: none">
+      <g fill="none" stroke="currentColor" stroke-width="4.8" stroke-linejoin="round">
+        <path d="M-11.8 0 L-11.8 85 A11.8 11.8 0 0 0 11.8 85 L11.8 0 A11.8 11.8 0 0 0 -11.8 0 Z"></path>
+        <path d="M88.2 0 L88.2 85 A11.8 11.8 0 0 0 111.8 85 L111.8 0 A11.8 11.8 0 0 0 88.2 0 Z"></path>
+        <path d="M-8.34 8.34 L41.66 58.34 A11.8 11.8 0 0 0 58.34 41.66 L8.34 -8.34 A11.8 11.8 0 0 0 -8.34 8.34 Z"></path>
+        <path d="M91.66 -8.34 L41.66 41.66 A11.8 11.8 0 0 0 58.34 58.34 L108.34 8.34 A11.8 11.8 0 0 0 91.66 -8.34 Z"></path>
+        <circle cx="0" cy="0" r="9.8"></circle><circle cx="0" cy="85" r="9.8"></circle>
+        <circle cx="100" cy="0" r="9.8"></circle><circle cx="100" cy="85" r="9.8"></circle>
+        <circle cx="50" cy="50" r="9.8"></circle>
+      </g>
+    </svg>
+    <div class="pie">40 · trazo 4,8</div>
+  </div>
+
+  <div class="pieza">
+    <svg viewBox="-22.2 -29.7 144.4 144.4" width="22" height="22" role="img" aria-label="Isotipo a 22 px" style="color: var(--accion); flex: none">
+      <g fill="none" stroke="currentColor" stroke-width="8.5" stroke-linejoin="round">
+        <path d="M-11.8 0 L-11.8 85 A11.8 11.8 0 0 0 11.8 85 L11.8 0 A11.8 11.8 0 0 0 -11.8 0 Z"></path>
+        <path d="M88.2 0 L88.2 85 A11.8 11.8 0 0 0 111.8 85 L111.8 0 A11.8 11.8 0 0 0 88.2 0 Z"></path>
+        <path d="M-8.34 8.34 L41.66 58.34 A11.8 11.8 0 0 0 58.34 41.66 L8.34 -8.34 A11.8 11.8 0 0 0 -8.34 8.34 Z"></path>
+        <path d="M91.66 -8.34 L41.66 41.66 A11.8 11.8 0 0 0 58.34 58.34 L108.34 8.34 A11.8 11.8 0 0 0 91.66 -8.34 Z"></path>
+        <circle cx="0" cy="0" r="9.8"></circle><circle cx="0" cy="85" r="9.8"></circle>
+        <circle cx="100" cy="0" r="9.8"></circle><circle cx="100" cy="85" r="9.8"></circle>
+        <circle cx="50" cy="50" r="9.8"></circle>
+      </g>
+    </svg>
+    <div class="pie">22 · trazo 8,5</div>
+  </div>
+
+  <div class="pieza">
+    <div class="favicon">
+      <svg viewBox="-22.2 -29.7 144.4 144.4" width="24" height="24" role="img" aria-label="Favicon" style="color: var(--texto-sobre-accion); flex: none">
+        <g fill="none" stroke="currentColor" stroke-width="9.5" stroke-linejoin="round">
+          <path d="M-11.8 0 L-11.8 85 A11.8 11.8 0 0 0 11.8 85 L11.8 0 A11.8 11.8 0 0 0 -11.8 0 Z"></path>
+          <path d="M88.2 0 L88.2 85 A11.8 11.8 0 0 0 111.8 85 L111.8 0 A11.8 11.8 0 0 0 88.2 0 Z"></path>
+          <path d="M-8.34 8.34 L41.66 58.34 A11.8 11.8 0 0 0 58.34 41.66 L8.34 -8.34 A11.8 11.8 0 0 0 -8.34 8.34 Z"></path>
+          <path d="M91.66 -8.34 L41.66 41.66 A11.8 11.8 0 0 0 58.34 58.34 L108.34 8.34 A11.8 11.8 0 0 0 91.66 -8.34 Z"></path>
+        </g>
+      </svg>
+    </div>
+    <div class="pie">Favicon · sin nodos</div>
+  </div>
+
+</div>
+</body>
+</html>
