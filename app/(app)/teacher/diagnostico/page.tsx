@@ -6,7 +6,7 @@ import { Cargando } from '@/components/sistema/cargando'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import {
   DiagnosticCourseReport,
   type CourseDiagnostic,

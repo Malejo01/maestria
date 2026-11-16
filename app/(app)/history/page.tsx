@@ -24,7 +24,6 @@ import {
   Trophy,
   TrendingUp,
   BookOpen,
-  Loader2,
   ChevronDown,
   ChevronUp,
   CheckCircle,

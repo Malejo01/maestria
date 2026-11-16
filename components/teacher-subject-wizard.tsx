@@ -18,7 +18,6 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Loader2,
   Plus,
   Search,
   Sparkles,

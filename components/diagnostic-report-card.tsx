@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { pedirJson } from '@/lib/pedir-json'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, ChevronDown, ChevronUp, ClipboardList, Loader2 } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronUp, ClipboardList } from 'lucide-react'
 import {
   CHANCE_FLOOR,
   QUESTION_TYPE_LABEL,

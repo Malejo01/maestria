@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { BadgeCheck, Lightbulb, Loader2, Target } from 'lucide-react'
+import { BadgeCheck, Lightbulb, Target } from 'lucide-react'
 import { AccuracyBar, formatDateTime, formatScore } from '@/components/classroom-report-parts'
 
 interface StudentAttempt {

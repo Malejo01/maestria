@@ -6,8 +6,15 @@ import { Cargando } from '@/components/sistema/cargando'
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
-  ChevronRight, Loader2,
-  CheckSquare, Square, Minus, ArrowLeft, Settings2, Upload, FileText, GraduationCap,
+  ChevronRight,
+  CheckSquare,
+  Square,
+  Minus,
+  ArrowLeft,
+  Settings2,
+  Upload,
+  FileText,
+  GraduationCap,
 } from 'lucide-react'
 import { CargaFallida } from '@/components/carga-fallida'
 import { pedirJson } from '@/lib/pedir-json'

@@ -31,7 +31,6 @@ import {
   Download,
   KeyRound,
   Link2,
-  Loader2,
   Plus,
   RefreshCw,
   Target,

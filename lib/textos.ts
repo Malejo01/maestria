@@ -95,19 +95,6 @@ export const INGRESO = {
 export const BIENVENIDA = {
   guardando: 'Preparando tu cuenta…',
   noSeGuardo: 'No pudimos guardar tu elección. Probá de nuevo.',
-  nivel: {
-    titulo: '¿Qué estás cursando?',
-    bajada: 'Así te mostramos tus materias de entrada.',
-  },
-  grado: {
-    tituloPrimario: '¿En qué grado estás?',
-    titulo: '¿En qué año estás?',
-    sinContenido:
-      'Todavía no hay contenidos cargados para este nivel. Podés elegir tu materia más adelante, desde Practicar.',
-    queCargamos: 'los años de tu nivel',
-  },
-  volver: 'Volver',
-  saltar: 'Elegir más tarde',
 } as const
 
 export const GRUPO = {
@@ -525,5 +512,34 @@ export const MI_PROGRESO = {
     },
     resumenTitulo: 'Mis tips',
     verTodos: 'Ver todos',
+  },
+} as const
+
+export const ONBOARDING_ALUMNO = {
+  paso: (actual: number, total: number) => `${actual} de ${total}`,
+  seguir: 'Seguir',
+  volver: 'Volver',
+  queEs: {
+    titulo: 'Acá hacés las tareas que te manda tu profe',
+    detalle:
+      'Cuando te equivocás, MaestrIA no te da la respuesta de una: primero te muestra en qué te confundiste, para que la próxima te salga.',
+  },
+  grupo: {
+    titulo: '¿Tu profe te pasó un código?',
+    detalle: 'Con el código entrás a su grupo. Si te mandó un link, es lo mismo: abrilo y listo.',
+    etiqueta: 'Código del grupo',
+    ejemplo: '7K4P2M',
+    incompleto: (largo: number) => `El código tiene ${largo} caracteres. Fijate si te falta alguno.`,
+    entrar: 'Entrar al grupo',
+    sinCodigo: 'Todavía no tengo código',
+    yaEstas: {
+      titulo: 'Ya estás en el grupo de tu profe',
+      detalle: 'Si otro profe te pasa un código, lo escribís en Mis tareas.',
+    },
+  },
+  tareas: {
+    titulo: 'Todo lo que te manden aparece en Mis tareas',
+    detalle: 'Con la fecha de entrega al lado. Y en Mi progreso ves cómo te va en cada tema.',
+    boton: 'Ir a mis tareas',
   },
 } as const
