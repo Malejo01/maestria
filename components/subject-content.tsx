@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -16,6 +16,8 @@ import type { ProgramUnit, Question, QuestionType, QuizActionMode, SubjectColorN
 import { DEFAULT_QUESTION_TYPES } from '@/lib/question-types'
 import { useToast } from '@/hooks/use-toast'
 import { contar } from '@/lib/textos'
+import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
+import { DialogoDeLimite } from '@/components/docente/pantalla-de-limite'
 
 interface SubjectContentProps {
   subject: Subject
@@ -83,6 +85,11 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
   const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>({})
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
   const { toast } = useToast()
+  // Un 402 del plan (vencido o tope del gratis) abre la pantalla de límite en
+  // vez del aviso genérico de "no se pudo generar". El ref es para saberlo en
+  // el mismo turno, sin esperar el render.
+  const [bloqueoPlan, setBloqueoPlan] = useState<CuerpoDeBloqueo | null>(null)
+  const bloqueoRef = useRef<CuerpoDeBloqueo | null>(null)
   
   const colors = colorConfig[subject.id as keyof typeof colorConfig] || colorConfig.algebra
   const pedagogyContext = subject.pedagogyProfile
@@ -198,6 +205,13 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
       })
       
       const data = await response.json()
+
+      const frenado = response.status === 402 ? leerBloqueo(data) : null
+      if (frenado) {
+        bloqueoRef.current = frenado
+        setBloqueoPlan(frenado)
+        return null
+      }
 
       if (Array.isArray(data.questions) && data.questions.length === questionCount) {
         return data.questions as Question[]
@@ -349,6 +363,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
 
     setIsLoading(true)
     setShowActionDialog(false)
+    bloqueoRef.current = null
     if (useLoadingScreen) {
       setActiveView('loading')
     }
@@ -358,7 +373,9 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
         ? await generateMixedQuestions(effectiveQuestionCount)
         : await generateQuestionsByMode(effectiveMode, effectiveQuestionCount)
       if (!generatedQuestions || generatedQuestions.length === 0) {
-        toast({ title: 'No se pudo generar el cuestionario', description: 'Intenta nuevamente.' })
+        if (!bloqueoRef.current) {
+          toast({ title: 'No se pudo generar el cuestionario', description: 'Intentá de nuevo.' })
+        }
         if (useLoadingScreen) {
           setActiveView('dashboard')
         }
@@ -696,6 +713,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
 
       {userProfile?.role === 'DOCENTE' && (
         <>
+          <DialogoDeLimite bloqueo={bloqueoPlan} onCerrar={() => setBloqueoPlan(null)} />
           <QuizActionDialog
             open={showActionDialog}
             onOpenChange={setShowActionDialog}

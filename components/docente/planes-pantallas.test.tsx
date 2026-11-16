@@ -25,6 +25,9 @@ const base: ResumenDelPlan = {
   venceEl: '2026-12-16T00:00:00Z',
   diasRestantes: 20,
   avisoDePruebaPendiente: false,
+  cupoGratis: 2,
+  topeCuestionarios: 20,
+  cuestionarios: null,
 }
 
 afterEach(cleanup)
@@ -78,21 +81,66 @@ describe('PantallaDeLimite', () => {
     expect(screen.getByRole('link', { name: /Pagar el pase/ })).toBeTruthy()
     expect(screen.queryByText(/administrador/i)).toBeNull()
   })
+
+  const enDialogo = (bloqueo: ReturnType<typeof cuerpoDeBloqueo>) =>
+    render(
+      <Dialog open>
+        <DialogContent>
+          <PantallaDeLimite bloqueo={bloqueo} onVolver={() => {}} />
+        </DialogContent>
+      </Dialog>,
+    )
+  const gratis: ResumenDelPlan = { ...base, estado: 'gratis', nivel: 0, cupo: 2, alumnos: 2, venceEl: null, diasRestantes: null }
+
+  it('H7, gratis lleno: el tope gratis, 1 bloque en total y el botón de pago', () => {
+    enDialogo(cuerpoDeBloqueo(gratis, 'sin_cupo', ENV))
+    expect(screen.getByText('Tenés 2 de 2 alumnos')).toBeTruthy()
+    expect(screen.getByText(/plan gratis llega hasta 2 alumnos.*1 bloque: son 5 alumnos en total/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Pagar el mes/ }).getAttribute('href')).toBe('https://mp.example/m1')
+  })
+
+  it('H7, tope de cuestionarios: cuántos generó, el tope y lo que cuesta seguir', () => {
+    enDialogo(cuerpoDeBloqueo({ ...gratis, cuestionarios: 20 }, 'tope_cuestionarios', ENV))
+    expect(screen.getByText('Generaste 20 de 20 cuestionarios')).toBeTruthy()
+    expect(screen.getByText(/hasta 20 cuestionarios cada 30 días. Con 1 bloque/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Pagar el mes/ })).toBeTruthy()
+  })
+
+  it('H7, sin link para ese nivel: el botón no aparece', () => {
+    enDialogo(cuerpoDeBloqueo({ ...gratis, cuestionarios: 20 }, 'tope_cuestionarios', {}))
+    expect(screen.queryByRole('link')).toBeNull()
+  })
 })
 
 describe('EstadoDelPlan', () => {
-  it('vencido: qué puede seguir haciendo y qué no', () => {
+  it('vencido: qué puede seguir haciendo, qué no, y cómo volver al gratis', () => {
     render(
       <EstadoDelPlan
-        datos={{ plan: { ...base, estado: 'vencido', diasRestantes: 0 }, renovar: opcionDePago(1, ENV) }}
+        datos={{ plan: { ...base, estado: 'vencido', alumnos: 3, diasRestantes: 0 }, renovar: opcionDePago(1, ENV) }}
       />,
     )
     expect(screen.getByRole('heading', { name: PLAN.vencimiento.tituloPlan })).toBeTruthy()
-    for (const item of [...PLAN.vencimiento.puede, ...PLAN.vencimiento.noPuede]) expect(screen.getByText(item)).toBeTruthy()
+    for (const item of [...PLAN.vencimiento.puede(2), ...PLAN.vencimiento.noPuede]) expect(screen.getByText(item)).toBeTruthy()
+    expect(screen.getByText(/Tenés 3 alumnos y el plan gratis llega hasta 2/)).toBeTruthy()
   })
-  it('prueba con 3 días: el banner', () => {
-    render(<EstadoDelPlan datos={{ plan: { ...base, nivel: 0, cupo: 10, diasRestantes: 3 }, renovar: null }} />)
-    expect(screen.getByText('Tu prueba termina en 3 días.')).toBeTruthy()
+  it('H7, prueba con 4 días y 2 alumnos: después sigue gratis, sin vender nada', () => {
+    render(<EstadoDelPlan datos={{ plan: { ...base, nivel: 0, cupo: 10, alumnos: 2, diasRestantes: 4 }, renovar: null }} />)
+    expect(screen.getByText('Te quedan 4 días de prueba.')).toBeTruthy()
+    expect(screen.getByText('Después seguís gratis con hasta 2 alumnos.')).toBeTruthy()
+    expect(screen.queryByRole('link')).toBeNull()
+    expect(screen.queryByRole('button', { name: PLAN.vencimiento.verPlanes })).toBeNull()
+  })
+  it('H7, prueba con 4 días y 12 alumnos: necesita un plan, con link a /precios', () => {
+    render(<EstadoDelPlan datos={{ plan: { ...base, nivel: 0, cupo: 10, alumnos: 12, diasRestantes: 4 }, renovar: null }} />)
+    expect(screen.getByText('Te quedan 4 días de prueba.')).toBeTruthy()
+    expect(screen.getByText(/Después, con 12 alumnos, necesitás un plan\./)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Mirá los precios.' }).getAttribute('href')).toBe('/precios')
+  })
+  it('gratis: ni banner ni solo lectura', () => {
+    const { container } = render(
+      <EstadoDelPlan datos={{ plan: { ...base, estado: 'gratis', cupo: 2, alumnos: 2, venceEl: null, diasRestantes: null }, renovar: null }} />,
+    )
+    expect(container.textContent).toBe('')
   })
   it('exento: nada', () => {
     const { container } = render(<EstadoDelPlan datos={{ plan: { ...base, estado: 'exento' }, renovar: null }} />)

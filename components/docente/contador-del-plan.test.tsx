@@ -13,6 +13,9 @@ const plan: ResumenDelPlan = {
   venceEl: '2026-12-15T15:00:00Z',
   diasRestantes: 29,
   avisoDePruebaPendiente: false,
+  cupoGratis: 2,
+  topeCuestionarios: 20,
+  cuestionarios: null,
 }
 
 afterEach(cleanup)
@@ -21,20 +24,34 @@ describe('textoDelContador', () => {
   it('alumnos contra el cupo y el vencimiento', () => {
     expect(textoDelContador({ plan, renovar: null })).toBe('12 de 15 alumnos · tu plan vence el 15/12')
   })
-  it('en prueba dice que termina la prueba', () => {
-    expect(textoDelContador({ plan: { ...plan, nivel: 0, cupo: 10, alumnos: 4 }, renovar: null })).toBe(
-      '4 de 10 alumnos · tu prueba termina el 15/12',
-    )
+  it('en prueba dice cuántos días quedan', () => {
+    expect(
+      textoDelContador({ plan: { ...plan, estado: 'prueba', nivel: 0, cupo: 10, alumnos: 6, diasRestantes: 18 }, renovar: null }),
+    ).toBe('6 de 10 alumnos · prueba, quedan 18 días')
+    expect(
+      textoDelContador({ plan: { ...plan, estado: 'prueba', nivel: 0, cupo: 10, alumnos: 6, diasRestantes: 1 }, renovar: null }),
+    ).toBe('6 de 10 alumnos · prueba, queda 1 día')
+  })
+  it('H7, en gratis: plan gratis, sin fecha', () => {
+    expect(
+      textoDelContador({
+        plan: { ...plan, estado: 'gratis', nivel: 0, cupo: 2, alumnos: 2, venceEl: null, diasRestantes: null },
+        renovar: null,
+      }),
+    ).toBe('2 de 2 alumnos · plan gratis')
   })
   it('vencido dice que venció', () => {
     expect(textoDelContador({ plan: { ...plan, estado: 'vencido' }, renovar: null })).toBe(
-      '12 de 15 alumnos · tu plan venció el 15/12',
+      '12 alumnos · tu plan venció el 15/12',
+    )
+    expect(textoDelContador({ plan: { ...plan, estado: 'vencido', nivel: 0, cupo: 10, alumnos: 3 }, renovar: null })).toBe(
+      '3 alumnos · tu prueba terminó el 15/12',
     )
   })
-  it('prueba sin arrancar: sólo los alumnos', () => {
-    expect(textoDelContador({ plan: { ...plan, nivel: 0, cupo: 10, venceEl: null }, renovar: null })).toBe(
-      '12 de 10 alumnos',
-    )
+  it('prueba sin arrancar: los alumnos y que es la prueba', () => {
+    expect(
+      textoDelContador({ plan: { ...plan, estado: 'prueba', nivel: 0, cupo: 10, venceEl: null, diasRestantes: null }, renovar: null }),
+    ).toBe('12 de 10 alumnos · prueba')
   })
   it('la cuenta exenta (o sin la 026) no ve nada', () => {
     expect(textoDelContador({ plan: { ...plan, estado: 'exento', cupo: null }, renovar: null })).toBeNull()

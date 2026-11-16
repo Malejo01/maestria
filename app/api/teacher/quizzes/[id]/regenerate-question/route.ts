@@ -63,8 +63,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Solo docentes pueden regenerar preguntas' }, { status: 403 })
   }
 
-  // Plan vencido: modo solo lectura (lib/planes.ts).
-  const bloqueo = await bloqueoParaGenerar(teacher.id, teacher.email)
+  // Plan vencido: solo lectura; en el gratis, cuenta para el tope de cuestionarios (lib/planes.ts).
+  const bloqueo = await bloqueoParaGenerar(teacher.id, teacher.email, {}, { cuestionario: true })
   if (bloqueo) return bloqueo
 
   const { id } = await params

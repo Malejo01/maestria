@@ -6,15 +6,20 @@ import { normalizarNombre } from '@/lib/alumnos-docente'
 import { captureRouteFailure } from '@/lib/observability'
 import {
   DIAS_PRUEBA,
-  cupoDeNivel,
+  DIAS_VENTANA_GRATIS,
   cuerpoDeBloqueo,
+  cuestionariosGratisPorMes,
+  cupoGratis,
+  cupoVigente,
   diasRestantes,
   estadoDelPlan,
   normalizarNivel,
   puedeGenerar,
   puedeSumarAlumno,
+  terminoElPeriodo,
   venceElEfectivo,
   type DatosDelPlan,
+  type EstadoPlan,
   type NivelPlan,
   type ResumenDelPlan,
 } from '@/lib/planes'
@@ -36,10 +41,21 @@ interface PlanLeido {
   columnasPresentes: boolean
 }
 
-async function leerPlan(userId: string, email: string | null, ahora: Date): Promise<PlanLeido> {
+/**
+ * Lee el plan. Los alumnos se cuentan sólo cuando deciden algo —la prueba o el
+ * plan ya terminaron, y entonces es gratis o solo lectura— o cuando quien
+ * llama los necesita igual (`contarSiempre`): así generar con un plan vigente
+ * sigue siendo una sola consulta.
+ */
+async function leerPlan(
+  userId: string,
+  email: string | null,
+  ahora: Date,
+  { contarSiempre = false }: { contarSiempre?: boolean } = {},
+): Promise<PlanLeido> {
   const esExento = isAdminEmail(email)
   const vacio: PlanLeido = {
-    datos: { nivel: undefined, venceEl: null, pruebaIniciadaEl: null, esExento, ahora },
+    datos: { nivel: undefined, venceEl: null, pruebaIniciadaEl: null, esExento, ahora, alumnosActuales: 0 },
     columnasPresentes: false,
   }
   if (esExento) return vacio
@@ -49,16 +65,18 @@ async function leerPlan(userId: string, email: string | null, ahora: Date): Prom
     `) as Fila[]
     const fila = filas[0]
     if (!fila) return vacio
-    return {
-      datos: {
-        nivel: fila.plan_nivel,
-        venceEl: fila.plan_vence_el as string | null,
-        pruebaIniciadaEl: fila.prueba_iniciada_el as string | null,
-        esExento,
-        ahora,
-      },
-      columnasPresentes: true,
+    const datos: DatosDelPlan = {
+      nivel: fila.plan_nivel,
+      venceEl: fila.plan_vence_el as string | null,
+      pruebaIniciadaEl: fila.prueba_iniciada_el as string | null,
+      esExento,
+      ahora,
+      alumnosActuales: 0,
     }
+    if (normalizarNivel(datos.nivel) !== null && (contarSiempre || terminoElPeriodo(datos))) {
+      datos.alumnosActuales = await contarAlumnosSinRomper(userId)
+    }
+    return { datos, columnasPresentes: true }
   } catch (error) {
     // 42703 = columna inexistente: la 026 todavía no corrió en esta base. Es
     // el estado esperado hasta que Mauro la corra, no un incidente.
@@ -75,21 +93,59 @@ export async function resumenDelPlan(
   email: string | null,
   ahora: Date = new Date(),
 ): Promise<ResumenDelPlan> {
-  const { datos, columnasPresentes } = await leerPlan(teacherId, email, ahora)
+  const { datos, columnasPresentes } = await leerPlan(teacherId, email, ahora, { contarSiempre: true })
   const estado = estadoDelPlan(datos)
+  const cuestionarios = estado === 'gratis' ? await contarCuestionariosEnVentana(teacherId) : null
+  return armarResumen(datos, estado, cuestionarios, columnasPresentes)
+}
+
+function armarResumen(
+  datos: DatosDelPlan,
+  estado: EstadoPlan,
+  cuestionarios: number | null,
+  columnasPresentes: boolean,
+): ResumenDelPlan {
   // Exento no cuenta nada: ni consume ni se muestra.
-  const alumnos = estado === 'exento' ? 0 : await contarAlumnosSinRomper(teacherId)
-  const nivel = estado === 'exento' ? null : normalizarNivel(datos.nivel)
-  const vence = estado === 'exento' ? null : venceElEfectivo(datos)
+  const exento = estado === 'exento'
+  const nivel = exento ? null : normalizarNivel(datos.nivel)
+  // El gratis no vence: no se muestra la fecha en que terminó lo anterior.
+  const vence = exento || estado === 'gratis' ? null : venceElEfectivo(datos)
   return {
     estado,
     nivel,
-    cupo: nivel === null ? null : cupoDeNivel(nivel),
-    alumnos,
+    cupo: cupoVigente(estado, nivel),
+    alumnos: exento ? 0 : datos.alumnosActuales,
     venceEl: vence ? vence.toISOString() : null,
     diasRestantes: diasRestantes(datos),
     avisoDePruebaPendiente:
       columnasPresentes && estado === 'prueba' && nivel === 0 && !datos.pruebaIniciadaEl && !datos.venceEl,
+    cupoGratis: cupoGratis(),
+    topeCuestionarios: cuestionariosGratisPorMes(),
+    cuestionarios,
+  }
+}
+
+/**
+ * Cuestionarios generados en los últimos 30 días corridos: las filas de
+ * `ai_usage_log` del bucket `quiz_generation` (generar un cuestionario y
+ * regenerar una pregunta) de ese usuario. No cuentan las que terminaron en
+ * 'error': una falla del modelo no le come el tope al docente. Si la consulta
+ * falla, cero: la válvula, también acá.
+ */
+async function contarCuestionariosEnVentana(userId: string): Promise<number> {
+  try {
+    const filas = (await sql`
+      SELECT COUNT(*)::int AS total
+      FROM ai_usage_log
+      WHERE user_id = ${userId}
+        AND endpoint = 'quiz_generation'
+        AND status <> 'error'
+        AND created_at > NOW() - make_interval(days => ${DIAS_VENTANA_GRATIS})
+    `) as Fila[]
+    return Number(filas[0]?.total ?? 0)
+  } catch (error) {
+    captureRouteFailure(error, { endpoint: 'lib/planes-server', operation: 'contarCuestionarios' })
+    return 0
   }
 }
 
@@ -104,18 +160,23 @@ async function contarAlumnosSinRomper(teacherId: string): Promise<number> {
 
 /**
  * Para los endpoints que generan, crean materias o crean grupos: null si puede
- * seguir, o el 402 que la UI sabe leer.
+ * seguir, o el 402 que la UI sabe leer. `cuestionario: true` cuando lo que se
+ * pide es generar un cuestionario o regenerar una pregunta: en el plan gratis
+ * eso consume el tope de cuestionarios; crear una materia o un grupo, no.
  */
 export async function bloqueoParaGenerar(
   teacherId: string,
   email: string | null,
   extra: Record<string, unknown> = {},
+  { cuestionario = false }: { cuestionario?: boolean } = {},
 ): Promise<NextResponse | null> {
   const { datos } = await leerPlan(teacherId, email, new Date())
   const estado = estadoDelPlan(datos)
-  if (puedeGenerar(estado)) return null
+  const cuestionarios = estado === 'gratis' && cuestionario ? await contarCuestionariosEnVentana(teacherId) : undefined
+  if (puedeGenerar(estado, cuestionarios)) return null
   const resumen = await resumenDelPlan(teacherId, email)
-  return NextResponse.json({ ...extra, ...cuerpoDeBloqueo(resumen, 'vencido') }, { status: 402 })
+  const motivo = estado === 'vencido' ? 'vencido' : 'tope_cuestionarios'
+  return NextResponse.json({ ...extra, ...cuerpoDeBloqueo(resumen, motivo) }, { status: 402 })
 }
 
 /** Para sumar UN alumno: null si hay lugar, o el 402 (vencido o sin cupo). */
@@ -188,32 +249,22 @@ export async function listarDocentesConPlan(ahora: Date = new Date()): Promise<D
     filas.map(async (fila) => {
       const id = String(fila.id)
       const email = typeof fila.email === 'string' ? fila.email : null
+      const alumnos = await contarAlumnosSinRomper(id)
       const datos: DatosDelPlan = {
         nivel: fila.plan_nivel,
         venceEl: fila.plan_vence_el as string | null,
         pruebaIniciadaEl: fila.prueba_iniciada_el as string | null,
         esExento: isAdminEmail(email),
         ahora,
+        alumnosActuales: alumnos,
       }
-      const estado = estadoDelPlan(datos)
-      const nivel = estado === 'exento' ? null : normalizarNivel(datos.nivel)
-      const vence = estado === 'exento' ? null : venceElEfectivo(datos)
-      const alumnos = await contarAlumnosSinRomper(id)
       return {
         id,
         nombre: String(fila.name ?? ''),
         email,
         alumnos,
         notas: typeof fila.plan_notas === 'string' ? fila.plan_notas : null,
-        resumen: {
-          estado,
-          nivel,
-          cupo: nivel === null ? null : cupoDeNivel(nivel),
-          alumnos,
-          venceEl: vence ? vence.toISOString() : null,
-          diasRestantes: diasRestantes(datos),
-          avisoDePruebaPendiente: estado === 'prueba' && !datos.pruebaIniciadaEl && !datos.venceEl,
-        },
+        resumen: armarResumen(datos, estadoDelPlan(datos), null, true),
       }
     }),
   )

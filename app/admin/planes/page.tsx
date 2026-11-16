@@ -20,6 +20,7 @@ const ESTADO: Record<EstadoPlan, { texto: string; clase: string }> = {
   exento: { texto: 'Exento', clase: 'text-texto-suave' },
   prueba: { texto: 'Prueba', clase: 'text-accion' },
   activo: { texto: 'Activo', clase: 'text-logrado' },
+  gratis: { texto: 'Gratis', clase: 'text-texto' },
   vencido: { texto: 'Vencido', clase: 'text-flojo' },
 }
 

@@ -33,6 +33,8 @@ import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { stableStringify } from '@/lib/stable-json'
 import type { Question, TeacherQuiz } from '@/lib/types'
+import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
+import { DialogoDeLimite } from '@/components/docente/pantalla-de-limite'
 
 /**
  * Revisión y edición de un cuestionario guardado, pregunta por pregunta.
@@ -114,6 +116,8 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
   /** Diálogo de motivo antes de pedir la regeneración. */
   const [pidiendoMotivo, setPidiendoMotivo] = useState<number | null>(null)
   const [motivo, setMotivo] = useState('')
+  /** Un 402 del plan (vencido o tope del gratis): la pantalla de límite. */
+  const [bloqueoPlan, setBloqueoPlan] = useState<CuerpoDeBloqueo | null>(null)
 
   const [conflicto, setConflicto] = useState<QuizImpact | null>(null)
   const [salidaPendiente, setSalidaPendiente] = useState(false)
@@ -185,6 +189,12 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
           body: JSON.stringify({ questionIndex: index, rejectionNote: nota.trim() || undefined }),
         })
         const data = await res.json().catch(() => ({}))
+
+        const frenado = res.status === 402 ? leerBloqueo(data) : null
+        if (frenado) {
+          setBloqueoPlan(frenado)
+          return
+        }
 
         if (!res.ok || !data?.question) {
           toast({
@@ -430,6 +440,8 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
           )
         })}
       </ol>
+
+      <DialogoDeLimite bloqueo={bloqueoPlan} onCerrar={() => setBloqueoPlan(null)} />
 
       {/* ─── Motivo del rechazo (opcional) ─────────────────────────────────── */}
       <Dialog open={pidiendoMotivo !== null} onOpenChange={(open) => !open && setPidiendoMotivo(null)}>
