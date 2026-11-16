@@ -17,6 +17,12 @@
  *   ENTRAR_COMO="Nombre"         entra por el ingreso de desarrollo (/sign-in/dev,
  *                                sólo con `npm run dev:staging`) como el usuario
  *                                cuyo nombre contenga ese texto
+ *   ANTES=scripts/capturas/x.js  archivo con JavaScript que se ejecuta en la
+ *                                página ya cargada, antes de la foto, y se
+ *                                espera si devuelve una promesa. Es lo que
+ *                                permite capturar un diálogo o un paso de un
+ *                                flujo: el script hace los clicks.
+ *   NOMBRE=explicacion           nombre del archivo, en lugar del de la ruta
  *
  * No usa Playwright ni Puppeteer: levanta el navegador instalado (Edge o
  * Chrome) sin ventana y lo maneja por el protocolo de DevTools con el
@@ -24,7 +30,7 @@
  */
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -37,7 +43,8 @@ if (!salida || rutas.length === 0) {
 const BASE = process.env.BASE ?? 'http://localhost:3000'
 const MODOS = (process.env.MODOS ?? 'claro,oscuro').split(',')
 const ANCHOS = (process.env.ANCHOS ?? '1440,390').split(',').map(Number)
-const ALTO = { 1440: 900, 390: 844 }
+const ALTO = { 1440: 900, 1280: 800, 390: 844 }
+const ANTES = process.env.ANTES ? await readFile(process.env.ANTES, 'utf8') : null
 const PUERTO = 9333
 
 const NAVEGADORES = [
@@ -163,8 +170,19 @@ try {
         await navegar(BASE + ruta)
         // Datos que llegan por fetch y animaciones de entrada.
         await esperar(Number(process.env.ESPERA ?? 3000))
+        if (ANTES) {
+          const { exceptionDetails } = await cdp('Runtime.evaluate', {
+            expression: ANTES,
+            awaitPromise: true,
+          })
+          // Una foto de la pantalla equivocada es peor que ninguna foto.
+          if (exceptionDetails) {
+            throw new Error(`ANTES falló en ${ruta}: ${exceptionDetails.exception?.description ?? exceptionDetails.text}`)
+          }
+          await esperar(800)
+        }
         const { data } = await cdp('Page.captureScreenshot', { format: 'png' })
-        const archivo = join(salida, `${nombreDe(ruta)}-${ancho}-${modo}.png`)
+        const archivo = join(salida, `${process.env.NOMBRE ?? nombreDe(ruta)}-${ancho}-${modo}.png`)
         await writeFile(archivo, Buffer.from(data, 'base64'))
         console.log(archivo)
       }

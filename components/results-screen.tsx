@@ -9,6 +9,7 @@ import { useAppStore } from '@/lib/store'
 import { StreakBadge } from './streak-badge'
 import { MathBackground } from './math-background'
 import { LaTeXRenderer } from './latex-renderer'
+import { ExplicacionMarkdown } from './explicacion-markdown'
 import { Home, RotateCcw, TrendingUp, TrendingDown, Sparkles, XCircle, CheckCircle, ChevronDown, ChevronUp, AlertCircle, Lightbulb, History } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import confetti from 'canvas-confetti'
@@ -521,9 +522,7 @@ export function ResultsScreen() {
                     <Card className="ml-8 p-4 border-2 border-[var(--algebra)]/30 bg-[var(--algebra-light)]">
                       <div className="flex items-start gap-2">
                         <Lightbulb className="w-5 h-5 text-[var(--algebra)] shrink-0 mt-0.5" />
-                        <div className="text-sm text-foreground/80 whitespace-pre-wrap">
-                          <LaTeXRenderer content={explanations[answer.questionId]} />
-                        </div>
+                        <ExplicacionMarkdown content={explanations[answer.questionId]} className="flex-1" />
                       </div>
                     </Card>
                   )}

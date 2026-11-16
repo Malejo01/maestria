@@ -1,6 +1,6 @@
 # MaestrIA — Roadmap
 
-Documento vivo. Última actualización: **15 de noviembre de 2026**.
+Documento vivo. Última actualización: **16 de noviembre de 2026**.
 
 ## Tesis de producto
 
@@ -277,6 +277,16 @@ Pendiente, a propósito:
 - [ ] Las tres pantallas no tienen capturas: son un flujo con estado y el script de capturas sólo saca pantallas por URL. Hay captura de la primera (la elección de rol para una cuenta nueva).
 - [ ] No se probó la segunda pantalla con un código real (entrar al grupo desde ahí), ni el caso "ya estás en el grupo".
 - [ ] El invitado no tiene onboarding: llega por el link de su profe y cae directo en su tarea.
+
+---
+
+## 🔁 Tanda post-rediseño (desde el 16/11/2026)
+
+Los siete bloques están en `main` (`f0911c3`) y la 025 corrida en producción. Esta tanda es lo que apareció mirando la app en el navegador, más lo que el rediseño dejó abierto. **Una tarea, una rama desde `main`, un PR**: nada apilado (los PRs apilados del rediseño costaron un rescate a mano). Una línea por tarea cerrada: qué se hizo y qué quedó sin verificar.
+
+- [x] **A1 · Las explicaciones de la IA se ven formateadas** (rama `fix/a1-markdown-explicacion`). Se imprimían con `whitespace-pre-wrap` y el alumno leía los `##` y los `**`. Parser propio en [lib/markdown-explicacion.ts](../lib/markdown-explicacion.ts) y componente [explicacion-markdown.tsx](../components/explicacion-markdown.tsx), usado en los **tres** lugares que mostraban esa salida: el modal, la pantalla de resultados y Mi progreso. **Sin dependencia nueva, a propósito**: en `$a_1 * b_2$` un parser de Markdown ve cursiva, y los plugins de matemática tratan todo `$…$` como fórmula, cuando `LaTeXRenderer` ya distingue el `$` que no lo es. Las fórmulas se apartan crudas y las sigue dibujando él. Un marcador sin cerrar nunca se imprime (el modal revela el texto de a poco). De paso, dos defectos del modal a 390 px que mostró la captura: `max-w-lg mx-4` lo corría 16 px fuera de la pantalla, y el botón de revancha no partía renglón y ensanchaba todo. `scripts/capturas.mjs` ahora acepta `ANTES=<archivo.js>` para hacer clicks antes de la foto: **cierra el "no maneja diálogos"** que los bloques 4, 5 y 7 dejaron anotado. Capturas en `docs/capturas/a1-markdown/`. Verificado además con una explicación real del modelo en staging (4 encabezados, negritas, lista).
+  - Sin verificar: resultados y Mi progreso se cambiaron pero no se miraron en pantalla (mismo componente, tamaño `compacto` en Mi progreso). Tablas y links de Markdown no se soportan: el prompt no los pide.
+  - Queda: `components/weak-points-section.tsx` tiene el mismo `max-w-xl mx-4` en su diálogo; se mira en A5.
 
 ---
 
