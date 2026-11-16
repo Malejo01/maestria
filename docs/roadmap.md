@@ -305,6 +305,10 @@ Los siete bloques están en `main` (`f0911c3`) y la 025 corrida en producción. 
   - Sin verificar: no se miró en pantalla (en staging ningún tema cae entre 5 y 7 respuestas, así que nada cambia de color). Efecto esperable en producción: algunos chips verdes pasan a "sin datos".
   - **Para Mauro:** el estado intermedio se llama "Sin datos", que no es exactamente cierto (hay datos, no alcanzan). El sistema tiene tres estados de chip; un cuarto es decisión de diseño.
 
+- [x] **B2 · La excepción de animación quedó escrita, y dejó de ser falsa** (rama `fix/b2-movimiento-reducido`). La sección nueva está en `design-reference/sistema/accesibilidad.md` ("La excepción declarada: qué se mueve y por qué"): las nueve cosas que se animan, el motivo de cada una y qué hacen con `prefers-reduced-motion`. **Al inventariar para escribirla salió que el documento ya decía algo que el código no cumplía**: el papel picado de resultados no consultaba la preferencia (no es de Framer Motion, así que no pasaba por `useReducedMotion()`), y tampoco las transiciones de CSS ni la animación de apertura de los primitivos de `components/ui/`. Ahora el papel picado lleva `disableForReducedMotion: true` y `app/globals.css` tiene la red para todo lo que se mueve por CSS. Dos tests léxicos lo sostienen.
+  - Sin verificar: **no se probó en un navegador con la preferencia activada**; lo que hay son los tests sobre el código. `design-reference/` no está versionado, así que el documento cambió sólo en la máquina de Mauro: este PR lleva el código.
+  - El papel picado sigue siendo decisión de Mauro (bloque 6): si la regla de sobriedad es estricta, se saca en una línea y se borra su fila de la tabla.
+
 ### Cola nueva, salida de A5 (se hace después de E3)
 
 - [ ] **F1 · La nota no entra en su recuadro en resultados.** A 390, "4.00" a 48 px se sale del cuadro de 144 px y pisa el "/10" (`components/results-screen.tsx`). Captura: `a5-celular/resultados-390-claro.png`.
