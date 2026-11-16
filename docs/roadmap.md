@@ -206,6 +206,42 @@ Pendiente, a propósito:
 - [ ] Sin capturas del diálogo: el script no maneja diálogos. Hay capturas de Mis tareas.
 - [ ] No se probó con fecha "Hasta" en pantalla; el texto con fecha está cubierto por tests.
 
+### Bloque 6 — Lado del alumno (rama `rediseno/6-lado-alumno`)
+
+Sin migraciones. **No se tocó la lógica** del motor de cuestionarios, de la corrección ni de los inputs de respuesta: los 753 tests siguen pasando sin haber cambiado uno.
+
+- [x] **Pase de tokens a toda la app** ([scripts/codemod-tokens.py](../scripts/codemod-tokens.py)): la paleta de Tailwind pasó a los tokens en 31 archivos, cambiando sólo nombres de clase. Verdes → `logrado`, rojos y naranjas → `flojo` (naranja, nunca rojo), azules y violetas → `accion`, grises → `texto` / `borde` / `superficie`. Degradés → el color sólido de arranque; sombras y desenfoques, afuera. Es idempotente.
+- [x] **El chequeo de diseño cubre toda la app.** `tests/sistema-de-diseno.test.ts` pasó de revisar las carpetas rediseñadas a revisar `app/` y `components/` enteros (menos `components/ui/`, vendored). `TODAVIA_VIEJOS` quedó vacío.
+- [x] **Mis tareas del alumno** (`/aulas`): todas las tareas de todos sus grupos en una sola lista, lo que hay para hacer primero. Un solo botón azul: la primera tarea disponible. Debajo, los accesos a Practicar y Mi progreso (pedido de Mauro: que el alumno vea todo lo que puede hacer), sus grupos con "Te invitó…" y el campo para sumarse a otro.
+- [x] **Mi progreso**: `/history` y `/tips` se fundieron. Tres pestañas: Lo que hice, A reforzar, Mis tips. `/tips` redirige. "Cofre de Tips" dejó de llamarse así.
+- [x] **Cuestionario, resultados y Practicar con los tokens.** Verificado en pantalla respondiendo una pregunta: la opción correcta en verde `logrado`, la elegida mal en naranja `flojo`, y el mensaje en el mismo tono.
+- [x] **Sin emojis en la interfaz**: salieron de resultados, explicación, revancha, tips y temas a reforzar.
+- [x] **Un solo azul**: las materias dejaron de tener color propio (`lib/subject-appearance.ts`). `color_name` se sigue guardando; ya no cambia cómo se ve. El selector de color salió del wizard.
+- [x] **Fondo plano**: `MathBackground` (degradé + grilla + manchas) quedó como un fondo liso. Se conserva el componente para no tocar los siete lugares que lo montan.
+- [x] **Íconos de carga con Framer Motion**: los `Loader2 animate-spin` pasaron a `<Cargando />`, que respeta `prefers-reduced-motion`.
+- [x] La tarjeta que se da vuelta (`flashcard-3d`) es un `<button>` de verdad en vez de un `div` con `role="button"`.
+
+Decisiones:
+
+- **El invitado ya no ve la práctica libre del grupo**, sólo sus tareas, con una línea que dice que con cuenta la tiene. Es la decisión que este documento ya tenía tomada ("La práctica exige cuenta") y la tabla del encargo. Cambia comportamiento: antes un invitado podía generar hasta 3 por día.
+- **"analysis" era el verde de acierto** dentro del cuestionario y el color del modo práctico en el armado. En el cuestionario pasó a `logrado`; en el armado, al azul.
+- **El papel picado de los resultados se queda**, con los colores de los tokens. Es la única animación que no es de Framer Motion (usa `canvas-confetti`). **Decisión de Mauro**: si la regla es estricta, se saca en una línea.
+- **Los prompts de la IA siguen pidiendo emojis** en las explicaciones para Primario (`app/api/explain-error/route.ts`). No se tocó: es contenido pedagógico generado, no interfaz, y cambiarlo cambia cómo le habla la app a un nene de 8 años. **Decisión de Mauro.**
+- **La pantalla de error global conserva colores escritos a mano**: se muestra justo cuando la hoja de estilos no cargó. Son el espejo de los tokens y está anotado en el test.
+
+Lo que el pase rompió y cómo se atrapó (queda escrito porque el script se puede volver a usar):
+
+- **Se llevó una comilla** en dos lugares: la clase `'hover:shadow-xl …'` al principio de una cadena perdía su comilla de apertura. Lo atrapó el compilador. Corregido en el script.
+- **Dejó botones sin fondo**: los que sólo tenían color por su degradé (`from-[var(--algebra)]`) quedaban con texto blanco sobre nada. Lo atrapó una captura de la pantalla de carga. Corregido: el arranque del degradé pasa a ser el fondo.
+- **Los íconos de nivel de Practicar quedaron invisibles**: sus clases venían de `lib/nivel-options.ts`, fuera del alcance del pase. Lo atrapó otra captura.
+
+Pendiente, a propósito:
+
+- [ ] **Sólo se miró en pantalla una parte**: el cuestionario (una pregunta de opción múltiple, bien y mal), Mis tareas, Mi progreso y el primer paso de Practicar. No se recorrieron la pantalla de resultados, la explicación del error, la revancha, ni los inputs numérico, verdadero/falso y respuesta corta. Cambiaron sólo clases, pero no se vieron.
+- [ ] El interior de `/history` conserva su estructura vieja (tarjetas grandes, filtros), ahora con los tokens. No se rediseñó la disposición.
+- [ ] La racha de la home vieja no volvió a ningún lado: vivía en localStorage y contaba otra cosa que lo que decía su etiqueta (ver "Tarjetas de resumen de /history").
+- [ ] `tw-animate-css` sigue importado: lo usan los primitivos de `components/ui/`.
+
 ---
 
 ## ⏸️ PENDIENTE ESPERANDO PRESUPUESTO
