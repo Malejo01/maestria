@@ -209,7 +209,7 @@ export const ONBOARDING_DOCENTE = {
     },
   },
   listo: {
-    titulo: '¡Listo! Ya mandaste tu primera tarea.',
+    titulo: 'Ya mandaste tu primera tarea.',
     detalle: 'Cuando tus alumnos la resuelvan, acá vas a ver en qué se equivoca cada uno.',
     boton: 'Cerrar este aviso',
   },
@@ -425,7 +425,7 @@ export const COMPARTIR_TAREA = {
     exportando: 'Exportando…',
   },
   lista: {
-    titulo: '¡Listo! La tarea ya está en el grupo.',
+    titulo: 'La tarea ya está en el grupo.',
     detalle: 'Pasales el link para que entren. Quien ya está en el grupo la ve en Mis tareas.',
     link: 'Link del grupo',
     copiarLink: 'Copiar el link',
@@ -556,3 +556,8 @@ export const ONBOARDING_ALUMNO = {
     boton: 'Ir a mis tareas',
   },
 } as const
+
+/** "1 unidad", "3 unidades": el número con el sustantivo en singular o plural. */
+export function contar(n: number, singular: string, plural: string): string {
+  return `${n} ${n === 1 ? singular : plural}`
+}

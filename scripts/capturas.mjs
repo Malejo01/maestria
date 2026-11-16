@@ -24,6 +24,8 @@
  *                                flujo: el script hace los clicks. Varios
  *                                archivos separados por coma corren en orden.
  *   NOMBRE=explicacion           nombre del archivo, en lugar del de la ruta
+ *   MOVIMIENTO=reducido          emula prefers-reduced-motion: reduce
+ *   PUERTO=9333                  puerto de DevTools (otro para correr dos a la vez)
  *
  * No usa Playwright ni Puppeteer: levanta el navegador instalado (Edge o
  * Chrome) sin ventana y lo maneja por el protocolo de DevTools con el
@@ -49,7 +51,7 @@ const ALTO = { 1440: 900, 1280: 800, 390: 844 }
 const ANTES = process.env.ANTES
   ? await Promise.all(process.env.ANTES.split(',').map((archivo) => readFile(archivo.trim(), 'utf8')))
   : []
-const PUERTO = 9333
+const PUERTO = Number(process.env.PUERTO ?? 9333)
 
 const NAVEGADORES = [
   process.env.NAVEGADOR,
@@ -132,6 +134,9 @@ try {
 
   await cdp('Page.enable')
   await cdp('Network.enable')
+  if (process.env.MOVIMIENTO === 'reducido') {
+    await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] })
+  }
   if (process.env.COOKIE) {
     const [name, ...resto] = process.env.COOKIE.split('=')
     await cdp('Network.setCookie', { name, value: resto.join('='), url: BASE })

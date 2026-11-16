@@ -34,6 +34,9 @@ import type { QuestionType } from '@/lib/types'
 
 type QuizMode = 'teorico' | 'practico' | 'mixto'
 
+const ETIQUETA_MODO: Record<QuizMode, string> = { teorico: 'Teórico', practico: 'Práctico', mixto: 'Mixto' }
+const ETIQUETA_DIFICULTAD = { basico: 'Básico', intermedio: 'Intermedio', avanzado: 'Avanzado' } as const
+
 interface Eje {
   eje: string
   temas: string[]
@@ -892,13 +895,13 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
                       key={m}
                       onClick={() => setMode(m)}
                       className={cn(
-                        'p-3 rounded-xl border text-sm font-semibold capitalize transition-all',
+                        'p-3 rounded-xl border text-sm font-semibold transition-all',
                         mode === m
                           ? 'border-primary bg-primary/10 text-primary'
                           : 'border-border bg-card text-muted-foreground hover:border-primary/50'
                       )}
                     >
-                      {m.charAt(0).toUpperCase() + m.slice(1)}
+                      {ETIQUETA_MODO[m]}
                     </button>
                   ))}
                 </div>
@@ -936,13 +939,13 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
                       key={d}
                       onClick={() => setDifficulty(d)}
                       className={cn(
-                        'p-3 rounded-xl border text-sm font-semibold capitalize transition-all',
+                        'p-3 rounded-xl border text-sm font-semibold transition-all',
                         difficulty === d
                           ? 'border-primary bg-primary/10 text-primary'
                           : 'border-border bg-card text-muted-foreground hover:border-primary/50'
                       )}
                     >
-                      {d.charAt(0).toUpperCase() + d.slice(1)}
+                      {ETIQUETA_DIFICULTAD[d]}
                     </button>
                   ))}
                 </div>
@@ -968,14 +971,14 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
                   onClick={handleStart}
                   className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base hover:bg-primary/90 transition-all active:scale-95"
                 >
-                  Generar Cuestionario
+                  Generar el cuestionario
                 </button>
               ) : (
                 <button
                   onClick={handleStart}
                   className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base hover:bg-primary/90 transition-all active:scale-95"
                 >
-                  Realizar Cuestionario
+                  Empezar la práctica
                 </button>
               )}
             </div>

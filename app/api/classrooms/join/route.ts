@@ -44,11 +44,11 @@ export async function GET(req: Request) {
     `
 
     if (rows.length === 0) {
-      return NextResponse.json({ error: 'No encontramos ningún aula con ese código.' }, { status: 404 })
+      return NextResponse.json({ error: 'No encontramos ningún grupo con ese código.' }, { status: 404 })
     }
 
     if (rows[0].status === 'closed') {
-      return NextResponse.json({ error: 'Esa aula está cerrada por el docente.' }, { status: 403 })
+      return NextResponse.json({ error: 'Ese grupo está cerrado por el docente.' }, { status: 403 })
     }
 
     const viewer = await getViewer()
@@ -98,12 +98,12 @@ export async function POST(req: Request) {
     `
 
     if (classroomRows.length === 0) {
-      return NextResponse.json({ error: 'No encontramos ningún aula con ese código.' }, { status: 404 })
+      return NextResponse.json({ error: 'No encontramos ningún grupo con ese código.' }, { status: 404 })
     }
 
     const classroom = classroomRows[0]
     if (classroom.status === 'closed') {
-      return NextResponse.json({ error: 'Esa aula está cerrada por el docente.' }, { status: 403 })
+      return NextResponse.json({ error: 'Ese grupo está cerrado por el docente.' }, { status: 403 })
     }
 
     const viewer = await getViewer()

@@ -520,7 +520,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             {isPreviewMode
               ? `Previsualizacion - ${currentQuestion.topicName}`
-              : `${config?.mode === 'teorico' ? 'Modo Teorico' : config?.mode === 'practico' ? 'Modo Practico' : 'Modo Mixto'} - ${currentQuestion.topicName}`}
+              : `${config?.mode === 'teorico' ? 'Modo teórico' : config?.mode === 'practico' ? 'Modo práctico' : 'Modo mixto'} - ${currentQuestion.topicName}`}
           </span>
         </div>
       </header>
