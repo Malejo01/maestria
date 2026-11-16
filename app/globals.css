@@ -189,3 +189,20 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/* Red para lo que se mueve sin pasar por Framer Motion: las transiciones de
+   estado de CSS (hover, el botón que se hunde) y la animación de apertura de
+   los primitivos de components/ui/, que son código de terceros. Las
+   animaciones propias consultan useReducedMotion(); esto cubre el resto.
+   Fuera de @layer a propósito: tiene que ganarle a cualquier utilidad.
+   Ver design-reference/sistema/accesibilidad.md, "Movimiento". */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
