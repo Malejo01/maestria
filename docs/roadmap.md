@@ -242,6 +242,42 @@ Pendiente, a propósito:
 - [ ] La racha de la home vieja no volvió a ningún lado: vivía en localStorage y contaba otra cosa que lo que decía su etiqueta (ver "Tarjetas de resumen de /history").
 - [ ] `tw-animate-css` sigue importado: lo usan los primitivos de `components/ui/`.
 
+### Bloque 7 — Onboarding del alumno (rama `rediseno/7-onboarding-alumno`)
+
+Sin migraciones.
+
+- [x] **Tres pantallas y nada más** ([components/entrada/bienvenida.tsx](../components/entrada/bienvenida.tsx)): qué es esto, cómo se entra a un grupo (se puede escribir el código ahí mismo) y dónde se ve lo que le mandaron. Con contador "1 de 3" y botón de volver.
+- [x] **Ya no pregunta nivel y año.** Eran dos pantallas de formulario antes de ver nada, tenían un "saltar por ahora", y Practicar ya los pregunta cuando hacen falta.
+- [x] **Quien llegó por el link de su profe no ve el pedido de código**: la segunda pantalla detecta que ya está en un grupo y se lo dice.
+- [x] **El rol se guarda al terminar la tercera pantalla**, no antes. Quien cierra a la mitad las vuelve a ver: no hay un "ya lo vio" que pueda quedar marcado sin que lo haya visto.
+
+#### 🚨 El JWT nunca se refrescaba — defecto que ya estaba en producción
+
+Se destapó al probar este bloque. Al terminar la bienvenida, el rol se guardaba en la base pero la persona quedaba para siempre en "Preparando tu cuenta…".
+
+**La causa:** en Auth.js v5, `useSession().update()` **sin argumento no dispara nada**. Hace un GET común de la sesión y devuelve el token tal como estaba (`node_modules/next-auth/react.js`: `typeof data === "undefined" ? undefined : { body: … }`). Sólo con un argumento hace el POST que el servidor marca como `trigger: 'update'`, que es lo que `auth.ts` espera para re-leer la base.
+
+El repo llamaba a `update()` pelado en tres lugares: al terminar el onboarding, al cambiar de rol, y en el refresco automático de nivel y año. **Ninguno de los tres funcionaba.** Esto corrige dos entradas de más abajo:
+
+- "**Refresh del JWT sin cerrar sesión**" (16/08), dada por implementada y nunca verificada en browser: **no andaba**. Los alumnos con perfil corregido seguían con el token viejo hasta volver a loguearse.
+- El `forceOnboarded` del gate de onboarding no era una optimización: era lo que tapaba el síntoma.
+
+No se notaba porque la barra vieja leía el rol de `/api/user/profile` y no del token. Se notó cuando la raíz del sitio pasó a decidir por el rol del token.
+
+**El arreglo tuvo dos intentos**, y el primero falló igual de callado que el original: un hook que llamaba a `update({})` pero guardaba la función del primer render, que nace con `loading: true` adentro y sale por su `if (loading) return` sin hacer nada. Lo mostró la pestaña de red: después de guardar el rol no salía ningún POST a `/api/auth/session`. El definitivo ([hooks/use-refrescar-sesion.ts](../hooks/use-refrescar-sesion.ts)) usa siempre la `update` del último render. Un test fija las dos cosas y prohíbe sacar `update` de `useSession` fuera del hook.
+
+Es la cuarta vez del mismo patrón: algo que no funciona y se ve igual que si funcionara (`Boolean(undefined)`, el 500 pintado como lista vacía, el JSONB reordenado, y ahora esto).
+
+**Verificado en browser contra staging**, con una cuenta nueva sin rol: las tres pantallas, el rol en `null` hasta el final, y al terminar la sesión con `role: ALUMNO`, `isOnboarded: true` y la persona en Mis tareas. También el cambio de rol desde el menú: termina en `/teacher` con sesión de docente y el primer hito del onboarding docente a la vista.
+
+**Consecuencia para producción, a tener presente al mergear:** el proxy bloquea `/teacher` a quien tenga `role: 'ALUMNO'` en el token. Con el refresco roto, un token viejo podía decir otra cosa que la base. Ahora dicen lo mismo.
+
+Pendiente, a propósito:
+
+- [ ] Las tres pantallas no tienen capturas: son un flujo con estado y el script de capturas sólo saca pantallas por URL. Hay captura de la primera (la elección de rol para una cuenta nueva).
+- [ ] No se probó la segunda pantalla con un código real (entrar al grupo desde ahí), ni el caso "ya estás en el grupo".
+- [ ] El invitado no tiene onboarding: llega por el link de su profe y cae directo en su tarea.
+
 ---
 
 ## ⏸️ PENDIENTE ESPERANDO PRESUPUESTO
