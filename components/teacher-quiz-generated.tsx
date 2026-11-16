@@ -6,7 +6,6 @@ import { useAppStore } from '@/lib/store'
 import { exportQuizToMoodleGift } from '@/lib/moodle-export'
 import { MathBackground } from '@/components/math-background'
 import { LaTeXRenderer } from '@/components/latex-renderer'
-import { Navbar } from './navbar'
 import {
   Save, PlayCircle, Trash2, ChevronDown, ChevronUp,
   ArrowLeft, Loader2, CheckCircle, GraduationCap, Pencil,
@@ -234,7 +233,6 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
   return (
     <div className="relative min-h-screen bg-background">
       <MathBackground />
-      <Navbar />
 
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-6">
         {/* Header */}

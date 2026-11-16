@@ -1,6 +1,6 @@
 # MaestrIA — Roadmap
 
-Documento vivo. Última actualización: **30 de septiembre de 2026**.
+Documento vivo. Última actualización: **15 de noviembre de 2026**.
 
 ## Tesis de producto
 
@@ -39,6 +39,62 @@ Lo que hay que convertir en producto, en orden de dependencia:
 4. **Inscribir desde la UI**: ya existe el código de aula, que cubre el caso normal. Falta el caso masivo — "traé a todos los que rindieron el diagnóstico".
 
 **Criterio de terminado, y conviene que sea incómodo:** una docente que nunca habló con nosotros tiene que poder recorrer los cuatro pasos sola, sin que nadie corra un script, sin que su email aparezca en ningún archivo del repo.
+
+---
+
+## 🎨 Rediseño completo (desde el 15/11/2026)
+
+El encargo, el sistema de diseño y las pantallas aprobadas viven en `design-reference/` (en la raíz, **sin versionar**: es material de Mauro). El encargo es `design-reference/PROMPT-FABLE.md`. Siete bloques, uno por rama y por PR, apilados:
+
+```
+1. Entrada y navegación   ← este
+2. Onboarding docente
+3. Panel: Mis alumnos
+4. Wizard de temario
+5. Compartir tarea
+6. Lado del alumno
+7. Onboarding alumno
+```
+
+**Compuertas acordadas con Mauro el 15/11, y no se negocian aunque el trabajo corra en loop:** ninguna migración contra producción sin su OK explícito (sólo contra la branch de staging de Neon), y ningún merge a `main`. La elección entre maquetas se frena sólo en el bloque 1; del 2 al 7 se elige y se documenta la alternativa en el PR. Si el bloque 1 vuelve con cambios grandes, se corta la pila y se rearma desde `main`.
+
+**La app se trata como en uso.** El encargo dice que hoy no la usa ningún alumno; este documento dice que los 31 de Análisis de Sistemas están en el aula 2. Ante la duda, no se rompe `/aula/[codigo]` ni el motor de cuestionarios.
+
+### Bloque 1 — Entrada y navegación (rama `rediseno/1-entrada-navegacion`)
+
+Maquetas comparadas en [docs/maquetas/bloque-1.html](maquetas/bloque-1.html). Elegido por Mauro: entrada A (la tarjeta aprobada con una frase arriba), ingreso como paso 2 dentro de la misma tarjeta, barra inferior en celular.
+
+- [x] **Tokens.** `app/tokens.css` es copia exacta de `design-reference/sistema/tokens.css`. `globals.css` ya no define ningún color: conecta los roles de shadcn (`--primary`, `--border`…) con los tokens, así los primitivos de `components/ui/` cambian de piel sin reescribirse. Modo en `data-theme="claro|oscuro"`; el variant `dark:` de Tailwind apunta ahí. Sombras anuladas a nivel de tema.
+- [x] **Tipografías.** Plus Jakarta Sans e Inter self-hosteadas en `app/fonts/`; se fueron Manrope y Playfair. Esto cierra de paso el hallazgo del wordmark en la fuente equivocada (`--font-brand` ya no existe).
+- [x] **Modo claro por defecto, siempre.** No sigue la preferencia del sistema operativo. Sin next-themes: React 19 marca su `<script>` como error; el script va en el `<head>` del layout de servidor (`lib/tema.ts`, `hooks/use-tema.ts`).
+- [x] **Textos centralizados** en `lib/textos.ts`, con el vocabulario (temario, grupo, tarea…). Las pantallas todavía no rediseñadas conservan sus textos viejos.
+- [x] **Cuatro contextos**, decididos por `lib/navegacion.ts` (función pura, con tests): visitante, invitado, alumno (Mis tareas / Practicar / Mi progreso), docente (Mis alumnos / Mis materias / Mis tareas). El caparazón nuevo está en `components/caparazon/`; `components/navbar.tsx` se borró.
+- [x] **Entrada** (`app/(entrada)/`): la raíz es un server component que manda a cada quien a su inicio y sólo le muestra la entrada al visitante. El rol se elige ANTES del método; `/sign-in?rol=…` es el paso 2. El rol elegido sobrevive a la ida y vuelta a Google en localStorage (`lib/rol-elegido.ts`), y la bienvenida no lo vuelve a preguntar.
+- [x] **Link de grupo** (`/aula/[codigo]`): "Te invitó…", sin pregunta de rol, un camino recomendado (el nombre) y Google como secundario. La lógica de ingreso no se tocó.
+- [x] **El desplegable de rol salió de la barra.** Ahora vive en el menú de la cuenta, con confirmación y el texto que dice qué va a pasar.
+- [x] **Vista de alumno para el docente, en otra pestaña y sin cambiar el rol** (pedido de Mauro al elegir maquetas). El docente abre las pantallas de alumno con un aviso arriba; su rol sigue siendo DOCENTE, así que el panel sigue andando en la pestaña original. Por eso el caparazón se decide por ruta + rol, no sólo por rol.
+- [x] **Favicon definitivo**: la M sin nodos sobre `accion`. Cierra el pendiente "Falta el arte definitivo" del backlog. `public/icon.svg` es la fuente; `node scripts/generar-iconos.mjs` deriva el resto.
+- [x] **`scripts/capturas.mjs`**: capturas a 1440 y 390, claro y oscuro, manejando el Chrome o Edge instalado por DevTools. Sin dependencias nuevas.
+- [x] **`tests/sistema-de-diseno.test.ts`**: chequeo léxico sobre lo ya rediseñado — sin hexadecimales, sin sombras, sin degradés, sin rojo, sin animaciones CSS, sin emojis. Cada bloque suma sus carpetas a `ZONAS_REDISENADAS`.
+
+Decisiones que conviene no redescubrir:
+
+- **Las URLs no cambiaron.** "Mis tareas" es `/aulas`, "Mi progreso" es `/history` (+ `/tips` como sub-entrada hasta que el bloque 6 las funda), y las tres pestañas del docente son `/teacher?seccion=alumnos|materias|tareas`. Renombrar rutas rompía links ya compartidos por WhatsApp a cambio de nada.
+- **Los colores de los chips salen de `tokens.json`, no del HTML de referencia.** El HTML usa `#0B6044` y `#9A3412`; los tokens dicen `#0e7c57` y `#c2410c`. Los tokens son la fuente de verdad declarada.
+- **La segunda línea de "Soy docente" no va atenuada.** La referencia la pone al 75 % de opacidad, que a 12 px da 3,8:1 sobre `accion` y no pasa AA.
+- **Las clases tipográficas de los tokens van en la capa `base`.** Importadas sin capa le ganaban a las utilidades de Tailwind (`cuerpo-s font-bold` daba 400).
+- **Lo que viene pintado del servidor no se anima.** `Aparecer` sólo anima lo que se monta después de hidratar: con `opacity: 0` de entrada, la primera pantalla quedaba invisible hasta que corriera el JS.
+- **`destructive` de shadcn apunta a `flojo` (naranja).** El sistema no tiene rojo, a propósito.
+- **`viewport` ya no bloquea el zoom** (`maximumScale: 1` + `userScalable: false` afuera): impedía agrandar una fórmula, WCAG 1.4.4.
+
+Pendiente del bloque 1, a propósito:
+
+- [ ] **Verificación con sesión real.** Lo público (entrada, ingreso, link de grupo contra el aula `2UQT7J`) se verificó en browser. Los caparazones de alumno, invitado y docente se verificaron con una página temporal de datos de ejemplo, **no** con sesión: no hay `.env.staging.local`, así que el dev server apunta a producción y loguearse ahí escribe. Se re-verifica al arrancar el bloque 2, que empieza por crear la branch de staging y un login de desarrollo.
+- [ ] **Ingreso por email con código**: fuera de este bloque por decisión de Mauro. Necesita proveedor de correo, una key y una migración de tokens de verificación. Va en su propio PR, apagado por variable de entorno.
+- [ ] **El panel docente por dentro es el viejo.** Las tres pestañas muestran las secciones que ya existían (aulas, materias, cuestionarios + crear) con los tokens nuevos aplicados por arrastre. Los bloques 3 y 4 lo rehacen; "+ Alumno" de la referencia llega con el bloque 3.
+- [ ] **El inicio viejo del alumno (`/`) desapareció**: racha, contador y adelanto de tips vivían ahí. Siguen accesibles en Mi progreso; el bloque 6 arma el inicio nuevo con accesos a todo lo que puede hacer (pedido de Mauro).
+- [ ] **Gráficos por tema y planilla por alumno** (pedido de Mauro al elegir maquetas): van en la ficha de alumno, bloque 3.
+- [ ] `components/math-background.tsx` sigue montado en el cuestionario, los resultados y `/practicar` (degradé + grilla de puntos). Se va con el bloque 6.
 
 ---
 
@@ -508,7 +564,7 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
 - [x] favicon 404 — `public/favicon.ico`, un contenedor `.ico` de verdad con dos PNG embebidos (16 y 32, sacados de `icon-light-32x32.png`), no un PNG renombrado. Va en `public/` y **no** en `app/favicon.ico`: la convención de archivo de Next haría que el framework emita su propio `<link rel="icon">` compitiendo con el bloque `metadata.icons` de `layout.tsx`. Verificado contra el dev server, 404 sin el archivo y 200 con él.
 - [x] Limpieza de ramas — de **16** locales a 9, y de 4 worktrees a 2. Borradas las 5 `worktree-agent-*` y las 3 `v0/*`, las ocho verificadas como ancestros de `main` antes de tocar nada. `fix/flujo-diagnostico-primero` se conserva: es la única sin mergear. (El conteo viejo decía ~14; eran 16.)
 - [x] **Sacar el logo de v0** — los cinco íconos y `metadata.generator: 'v0.app'` afuera. En su lugar hay un arte **provisorio**: una M de trazo sobre cuadrado redondeado en el verde de marca `#43613C`, con el mismo esquema claro/oscuro que tenía el set anterior. `generator` se elimina del objeto en vez de reescribirse — es opcional y no hay nada que declarar.
-  - [ ] **Falta el arte definitivo.** Lo provisorio sirve para no seguir mostrando la marca de otro producto, no para ser la identidad. Ver la nota de abajo sobre qué hace falta.
+  - [x] ~~**Falta el arte definitivo.**~~ Resuelto el 15/11/2026 con el isotipo del sistema de diseño (ver el bloque 1 del rediseño). Lo provisorio servía para no seguir mostrando la marca de otro producto, no para ser la identidad. Ver la nota de abajo sobre qué hace falta.
 - [x] ~~**10 preguntas del 10/08 llegaron a un alumno con el texto corrupto.**~~ **Reproducido y arreglado el 25/08/2026.** Los ids 1430–1448 tenían escapes `\uXXXX` sin decodificar: el alumno leyó `La circunferencia…` en enunciado, opciones y explicación.
   - **La reproducción exoneró a la sospechosa.** Este ítem culpaba a la regex de `repairQuizJson` que duplica backslashes — y esa regex **nunca toca `\u`**: está en su lookahead de exclusión. El disparador real es el modelo emitiendo `par\\u00e1bola` con doble backslash (el mismo hábito con el que escribe `\\frac` para que el JSON signifique `\frac`, aplicado donde no corresponde). Eso es **JSON válido** cuyo valor es el texto literal: ni la reparación ni el parser ven nada raro, así que sólo se puede arreglar después de parsear.
   - El fix: `decodeStrandedUnicodeEscapes` en la normalización post-parse (las tres salidas del módulo, `acceptedAnswers` incluido), acotado a la mitad alta de Latin-1 con el mismo recorte que la regla del lint y por la misma razón. Tres tests de regresión verificados en rojo sin el fix; los 29 de caracterización, intactos.

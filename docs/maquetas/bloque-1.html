@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="es" data-theme="claro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MaestrIA — Maquetas del bloque 1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Tokens copiados de design-reference/sistema/tokens.css. En la app se importan, no se copian. */
+:root,[data-theme="claro"]{--superficie-base:#f6f7f9;--superficie-tarjeta:#fff;--superficie-suave:#eef2ff;--borde:#e3e6eb;--borde-fuerte:#c8cdd6;--texto:#15181d;--texto-suave:#667085;--accion:#2d5bff;--accion-hover:#1f42c4;--texto-sobre-accion:#fff;--accion-tenue:#f3f6ff;--accion-tenue-borde:#c9d7ff;--logrado:#0e7c57;--logrado-fondo:#e6f4ee;--flojo:#c2410c;--flojo-fondo:#fdf0e8;--foco:#2d5bff}
+[data-theme="oscuro"]{--superficie-base:#0f1217;--superficie-tarjeta:#171b22;--superficie-suave:#1e2a4d;--borde:#272d38;--borde-fuerte:#3a424f;--texto:#f2f4f7;--texto-suave:#9aa3b2;--accion:#5b82ff;--accion-hover:#8ca6ff;--texto-sobre-accion:#0a0e15;--accion-tenue:#16203b;--accion-tenue-borde:#2b3c6b;--logrado:#34c08a;--logrado-fondo:#163327;--flojo:#ff8a4c;--flojo-fondo:#3a220f;--foco:#8ca6ff}
+:root{--e1:4px;--e2:8px;--e3:12px;--e4:16px;--e5:24px;--e6:32px;--e7:48px;--r-sm:8px;--r-md:11px;--r-lg:14px;--r-xl:24px;--display:"Plus Jakarta Sans",system-ui,sans-serif;--textof:Inter,system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--textof);background:var(--superficie-base);color:var(--texto)}
+button,input{font-family:inherit}
+:focus-visible{outline:2px solid var(--foco);outline-offset:2px}
+
+/* ── Barra de la maqueta (no es parte del diseño) ── */
+.herr{position:sticky;top:0;z-index:20;background:var(--superficie-tarjeta);border-bottom:1px solid var(--borde);padding:var(--e3) var(--e4);display:flex;flex-wrap:wrap;gap:var(--e3) var(--e5);align-items:center}
+.herr b{font-size:11px;letter-spacing:.1em;color:var(--texto-suave);margin-right:var(--e2)}
+.seg{display:inline-flex;border:1px solid var(--borde-fuerte);border-radius:var(--r-md);overflow:hidden}
+.seg button{border:0;background:var(--superficie-tarjeta);color:var(--texto);font-size:13px;font-weight:600;padding:9px 12px;cursor:pointer;min-height:38px}
+.seg button+button{border-left:1px solid var(--borde-fuerte)}
+.seg button[aria-pressed="true"]{background:var(--texto);color:var(--superficie-tarjeta)}
+.desc{max-width:1280px;margin:var(--e4) auto 0;padding:0 var(--e4);font-size:14px;line-height:21px;color:var(--texto-suave)}
+.desc strong{color:var(--texto)}
+.escena{padding:var(--e4);display:flex;justify-content:center}
+
+/* ── Marco: simula el viewport. Todo lo de adentro responde al ancho del marco ── */
+.marco{container-type:inline-size;width:100%;max-width:1280px;min-height:720px;background:var(--superficie-base);border:1px solid var(--borde-fuerte);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column;position:relative}
+.marco.cel{width:390px;height:780px;min-height:0}
+.pant{flex:1;overflow:auto;display:flex;flex-direction:column}
+
+/* ── Logo ── */
+.marca{display:flex;align-items:center;gap:9px}
+.marca svg{color:var(--accion);flex:none}
+.logotipo{font-family:var(--display);font-weight:800;letter-spacing:-.02em;font-size:20px}
+.logotipo span{color:var(--accion)}
+
+/* ── Botones ── */
+.btn{font-size:13.5px;font-weight:700;padding:10px 15px;border-radius:var(--r-md);border:1px solid transparent;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none}
+.btn.pri{background:var(--accion);color:var(--texto-sobre-accion)}
+.btn.pri:hover{background:var(--accion-hover)}
+.btn.sec{background:var(--superficie-tarjeta);color:var(--texto);border-color:var(--borde-fuerte)}
+.btn.sec:hover{border-color:var(--texto)}
+.btn.ancho{width:100%}
+.ico{width:44px;height:44px;border:1px solid var(--borde);border-radius:var(--r-md);background:var(--superficie-tarjeta);color:var(--texto-suave);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.ico:hover{border-color:var(--borde-fuerte);color:var(--texto)}
+.ico svg,.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.lnk{background:none;border:0;padding:12px 0;color:var(--accion);font-size:13.5px;font-weight:600;cursor:pointer;text-align:left}
+.lnk:hover{color:var(--accion-hover)}
+.lnk.suave{color:var(--texto-suave)}
+
+/* ── Entrada ── */
+.entrada{flex:1;display:flex;flex-direction:column;align-items:center;padding:var(--e7) var(--e4) var(--e5);gap:var(--e5)}
+.tarjeta-e{width:100%;max-width:380px;background:var(--superficie-tarjeta);border:1px solid var(--borde);border-radius:var(--r-xl);padding:var(--e6) var(--e5)}
+.tarjeta-e .marca{justify-content:center;margin-bottom:30px}
+h1.t{margin:0 0 5px;font-family:var(--display);font-size:25px;line-height:29px;font-weight:800;letter-spacing:-.025em}
+.bajada{margin:0 0 22px;font-size:13px;line-height:1.45;color:var(--texto-suave)}
+.opcion{display:block;width:100%;text-align:left;border:1.5px solid var(--accion);border-radius:var(--r-lg);padding:16px 17px;margin-bottom:11px;background:var(--accion);cursor:pointer}
+.opcion:hover{background:var(--accion-hover);border-color:var(--accion-hover)}
+.opcion .a{display:block;font-size:16px;font-weight:700;color:var(--texto-sobre-accion)}
+.opcion .b{display:block;font-size:12px;color:var(--texto-sobre-accion);opacity:.8;margin-top:2px}
+.opcion.hueco{background:var(--superficie-tarjeta);border-color:var(--texto);margin-bottom:22px}
+.opcion.hueco:hover{background:var(--superficie-suave)}
+.opcion.hueco .a{color:var(--texto)}.opcion.hueco .b{color:var(--texto-suave);opacity:1}
+.o{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.o i{flex:1;height:1px;background:var(--borde)}.o span{font-size:11px;font-weight:600;color:var(--texto-suave)}
+label.l{display:block;font-size:12px;font-weight:600;color:var(--texto-suave);margin-bottom:8px}
+.campo{display:flex;gap:8px}
+.inp{flex:1;min-width:0;font-size:15px;padding:13px;border:1px solid var(--borde-fuerte);border-radius:var(--r-md);background:var(--superficie-tarjeta);color:var(--texto);min-height:46px}
+.inp.cod{letter-spacing:.14em;text-transform:uppercase}
+.inp::placeholder{color:var(--texto-suave);opacity:.7}
+.ir{font-size:14px;font-weight:700;padding:13px 17px;border:0;border-radius:var(--r-md);background:var(--texto);color:var(--superficie-tarjeta);cursor:pointer;min-width:46px}
+.pie{margin-top:auto;font-size:12.5px;color:var(--texto-suave);display:flex;gap:var(--e4);padding-top:var(--e4)}
+.pie a{color:var(--texto-suave)}
+.frase{max-width:380px;text-align:center;font-size:14px;line-height:21px;color:var(--texto-suave);margin:0}
+/* B: dos columnas */
+.dos{width:100%;max-width:1040px;display:grid;grid-template-columns:1fr 380px;gap:var(--e7);align-items:center;margin:auto 0}
+.dos h2,.como h2{font-family:var(--display);font-weight:800;letter-spacing:-.025em;font-size:30px;line-height:34px;margin:0 0 var(--e3)}
+.dos p{font-size:16px;line-height:24px;color:var(--texto-suave);margin:0 0 var(--e5);max-width:46ch}
+.pts{list-style:none;margin:0;padding:0;display:grid;gap:var(--e3)}
+.pts li{display:flex;gap:var(--e3);font-size:14px;line-height:21px}
+.pts .n{flex:none;width:26px;height:26px;border-radius:var(--r-sm);background:var(--superficie-suave);color:var(--accion);font-family:var(--display);font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+@container (max-width:800px){.dos{grid-template-columns:1fr;gap:var(--e5)}.dos h2{font-size:25px;line-height:29px}.dos .pts{display:none}.dos p{margin-bottom:0;font-size:14px;line-height:21px}.entrada{padding-top:var(--e5)}}
+/* C: explicación debajo */
+.como{width:100%;max-width:880px;border-top:1px solid var(--borde);padding-top:var(--e6)}
+.como h2{font-size:20px;line-height:25px;text-align:center;margin-bottom:var(--e5)}
+.pasos{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--e3)}
+.paso{background:var(--superficie-tarjeta);border:1px solid var(--borde);border-radius:var(--r-lg);padding:var(--e4)}
+.paso b{display:block;font-size:15px;margin:var(--e2) 0 var(--e1)}
+.paso span{font-size:13px;line-height:19px;color:var(--texto-suave)}
+@container (max-width:800px){.pasos{grid-template-columns:1fr}}
+
+/* ── Caparazón ── */
+.barra{background:var(--superficie-tarjeta);border-bottom:1px solid var(--borde);padding:0 var(--e5);display:flex;align-items:center;gap:var(--e5);min-height:68px;flex:none}
+.barra .marca .logotipo{font-size:17px}
+.tabs{display:flex;gap:var(--e5);align-self:stretch}
+.tab{background:none;border:0;border-bottom:2px solid transparent;border-top:2px solid transparent;padding:0;font-size:14px;font-weight:600;color:var(--texto-suave);cursor:pointer;min-height:44px}
+.tab:hover{color:var(--texto)}
+.tab[aria-current="page"]{color:var(--texto);border-bottom-color:var(--accion)}
+.der{margin-left:auto;display:flex;align-items:center;gap:10px}
+.avatar{width:44px;height:44px;border-radius:var(--r-md);border:1px solid var(--borde);background:var(--superficie-suave);color:var(--accion);font-family:var(--display);font-weight:800;font-size:15px;cursor:pointer}
+.solo-cel{display:none}
+.cont{flex:1;width:100%;max-width:1040px;margin:0 auto;padding:var(--e5);display:flex;flex-direction:column;gap:11px}
+.cont h1{font-family:var(--display);font-weight:800;font-size:25px;line-height:29px;letter-spacing:-.025em;margin:0 0 var(--e2)}
+.ej{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--texto-suave)}
+.fila{border:1px solid var(--borde);background:var(--superficie-tarjeta);border-radius:var(--r-lg);padding:15px 17px;display:flex;align-items:center;gap:15px;color:inherit;text-decoration:none}
+.fila:hover{border-color:var(--borde-fuerte)}
+.ini{width:42px;height:42px;flex:none;border-radius:12px;background:var(--superficie-suave);color:var(--accion);font-family:var(--display);font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center}
+.quien{flex:1;min-width:0}.quien b{display:block;font-size:15.5px}.quien span{font-size:12.5px;color:var(--texto-suave)}
+.chips{display:flex;gap:6px;flex:none}
+.chip{font-size:11px;font-weight:600;padding:5px 9px;border-radius:var(--r-sm)}
+.chip.ok{background:var(--logrado-fondo);color:var(--logrado)}.chip.fl{background:var(--flojo-fondo);color:var(--flojo)}
+.cuando{font-size:12.5px;color:var(--texto-suave);width:72px;text-align:right;flex:none}
+.sug{background:var(--accion-tenue);border:1px solid var(--accion-tenue-borde);border-radius:var(--r-lg);padding:16px 17px;display:flex;align-items:center;gap:14px;margin-top:5px}
+.sug div{flex:1}.sug b{display:block;font-size:14px}.sug span{font-size:12.5px;color:var(--texto-suave)}
+.aviso{background:var(--accion-tenue);border-bottom:1px solid var(--accion-tenue-borde);padding:10px var(--e5);display:flex;align-items:center;gap:var(--e3);font-size:13px;line-height:19px;flex:none}
+.aviso span{flex:1}
+.invito{font-size:12.5px;color:var(--texto-suave);margin:0}
+/* variantes de navegación en celular */
+.tabs-cel,.barra-inf,.cajon{display:none}
+@container (max-width:800px){
+  .barra{padding:0 var(--e4);gap:var(--e3);min-height:60px}
+  .barra .tabs{display:none}.solo-esc{display:none}.solo-cel{display:inline-flex}
+  .cont{padding:var(--e4)}
+  .fila{flex-wrap:wrap}.chips{order:3;width:100%;padding-left:57px}.cuando{width:auto}
+  .sug{flex-direction:column;align-items:stretch}
+  .aviso{flex-direction:column;align-items:stretch;padding:var(--e3) var(--e4)}
+  .tabs-cel{display:flex;gap:var(--e5);padding:0 var(--e4);background:var(--superficie-tarjeta);border-bottom:1px solid var(--borde);overflow-x:auto;flex:none}
+  .tabs-cel .tab{white-space:nowrap;min-height:46px}
+  .barra-inf{display:grid;grid-template-columns:repeat(3,1fr);background:var(--superficie-tarjeta);border-top:1px solid var(--borde);flex:none}
+  .barra-inf button{background:none;border:0;border-top:2px solid transparent;color:var(--texto-suave);font-size:11px;font-weight:600;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer}
+  .barra-inf button[aria-current="page"]{color:var(--texto);border-top-color:var(--accion)}
+  .barra-inf .i{width:21px;height:21px}
+  .cajon{display:flex;flex-direction:column;background:var(--superficie-tarjeta);border-bottom:1px solid var(--borde);padding:var(--e2) var(--e4) var(--e3);flex:none}
+  .cajon .tab{text-align:left;border:0;border-left:2px solid transparent;padding-left:var(--e3);min-height:46px}
+  .cajon .tab[aria-current="page"]{border-left-color:var(--accion)}
+}
+/* menú de usuario y diálogo */
+.menu{position:absolute;top:62px;right:var(--e4);width:270px;background:var(--superficie-tarjeta);border:1px solid var(--borde-fuerte);border-radius:var(--r-lg);padding:var(--e2);z-index:5;display:flex;flex-direction:column}
+.menu p{margin:0;padding:var(--e2) var(--e3) var(--e3);font-size:12.5px;color:var(--texto-suave);border-bottom:1px solid var(--borde)}
+.menu p b{display:block;color:var(--texto);font-size:14px}
+.menu button{background:none;border:0;text-align:left;padding:0 var(--e3);min-height:44px;font-size:14px;color:var(--texto);border-radius:var(--r-sm);cursor:pointer}
+.menu button:hover{background:var(--superficie-suave)}
+.velo{position:absolute;inset:0;background:color-mix(in srgb,var(--texto) 45%,transparent);display:flex;align-items:center;justify-content:center;padding:var(--e4);z-index:6}
+.dlg{width:100%;max-width:400px;background:var(--superficie-tarjeta);border:1px solid var(--borde);border-radius:var(--r-lg);padding:var(--e5)}
+.dlg h2{font-family:var(--display);font-weight:800;font-size:20px;line-height:25px;letter-spacing:-.02em;margin:0 0 var(--e2)}
+.dlg p{font-size:14px;line-height:21px;color:var(--texto-suave);margin:0 0 var(--e5)}
+.dlg .acc{display:flex;gap:var(--e2);justify-content:flex-end;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<div class="herr" role="toolbar" aria-label="Controles de la maqueta">
+  <div><b>VARIANTE</b><span class="seg" data-k="v"><button data-x="A">A</button><button data-x="B">B</button><button data-x="C">C</button></span></div>
+  <div><b>PANTALLA</b><span class="seg" data-k="p"><button data-x="entrada">Entrada</button><button data-x="ingreso">Ingreso</button><button data-x="grupo">Link de grupo</button><button data-x="invitado">Invitado</button><button data-x="alumno">Alumno</button><button data-x="docente">Docente</button></span></div>
+  <div><b>ANCHO</b><span class="seg" data-k="w"><button data-x="cel">390</button><button data-x="esc">Escritorio</button></span></div>
+  <div><b>MODO</b><span class="seg" data-k="t"><button data-x="claro">Claro</button><button data-x="oscuro">Oscuro</button></span></div>
+</div>
+<p class="desc" id="desc"></p>
+<div class="escena"><div class="marco" id="marco"></div></div>
+
+<script>
+const S = { v:'A', p:'entrada', w:'esc', t:'claro', rol:'docente', tab:0, menu:false, dlg:false, cajon:false, paso:1 };
+const DESC = {
+  A:'<strong>A — Tal cual la referencia.</strong> La entrada es solo la tarjeta aprobada, con una frase arriba. El método de ingreso es una pantalla aparte. En celular la navegación va en un menú hamburguesa.',
+  B:'<strong>B — Landing en dos columnas.</strong> En escritorio, qué es MaestrIA a la izquierda y la tarjeta a la derecha; en celular, título corto y la tarjeta. El ingreso es el paso 2 dentro de la misma tarjeta. En celular la navegación es una barra inferior con las tres entradas siempre a la vista.',
+  C:'<strong>C — Entrada primero, explicación abajo.</strong> La tarjeta arriba y, bajando, “Cómo funciona” en tres pasos. El ingreso es una pantalla aparte. En celular las tres entradas van como pestañas visibles debajo de la barra.'
+};
+const M = (px, sw) => `<svg viewBox="-22.2 -29.7 144.4 144.4" width="${px}" height="${px}" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linejoin="round"><path d="M-11.8 0 L-11.8 85 A11.8 11.8 0 0 0 11.8 85 L11.8 0 A11.8 11.8 0 0 0 -11.8 0 Z"/><path d="M88.2 0 L88.2 85 A11.8 11.8 0 0 0 111.8 85 L111.8 0 A11.8 11.8 0 0 0 88.2 0 Z"/><path d="M-8.34 8.34 L41.66 58.34 A11.8 11.8 0 0 0 58.34 41.66 L8.34 -8.34 A11.8 11.8 0 0 0 -8.34 8.34 Z"/><path d="M91.66 -8.34 L41.66 41.66 A11.8 11.8 0 0 0 58.34 58.34 L108.34 8.34 A11.8 11.8 0 0 0 91.66 -8.34 Z"/><circle cx="0" cy="0" r="9.8"/><circle cx="0" cy="85" r="9.8"/><circle cx="100" cy="0" r="9.8"/><circle cx="100" cy="85" r="9.8"/><circle cx="50" cy="50" r="9.8"/></g></svg>`;
+const logo = (px=28) => `<div class="marca">${M(px, px>=27?4.8:8.5)}<span class="logotipo">Maestr<span>IA</span></span></div>`;
+const I = {
+  luna:'<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  sol:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
+  personas:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/>',
+  libro:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M9 8h6"/>',
+  tarea:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6"/>',
+  lapiz:'<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19zM14 7l3 3"/>',
+  avance:'<path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/>'
+};
+const ic = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${I[n]}</svg>`;
+const NAV = {
+  docente:[['Mis alumnos','personas'],['Mis materias','libro'],['Mis tareas','tarea']],
+  alumno:[['Mis tareas','tarea'],['Practicar','lapiz'],['Mi progreso','avance']]
+};
+
+function tarjetaEntrada(){
+  if (S.v==='B' && S.paso===2) return tarjetaIngreso(true);
+  return `<div class="tarjeta-e">${logo()}
+    <h1 class="t">¿Cómo entrás?</h1>
+    <p class="bajada">Elegí una vez. Después lo podés cambiar desde tu perfil.</p>
+    <button type="button" class="opcion" data-a="rol:docente"><span class="a">Soy docente</span><span class="b">Armo temarios y mando tareas</span></button>
+    <button type="button" class="opcion hueco" data-a="rol:alumno"><span class="a">Soy alumno</span><span class="b">Practico y rindo mis tareas</span></button>
+    <div class="o"><i></i><span>o</span><i></i></div>
+    <label class="l" for="cod">Tu profe te pasó un código</label>
+    <div class="campo"><input class="inp cod" id="cod" type="text" placeholder="7K4P2M" autocomplete="off"><button type="button" class="ir" data-a="ir:grupo">Ir</button></div>
+  </div>`;
+}
+function tarjetaIngreso(enLugar){
+  const d = S.rol==='docente';
+  return `<div class="tarjeta-e">${logo()}
+    <h1 class="t">${d?'Entrá como docente':'Entrá como alumno'}</h1>
+    <p class="bajada">${d?'Con tu cuenta guardamos tus materias, tus alumnos y sus tareas.':'Con tu cuenta guardamos tus tareas y tu progreso.'}</p>
+    <button type="button" class="btn pri ancho" data-a="ir:${S.rol}">Continuar con Google</button>
+    ${d?'':'<div class="o" style="margin:18px 0 6px"><i></i><span>o</span><i></i></div><button type="button" class="lnk" data-a="ir:entrada">Tengo un código de mi profe: entrar sin cuenta</button>'}
+    <div><button type="button" class="lnk suave" data-a="volver">${d?'No soy docente':'No soy alumno'} — volver</button></div>
+  </div>`;
+}
+const pie = `<div class="pie"><a href="#">Términos</a><a href="#">Privacidad</a></div>`;
+const FRASE = 'El docente arma el temario y manda tareas. La IA le muestra a cada alumno en qué se equivoca antes de darle la respuesta.';
+
+function entrada(){
+  if (S.v==='A') return `<div class="entrada"><div style="margin:auto 0;display:flex;flex-direction:column;align-items:center;gap:var(--e5)"><p class="frase">${FRASE}</p>${tarjetaEntrada()}</div>${pie}</div>`;
+  if (S.v==='B') return `<div class="entrada"><div class="dos"><div>
+      <h2>Sabé en qué se equivoca cada alumno antes de la próxima clase.</h2>
+      <p>Armás tu temario, mandás una tarea por un link y MaestrIA te dice qué tema reforzar con cada uno.</p>
+      <ul class="pts"><li><span class="n">1</span><span>Cargás tu temario: subís el archivo o lo escribís.</span></li><li><span class="n">2</span><span>Mandás la tarea por WhatsApp. El alumno entra con su nombre, sin cuenta.</span></li><li><span class="n">3</span><span>Ves a cada alumno con sus temas dominados y los flojos.</span></li></ul>
+    </div>${tarjetaEntrada()}</div>${pie}</div>`;
+  return `<div class="entrada">${tarjetaEntrada()}<div class="como"><h2>Cómo funciona</h2><div class="pasos">
+      <div class="paso"><span class="pts"><span class="n">1</span></span><b>El docente carga su temario</b><span>Sube el archivo o lo escribe. MaestrIA lo ordena en unidades y temas.</span></div>
+      <div class="paso"><span class="pts"><span class="n">2</span></span><b>Manda una tarea por un link</b><span>El alumno entra con su nombre. No necesita cuenta.</span></div>
+      <div class="paso"><span class="pts"><span class="n">3</span></span><b>La IA muestra dónde se equivoca</b><span>Al alumno, antes de darle la respuesta. Al docente, tema por tema.</span></div>
+    </div></div>${pie}</div>`;
+}
+const ingreso = () => `<div class="entrada"><div style="margin:auto 0">${tarjetaIngreso()}</div>${pie}</div>`;
+const grupo = () => `<div class="entrada"><div style="margin:auto 0"><div class="tarjeta-e">${logo()}
+    <p class="invito">Te invitó Mauro Lizárraga</p>
+    <h1 class="t" style="margin-top:4px">Análisis I</h1>
+    <p class="bajada">Entrás con tu nombre. No necesitás cuenta.</p>
+    <label class="l" for="nom">¿Cómo te llamás?</label>
+    <input class="inp" id="nom" type="text" placeholder="Nombre y apellido" autocomplete="name" style="width:100%;margin-bottom:11px">
+    <button type="button" class="btn pri ancho" data-a="ir:invitado">Entrar al grupo</button>
+    <div class="o" style="margin:18px 0 6px"><i></i><span>o</span><i></i></div>
+    <button type="button" class="lnk" data-a="ir:alumno">Ya tengo cuenta: entrar con Google</button>
+  </div></div>${pie}</div>`;
+
+function barra(rol){
+  const tabs = NAV[rol]||[];
+  const t = tabs.map(([n],i)=>`<button type="button" class="tab" data-a="tab:${i}" ${i===S.tab?'aria-current="page"':''}>${n}</button>`).join('');
+  const modo = `<button type="button" class="ico" data-a="modo" aria-label="Cambiar a modo ${S.t==='claro'?'oscuro':'claro'}"><svg viewBox="0 0 24 24" aria-hidden="true">${I[S.t==='claro'?'luna':'sol']}</svg></button>`;
+  const ham = (S.v==='A' && tabs.length) ? `<button type="button" class="ico solo-cel" data-a="cajon" aria-label="Abrir el menú" aria-expanded="${S.cajon}"><svg viewBox="0 0 24 24" aria-hidden="true">${I.menu}</svg></button>` : '';
+  return `<header class="barra">${ham}${logo(22)}<nav class="tabs" aria-label="Principal">${t}</nav>
+    <div class="der">${modo}${rol==='docente'?'<button type="button" class="btn pri">+ Alumno</button>':''}${rol==='invitado'?'':`<button type="button" class="avatar" data-a="menu" aria-label="Abrir el menú de tu cuenta" aria-expanded="${S.menu}">M</button>`}</div></header>
+    ${S.v==='A' && S.cajon && tabs.length ? `<nav class="cajon" aria-label="Principal">${t}</nav>`:''}
+    ${S.v==='C' && tabs.length ? `<nav class="tabs-cel" aria-label="Principal">${t}</nav>`:''}`;
+}
+const barraInf = rol => S.v==='B' ? `<nav class="barra-inf" aria-label="Principal">${NAV[rol].map(([n,i],k)=>`<button type="button" data-a="tab:${k}" ${k===S.tab?'aria-current="page"':''}>${ic(i)}${n}</button>`).join('')}</nav>` : '';
+const menuUsuario = rol => S.menu ? `<div class="menu"><p><b>Mauro Lizárraga</b>Estás como ${rol}</p>
+    <button type="button" data-a="dlg">Cambiar a la vista de ${rol==='docente'?'alumno':'docente'}</button>
+    <button type="button" data-a="ir:entrada">Cerrar sesión</button></div>` : '';
+const dialogo = rol => S.dlg ? `<div class="velo"><div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dt"><h2 id="dt">¿Cambiar a la vista de ${rol==='docente'?'alumno':'docente'}?</h2>
+    <p>${rol==='docente'?'Vas a cambiar a la vista de alumno. Tus materias y alumnos siguen donde están.':'Vas a cambiar a la vista de docente. Tus tareas y tu progreso siguen donde están.'}</p>
+    <div class="acc"><button type="button" class="btn sec" data-a="cerrar">Quedarme acá</button><button type="button" class="btn pri" data-a="ir:${rol==='docente'?'alumno':'docente'}">Cambiar de vista</button></div></div></div>` : '';
+
+const fila = (n,c,chips,cu) => `<a class="fila" href="#"><span class="ini" aria-hidden="true">${n[0]}</span><span class="quien"><b>${n}</b><span>${c}</span></span><span class="chips">${chips.map(([t,k])=>`<span class="chip ${k}">${t}</span>`).join('')}</span><span class="cuando">${cu}</span></a>`;
+const vacio = (t,x) => `<h1>${t}</h1><div class="fila"><span class="quien"><span>${x}</span></span></div>`;
+function docente(){
+  const c = S.tab===0 ? `<span class="ej">DATOS DE EJEMPLO</span>
+    ${fila('Sofía Ramírez','Análisis I · rinde el 12/12',[['Límites','ok'],['Derivadas','fl']],'hace 2 d')}
+    ${fila('Tomás Villa','Ingreso a Exactas · marzo',[['Conjuntos','ok'],['Lógica','ok']],'ayer')}
+    ${fila('Julieta Ocampo','Física · 5.º año',[['Cinemática','fl']],'hace 6 d')}
+    <div class="sug"><div><b>Julieta no practica hace 6 días</b><span>Sigue floja en cinemática. ¿Le mandamos una tarea corta?</span></div><button type="button" class="btn pri">Armar tarea</button></div>`
+    : vacio(NAV.docente[S.tab][0],'Esta pantalla se rediseña en un bloque posterior. En el bloque 1 muestra el contenido actual dentro del caparazón nuevo.');
+  return `${barra('docente')}<div class="pant"><main class="cont">${c}</main></div>${barraInf('docente')}${menuUsuario('docente')}${dialogo('docente')}`;
+}
+function alumno(){
+  const c = S.tab===0 ? `<h1>Mis tareas</h1><span class="ej">DATOS DE EJEMPLO</span>
+    <div class="fila"><span class="quien"><b>Práctica de límites</b><span>Análisis I · Mauro Lizárraga · hasta el 12/12</span></span><button type="button" class="btn pri">Empezar tarea</button></div>
+    <div class="fila"><span class="quien"><b>Derivadas: regla de la cadena</b><span>Análisis I · Mauro Lizárraga · entregada ayer</span></span><button type="button" class="btn sec">Ver resultado</button></div>
+    <div><button type="button" class="lnk">Sumarme a otro grupo con un código</button></div>`
+    : vacio(NAV.alumno[S.tab][0],'Esta pantalla se rediseña en el bloque 6. En el bloque 1 muestra el contenido actual dentro del caparazón nuevo.');
+  return `${barra('alumno')}<div class="pant"><main class="cont">${c}</main></div>${barraInf('alumno')}${menuUsuario('alumno')}${dialogo('alumno')}`;
+}
+const invitado = () => `${barra('invitado')}<div class="aviso"><span>Estás entrando como invitado. Creá tu cuenta para no perder tu progreso.</span><button type="button" class="btn sec" data-a="ir:alumno">Crear mi cuenta</button></div>
+  <div class="pant"><main class="cont"><p class="invito">Te invitó Mauro Lizárraga</p><h1>Análisis I</h1><span class="ej">DATOS DE EJEMPLO</span>
+  <div class="fila"><span class="quien"><b>Práctica de límites</b><span>Hasta el 12/12</span></span><button type="button" class="btn pri">Empezar tarea</button></div></main></div>`;
+
+const P = { entrada, ingreso, grupo, invitado, alumno, docente };
+function render(){
+  document.documentElement.dataset.theme = S.t;
+  const m = document.getElementById('marco');
+  m.className = 'marco' + (S.w==='cel'?' cel':'');
+  m.innerHTML = P[S.p]();
+  document.getElementById('desc').innerHTML = DESC[S.v];
+  document.querySelectorAll('.seg').forEach(s=>s.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(S[s.dataset.k]===b.dataset.x))));
+}
+function ir(p){ S.p=p; S.tab=0; S.menu=S.dlg=S.cajon=false; S.paso=1; if(p==='docente'||p==='alumno') S.rol=p; }
+document.addEventListener('click', e=>{
+  const seg = e.target.closest('.seg button');
+  if (seg){ const k=seg.parentElement.dataset.k; if(k==='p') ir(seg.dataset.x); else S[k]=seg.dataset.x; return render(); }
+  const el = e.target.closest('[data-a]'); if(!el){ if(e.target.closest('a[href="#"]')) e.preventDefault(); return; }
+  const [a,x] = el.dataset.a.split(':');
+  if (a==='rol'){ S.rol=x; if(S.v==='B') S.paso=2; else S.p='ingreso'; }
+  else if (a==='volver'){ S.p='entrada'; S.paso=1; }
+  else if (a==='ir') ir(x);
+  else if (a==='tab'){ S.tab=+x; S.cajon=false; }
+  else if (a==='modo') S.t = S.t==='claro'?'oscuro':'claro';
+  else if (a==='menu') S.menu=!S.menu;
+  else if (a==='cajon') S.cajon=!S.cajon;
+  else if (a==='dlg'){ S.dlg=true; S.menu=false; }
+  else if (a==='cerrar') S.dlg=false;
+  render();
+});
+render();
+</script>
+</body>
+</html>

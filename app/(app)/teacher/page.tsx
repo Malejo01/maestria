@@ -1,9 +1,12 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
+import { Boton } from '@/components/sistema/boton'
+import { SECCION_DOCENTE_POR_DEFECTO, esSeccionDocente } from '@/lib/navegacion'
+import { PANEL_DOCENTE } from '@/lib/textos'
 import { SubjectContent } from '@/components/subject-content'
 import { teacherProgramToSubject } from '@/lib/teacher-programs'
 import { SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
@@ -139,6 +142,15 @@ export default function TeacherPage() {
   const router = useRouter()
 
   const isTeacher = userProfile?.role === 'DOCENTE'
+
+  // La sección la manda la URL (?seccion=), que es lo que marcan las pestañas
+  // de la barra: Mis alumnos / Mis materias / Mis tareas. Sin parámetro, la
+  // pantalla de inicio del docente es Mis alumnos.
+  const seccionDeLaUrl = useSearchParams().get('seccion')
+  useEffect(() => {
+    const seccion = esSeccionDocente(seccionDeLaUrl) ? seccionDeLaUrl : SECCION_DOCENTE_POR_DEFECTO
+    setTeacherSection(seccion === 'alumnos' ? 'aulas' : seccion === 'materias' ? 'materias' : 'cuestionarios')
+  }, [seccionDeLaUrl, setTeacherSection])
 
   const [activeSubject, setActiveSubject] = useState<string | null>(null)
   const [showCreateWizard, setShowCreateWizard] = useState(false)
@@ -519,52 +531,29 @@ export default function TeacherPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-          <GraduationCap className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-black text-foreground">Panel Docente</h1>
-          <p className="text-sm text-muted-foreground">Gestioná tus materias, programas y cuestionarios.</p>
-        </div>
-      </div>
-
-      <Card className="p-3 rounded-2xl border border-border/60 bg-card/75 backdrop-blur-md shadow-[0_6px_30px_rgba(23,23,23,0.06)]">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <Button
-            className={`min-w-0 h-11 px-2 sm:px-3 rounded-xl justify-center sm:justify-start shadow-sm ${teacherSection === 'materias' ? 'bg-[var(--algebra-light)] text-[var(--algebra)] border-[var(--algebra)]/40 hover:bg-[var(--algebra-light)]' : 'bg-white/70 border-border/70 hover:bg-[var(--algebra-light)]/70 hover:text-[var(--algebra)]'}`}
-            variant="outline"
-            onClick={() => setTeacherSection('materias')}
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            <span className="text-[11px] sm:text-xs md:text-sm leading-tight text-center sm:text-left whitespace-normal">Mis materias</span>
-          </Button>
-          <Button
-            className={`min-w-0 h-11 px-2 sm:px-3 rounded-xl justify-center sm:justify-start shadow-sm ${teacherSection === 'crear' ? 'bg-[var(--analysis-light)] text-[var(--analysis)] border-[var(--analysis)]/40 hover:bg-[var(--analysis-light)]' : 'bg-white/70 border-border/70 hover:bg-[var(--analysis-light)]/70 hover:text-[var(--analysis)]'}`}
-            variant="outline"
-            onClick={() => setTeacherSection('crear')}
-          >
-            <PlayCircle className="w-4 h-4 mr-2" />
-            <span className="text-[11px] sm:text-xs md:text-sm leading-tight text-center sm:text-left whitespace-normal">Crear cuestionario</span>
-          </Button>
-          <Button
-            className={`min-w-0 h-11 px-2 sm:px-3 rounded-xl justify-center sm:justify-start shadow-sm ${teacherSection === 'cuestionarios' ? 'bg-[var(--probability-light)] text-[var(--probability)] border-[var(--probability)]/40 hover:bg-[var(--probability-light)]' : 'bg-white/70 border-border/70 hover:bg-[var(--probability-light)]/70 hover:text-[var(--probability)]'}`}
-            variant="outline"
+      {/* "Mis tareas" junta dos cosas que todavía son secciones separadas:
+          las tareas ya armadas y el armado de una nueva. El bloque 3 del
+          rediseño parte esta página; hasta entonces se alterna con estos dos. */}
+      {(teacherSection === 'cuestionarios' || teacherSection === 'crear') && (
+        <div className="flex flex-wrap gap-2">
+          <Boton
+            variante="secundario"
+            aria-pressed={teacherSection === 'cuestionarios'}
+            className="aria-pressed:border-texto"
             onClick={() => setTeacherSection('cuestionarios')}
           >
-            <BookOpen className="w-4 h-4 mr-2" />
-            <span className="text-[11px] sm:text-xs md:text-sm leading-tight text-center sm:text-left whitespace-normal">Mis cuestionarios</span>
-          </Button>
-          <Button
-            className={`min-w-0 h-11 px-2 sm:px-3 rounded-xl justify-center sm:justify-start shadow-sm ${teacherSection === 'aulas' ? 'bg-primary/10 text-primary border-primary/40 hover:bg-primary/10' : 'bg-white/70 border-border/70 hover:bg-primary/5 hover:text-primary'}`}
-            variant="outline"
-            onClick={() => setTeacherSection('aulas')}
+            {PANEL_DOCENTE.tareas.guardadas}
+          </Boton>
+          <Boton
+            variante="secundario"
+            aria-pressed={teacherSection === 'crear'}
+            className="aria-pressed:border-texto"
+            onClick={() => setTeacherSection('crear')}
           >
-            <Users className="w-4 h-4 mr-2" />
-            <span className="text-[11px] sm:text-xs md:text-sm leading-tight text-center sm:text-left whitespace-normal">Mis aulas</span>
-          </Button>
+            {PANEL_DOCENTE.tareas.armar}
+          </Boton>
         </div>
-      </Card>
+      )}
 
       <div className="space-y-4">
         {teacherSection === 'materias' && (

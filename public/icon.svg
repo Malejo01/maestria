@@ -1,12 +1,15 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <style>
-    .background { fill: #43613C; }
-    .foreground { stroke: #FFFFFF; }
-    @media (prefers-color-scheme: dark) {
-      .background { fill: #FFFFFF; }
-      .foreground { stroke: #43613C; }
-    }
-  </style>
-  <rect class="background" width="180" height="180" rx="37" />
-  <path class="foreground" d="M50 122 V58 L90 100 L130 58 V122" fill="none" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" />
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180">
+  <!-- Favicon de MaestrIA (brand-book.md): la M sin los cinco nodos, en
+       texto-sobre-accion sobre un cuadrado de accion con radio-sm. Un archivo
+       estatico no puede leer variables CSS: estos dos colores son el espejo de
+       los tokens `accion` y `texto-sobre-accion` del modo claro. -->
+  <rect width="180" height="180" rx="48" fill="#2d5bff"/>
+  <svg x="27" y="27" width="126" height="126" viewBox="-22.2 -29.7 144.4 144.4">
+    <g fill="none" stroke="#ffffff" stroke-width="9.5" stroke-linejoin="round">
+      <path d="M-11.8 0 L-11.8 85 A11.8 11.8 0 0 0 11.8 85 L11.8 0 A11.8 11.8 0 0 0 -11.8 0 Z"/>
+      <path d="M88.2 0 L88.2 85 A11.8 11.8 0 0 0 111.8 85 L111.8 0 A11.8 11.8 0 0 0 88.2 0 Z"/>
+      <path d="M-8.34 8.34 L41.66 58.34 A11.8 11.8 0 0 0 58.34 41.66 L8.34 -8.34 A11.8 11.8 0 0 0 -8.34 8.34 Z"/>
+      <path d="M91.66 -8.34 L41.66 41.66 A11.8 11.8 0 0 0 58.34 58.34 L108.34 8.34 A11.8 11.8 0 0 0 91.66 -8.34 Z"/>
+    </g>
+  </svg>
 </svg>

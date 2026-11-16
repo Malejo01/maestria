@@ -220,7 +220,7 @@ export function FeedbackButton() {
         'fixed right-4 sm:right-6 z-[45] flex flex-col items-end gap-3 print:hidden',
         // Los guiones bajos son espacios: dentro de calc(), el `+` necesita
         // espacio a los lados o el valor entero es inválido.
-        '[--feedback-bottom:calc(1rem_+_env(safe-area-inset-bottom))]',
+        '[--feedback-bottom:calc(1rem_+_var(--alto-barra-inferior,0px)_+_env(safe-area-inset-bottom))]',
         'sm:[--feedback-bottom:calc(1.5rem_+_env(safe-area-inset-bottom))]',
         // env(safe-area-inset-bottom) es 0px en un monitor y ~34px en un
         // teléfono con barra de gestos: sin esto el botón queda debajo de la
