@@ -617,6 +617,13 @@ export const PLAN = {
     noPodes: 'Para esto hace falta renovar',
     noPuede: ['Generar cuestionarios.', 'Crear materias o grupos.', 'Sumar alumnos.'],
   },
+  /** G6: el contador discreto de arriba del panel. */
+  contador: {
+    alumnos: (alumnos: number, cupo: number) => `${alumnos} de ${cupo} alumnos`,
+    vence: (fecha: string) => `tu plan vence el ${fecha}`,
+    pruebaVence: (fecha: string) => `tu prueba termina el ${fecha}`,
+    vencio: (fecha: string) => `tu plan venció el ${fecha}`,
+  },
 } as const
 
 /** G5: /precios. Lo que un docente lee en el celular cuando Mauro le pasa el link. */
