@@ -7,7 +7,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { useRefrescarSesion } from '@/hooks/use-refrescar-sesion'
-import { ArrowLeftRight, ExternalLink, LogOut, Undo2 } from 'lucide-react'
+import { ArrowLeftRight, CreditCard, ExternalLink, Gauge, LogOut, Undo2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -52,12 +52,19 @@ export function MenuUsuario({
   email,
   rol,
   vistaPrevia,
+  esAdmin = false,
 }: {
   nombre: string
   email: string | null
   rol: UserRole
   /** Un docente mirando las pantallas de alumno. */
   vistaPrevia: boolean
+  /**
+   * H4: la lista de admin (`isAdminEmail`). Suma los links a /admin/planes y
+   * /admin/ai-usage, que antes sólo se encontraban escribiendo la dirección.
+   * Para cualquier otra cuenta el menú no cambia.
+   */
+  esAdmin?: boolean
 }) {
   const actualizarSesion = useRefrescarSesion()
   const [confirmando, setConfirmando] = useState(false)
@@ -127,6 +134,26 @@ export function MenuUsuario({
                 {CUENTA.vistaAlumno.volver}
               </Link>
             </DropdownMenuItem>
+          )}
+
+          {esAdmin && (
+            <>
+              <DropdownMenuSeparator className="bg-borde" />
+              <DropdownMenuLabel className="etiqueta px-3 pt-2 pb-1 text-texto-suave">{CUENTA.admin.titulo}</DropdownMenuLabel>
+              <DropdownMenuItem asChild className={ITEM}>
+                <Link href="/admin/planes">
+                  <CreditCard aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                  {CUENTA.admin.planes}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className={ITEM}>
+                <Link href="/admin/ai-usage">
+                  <Gauge aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                  {CUENTA.admin.usoDeIA}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-borde" />
+            </>
           )}
 
           <DropdownMenuItem className={ITEM} onSelect={() => setConfirmando(true)}>
