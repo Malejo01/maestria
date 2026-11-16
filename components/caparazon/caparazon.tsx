@@ -16,15 +16,10 @@ import { Logo } from '@/components/sistema/logo'
 import { entradaActiva, resolverCaparazon, type EntradaNav } from '@/lib/navegacion'
 import { guardarRolElegido } from '@/lib/rol-elegido'
 import { CUENTA, INVITADO, MIS_ALUMNOS, NAVEGACION } from '@/lib/textos'
-import type { UserRole } from '@/lib/types'
+import type { QuienEntro } from '@/lib/quien-entro'
 import { cn } from '@/lib/utils'
 
-export interface QuienEntro {
-  nombre: string
-  email: string | null
-  rol: UserRole | null
-  esInvitado: boolean
-}
+export type { QuienEntro }
 
 /**
  * El caparazón de la app: la barra, los avisos y el marco de cada pantalla.
@@ -107,7 +102,13 @@ function Marco({
               </Boton>
             )}
             {quien && !quien.esInvitado && quien.rol && (
-              <MenuUsuario nombre={quien.nombre} email={quien.email} rol={quien.rol} vistaPrevia={vistaPrevia} />
+              <MenuUsuario
+                nombre={quien.nombre}
+                email={quien.email}
+                rol={quien.rol}
+                vistaPrevia={vistaPrevia}
+                esAdmin={quien.esAdmin}
+              />
             )}
           </div>
         </div>

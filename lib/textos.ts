@@ -121,6 +121,8 @@ export const INVITADO = {
 
 export const CUENTA = {
   abrirMenu: 'Abrir el menú de tu cuenta',
+  /** H4: sólo para la lista de admin. */
+  admin: { titulo: 'Administración', planes: 'Planes de los docentes', usoDeIA: 'Uso de la IA' },
   estasComo: { DOCENTE: 'Estás como docente', ALUMNO: 'Estás como alumno' },
   cerrarSesion: 'Cerrar sesión',
   /** Docente: mirar la app como la ve un alumno, sin dejar de ser docente. */

@@ -97,3 +97,31 @@ describe('MenuUsuario — cambiar de rol', () => {
     expect(update).not.toHaveBeenCalled()
   })
 })
+
+describe('MenuUsuario — links de admin (H4)', () => {
+  async function abrir(props: { esAdmin?: boolean; rol?: 'DOCENTE' | 'ALUMNO' }) {
+    const usuario = userEvent.setup()
+    render(<MenuUsuario nombre="Irina Álvarez" email="irina@x.com" rol={props.rol ?? 'DOCENTE'} vistaPrevia={false} esAdmin={props.esAdmin} />)
+    await usuario.click(screen.getByRole('button', { name: 'Abrir el menú de tu cuenta' }))
+    await screen.findByRole('menuitem', { name: 'Cerrar sesión' })
+  }
+
+  it('un docente común no ve los links a las pantallas de admin', async () => {
+    await abrir({})
+    expect(screen.queryByRole('menuitem', { name: 'Planes de los docentes' })).toBeNull()
+    expect(screen.queryByRole('menuitem', { name: 'Uso de la IA' })).toBeNull()
+    expect(screen.queryByText('Administración')).toBeNull()
+    expect(document.querySelector('a[href^="/admin"]')).toBeNull()
+  })
+
+  it('tampoco con esAdmin en false explícito', async () => {
+    await abrir({ esAdmin: false })
+    expect(document.querySelector('a[href^="/admin"]')).toBeNull()
+  })
+
+  it('la cuenta de la lista de admin ve los dos', async () => {
+    await abrir({ esAdmin: true })
+    expect(screen.getByRole('menuitem', { name: 'Planes de los docentes' }).getAttribute('href')).toBe('/admin/planes')
+    expect(screen.getByRole('menuitem', { name: 'Uso de la IA' }).getAttribute('href')).toBe('/admin/ai-usage')
+  })
+})
