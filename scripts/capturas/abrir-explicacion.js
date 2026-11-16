@@ -49,7 +49,7 @@
         )
       : fetchReal(url, opciones)
 
-  ;(await hasta(() => boton('Empezar tarea') || boton('Seguir') || boton('Reintentar'), 'el botón de la tarea')).click()
+  ;(await hasta(() => boton('Empezar tarea') || boton('Volver a hacerla') || boton('Seguir'), 'el botón de la tarea')).click()
   await hasta(() => boton('Verificar') || document.querySelector('button[class*="rounded"] span'), 'la primera pregunta')
 
   for (let pregunta = 0; pregunta < 20; pregunta++) {

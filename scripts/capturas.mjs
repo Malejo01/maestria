@@ -21,7 +21,8 @@
  *                                página ya cargada, antes de la foto, y se
  *                                espera si devuelve una promesa. Es lo que
  *                                permite capturar un diálogo o un paso de un
- *                                flujo: el script hace los clicks.
+ *                                flujo: el script hace los clicks. Varios
+ *                                archivos separados por coma corren en orden.
  *   NOMBRE=explicacion           nombre del archivo, en lugar del de la ruta
  *
  * No usa Playwright ni Puppeteer: levanta el navegador instalado (Edge o
@@ -44,7 +45,10 @@ const BASE = process.env.BASE ?? 'http://localhost:3000'
 const MODOS = (process.env.MODOS ?? 'claro,oscuro').split(',')
 const ANCHOS = (process.env.ANCHOS ?? '1440,390').split(',').map(Number)
 const ALTO = { 1440: 900, 1280: 800, 390: 844 }
-const ANTES = process.env.ANTES ? await readFile(process.env.ANTES, 'utf8') : null
+// Varios archivos separados por coma se ejecutan en orden, cada uno esperando al anterior.
+const ANTES = process.env.ANTES
+  ? await Promise.all(process.env.ANTES.split(',').map((archivo) => readFile(archivo.trim(), 'utf8')))
+  : []
 const PUERTO = 9333
 
 const NAVEGADORES = [
@@ -170,9 +174,9 @@ try {
         await navegar(BASE + ruta)
         // Datos que llegan por fetch y animaciones de entrada.
         await esperar(Number(process.env.ESPERA ?? 3000))
-        if (ANTES) {
+        for (const paso of ANTES) {
           const { exceptionDetails } = await cdp('Runtime.evaluate', {
-            expression: ANTES,
+            expression: paso,
             awaitPromise: true,
           })
           // Una foto de la pantalla equivocada es peor que ninguna foto.
