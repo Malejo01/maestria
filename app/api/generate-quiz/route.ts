@@ -15,6 +15,8 @@ import { guardAiCall } from '@/lib/ai-guard'
 import { captureRouteFailure } from '@/lib/observability'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { generateQuiz, resolveQuizRequest } from '@/lib/quiz-generation'
+import { bloqueoParaGenerar } from '@/lib/planes-server'
+import { getViewer } from '@/lib/auth-session'
 
 export async function POST(req: Request) {
   const resolved = resolveQuizRequest(await req.json())
@@ -24,6 +26,14 @@ export async function POST(req: Request) {
   }
 
   const params = resolved.params
+
+  // Un docente con el plan vencido no genera (lib/planes.ts). A los alumnos no
+  // se los toca: no se castiga al alumno por algo del docente.
+  const viewer = await getViewer()
+  if (viewer && !viewer.isGuest && viewer.role === 'DOCENTE') {
+    const bloqueo = await bloqueoParaGenerar(viewer.id, viewer.email, { questions: [] })
+    if (bloqueo) return bloqueo
+  }
 
   // Recién acá, con el nivel ya resuelto, para que el mensaje de corte le hable
   // a un chico de primaria distinto que a un estudiante de terciario. Todo lo

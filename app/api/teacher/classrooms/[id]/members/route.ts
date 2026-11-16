@@ -3,6 +3,7 @@ import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { getClassroomMembers, getOwnedClassroom } from '@/lib/classrooms-server'
 import { captureRouteFailure } from '@/lib/observability'
+import { bloqueoParaGenerar } from '@/lib/planes-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,6 +48,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!teacher) {
     return NextResponse.json({ error: 'Solo docentes pueden agregar alumnos' }, { status: 403 })
   }
+
+  // Copiar alumnos de otro grupo propio no suma personas nuevas (ya cuentan),
+  // pero con el plan vencido no se suma a nadie (lib/planes.ts).
+  const bloqueo = await bloqueoParaGenerar(teacher.id, teacher.email)
+  if (bloqueo) return bloqueo
 
   const { id } = await params
   const classroomId = Number(id)

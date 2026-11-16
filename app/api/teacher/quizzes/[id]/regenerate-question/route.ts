@@ -6,6 +6,7 @@ import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { captureRouteFailure } from '@/lib/observability'
 import { generateQuiz, type QuizRequestParams } from '@/lib/quiz-generation'
 import type { Question, QuestionType } from '@/lib/types'
+import { bloqueoParaGenerar } from '@/lib/planes-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,6 +62,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!teacher) {
     return NextResponse.json({ error: 'Solo docentes pueden regenerar preguntas' }, { status: 403 })
   }
+
+  // Plan vencido: modo solo lectura (lib/planes.ts).
+  const bloqueo = await bloqueoParaGenerar(teacher.id, teacher.email)
+  if (bloqueo) return bloqueo
 
   const { id } = await params
   const quizId = Number(id)

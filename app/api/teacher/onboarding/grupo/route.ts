@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { captureRouteFailure } from '@/lib/observability'
 import { asegurarGrupoDe } from '@/lib/onboarding-docente-server'
+import { bloqueoParaGenerar } from '@/lib/planes-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +19,10 @@ export async function POST(req: Request) {
   if (!teacher) {
     return NextResponse.json({ error: 'Solo docentes' }, { status: 403 })
   }
+
+  // Plan vencido: modo solo lectura (lib/planes.ts).
+  const bloqueo = await bloqueoParaGenerar(teacher.id, teacher.email)
+  if (bloqueo) return bloqueo
 
   try {
     const body = (await req.json().catch(() => null)) as { teacherProgramId?: unknown } | null

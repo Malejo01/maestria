@@ -8,6 +8,7 @@ import {
   estadoDeTema,
   haceCuanto,
   normalizarNombre,
+  contarLugares,
   RESPUESTAS_PARA_DOMINADO,
   RESPUESTAS_PARA_FLOJO,
   resumir,
@@ -304,5 +305,26 @@ describe('temaCorto', () => {
 
   it('nunca devuelve vacío', () => {
     expect(temaCorto(': raro')).toBe(': raro')
+  })
+})
+
+describe('contarLugares', () => {
+  const m = (userId: string, nombre: string, grupoId: number) => ({ userId, nombre, grupoId })
+  const i = (id: number, nombre: string, grupoId: number) => ({ id, nombre, grupoId })
+
+  it('un alumno en dos grupos del mismo docente ocupa un lugar', () => {
+    expect(contarLugares([m('a', 'Ana', 1), m('a', 'Ana', 2), m('b', 'Beto', 1)], [])).toBe(2)
+  })
+
+  it('los invitados sin cuenta cuentan como cualquier miembro', () => {
+    expect(contarLugares([m('guest-1', 'Invitado', 1)], [])).toBe(1)
+  })
+
+  it('una invitación pendiente ocupa lugar; la que ya entró no suma dos veces', () => {
+    expect(contarLugares([m('a', 'Sofía Ramírez', 1)], [i(1, 'sofia ramirez', 1), i(2, 'Tomás', 1)])).toBe(2)
+  })
+
+  it('una invitación de otro grupo con el mismo nombre no se funde', () => {
+    expect(contarLugares([m('a', 'Ana', 1)], [i(1, 'Ana', 2)])).toBe(2)
   })
 })

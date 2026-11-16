@@ -9,6 +9,7 @@ import {
   leerMisAlumnos,
 } from '@/lib/alumnos-docente-server'
 import { asegurarGrupoDe } from '@/lib/onboarding-docente-server'
+import { bloqueoParaSumarAlumno } from '@/lib/planes-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,6 +56,11 @@ export async function POST(req: Request) {
     if (!datos.success) {
       return NextResponse.json({ error: 'Escribí el nombre del alumno y elegí la materia.' }, { status: 400 })
     }
+
+    // El alumno que supera el cupo no entra: se frena acá y la UI muestra la
+    // pantalla de límite (lib/planes.ts).
+    const bloqueo = await bloqueoParaSumarAlumno(teacher.id, teacher.email)
+    if (bloqueo) return bloqueo
 
     const grupo = await asegurarGrupoDe(teacher.id, datos.data.teacherProgramId)
     if (!grupo) {
