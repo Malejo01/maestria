@@ -1,6 +1,12 @@
 import { generateText } from 'ai'
 import { google } from '@ai-sdk/google'
-import { getEducationContext } from '@/lib/education-context'
+import {
+  buildExplainErrorPrompt,
+  getEducationContext,
+  quitarEmojis,
+  resolverNivelYGrado,
+} from '@/lib/education-context'
+import { getSession } from '@/lib/auth-session'
 import { guardAiCall } from '@/lib/ai-guard'
 import { AI_MODEL } from '@/lib/ai-model'
 
@@ -25,77 +31,40 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Faltan selectedText/correctText.' }, { status: 400 })
   }
 
-  let nivel = rawNivel
-  let grado = rawGrado
-
-  if (typeof pedagogyContext === 'string') {
-    if (!nivel) {
-      const matchNivel = pedagogyContext.match(/Nivel:\s*([a-zA-Záéíóúñ]+)/i)
-      if (matchNivel && matchNivel[1]) nivel = matchNivel[1]
-    }
-    if (!grado) {
-      const matchGrado = pedagogyContext.match(/Grado(?:\/Año)?:\s*([^\s|]+(?:\s+[^\s|]+)*)/i)
-      if (matchGrado && matchGrado[1]) grado = matchGrado[1]
-    }
-  }
+  // De dónde sale el nivel, en orden: lo que manda el cuestionario (el grupo),
+  // el contexto del programa, y recién al final el perfil del alumno. Mi
+  // progreso no manda ninguno de los dos primeros: sin el perfil, todo lo que
+  // se explicaba desde ahí salía con el nivel por defecto.
+  const session = await getSession()
+  const { nivel, grado } = resolverNivelYGrado({
+    nivel: rawNivel,
+    grado: rawGrado,
+    pedagogyContext,
+    perfil: session?.user ? { nivel: session.user.nivel, grado: session.user.grado } : null,
+  })
 
   const guard = await guardAiCall({ bucket: 'feedback', nivel })
   if (!guard.ok) return guard.response
 
   const eduCtx = getEducationContext(nivel, grado, subject || 'la materia')
-  const subjectContext = `\n${eduCtx.estrategiaMateria}`
 
-  const pedagogySection = typeof pedagogyContext === 'string' && pedagogyContext.trim().length > 0
-    ? `\nREFERENCIAS PEDAGÓGICAS ADICIONALES:\n${pedagogyContext}\n`
-    : ''
-
-  // `.catch` en vez de try/catch para no reindentar el prompt entero: sólo
-  // hace falta marcar la fila como fallida y dejar que el error siga su curso.
+  // `.catch` en vez de try/catch: sólo hace falta marcar la fila como fallida
+  // y dejar que el error siga su curso.
   const generation = await generateText({
     model: google(AI_MODEL),
     messages: [
       {
         role: 'user',
-        content: `ROL E IDENTIDAD:
-${eduCtx.rolDocente}.
-
-OBJETIVO:
-Un estudiante de ${eduCtx.grado} (${eduCtx.nivel === 'Superior' ? 'Educación Superior' : `edad ${eduCtx.edadMin}-${eduCtx.edadMax} años`}) respondió incorrectamente la siguiente pregunta. Tu tarea es explicarle el error con empatía, calidez y un lenguaje perfectamente adaptado a su edad y nivel educativo.
-
-${eduCtx.registroLinguistico}
-${eduCtx.instruccionesExplicacion}
-
-${subjectContext}
-TEMA: ${topic}
-MATERIA: ${subject || 'General'}
-${pedagogySection}
-
-PREGUNTA:
-${question}
-
-RESPUESTA DEL ESTUDIANTE: ${selectedText}
-RESPUESTA CORRECTA: ${correctText}
-
-Explica de forma muy visual, cercana y estructurada usando EXACTAMENTE este formato de 4 secciones:
-
-## 1. 🧠 ¿Por qué elegiste esta opción? (Diagnóstico de tu respuesta)
-Analiza específicamente lo que respondió el estudiante ("${selectedText}"). Explícale de forma empática por qué es muy común cometer esa confusión a su edad. Marca el detalle con calidez ("¡Atención!", "¡Casi!", "Es muy normal confundirse aquí porque..."). NUNCA lo felicites por haberse equivocado (no digas "¡Excelente!" ni "¡Lo hiciste genial!").
-
-## 2. 💡 Explicación paso a paso
-Muestra cómo llegar a la respuesta correcta ("${correctText}") con un ejemplo claro y elementos visuales/emojis (🌱, ☀️, 💧, 🔢 según la materia). Sé conciso e ilustrativo.
-
-## 3. 📌 ¿Por qué la respuesta correcta es la única válida?
-Resume en 1 o 2 frases el concepto clave.
-
-## 4. ⭐ Tip o consejo para recordar
-Un tip práctico, regla mnemotécnica o truco amigable para no volver a tener esa confusión en el futuro.
-
-REGLAS CRÍTICAS:
-- Si es Nivel Primario o Inicial, usa emojis sutiles (🌱, ☀️, 💧, 🐥, 🔢) para hacer la lectura súper cálida y visual.
-- Usa notación LaTeX solo si hay fórmulas ($x^2$, $\\frac{a}{b}$).
-- NUNCA agregues notas ni aclaraciones entre paréntesis sobre LaTeX (ej: NO escribas "(Nota: En este caso no aplica notación LaTeX)").
-- Sé muy ágil y directo al punto.`
-      }
+        content: buildExplainErrorPrompt({
+          ctx: eduCtx,
+          question,
+          selectedText,
+          correctText,
+          topic,
+          subject,
+          pedagogyContext,
+        }),
+      },
     ],
     maxOutputTokens: 4000,
     temperature: 0.5,
@@ -104,7 +73,9 @@ REGLAS CRÍTICAS:
     throw error
   })
 
-  const text = generation.text
+  // El prompt ya pide que no haya emojis fuera de Primario; esto lo garantiza
+  // aunque el modelo no obedezca.
+  const text = eduCtx.permiteEmojis ? generation.text : quitarEmojis(generation.text)
   await guard.finish(generation.usage)
 
   // Extraer sección 1 y sección 4 para guardar apunte / diagnóstico

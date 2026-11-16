@@ -11,7 +11,42 @@ export interface EducationContext {
   contextualizacion: string
   estrategiaMateria: string
   rubricaRespuestaCorta: string
+  /**
+   * Los emojis son contenido pedagógico SÓLO para Primario. En Secundario y
+   * Superior el texto que escribe la IA no lleva ninguno: se le pide en el
+   * prompt y, como el modelo no siempre obedece, `quitarEmojis` lo garantiza
+   * sobre la salida.
+   */
+  permiteEmojis: boolean
 }
+
+export type NivelEducativo = EducationContext['nivel']
+
+/**
+ * Lleva a uno de los tres niveles lo que en la práctica llega escrito de
+ * muchas formas: el perfil del alumno dice "Secundario", pero el programa de
+ * un docente puede decir "secundaria", "Nivel Primario" o "Terciario". Antes
+ * sólo se aceptaba la forma exacta y todo lo demás caía, callado, al default.
+ *
+ * Devuelve `null` si no reconoce nada, para que quien llama pueda seguir
+ * buscando en otra fuente antes de resignarse al default.
+ */
+export function normalizarNivel(valor?: string | null): NivelEducativo | null {
+  if (!valor) return null
+  const v = valor
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+  if (/primari/.test(v)) return 'Primario'
+  if (/secundari|bachiller|polimodal/.test(v)) return 'Secundario'
+  if (/superior|terciari|universi|profesorado|tecnicatura|licenciatura|facultad/.test(v)) return 'Superior'
+  return null
+}
+
+const NIVEL_POR_DEFECTO: NivelEducativo = 'Secundario'
+
+const SIN_EMOJIS =
+  '- PROHIBIDO usar emojis, emoticones o pictogramas: ni en títulos, ni en el texto, ni en las opciones.'
 
 function parseNumeroGrado(gradoStr?: string): number {
   if (!gradoStr) return 1
@@ -51,9 +86,7 @@ export function getEducationContext(
   gradoStr?: string,
   materia: string = 'la materia'
 ): EducationContext {
-  const nivel = (nivelStr === 'Primario' || nivelStr === 'Secundario' || nivelStr === 'Superior')
-    ? nivelStr
-    : 'Secundario'
+  const nivel = normalizarNivel(nivelStr) ?? NIVEL_POR_DEFECTO
 
   const numGrado = parseNumeroGrado(gradoStr)
   const estrategiaMateria = getSubjectStrategy(materia)
@@ -133,6 +166,7 @@ ${emojiInstruction}`
       contextualizacion: 'Contextualiza las situaciones dentro de entornos locales y cotidianos de Argentina, usando la región o provincia correspondiente al estudiante cuando sea relevante.',
       estrategiaMateria,
       rubricaRespuestaCorta: rubricaCorta,
+      permiteEmojis: true,
     }
   }
 
@@ -158,7 +192,8 @@ ${emojiInstruction}`
 - Usa vocabulario disciplinar propio de ${materia} acorde a ${anioNum}º Año de secundaria.
 - Las oraciones pueden ser compuestas y requerir relaciones de causa-efecto o análisis crítico.
 - Evita el infantilismo, dirigiéndote al estudiante con empatía, claridad y estímulo al pensamiento autónomo.
-- Las opciones pueden contener matices conceptuales bien diferenciados.`
+- Las opciones pueden contener matices conceptuales bien diferenciados.
+${SIN_EMOJIS}`
 
     if (materia.toLowerCase().includes('histor') || materia.toLowerCase().includes('social')) {
       // Persona 3: Historia
@@ -193,6 +228,7 @@ ${emojiInstruction}`
       contextualizacion: 'Incluye referencias a situaciones reales, aplicaciones prácticas del conocimiento y contexto regional o nacional argentino cuando sea relevante.',
       estrategiaMateria,
       rubricaRespuestaCorta: rubricaCorta,
+      permiteEmojis: false,
     }
   }
 
@@ -205,7 +241,8 @@ ${emojiInstruction}`
   let rolDocente = `Profesor/a Universitario/a especialista en ${materia}`
   let registroLinguistico = `LENGUAJE DE EDUCACIÓN SUPERIOR:
 - Emplea terminología técnica, formal y académica rigurosa de ${materia}.
-- Plantea problemas con precisión conceptual y lenguaje universitario sin simplificaciones artificiales.`
+- Plantea problemas con precisión conceptual y lenguaje universitario sin simplificaciones artificiales.
+${SIN_EMOJIS}`
 
   if (materia.toLowerCase().includes('matemát') || materia.toLowerCase().includes('matemat') || materia.toLowerCase().includes('álgebra') || materia.toLowerCase().includes('algebra') || materia.toLowerCase().includes('análisis') || materia.toLowerCase().includes('analisis') || materia.toLowerCase().includes('cálculo')) {
     // Persona 5: Matemática Superior
@@ -232,7 +269,170 @@ ${emojiInstruction}`
     contextualizacion: 'Enfocado en estándares de la cátedra universitaria y aplicación profesional de la materia.',
     estrategiaMateria,
     rubricaRespuestaCorta: rubricaCorta,
+    permiteEmojis: false,
   }
+}
+
+// ── De dónde sale el nivel ──────────────────────────────────────────────────
+
+/**
+ * Decide con qué nivel y año se le habla al alumno, en este orden:
+ *
+ *   1. lo que manda quien llama (el cuestionario sabe de qué grupo es),
+ *   2. lo que dice el contexto pedagógico del programa ("Nivel: …"),
+ *   3. el perfil del alumno,
+ *   4. Secundario.
+ *
+ * El grupo va antes que el perfil a propósito: un alumno registrado como
+ * Primario que hace una tarea de un grupo de 4.º año de secundaria tiene que
+ * recibir la explicación de secundaria. El nivel y el año se toman de la misma
+ * fuente: mezclar el nivel del grupo con el año del perfil da "7.º de Superior".
+ */
+export function resolverNivelYGrado(fuentes: {
+  nivel?: string | null
+  grado?: string | null
+  pedagogyContext?: string | null
+  perfil?: { nivel?: string | null; grado?: string | null } | null
+}): { nivel: NivelEducativo; grado?: string } {
+  const explicito = normalizarNivel(fuentes.nivel)
+  if (explicito) return { nivel: explicito, grado: fuentes.grado || undefined }
+
+  const contexto = typeof fuentes.pedagogyContext === 'string' ? fuentes.pedagogyContext : ''
+  const delContexto = normalizarNivel(contexto.match(/Nivel:[ \t]*([^\n|]+)/i)?.[1])
+  if (delContexto) {
+    const grado = contexto.match(/Grado(?:\/A[ñn]o)?:[ \t]*([^\n|]+)/i)?.[1]?.trim()
+    return { nivel: delContexto, grado: fuentes.grado || grado || undefined }
+  }
+
+  const delPerfil = normalizarNivel(fuentes.perfil?.nivel)
+  if (delPerfil) return { nivel: delPerfil, grado: fuentes.grado || fuentes.perfil?.grado || undefined }
+
+  return { nivel: NIVEL_POR_DEFECTO, grado: fuentes.grado || undefined }
+}
+
+// ── Emojis ──────────────────────────────────────────────────────────────────
+
+/**
+ * Qué cuenta como emoji acá. NO es `\p{Extended_Pictographic}` a secas: esa
+ * clase incluye símbolos que en una explicación son contenido (↔ en lógica,
+ * ©, ™, ✔). Se quitan los que se dibujan a color por defecto, y los de texto
+ * sólo cuando vienen con el selector que los vuelve emoji (U+FE0F).
+ */
+const EMOJI = String.raw`(?:\p{Extended_Pictographic}️|[\p{Emoji_Presentation}\p{Emoji_Modifier}‍️])`
+/** "1️⃣": un dígito convertido en tecla. El dígito es contenido; la tecla no. */
+const TECLA = /([0-9#*])️?⃣/gu
+/** Emojis que abren un renglón, después del marcador de título o de lista. */
+const EMOJIS_AL_PRINCIPIO = new RegExp(
+  String.raw`^([ \t]*(?:#{1,6}[ \t]+|[-*+][ \t]+|\d+[.)][ \t]+)*)${EMOJI}+[ \t]*`,
+  'gmu',
+)
+const EMOJIS_EN_EL_MEDIO = new RegExp(String.raw`[ \t]*${EMOJI}+`, 'gu')
+
+/**
+ * Saca los emojis de un texto generado sin dejar huecos: "## 1. 🧠 ¿Por qué?"
+ * queda "## 1. ¿Por qué?". No toca fórmulas, flechas ni símbolos matemáticos.
+ */
+export function quitarEmojis(texto: string): string {
+  return texto.replace(TECLA, '$1').replace(EMOJIS_AL_PRINCIPIO, '$1').replace(EMOJIS_EN_EL_MEDIO, '')
+}
+
+// ── Explicación de un error ─────────────────────────────────────────────────
+
+/**
+ * El prompt con el que se le explica al alumno por qué erró. Vivía entero en
+ * `app/api/explain-error/route.ts`, con UN formato para todos los niveles: los
+ * títulos traían emojis escritos a mano y el cuerpo pedía "elementos
+ * visuales/emojis" y hablaba de "su edad". El registro de Primario llegaba así
+ * a un 4.º año de secundaria aunque `registroLinguistico` dijera otra cosa.
+ *
+ * Los cuatro títulos conservan su numeración ("## 1." … "## 4.") en todos los
+ * niveles: la ruta saca de ahí el diagnóstico y el tip que guarda.
+ */
+export function buildExplainErrorPrompt({
+  ctx,
+  question,
+  selectedText,
+  correctText,
+  topic,
+  subject,
+  pedagogyContext,
+}: {
+  ctx: EducationContext
+  question: string
+  selectedText: string
+  correctText: string
+  topic?: string
+  subject?: string
+  pedagogyContext?: string
+}): string {
+  const pedagogySection =
+    typeof pedagogyContext === 'string' && pedagogyContext.trim().length > 0
+      ? `\nREFERENCIAS PEDAGÓGICAS ADICIONALES:\n${pedagogyContext}\n`
+      : ''
+
+  const destinatario =
+    ctx.nivel === 'Superior' ? 'Educación Superior' : `edad ${ctx.edadMin}-${ctx.edadMax} años`
+
+  const formato = ctx.permiteEmojis
+    ? `Explica de forma muy visual, cercana y estructurada usando EXACTAMENTE este formato de 4 secciones:
+
+## 1. 🧠 ¿Por qué elegiste esta opción? (Diagnóstico de tu respuesta)
+Analiza específicamente lo que respondió el estudiante ("${selectedText}"). Explícale de forma empática por qué es muy común cometer esa confusión a su edad. Marca el detalle con calidez ("¡Atención!", "¡Casi!", "Es muy normal confundirse aquí porque..."). NUNCA lo felicites por haberse equivocado (no digas "¡Excelente!" ni "¡Lo hiciste genial!").
+
+## 2. 💡 Explicación paso a paso
+Muestra cómo llegar a la respuesta correcta ("${correctText}") con un ejemplo claro y elementos visuales/emojis (🌱, ☀️, 💧, 🔢 según la materia). Sé conciso e ilustrativo.
+
+## 3. 📌 ¿Por qué la respuesta correcta es la única válida?
+Resume en 1 o 2 frases el concepto clave.
+
+## 4. ⭐ Tip o consejo para recordar
+Un tip práctico, regla mnemotécnica o truco amigable para no volver a tener esa confusión en el futuro.`
+    : `Explica de forma clara, sobria y estructurada usando EXACTAMENTE este formato de 4 secciones (los títulos van tal cual, sin agregarles nada):
+
+## 1. ¿Por qué elegiste esta opción?
+Analiza específicamente lo que respondió el estudiante ("${selectedText}") e identifica con precisión qué razonamiento lleva a esa respuesta y dónde falla. Trátalo como a ${ctx.nivel === 'Superior' ? 'un adulto' : 'un adolescente'} capaz: sin infantilizar, sin diminutivos y sin exclamaciones de aliento. NUNCA lo felicites por haberse equivocado.
+
+## 2. Explicación paso a paso
+Muestra cómo llegar a la respuesta correcta ("${correctText}") con el razonamiento ordenado en pasos. Sé conciso.
+
+## 3. Por qué la respuesta correcta es la única válida
+Resume en 1 o 2 frases el concepto clave.
+
+## 4. Cómo recordarlo
+Un criterio práctico o una regla para no repetir la confusión.`
+
+  const reglasDeRegistro = ctx.permiteEmojis
+    ? '- Usa emojis sutiles (🌱, ☀️, 💧, 🐥, 🔢) para hacer la lectura cálida y visual.'
+    : `- NO uses emojis, emoticones ni pictogramas en ninguna parte de la respuesta.
+- NO te dirijas al estudiante como a un niño: nada de "aventura", "magia", "truco mágico" ni comparaciones infantiles.`
+
+  return `ROL E IDENTIDAD:
+${ctx.rolDocente}.
+
+OBJETIVO:
+Un estudiante de ${ctx.grado} (${destinatario}) respondió incorrectamente la siguiente pregunta. Tu tarea es explicarle el error con empatía y un lenguaje perfectamente adaptado a su nivel educativo.
+
+${ctx.registroLinguistico}
+${ctx.instruccionesExplicacion}
+
+${ctx.estrategiaMateria}
+TEMA: ${topic}
+MATERIA: ${subject || 'General'}
+${pedagogySection}
+
+PREGUNTA:
+${question}
+
+RESPUESTA DEL ESTUDIANTE: ${selectedText}
+RESPUESTA CORRECTA: ${correctText}
+
+${formato}
+
+REGLAS CRÍTICAS:
+${reglasDeRegistro}
+- Usa notación LaTeX solo si hay fórmulas ($x^2$, $\\frac{a}{b}$).
+- NUNCA agregues notas ni aclaraciones entre paréntesis sobre LaTeX (ej: NO escribas "(Nota: En este caso no aplica notación LaTeX)").
+- Sé muy ágil y directo al punto.`
 }
 
 /** Aplicación profesional de una unidad, tal como la declara el programa de cátedra. */
