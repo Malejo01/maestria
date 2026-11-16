@@ -37,9 +37,20 @@ function archivosDe(ruta: string): string[] {
   return readdirSync(absoluta).flatMap((nombre) => archivosDe(join(ruta, nombre)))
 }
 
-const FUENTES = ZONAS_REDISENADAS.flatMap(archivosDe).filter(
-  (ruta) => /\.(tsx?|css)$/.test(ruta) && !/\.test\.tsx?$/.test(ruta),
-)
+/**
+ * Archivos que viven en una zona rediseñada pero todavía traen la presentación
+ * vieja, movida tal cual al partir app/(app)/teacher/page.tsx. Cada uno sale
+ * de esta lista cuando su bloque lo rehace; la lista sólo puede achicarse.
+ */
+const TODAVIA_VIEJOS = [
+  'components/docente/mis-materias.tsx', // bloque 4
+  'components/docente/mis-tareas.tsx', // bloque 5
+]
+
+const FUENTES = ZONAS_REDISENADAS.flatMap(archivosDe)
+  // En Windows `join` devuelve barras invertidas.
+  .map((ruta) => ruta.split('\\').join('/'))
+  .filter((ruta) => /\.(tsx?|css)$/.test(ruta) && !/\.test\.tsx?$/.test(ruta) && !TODAVIA_VIEJOS.includes(ruta))
 
 /** Saca comentarios: una regla citada en un comentario no es una violación. */
 function sinComentarios(codigo: string): string {

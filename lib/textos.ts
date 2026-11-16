@@ -262,3 +262,125 @@ export const CAMINOS_TEMARIO = {
   },
   masTarde: 'Decidir más tarde',
 } as const
+
+export const CHIP_TEMA = {
+  dominado: 'Dominado',
+  flojo: 'Flojo',
+  sin_datos: 'Sin datos',
+} as const
+
+export const MIS_ALUMNOS = {
+  titulo: 'Mis alumnos',
+  agregar: 'Agregar alumno',
+  agregarCorto: '+ Alumno',
+  queCargamos: 'tus alumnos',
+  vacio: {
+    titulo: 'Todavía no agregaste alumnos',
+    detalle: 'Cuando sumes al primero, acá vas a ver cómo le va: qué temas domina, cuáles le cuestan y cuándo practicó por última vez.',
+  },
+  sinMateria: {
+    titulo: 'Primero armá tu materia',
+    detalle: 'Para sumar alumnos necesitás al menos una materia con su temario.',
+  },
+  vista: { etiqueta: 'Cómo ver el listado', lista: 'Lista', planilla: 'Planilla' },
+  todaviaNoEntro: 'Todavía no entró',
+  verLink: 'Ver su link',
+  quitar: (nombre: string) => `Quitar a ${nombre} del listado`,
+  ultimaVez: 'Última práctica',
+  verFicha: (nombre: string) => `Ver la ficha de ${nombre}`,
+  sugerencia: {
+    inactivo: (nombre: string, dias: number) => `${nombre} no practica hace ${dias} días`,
+    conTema: (tema: string) => `Le sigue costando el tema ${tema}. ¿Le mandamos una tarea corta?`,
+    sinTema: '¿Le mandamos una tarea corta para que retome?',
+    leCuesta: (nombre: string, tema: string) => `A ${nombre} le cuesta el tema ${tema}`,
+    reforzar: '¿Le mandamos una tarea corta para reforzarlo?',
+    boton: 'Armar tarea',
+  },
+  resumen: {
+    estaSemana: 'Esta semana',
+    tareasEntregadas: (n: number) => (n === 1 ? 'tarea entregada' : 'tareas entregadas'),
+    temaMasFlojo: 'Tema más flojo',
+    deAlumnos: (n: number, total: number) => `${n} de ${total} ${total === 1 ? 'alumno' : 'alumnos'}`,
+    sinTemaFlojo: 'Ninguno por ahora',
+    sinTemaFlojoDetalle: 'Aparece cuando un tema le cuesta a alguien.',
+  },
+  planilla: {
+    titulo: 'Planilla de alumnos',
+    alumno: 'Alumno',
+    prepara: 'Qué prepara',
+    ultima: 'Última práctica',
+    practicas: 'Prácticas',
+    tareas: 'Tareas entregadas',
+    aciertos: 'Aciertos',
+    flojo: 'Tema más flojo',
+    sinDato: 'Sin datos',
+  },
+  grupos: {
+    titulo: 'Mis grupos',
+    detalle: 'Códigos, tareas mandadas y seguimiento por grupo.',
+    mostrar: 'Ver mis grupos',
+    ocultar: 'Ocultar mis grupos',
+  },
+} as const
+
+export const AGREGAR_ALUMNO = {
+  titulo: 'Agregar alumno',
+  detalle: 'Escribí su nombre y te damos el link para pasarle. Entra con su nombre, sin crear una cuenta.',
+  nombre: { etiqueta: 'Nombre y apellido', ejemplo: 'Sofía Ramírez' },
+  contexto: {
+    etiqueta: 'Qué prepara y para cuándo',
+    ayuda: 'Opcional. Te ayuda a ubicarlo en el listado.',
+    ejemplo: 'Análisis I · rinde el 12/12',
+  },
+  materia: { etiqueta: 'Materia' },
+  boton: 'Agregar alumno',
+  agregando: 'Agregando…',
+  fallo: 'No pudimos agregarlo. Probá de nuevo.',
+  listo: {
+    titulo: (nombre: string) => `Listo. Pasale este link a ${nombre}`,
+    detalle: 'Hasta que entre, lo vas a ver en el listado como "Todavía no entró".',
+    cerrar: 'Volver al listado',
+  },
+} as const
+
+export const FICHA_ALUMNO = {
+  volver: 'Volver a Mis alumnos',
+  queCargamos: 'la ficha',
+  noEsTuAlumno: 'Ese alumno no está en tus grupos.',
+  sinCuenta: 'Entra con su nombre, sin cuenta',
+  ultimaPractica: (cuando: string) => `Última práctica: ${cuando}`,
+  nuncaPractico: 'Todavía no practicó',
+  contexto: {
+    etiqueta: 'Qué prepara y para cuándo',
+    ejemplo: 'Análisis I · rinde el 12/12',
+    guardar: 'Guardar',
+    guardando: 'Guardando…',
+    guardado: 'Guardado',
+    fallo: 'No se pudo guardar. Probá de nuevo.',
+  },
+  asignar: 'Asignarle una tarea',
+  temas: {
+    titulo: 'Cómo le va en cada tema',
+    detalle: 'Sobre lo que respondió en tus tareas y prácticas. Un tema con menos de 5 respuestas todavía no tiene datos.',
+    vacio: 'Todavía no respondió nada. Cuando resuelva su primera tarea, acá vas a ver tema por tema.',
+    aciertos: (correctas: number, calificadas: number) => `${correctas} de ${calificadas} bien`,
+    porcentaje: (p: number) => `${p} %`,
+    grafico: 'Aciertos por tema',
+  },
+  errores: {
+    titulo: 'Errores que se le repiten',
+    detalle: 'Lo que detectó MaestrIA en sus respuestas. Habla del razonamiento, no de la nota.',
+    vacio: 'Todavía no detectamos ninguno.',
+  },
+  planilla: {
+    titulo: 'Sus prácticas',
+    detalle: 'Las últimas 50, de la más reciente a la más vieja.',
+    vacio: 'Todavía no hizo ninguna.',
+    fecha: 'Fecha',
+    que: 'Tarea o práctica',
+    temas: 'Temas',
+    resultado: 'Resultado',
+    practicaLibre: 'Práctica libre',
+    sinCalificar: (n: number) => `${n} sin calificar`,
+  },
+} as const

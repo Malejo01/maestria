@@ -15,7 +15,7 @@ import { ICONO_NAV, TRAZO_ICONO } from '@/components/sistema/iconos'
 import { Logo } from '@/components/sistema/logo'
 import { entradaActiva, resolverCaparazon, type EntradaNav } from '@/lib/navegacion'
 import { guardarRolElegido } from '@/lib/rol-elegido'
-import { CUENTA, INVITADO, NAVEGACION } from '@/lib/textos'
+import { CUENTA, INVITADO, MIS_ALUMNOS, NAVEGACION } from '@/lib/textos'
 import type { UserRole } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -99,6 +99,12 @@ function Marco({
             {!quien && (
               <Boton variante="secundario" asChild>
                 <Link href="/">{NAVEGACION.ingresar}</Link>
+              </Boton>
+            )}
+            {/* La acción del panel docente, como en la referencia: siempre a mano. */}
+            {contexto === 'docente' && (
+              <Boton asChild>
+                <Link href="/teacher?agregar=1">{MIS_ALUMNOS.agregarCorto}</Link>
               </Boton>
             )}
             {quien && !quien.esInvitado && quien.rol && (
