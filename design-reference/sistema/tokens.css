@@ -1,0 +1,108 @@
+/* MaestrIA — generado desde tokens.json. No edites este archivo a mano. */
+:root,
+[data-theme="claro"] {
+  --superficie-base: #f6f7f9;
+  --superficie-tarjeta: #ffffff;
+  --superficie-suave: #eef2ff;
+  --borde: #e3e6eb;
+  --borde-fuerte: #c8cdd6;
+  --texto: #15181d;
+  --texto-suave: #667085;
+  --accion: #2d5bff;
+  --accion-hover: #1f42c4;
+  --texto-sobre-accion: #ffffff;
+  --accion-tenue: #f3f6ff;
+  --accion-tenue-borde: #c9d7ff;
+  --logrado: #0e7c57;
+  --logrado-fondo: #e6f4ee;
+  --flojo: #c2410c;
+  --flojo-fondo: #fdf0e8;
+  --foco: #2d5bff;
+}
+[data-theme="oscuro"] {
+  --superficie-base: #0f1217;
+  --superficie-tarjeta: #171b22;
+  --superficie-suave: #1e2a4d;
+  --borde: #272d38;
+  --borde-fuerte: #3a424f;
+  --texto: #f2f4f7;
+  --texto-suave: #9aa3b2;
+  --accion: #5b82ff;
+  --accion-hover: #8ca6ff;
+  --texto-sobre-accion: #0a0e15;
+  --accion-tenue: #16203b;
+  --accion-tenue-borde: #2b3c6b;
+  --logrado: #34c08a;
+  --logrado-fondo: #163327;
+  --flojo: #ff8a4c;
+  --flojo-fondo: #3a220f;
+  --foco: #8ca6ff;
+}
+:root {
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-5: 24px;
+  --espacio-6: 32px;
+  --espacio-7: 48px;
+  --radio-sm: 8px;
+  --radio-md: 11px;
+  --radio-lg: 14px;
+  --radio-xl: 24px;
+  --radio-full: 999px;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-texto: Inter, system-ui, sans-serif;
+}
+.titulo-xl {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 34px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.titulo-l {
+  font-family: var(--font-display);
+  font-size: 25px;
+  line-height: 29px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.titulo-m {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 25px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.cuerpo-l {
+  font-family: var(--font-texto);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+}
+.cuerpo {
+  font-family: var(--font-texto);
+  font-size: 15px;
+  line-height: 23px;
+  font-weight: 700;
+}
+.cuerpo-s {
+  font-family: var(--font-texto);
+  font-size: 14px;
+  line-height: 21px;
+  font-weight: 400;
+}
+.nota {
+  font-family: var(--font-texto);
+  font-size: 12.5px;
+  line-height: 18px;
+  font-weight: 400;
+}
+.etiqueta {
+  font-family: var(--font-texto);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}

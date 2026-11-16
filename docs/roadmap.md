@@ -44,7 +44,7 @@ Lo que hay que convertir en producto, en orden de dependencia:
 
 ## 🎨 Rediseño completo (desde el 15/11/2026)
 
-El encargo, el sistema de diseño y las pantallas aprobadas viven en `design-reference/` (en la raíz, **sin versionar**: es material de Mauro). El encargo es `design-reference/PROMPT-FABLE.md`. Siete bloques, uno por rama y por PR, apilados:
+El encargo, el sistema de diseño y las pantallas aprobadas viven en `design-reference/` (en la raíz; **versionado desde el 16/11/2026**, G7: antes existía sólo en el disco de Mauro). El encargo es `design-reference/PROMPT-FABLE.md`. Siete bloques, uno por rama y por PR, apilados:
 
 ```
 1. Entrada y navegación   ← este
@@ -335,6 +335,12 @@ Los siete bloques están en `main` (`f0911c3`) y la 025 corrida en producción. 
 - [x] **F5 · Resultados no tiene ancho máximo en escritorio.** A 1280 las tarjetas miden el ancho entero de la ventana (se vio en A3). La barra de acciones sí está acotada. **Hecho:** ancho máximo de 672 px en la pantalla de resultados.
 - [x] **F6 · `components/weak-points-section.tsx` tiene el mismo `max-w-xl mx-4`** que sacaba de la pantalla al modal de explicación (A1). No se miró en pantalla. **Hecho:** sin `mx-4` y con el ancho del primitivo. **Sin mirar en pantalla**: el diálogo se llena con datos guardados en el navegador del alumno y no se pudo abrir en una sesión de captura.
 - [ ] **F7 · Restos del registro viejo en pantallas del alumno.** Resultados: "Tu Racha", "Aprueba 2 seguidos para activar" (tuteo, y la racha vive en localStorage); "Explicar Error". Mi progreso: "Evaluaciones" para lo que son prácticas, y el filtro "Todos los modos" parte en dos renglones. Es vocabulario, va contra `lib/textos.ts`; **decide Mauro** cuánto de esto se reescribe.
+
+## 💸 Tanda G — lo que hace falta para cobrar (desde el 16/11/2026)
+
+Objetivo: cobrarle a un docente esta semana sin facturación automática. Orden: G7 → G0 → G1 → G2 → G3 → G5 → G6 → G4 → G8 → G10. **G9 (migración a Claude) queda fuera a propósito**: se hace con Mauro presente, en su propio PR. Válvula de seguridad de toda la tanda: **si `users.plan_nivel` no existe, viene nulo o la consulta falla, el docente es `exento`**; correr la 026 en producción es lo que enciende el cobro, y eso lo hace Mauro a mano.
+
+- [x] **G7 · `design-reference/` versionado** (rama `chore/g7-versionar-design-reference`). La carpeta entera tal como estaba en el disco: 32 archivos, 1,5 MB, incluidas las ediciones de B2 (`accesibilidad.md`) y B3 (`voz-y-textos.md`) y los PNG de `pantallas/` (1,4 MB, el más pesado por debajo de 1 MB). Desde acá, lo que se escribe ahí queda en el repo.
 
 ---
 
