@@ -3,7 +3,7 @@
 import { Cargando } from '@/components/sistema/cargando'
 
 
-import { useState, type ChangeEvent } from 'react'
+import { useRef, useState, type ChangeEvent } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Boton } from '@/components/sistema/boton'
 import { LECTURA_DE_ARCHIVO as T } from '@/lib/textos'
@@ -14,7 +14,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { Check, Upload } from 'lucide-react'
+import { Check, Landmark, PenLine, Upload } from 'lucide-react'
+import { TRAZO_ICONO } from '@/components/sistema/iconos'
+import {
+  ESPERA_SIN_NOVEDADES_MS,
+  NO_SE_PUDO_LEER,
+  PESO_MAXIMO_BYTES,
+  mensajeDePesoExcedido,
+} from '@/lib/lectura-programa'
 import type { ProgramUnit } from '@/lib/types'
 
 export interface ProgramSourceMeta {
@@ -34,6 +41,11 @@ interface ProgramFileImportProps {
   onSourceMetaChange?: (meta: ProgramSourceMeta | null) => void
   /** El nivel y el año que el archivo dice de forma explícita, si los dice. */
   onNivelSugerido?: (sugerido: NivelSugerido | null) => void
+  /**
+   * I4: los otros dos caminos del wizard. Cuando el archivo no se puede leer,
+   * se ofrecen ahí mismo como botones: un error no es un callejón sin salida.
+   */
+  alternativas?: { escribirlo: () => void; planOficial: () => void }
   disabled?: boolean
 }
 
@@ -72,6 +84,7 @@ export function ProgramFileImport({
   onUnitsSuggested,
   onSourceMetaChange,
   onNivelSugerido,
+  alternativas,
   disabled = false,
 }: ProgramFileImportProps) {
   const { toast } = useToast()
@@ -133,11 +146,23 @@ export function ProgramFileImport({
   }
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setFile(event.target.files?.[0] ?? null)
+    const elegido = event.target.files?.[0] ?? null
     updateSourceMeta(null)
     setExtractSummary(null)
     resetGuideState()
+    setPasos([])
+    // Más de 5 MB: se dice antes de subir nada, con el peso de verdad.
+    if (elegido && elegido.size > PESO_MAXIMO_BYTES) {
+      setFile(null)
+      setFalloDeLectura(mensajeDePesoExcedido(elegido.size))
+      return
+    }
+    setFalloDeLectura(null)
+    setFile(elegido)
   }
+
+  /** El vigía de los 45 s: se rearma con cada novedad del servidor. */
+  const vigia = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const toggleRejectedUnit = (name: string) => {
     const normalized = name.trim().toLowerCase()
@@ -174,6 +199,21 @@ export function ProgramFileImport({
     setFalloDeLectura(null)
     onNivelSugerido?.(null)
 
+    // Sin novedades del servidor en 45 s, no se espera más: el docente ve qué
+    // hacer en vez de mirar un spinner hasta que el servidor corte (I4).
+    const controlador = new AbortController()
+    let lector: ReadableStreamDefaultReader<Uint8Array> | null = null
+    let agotado = false
+    const rearmar = () => {
+      if (vigia.current) clearTimeout(vigia.current)
+      vigia.current = setTimeout(() => {
+        agotado = true
+        controlador.abort()
+        void lector?.cancel().catch(() => {})
+      }, ESPERA_SIN_NOVEDADES_MS)
+    }
+    rearmar()
+
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -182,6 +222,7 @@ export function ProgramFileImport({
         method: 'POST',
         headers: { Accept: TIPO_DE_PROGRESO },
         body: formData,
+        signal: controlador.signal,
       })
 
       // Un rechazo previo al procesamiento (sin sesión, archivo inválido, sin
@@ -193,7 +234,7 @@ export function ProgramFileImport({
 
       // El servidor manda una línea JSON por etapa, a medida que ocurren.
       let data: Record<string, any> | null = null
-      const lector = response.body.getReader()
+      lector = response.body.getReader()
       const decodificador = new TextDecoder()
       let pendiente = ''
       for (;;) {
@@ -203,6 +244,7 @@ export function ProgramFileImport({
         pendiente = lineas.pop() ?? ''
         for (const linea of lineas) {
           if (!linea.trim()) continue
+          rearmar()
           const evento = JSON.parse(linea) as EventoDeLectura
           if (evento.etapa === 'leyendo') setPasos((previos) => [...previos, T.leyendo])
           else if (evento.etapa === 'leido') setPasos((previos) => [...previos, T.leido])
@@ -213,7 +255,7 @@ export function ProgramFileImport({
         }
         if (done) break
       }
-      if (!data) throw new Error(T.fallo)
+      if (!data) throw new Error(NO_SE_PUDO_LEER)
 
       const extractedUnits = sanitizeSuggestedUnits(data.units)
       if (extractedUnits.length > 0) {
@@ -249,8 +291,11 @@ export function ProgramFileImport({
       ])
     } catch (error) {
       // El motivo queda escrito al lado del archivo, no en un aviso que se va.
-      setFalloDeLectura(error instanceof Error && error.message ? error.message : T.fallo)
+      setFalloDeLectura(
+        agotado ? NO_SE_PUDO_LEER : error instanceof Error && error.message ? error.message : NO_SE_PUDO_LEER,
+      )
     } finally {
+      if (vigia.current) clearTimeout(vigia.current)
       setIsExtracting(false)
     }
   }
@@ -370,9 +415,21 @@ export function ProgramFileImport({
       )}
 
       {falloDeLectura && (
-        <p className="cuerpo-s text-flojo" role="alert">
-          {falloDeLectura}
-        </p>
+        <div className="space-y-3 rounded-lg border border-flojo bg-flojo-fondo p-4" role="alert">
+          <p className="cuerpo-s text-texto">{falloDeLectura}</p>
+          {alternativas && (
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Boton variante="secundario" onClick={alternativas.escribirlo}>
+                <PenLine aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                {T.alternativas.escribirlo}
+              </Boton>
+              <Boton variante="secundario" onClick={alternativas.planOficial}>
+                <Landmark aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                {T.alternativas.planOficial}
+              </Boton>
+            </div>
+          )}
+        </div>
       )}
 
       {sourceMeta && (

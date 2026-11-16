@@ -30,7 +30,7 @@ import { SUBJECT_ICON_OPTIONS } from '@/lib/subject-appearance'
 import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import { Boton } from '@/components/sistema/boton'
 import { ProgramFileImport, type ProgramSourceMeta } from '@/components/program-file-import'
-import { elegirGrado, ordenDePasos, pasoVecino, puedeLlegarA, type NivelSugerido, type PasoId } from '@/lib/wizard-temario'
+import { PASO, elegirGrado, ordenDePasos, pasoVecino, puedeLlegarA, type NivelSugerido, type PasoId } from '@/lib/wizard-temario'
 import { WIZARD_TEMARIO, contar } from '@/lib/textos'
 import type {
   Nivel,
@@ -222,7 +222,12 @@ export function TeacherSubjectWizard({
   }, [nextId])
 
   const [step, setStep] = useState<StepId>(1)
-  const orden = useMemo(() => ordenDePasos(initialPath, isEditing), [initialPath, isEditing])
+  /**
+   * El camino elegido al abrir. Puede cambiar adentro del wizard: si el
+   * archivo no se pudo leer, el docente pasa al plan oficial desde ahí (I4).
+   */
+  const [camino, setCamino] = useState(initialPath)
+  const orden = useMemo(() => ordenDePasos(camino, isEditing), [camino, isEditing])
   /** Nivel y año que MaestrIA leyó del archivo. El docente lo confirma o lo cambia. */
   const [sugerido, setSugerido] = useState<NivelSugerido | null>(null)
 
@@ -292,6 +297,7 @@ export function TeacherSubjectWizard({
       setUnits([])
       setPedagogy(DEFAULT_PEDAGOGY)
       setStep(ordenDePasos(initialPath, false)[0])
+      setCamino(initialPath)
       // `null`, no `''`: materia nueva, que la coincidencia automática vuelva a
       // correr en cuanto el docente escriba el nombre.
       setBrowseMateriaChoice(null)
@@ -428,6 +434,29 @@ export function TeacherSubjectWizard({
     const created: ProgramUnit = { id: nextId('u'), name: '', topics: [] }
     setUnits((prev) => [...prev, created])
     setActiveUnitId(created.id)
+  }
+
+  // ─── I4: los otros caminos, cuando el archivo no se pudo leer ──────────────
+
+  /** "Escribirlo yo": deja el archivo y abre una unidad en blanco. */
+  const escribirloYo = () => {
+    setShowFileImport(false)
+    setShowCustomSection(true)
+    addEmptyUnit()
+  }
+
+  /**
+   * "Usar el plan oficial": se filtra por nivel y año. Si ya están, se abre
+   * ahí mismo; si no (subiendo un archivo van después), el wizard pasa al
+   * orden del plan oficial y empieza por elegirlos.
+   */
+  const irAlPlanOficial = () => {
+    setShowFileImport(false)
+    setShowCurriculumSection(true)
+    if (!(nivel && grado)) {
+      setCamino('curriculum')
+      setStep(PASO.nivel)
+    }
   }
 
   const renameUnit = (unitId: string, name: string) => {
@@ -990,6 +1019,7 @@ export function TeacherSubjectWizard({
                   onUnitsSuggested={mergeSuggestedUnits}
                   onSourceMetaChange={setSourceMeta}
                   onNivelSugerido={recibirSugerencia}
+                  alternativas={{ escribirlo: escribirloYo, planOficial: irAlPlanOficial }}
                 />
               </div>
             )}
