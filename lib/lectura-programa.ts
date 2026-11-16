@@ -69,3 +69,17 @@ export function esTiempoAgotado(error: unknown): boolean {
 /** Lo que ve el docente cuando el archivo no se pudo leer (I4 lo acompaña con los otros caminos). */
 export const NO_SE_PUDO_LEER =
   'No pudimos leer este archivo. Podés probar con el Word o el PDF original, o armar el temario de otra forma.'
+
+// ─── I4: cuando algo falla, qué pasó y qué puede hacer ───────────────────────
+
+/** El tope de la subida: 5 MB. */
+export const PESO_MAXIMO_BYTES = 5 * 1024 * 1024
+
+/** Sin un evento nuevo del servidor en este tiempo, el cliente no espera más. */
+export const ESPERA_SIN_NOVEDADES_MS = 45_000
+
+/** "Tu archivo pesa 7,2 MB y el máximo es 5 MB…": con el peso de verdad, y qué hacer. */
+export function mensajeDePesoExcedido(bytes: number): string {
+  const mb = (bytes / (1024 * 1024)).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  return `Tu archivo pesa ${mb} MB y el máximo es 5 MB. Si es un escaneo, sacale una foto sólo a la página de los contenidos.`
+}

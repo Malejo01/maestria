@@ -11,10 +11,12 @@ import { AI_MODEL } from '@/lib/ai-model'
 import { bloqueoParaGenerar } from '@/lib/planes-server'
 import {
   NO_SE_PUDO_LEER,
+  PESO_MAXIMO_BYTES,
   TIEMPO_MAXIMO_DEL_MODELO_MS,
   comoLeerPrograma,
   elModeloLoLee,
   esTiempoAgotado,
+  mensajeDePesoExcedido,
 } from '@/lib/lectura-programa'
 import {
   extraerTextoDePrograma,
@@ -491,9 +493,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Solo se aceptan PDF, DOCX, DOC, PNG y JPG' }, { status: 400 })
     }
 
-    const maxSizeBytes = 5 * 1024 * 1024
-    if (file.size > maxSizeBytes) {
-      return NextResponse.json({ error: 'El archivo supera el limite de 5MB' }, { status: 400 })
+    if (file.size > PESO_MAXIMO_BYTES) {
+      return NextResponse.json({ error: mensajeDePesoExcedido(file.size) }, { status: 400 })
     }
 
     // Tipo y tamaño ya validados: un archivo rechazado no consume cupo. El rol

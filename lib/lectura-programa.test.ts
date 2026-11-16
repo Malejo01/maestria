@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   MINIMO_DE_TEXTO,
+  mensajeDePesoExcedido,
   comoLeerPrograma,
   elModeloLoLee,
   esTiempoAgotado,
@@ -51,5 +52,13 @@ describe('esTiempoAgotado', () => {
   it('no confunde otro error con un tiempo agotado', () => {
     expect(esTiempoAgotado(new Error('schema'))).toBe(false)
     expect(esTiempoAgotado(null)).toBe(false)
+  })
+})
+
+describe('mensajeDePesoExcedido (I4)', () => {
+  it('dice cuánto pesa, en MB con coma, y qué hacer', () => {
+    expect(mensajeDePesoExcedido(7.2 * 1024 * 1024)).toBe(
+      'Tu archivo pesa 7,2 MB y el máximo es 5 MB. Si es un escaneo, sacale una foto sólo a la página de los contenidos.',
+    )
   })
 })

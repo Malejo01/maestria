@@ -407,6 +407,8 @@ export const LECTURA_DE_ARCHIVO = {
     `Listo: ${unidades} ${unidades === 1 ? 'unidad' : 'unidades'} y ${temas} ${temas === 1 ? 'tema' : 'temas'}. Revisalos abajo.`,
   fallo: 'No pudimos leer el archivo. Probá con otro.',
   progreso: 'Qué está pasando con tu archivo',
+  /** I4: los otros dos caminos, ofrecidos ahí mismo cuando la lectura falla. */
+  alternativas: { escribirlo: 'Escribirlo yo', planOficial: 'Usar el plan oficial' },
 } as const
 
 export const COMPARTIR_TAREA = {
