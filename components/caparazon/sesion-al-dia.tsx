@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRefrescarSesion } from '@/hooks/use-refrescar-sesion'
 import { useAppStore } from '@/lib/store'
 import { isSessionProfileStale } from '@/lib/session-profile-sync'
 
@@ -15,7 +16,8 @@ import { isSessionProfileStale } from '@/lib/session-profile-sync'
  */
 export function SesionAlDia() {
   const { userProfile, setUserProfile } = useAppStore()
-  const { data: session, status, update: updateSession } = useSession()
+  const { data: session, status } = useSession()
+  const updateSession = useRefrescarSesion()
   const isSignedIn = status === 'authenticated'
   /** Candado del refresco de sesión por perfil desactualizado. Ver el efecto que lo usa. */
   const hasSyncedSessionProfile = useRef(false)
@@ -84,8 +86,7 @@ export function SesionAlDia() {
       // Si no se puede refrescar, el alumno sigue viendo el perfil viejo: es el
       // comportamiento que ya tenía, no una regresión.
     })
-    // `updateSession` se omite: next-auth la recrea por render y volvería a
-    // disparar el efecto sola.
+    // `updateSession` es estable (hooks/use-refrescar-sesion.ts) y se omite.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSignedIn, userProfile, dbNivel, dbGrado, sessionNivel, sessionGrado])
 

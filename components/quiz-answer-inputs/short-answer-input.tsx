@@ -21,10 +21,10 @@ export function ShortAnswerInput({ value, submitted, onChange, isCorrect, disabl
       placeholder="Escribe tu respuesta..."
       rows={3}
       className={cn(
-        'w-full p-4 rounded-2xl border-2 bg-card/80 backdrop-blur-sm text-base font-medium transition-all resize-none',
+        'w-full p-4 rounded-2xl border-2 bg-card/80 text-base font-medium transition-all resize-none',
         'focus:outline-none focus:ring-2 focus:ring-[var(--algebra)]/40',
         !submitted && 'border-border focus:border-[var(--algebra)]',
-        submitted && isCorrect && 'border-[var(--analysis)] bg-[var(--analysis-light)] border-4',
+        submitted && isCorrect && 'border-logrado bg-logrado-fondo border-4',
         submitted && isCorrect === false && 'border-destructive bg-destructive/10 border-4'
       )}
     />

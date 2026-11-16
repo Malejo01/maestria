@@ -46,11 +46,11 @@ export function LoadingScreen() {
         {/* Animated Icon */}
         <div className={cn(
           'w-28 h-28 mx-auto mb-8 rounded-3xl flex items-center justify-center',
-          'bg-gradient-to-br from-[var(--algebra)] to-[var(--analysis)]',
-          'shadow-2xl shadow-[var(--algebra)]/40',
-          'animate-pulse'
+          ' bg-[var(--algebra)]',
+          '',
+          ''
         )}>
-          <Brain className="w-14 h-14 text-white" />
+          <Brain className="w-14 h-14 text-texto-sobre-accion" />
         </div>
 
         {/* Loading Message */}
@@ -59,8 +59,8 @@ export function LoadingScreen() {
             Preparando tu cuestionario
           </h2>
           <div className="flex items-center justify-center gap-2 text-muted-foreground min-h-[28px]">
-            <CurrentIcon className="w-5 h-5 text-[var(--algebra)] animate-spin" />
-            <span className="font-medium animate-in fade-in-50 duration-500" key={messageIndex}>
+            <CurrentIcon className="w-5 h-5 text-accion" />
+            <span className="font-medium fade-in-50 duration-500" key={messageIndex}>
               {loadingMessages[messageIndex].text}
             </span>
           </div>
@@ -69,7 +69,7 @@ export function LoadingScreen() {
         {/* Progress Bar */}
         <div className="w-full bg-muted rounded-full h-3 overflow-hidden mb-4">
           <div 
-            className="h-full bg-gradient-to-r from-[var(--algebra)] to-[var(--analysis)] rounded-full transition-all duration-300 ease-out"
+            className="h-full bg-[var(--algebra)] rounded-full transition-all duration-300 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -85,7 +85,7 @@ export function LoadingScreen() {
               key={i}
               className={cn(
                 'w-3 h-3 rounded-full',
-                'bg-gradient-to-r from-[var(--algebra)] to-[var(--analysis)]',
+                ' bg-[var(--algebra)]',
               )}
               style={{
                 animation: `pulse 1.5s ease-in-out ${i * 0.3}s infinite`,

@@ -1,11 +1,13 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   AlertTriangle,
   ArrowLeft,
   Check,
-  Loader2,
   Pencil,
   RefreshCw,
   Save,
@@ -297,7 +299,7 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
     <div className="space-y-4">
       {/* Barra fija: el estado de "sin guardar" tiene que estar siempre a la
           vista, no al final de una lista de 20 preguntas. */}
-      <div className="sticky top-0 z-20 -mx-2 flex flex-wrap items-center gap-2 border-b bg-background/95 px-2 py-3 backdrop-blur">
+      <div className="sticky top-0 z-20 -mx-2 flex flex-wrap items-center gap-2 border-b bg-background/95 px-2 py-3">
         <Button variant="ghost" size="sm" onClick={intentarSalir}>
           <ArrowLeft className="mr-1 h-4 w-4" />
           Volver
@@ -312,7 +314,7 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
         </div>
 
         {sucio ? (
-          <Badge variant="outline" className="border-amber-500/50 text-amber-600">
+          <Badge variant="outline" className="border-flojo/50 text-flojo">
             <AlertTriangle className="mr-1 h-3 w-3" />
             Cambios sin guardar
           </Badge>
@@ -324,7 +326,7 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
         )}
 
         <Button size="sm" disabled={!sucio || guardando} onClick={() => guardar('in_place')}>
-          {guardando ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
+          {guardando ? <Cargando className="mr-1 h-4 w-4" /> : <Save className="mr-1 h-4 w-4" />}
           Guardar
         </Button>
       </div>
@@ -398,7 +400,7 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
                       aria-label="Regenerar pregunta"
                     >
                       {regenerando === index ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Cargando className="h-4 w-4" />
                       ) : (
                         <RefreshCw className="h-4 w-4" />
                       )}
@@ -560,7 +562,7 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
               Cancelar
             </Button>
             <Button disabled={guardando} onClick={() => guardar('copy')}>
-              {guardando ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
+              {guardando ? <Cargando className="mr-1 h-4 w-4" /> : <Save className="mr-1 h-4 w-4" />}
               Guardar como copia
             </Button>
           </div>
@@ -612,14 +614,14 @@ function VistaDePregunta({ question }: { question: Question }) {
               key={i}
               className={cn(
                 'flex items-start gap-2 rounded-md px-2 py-1',
-                i === question.correctAnswer && 'bg-emerald-500/10 font-semibold',
+                i === question.correctAnswer && 'bg-logrado/10 font-semibold',
               )}
             >
               <span className="shrink-0 text-xs text-muted-foreground">
                 {String.fromCharCode(65 + i)}.
               </span>
               <LaTeXRenderer content={opcion} />
-              {i === question.correctAnswer && <Check className="ml-auto h-4 w-4 shrink-0 text-emerald-600" />}
+              {i === question.correctAnswer && <Check className="ml-auto h-4 w-4 shrink-0 text-logrado" />}
             </li>
           ))}
         </ul>

@@ -49,7 +49,7 @@ function Metric({
   tone?: 'normal' | 'warn' | 'danger'
 }) {
   const toneClass =
-    tone === 'danger' ? 'text-red-600' : tone === 'warn' ? 'text-amber-600' : 'text-foreground'
+    tone === 'danger' ? 'text-flojo' : tone === 'warn' ? 'text-flojo' : 'text-foreground'
 
   return (
     <div className="rounded-xl border bg-card p-4">
@@ -91,7 +91,7 @@ function GroupTable({ title, rows, emptyLabel }: { title: string; rows: GroupedS
                     {compact(row.outputTokens)}
                   </td>
                   <td
-                    className={`px-4 py-2 text-right tabular-nums ${row.errors > 0 ? 'text-amber-600' : 'text-muted-foreground'}`}
+                    className={`px-4 py-2 text-right tabular-nums ${row.errors > 0 ? 'text-flojo' : 'text-muted-foreground'}`}
                   >
                     {compact(row.errors)}
                   </td>
@@ -156,7 +156,7 @@ export default async function AiUsagePage() {
       </div>
 
       {budgetPct >= 100 ? (
-        <p className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <p className="mt-4 rounded-lg border border-flojo bg-flojo-fondo px-4 py-3 text-sm text-flojo">
           Se alcanzó el presupuesto diario: los endpoints de IA están respondiendo 503 hasta que la
           ventana de 24 h se libere. Para levantarlo, subí <code className="font-mono">AI_DAILY_BUDGET_USD</code>.
         </p>

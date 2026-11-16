@@ -68,11 +68,11 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
         aria-invalid={noSeEntiende}
         aria-describedby={noSeEntiende ? 'numeric-input-error' : undefined}
         className={cn(
-          'w-full p-4 rounded-2xl border-2 bg-card/80 backdrop-blur-sm text-lg font-bold text-center transition-all',
+          'w-full p-4 rounded-2xl border-2 bg-card/80 text-lg font-bold text-center transition-all',
           'focus:outline-none focus:ring-2 focus:ring-[var(--algebra)]/40',
           !submitted && !noSeEntiende && 'border-border focus:border-[var(--algebra)]',
-          !submitted && noSeEntiende && 'border-amber-400 focus:border-amber-500',
-          submitted && isCorrect && 'border-[var(--analysis)] bg-[var(--analysis-light)] border-4',
+          !submitted && noSeEntiende && 'border-flojo focus:border-flojo',
+          submitted && isCorrect && 'border-logrado bg-logrado-fondo border-4',
           submitted && isCorrect === false && 'border-destructive bg-destructive/10 border-4'
         )}
       />
@@ -89,15 +89,15 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
       {/* El aviso llega ANTES de enviar, que es todo el punto: con el input
           viejo el alumno se quedaba mirando un botón deshabilitado y sin causa. */}
       {!submitted && noSeEntiende && (
-        <p id="numeric-input-error" className="text-center text-sm text-amber-700">
+        <p id="numeric-input-error" className="text-center text-sm text-flojo">
           No entendimos ese número. Podés escribirlo con coma (<code>3,5</code>), con punto
           (<code>3.5</code>) o como fracción (<code>7/2</code>).
         </p>
       )}
 
       {submitted && isCorrect === false && (
-        <Card className="p-3 rounded-xl border border-[var(--analysis)]/30 bg-[var(--analysis-light)] text-center">
-          <span className="text-sm font-semibold text-[var(--analysis)]">
+        <Card className="p-3 rounded-xl border border-logrado/30 bg-logrado-fondo text-center">
+          <span className="text-sm font-semibold text-logrado">
             Respuesta correcta: {formatNumericAnswer(question.correctAnswer)}
             {question.tolerance ? ` (± ${formatNumericAnswer(question.tolerance)})` : ''}
           </span>

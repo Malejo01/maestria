@@ -26,9 +26,9 @@ export function formatPercent(value: number | null | undefined): string {
  * decide what counts as a weak topic, so the colour and the wording agree.
  */
 export function accuracyColorClass(accuracy: number): string {
-  if (accuracy < 0.6) return 'bg-red-500'
-  if (accuracy < 0.8) return 'bg-amber-500'
-  return 'bg-emerald-500'
+  if (accuracy < 0.6) return 'bg-flojo'
+  if (accuracy < 0.8) return 'bg-flojo'
+  return 'bg-logrado'
 }
 
 export function AccuracyBar({ accuracy }: { accuracy: number }) {

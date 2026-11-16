@@ -1,29 +1,20 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { signIn, useSession } from 'next-auth/react'
-import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { Cargando } from '@/components/sistema/cargando'
+
+
+import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { useSession } from 'next-auth/react'
+import { Boton } from '@/components/sistema/boton'
+import { MIS_TAREAS_ALUMNO as T } from '@/lib/textos'
 import { SubjectContent } from '@/components/subject-content'
 import { useAppStore } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
 import { ASSIGNMENT_STATE_LABEL, isValidJoinCode, normalizeJoinCode } from '@/lib/classrooms'
-import { SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
-import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
-import { CalendarClock, KeyRound, Loader2, LogIn, PlayCircle, Users } from 'lucide-react'
 import { CargaFallida } from '@/components/carga-fallida'
 import { pedirJson } from '@/lib/pedir-json'
-import type { AssignmentState, StudentClassroom, Subject, SubjectColorName, SubjectIconName } from '@/lib/types'
-
-const STATE_BADGE_VARIANT: Record<AssignmentState, 'default' | 'secondary' | 'outline' | 'destructive'> = {
-  disponible: 'default',
-  programada: 'secondary',
-  vencida: 'destructive',
-  sin_intentos: 'outline',
-  cerrada: 'outline',
-}
+import type { AssignmentState, StudentClassroom, Subject } from '@/lib/types'
 
 function formatDate(value: string | null): string {
   if (!value) return ''
@@ -80,7 +71,6 @@ export default function MisAulasPage() {
       const list: StudentClassroom[] = Array.isArray(res.data.classrooms) ? res.data.classrooms : []
       setClassrooms(list)
       setViewer(res.data.viewer ?? null)
-      setActiveId((current) => current ?? (list.length === 1 ? list[0].id : null))
     }
     setIsLoading(false)
   }, [])
@@ -112,11 +102,6 @@ export default function MisAulasPage() {
         // Nothing to recover is the normal case; never bother the student.
       })
   }, [status, toast, load])
-
-  const activeClassroom = useMemo(
-    () => classrooms.find((classroom) => classroom.id === activeId) ?? null,
-    [classrooms, activeId]
-  )
 
   const handleJoin = async () => {
     const code = normalizeJoinCode(joinCode)
@@ -190,197 +175,185 @@ export default function MisAulasPage() {
     }
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-          <Users className="w-5 h-5" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-black text-foreground">Mis aulas</h1>
-          <p className="text-sm text-muted-foreground">
-            Practicá el temario que armó tu docente y resolvé lo que te asignó.
-          </p>
-        </div>
-      </div>
+  // Todas las tareas de todos los grupos en una sola lista: lo que hay para
+  // hacer primero, y dentro de eso lo que vence antes.
+  const tareas = classrooms
+    .flatMap((classroom) => classroom.assignments.map((assignment) => ({ assignment, classroom })))
+    .sort((a, b) => {
+      const orden = (estado: AssignmentState) => (estado === 'disponible' ? 0 : estado === 'programada' ? 1 : 2)
+      return (
+        orden(a.assignment.state) - orden(b.assignment.state) ||
+        String(a.assignment.dueAt ?? '9').localeCompare(String(b.assignment.dueAt ?? '9'))
+      )
+    })
+  const primeraDisponible = tareas.find(({ assignment }) => assignment.state === 'disponible')?.assignment.id ?? null
+  const esInvitado = Boolean(viewer?.isGuest)
+  const tieneCuenta = status === 'authenticated'
 
-      {viewer?.isGuest && (
-        <Card className="p-4 rounded-2xl border-2 border-amber-200 bg-amber-50/60 space-y-2">
-          <p className="text-sm font-semibold text-amber-900">
-            Estás entrando como invitado{viewer.displayName ? `, ${viewer.displayName}` : ''}.
-          </p>
-          <p className="text-sm text-amber-800">
-            Creá tu cuenta para practicar sin límite diario y para que tu docente te vea como alumno verificado. Todo
-            lo que hiciste hasta ahora se transfiere solo.
-          </p>
-          <Button size="sm" onClick={() => signIn('google', { callbackUrl: '/aulas' })}>
-            <LogIn className="w-4 h-4 mr-2" />
-            Crear mi cuenta con Google
-          </Button>
-        </Card>
+  return (
+    <div className="flex flex-col gap-6">
+      <h1 className="titulo-l text-texto">{T.titulo}</h1>
+
+      {isLoading && (
+        <p className="cuerpo-s flex items-center gap-2 text-texto-suave" role="status">
+          <Cargando /> {T.cargando}
+        </p>
       )}
 
-      <Card className="p-4 rounded-2xl space-y-2">
-        <label htmlFor="join-code" className="text-sm font-semibold flex items-center gap-2">
-          <KeyRound className="w-4 h-4" />
-          Entrar a un aula nueva
+      {!isLoading && loadError && (
+        <div className="rounded-lg border border-borde bg-superficie-tarjeta">
+          <CargaFallida que={T.queCargamos} detalle={loadError} onReintentar={load} />
+        </div>
+      )}
+
+      {!isLoading && !loadError && (
+        <section aria-label={T.titulo} className="flex flex-col gap-3">
+          {tareas.length === 0 ? (
+            <div className="rounded-lg border border-borde bg-superficie-tarjeta p-6">
+              <h2 className="titulo-m text-texto">{classrooms.length === 0 ? T.sinGrupo.titulo : T.sinTareas.titulo}</h2>
+              <p className="cuerpo-s mt-1 max-w-prose text-texto-suave">
+                {classrooms.length === 0 ? T.sinGrupo.detalle : T.sinTareas.detalle}
+              </p>
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {tareas.map(({ assignment, classroom }) => {
+                const disponible = assignment.state === 'disponible'
+                const abriendo = startingAssignmentId === assignment.id
+                return (
+                  <li
+                    key={assignment.id}
+                    className="flex flex-col gap-3 rounded-lg border border-borde bg-superficie-tarjeta p-4 sm:flex-row sm:items-center"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <h2 className="cuerpo text-texto">{assignment.title}</h2>
+                      <p className="nota text-texto-suave">
+                        {[
+                          classroom.subjectName,
+                          classroom.teacherName,
+                          assignment.dueAt ? T.hasta(formatDate(assignment.dueAt)) : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                      <p className="nota mt-1 text-texto-suave">
+                        {[
+                          disponible ? null : ASSIGNMENT_STATE_LABEL[assignment.state],
+                          assignment.opensAt && assignment.state === 'programada' ? T.desde(formatDate(assignment.opensAt)) : null,
+                          T.intentos(assignment.attemptsUsed, assignment.maxAttempts),
+                          assignment.bestScore !== null ? T.mejorNota(Number(assignment.bestScore).toFixed(1)) : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                    </div>
+                    {/* Un solo azul: la primera tarea para hacer es la principal. */}
+                    <Boton
+                      variante={assignment.id === primeraDisponible ? 'principal' : 'secundario'}
+                      className="shrink-0"
+                      disabled={!disponible || abriendo}
+                      onClick={() => handleStartAssignment(assignment.id, classroom)}
+                    >
+                      {abriendo && <Cargando />}
+                      {assignment.attemptsUsed > 0 ? T.volverAHacer : T.empezar}
+                    </Boton>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {/* Lo demás que puede hacer un alumno con cuenta. El invitado ve sólo su
+          grupo: la práctica libre y el progreso necesitan cuenta. */}
+      {tieneCuenta && !esInvitado && (
+        <nav aria-label={T.accesos.etiqueta} className="grid gap-3 sm:grid-cols-2">
+          {[
+            { href: '/practicar', ...T.accesos.practicar },
+            { href: '/history', ...T.accesos.progreso },
+          ].map((acceso) => (
+            <Link
+              key={acceso.href}
+              href={acceso.href}
+              className="rounded-lg border border-borde bg-superficie-tarjeta p-4 transition-colors hover:border-borde-fuerte"
+            >
+              <span className="cuerpo block text-texto">{acceso.titulo}</span>
+              <span className="nota block text-texto-suave">{acceso.detalle}</span>
+            </Link>
+          ))}
+        </nav>
+      )}
+
+      {classrooms.length > 0 && (
+        <section aria-labelledby="mis-grupos" className="flex flex-col gap-3">
+          <h2 id="mis-grupos" className="titulo-m text-texto">
+            {T.grupos.titulo}
+          </h2>
+          <ul className="flex flex-col gap-3">
+            {classrooms.map((classroom) => {
+              const abierto = activeId === classroom.id
+              return (
+                <li key={classroom.id} className="rounded-lg border border-borde bg-superficie-tarjeta p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="min-w-0 flex-1">
+                      <p className="nota text-texto-suave">{T.grupos.teInvito(classroom.teacherName)}</p>
+                      <h3 className="cuerpo text-texto">{classroom.subjectName}</h3>
+                      {classroom.status === 'closed' && <p className="nota text-texto-suave">{T.grupos.cerrado}</p>}
+                    </div>
+                    {!esInvitado && classroom.status !== 'closed' && (
+                      <Boton
+                        variante="secundario"
+                        className="shrink-0"
+                        aria-expanded={abierto}
+                        onClick={() => setActiveId(abierto ? null : classroom.id)}
+                      >
+                        {abierto ? T.grupos.cerrarPractica : T.grupos.practicar}
+                      </Boton>
+                    )}
+                  </div>
+
+                  {esInvitado && <p className="nota mt-3 text-texto-suave">{T.grupos.practicaConCuenta}</p>}
+
+                  {abierto && !esInvitado && (
+                    <div className="mt-4 border-t border-borde pt-4">
+                      <p className="cuerpo-s mb-3 text-texto-suave">{T.grupos.practicaDetalle}</p>
+                      <SubjectContent subject={classroomToSubject(classroom)} classroomId={classroom.id} />
+                    </div>
+                  )}
+
+                  {/* El panel del docente es nominal: se dice de frente. */}
+                  <p className="nota mt-3 text-texto-suave">{T.grupos.queVe(classroom.teacherName)}</p>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
+
+      <section className="rounded-lg border border-borde bg-superficie-tarjeta p-4">
+        <label htmlFor="join-code" className="nota mb-2 block font-semibold text-texto-suave">
+          {T.sumarme.etiqueta}
         </label>
-        <div className="flex flex-wrap gap-2">
-          <Input
+        <div className="flex max-w-sm gap-2">
+          <input
             id="join-code"
-            placeholder="Código de 6 caracteres"
+            placeholder={T.sumarme.ejemplo}
             value={joinCode}
             onChange={(event) => setJoinCode(event.target.value.toUpperCase())}
             onKeyDown={(event) => {
               if (event.key === 'Enter') handleJoin()
             }}
-            className="max-w-[220px] font-mono tracking-[0.2em] uppercase"
+            autoComplete="off"
             maxLength={12}
+            className="h-12 min-w-0 flex-1 rounded-md border border-borde-fuerte bg-superficie-tarjeta px-3 text-[15px] uppercase tracking-[0.14em] text-texto placeholder:text-texto-suave placeholder:opacity-70"
           />
-          <Button onClick={handleJoin} disabled={isJoining}>
-            {isJoining ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            Entrar
-          </Button>
+          <Boton variante="secundario" onClick={handleJoin} disabled={isJoining}>
+            {isJoining && <Cargando />}
+            {T.sumarme.boton}
+          </Boton>
         </div>
-      </Card>
-
-      {isLoading && (
-        <p className="text-sm text-muted-foreground flex items-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin" /> Cargando tus aulas...
-        </p>
-      )}
-
-      {!isLoading && loadError && (
-        <Card className="rounded-2xl">
-          <CargaFallida que="tus aulas" detalle={loadError} onReintentar={load} />
-        </Card>
-      )}
-
-      {!isLoading && !loadError && classrooms.length === 0 && (
-        <Card className="p-6 rounded-2xl text-center space-y-2">
-          <p className="font-semibold">Todavía no estás en ninguna aula</p>
-          <p className="text-sm text-muted-foreground">
-            Pedile el código a tu docente y escribilo arriba.
-          </p>
-        </Card>
-      )}
-
-      {classrooms.length > 0 && (
-        <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
-          {classrooms.map((classroom) => {
-            const Icon = SUBJECT_ICON_COMPONENTS[classroom.iconName as SubjectIconName] ?? SUBJECT_ICON_COMPONENTS['book-open']
-            const chipClass = SUBJECT_COLOR_CLASS[classroom.colorName as SubjectColorName]?.chip ?? 'bg-teal-500'
-            const pending = classroom.assignments.filter((assignment) => assignment.state === 'disponible').length
-            const isActive = activeId === classroom.id
-
-            return (
-              <Card
-                key={classroom.id}
-                className={`p-4 space-y-2 border-2 cursor-pointer transition-colors self-start ${isActive ? 'border-primary bg-primary/5' : 'hover:border-primary/40'}`}
-                onClick={() => setActiveId(classroom.id)}
-              >
-                <div className="flex items-start gap-2">
-                  <div className={`w-9 h-9 rounded-lg ${chipClass} text-white flex items-center justify-center shrink-0`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-sm leading-snug break-words">{classroom.subjectName}</p>
-                    <p className="text-xs text-muted-foreground break-words">
-                      {classroom.name} · {classroom.teacherName}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                  {classroom.status === 'closed' ? (
-                    <Badge variant="outline">Cerrada</Badge>
-                  ) : pending > 0 ? (
-                    <Badge>{pending} para resolver</Badge>
-                  ) : (
-                    <span className="text-muted-foreground">Práctica libre</span>
-                  )}
-                </div>
-              </Card>
-            )
-          })}
-        </div>
-      )}
-
-      {activeClassroom && (
-        <div className="space-y-4">
-          <Card className="p-4 rounded-2xl space-y-3">
-            <h2 className="font-bold flex items-center gap-2">
-              <CalendarClock className="w-4 h-4" />
-              Cuestionarios de {activeClassroom.subjectName}
-            </h2>
-
-            {activeClassroom.assignments.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Tu docente todavía no asignó ninguno. Mientras tanto podés practicar el temario acá abajo.
-              </p>
-            )}
-
-            <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
-              {activeClassroom.assignments.map((assignment) => (
-                <Card key={assignment.id} className="p-3 space-y-2 border self-start">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-sm break-words">{assignment.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {assignment.mode} · {assignment.questionCount} preguntas
-                      </p>
-                    </div>
-                    <Badge variant={STATE_BADGE_VARIANT[assignment.state]} className="shrink-0">
-                      {ASSIGNMENT_STATE_LABEL[assignment.state]}
-                    </Badge>
-                  </div>
-
-                  <ul className="text-xs text-muted-foreground space-y-0.5">
-                    {assignment.opensAt && <li>Abre: {formatDate(assignment.opensAt)}</li>}
-                    {assignment.dueAt && <li>Entrega hasta: {formatDate(assignment.dueAt)}</li>}
-                    <li>
-                      Intentos: {assignment.attemptsUsed}
-                      {assignment.maxAttempts ? ` de ${assignment.maxAttempts}` : ' (sin límite)'}
-                    </li>
-                    {assignment.bestScore !== null && <li>Tu mejor nota: {Number(assignment.bestScore).toFixed(1)}</li>}
-                  </ul>
-
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    disabled={assignment.state !== 'disponible' || startingAssignmentId === assignment.id}
-                    onClick={() => handleStartAssignment(assignment.id, activeClassroom)}
-                  >
-                    {startingAssignmentId === assignment.id ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <PlayCircle className="w-4 h-4 mr-2" />
-                    )}
-                    {assignment.attemptsUsed > 0 ? 'Volver a intentar' : 'Resolver'}
-                  </Button>
-                </Card>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-4 rounded-2xl space-y-3">
-            <div>
-              <h2 className="font-bold">Practicá el temario</h2>
-              <p className="text-sm text-muted-foreground">
-                Elegí los temas que quieras y la IA te arma un cuestionario con el programa de tu docente.
-              </p>
-            </div>
-            <SubjectContent subject={classroomToSubject(activeClassroom)} classroomId={activeClassroom.id} />
-          </Card>
-
-          {/* The teacher's panel is nominal, so say so plainly instead of
-              letting students discover it. */}
-          <p className="text-xs text-muted-foreground px-1">
-            {activeClassroom.teacherName} ve tu nombre, las notas de lo que resolvés en esta aula y los temas donde te
-            equivocás. Lo que practicás fuera del aula es sólo tuyo.
-          </p>
-        </div>
-      )}
+      </section>
     </div>
   )
 }

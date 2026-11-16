@@ -1,10 +1,20 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import {
-  ChevronRight, Loader2,
-  CheckSquare, Square, Minus, ArrowLeft, Settings2, Upload, FileText, GraduationCap,
+  ChevronRight,
+  CheckSquare,
+  Square,
+  Minus,
+  ArrowLeft,
+  Settings2,
+  Upload,
+  FileText,
+  GraduationCap,
 } from 'lucide-react'
 import { CargaFallida } from '@/components/carga-fallida'
 import { pedirJson } from '@/lib/pedir-json'
@@ -505,7 +515,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
               className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              Volver al Dashboard
+              Volver a Mis tareas
             </button>
           )
         )}
@@ -521,10 +531,10 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
                 <button
                   key={value}
                   onClick={() => handleNivel(value)}
-                  className="flex items-center gap-5 p-5 rounded-2xl border border-border bg-card hover:border-primary hover:shadow-md transition-all duration-200 active:scale-95 text-left"
+                  className="flex items-center gap-5 p-5 rounded-2xl border border-border bg-card hover:border-primary transition-all duration-200 active:scale-95 text-left"
                 >
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0`}>
-                    <Icon className="w-6 h-6 text-white" />
+                  <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center flex-shrink-0`}>
+                    <Icon className="w-6 h-6 text-texto-sobre-accion" />
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-foreground">{label}</p>
@@ -547,7 +557,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
             </p>
 
             {loadingData ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+              <div className="flex justify-center py-12"><Cargando className="w-6 h-6 text-primary" /></div>
             ) : loadError ? (
               /* Acá el error NO deja al alumno sin salida: abajo sigue el botón
                  de subir el programa propio, que es el camino que existía antes
@@ -568,8 +578,8 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
                     onClick={() => handleCarrera(c)}
                     className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary hover:bg-primary/5 transition-all active:scale-95 text-left"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
-                      <GraduationCap className="w-5 h-5 text-white" />
+                    <div className="w-10 h-10 rounded-lg bg-logrado flex items-center justify-center flex-shrink-0">
+                      <GraduationCap className="w-5 h-5 text-texto-sobre-accion" />
                     </div>
                     <span className="flex-1 font-semibold text-sm text-foreground">{c}</span>
                     <ChevronRight className="w-5 h-5 text-muted-foreground" />
@@ -608,7 +618,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
             </p>
 
             {loadingData ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+              <div className="flex justify-center py-12"><Cargando className="w-6 h-6 text-primary" /></div>
             ) : loadError ? (
               <CargaFallida
                 que="los años"
@@ -643,7 +653,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
             <p className="text-muted-foreground text-sm mb-8">Seleccioná la materia para ver los ejes y temas.</p>
 
             {loadingData ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+              <div className="flex justify-center py-12"><Cargando className="w-6 h-6 text-primary" /></div>
             ) : loadError ? (
               <CargaFallida
                 que="las materias"
@@ -679,7 +689,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
             <p className="text-muted-foreground text-sm mb-6">Elegí uno o más temas. Podés seleccionar ejes completos.</p>
 
             {loadingData ? (
-              <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
+              <div className="flex justify-center py-12"><Cargando className="w-6 h-6 text-primary" /></div>
             ) : loadError ? (
               <CargaFallida
                 que="los temas"
@@ -749,14 +759,14 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
                 </div>
 
                 {/* Sticky confirm bar */}
-                <div className="sticky bottom-4 flex items-center justify-between gap-4 p-4 bg-card/90 backdrop-blur-md border border-border rounded-2xl shadow-lg">
+                <div className="sticky bottom-4 flex items-center justify-between gap-4 p-4 bg-card/90 border border-border rounded-2xl">
                   <span className="text-sm text-muted-foreground">
                     {selectedCount === 0 ? 'Ningún tema seleccionado' : `${selectedCount} tema${selectedCount > 1 ? 's' : ''} seleccionado${selectedCount > 1 ? 's' : ''}`}
                   </span>
                   <button
                     onClick={handleConfirmTopics}
                     disabled={selectedCount === 0}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm shadow hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
                   >
                     Configurar cuestionario
                     <ChevronRight className="w-4 h-4" />
@@ -828,7 +838,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
                   )}
                 >
                   {uploadLoading ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /><span className="text-sm">Procesando con IA...</span></>
+                    <><Cargando className="w-4 h-4" /><span className="text-sm">Procesando con IA...</span></>
                   ) : uploadedFile && !uploadError ? (
                     <><FileText className="w-4 h-4" /><span className="text-sm font-medium">{uploadedFile.name}</span></>
                   ) : (
@@ -840,7 +850,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
                   <p className="mt-2 text-xs text-destructive">{uploadError}</p>
                 )}
                 {parsedUnits.length > 0 && (
-                  <p className="mt-2 text-xs text-emerald-600 dark:text-emerald-400">
+                  <p className="mt-2 text-xs text-logrado dark:text-logrado">
                     ✓ {parsedUnits.length} unidades · {parsedUnits.reduce((s, u) => s + u.topics.length, 0)} temas detectados
                   </p>
                 )}
@@ -850,7 +860,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
             <button
               onClick={handleSuperiorContinue}
               disabled={!carrera.trim() || (!!uploadedFile && uploadLoading)}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm shadow hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
             >
               {parsedUnits.length > 0 ? 'Seleccionar temas' : 'Continuar sin programa'}
               <ChevronRight className="w-4 h-4" />
@@ -956,14 +966,14 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
               {isDocente ? (
                 <button
                   onClick={handleStart}
-                  className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base shadow-lg hover:bg-primary/90 transition-all active:scale-95"
+                  className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base hover:bg-primary/90 transition-all active:scale-95"
                 >
                   Generar Cuestionario
                 </button>
               ) : (
                 <button
                   onClick={handleStart}
-                  className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base shadow-lg hover:bg-primary/90 transition-all active:scale-95"
+                  className="w-full py-3.5 rounded-2xl bg-primary text-primary-foreground font-bold text-base hover:bg-primary/90 transition-all active:scale-95"
                 >
                   Realizar Cuestionario
                 </button>

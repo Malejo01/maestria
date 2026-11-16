@@ -1,5 +1,7 @@
 import NextAuth, { type DefaultSession } from 'next-auth'
 import Google from 'next-auth/providers/google'
+import Credentials from 'next-auth/providers/credentials'
+import { DEV_LOGIN_PROVIDER_ID, devLoginConfigurado, usuarioDeDesarrollo } from '@/lib/dev-login'
 import { sql } from '@/lib/db'
 
 // ─── NextAuth type augmentation ───────────────────────────────────────────────
@@ -38,6 +40,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
+    // Ingreso de desarrollo: sólo en `next dev`, con DEV_LOGIN=1 y contra una
+    // base marcada como staging. En un build de producción este proveedor no
+    // existe. Los tres candados están explicados en lib/dev-login.ts.
+    ...(devLoginConfigurado()
+      ? [
+          Credentials({
+            id: DEV_LOGIN_PROVIDER_ID,
+            name: 'Ingreso de desarrollo',
+            credentials: { userId: {} },
+            async authorize(credentials) {
+              const usuario = await usuarioDeDesarrollo(credentials?.userId)
+              if (!usuario) return null
+              return { id: usuario.id, email: usuario.email, name: usuario.name }
+            },
+          }),
+        ]
+      : []),
   ],
 
   // JWT strategy: no DB hit on every request. Role is cached in the token.

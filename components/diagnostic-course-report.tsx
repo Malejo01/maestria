@@ -40,17 +40,17 @@ export interface CourseDiagnostic {
 }
 
 const VERDICT_CLASS: Record<ChanceVerdict, string> = {
-  sobre_azar: 'text-emerald-700 dark:text-emerald-400',
-  azar: 'text-amber-700 dark:text-amber-400',
-  bajo_azar: 'text-rose-700 dark:text-rose-400',
+  sobre_azar: 'text-logrado dark:text-logrado',
+  azar: 'text-flojo dark:text-flojo',
+  bajo_azar: 'text-flojo dark:text-flojo',
   sin_piso: 'text-foreground',
   sin_datos: 'text-muted-foreground',
 }
 
 const STRATEGY_CLASS: Record<TeachingStrategy, string> = {
-  frontal: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30',
-  pares: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30',
-  repaso_puntual: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+  frontal: 'bg-flojo/10 text-flojo dark:text-flojo border-flojo/30',
+  pares: 'bg-flojo/10 text-flojo dark:text-flojo border-flojo/30',
+  repaso_puntual: 'bg-logrado/10 text-logrado dark:text-logrado border-logrado/30',
   sin_datos: 'bg-muted text-muted-foreground border-border',
 }
 
@@ -70,9 +70,9 @@ export function DiagnosticCourseReport({ report }: { report: CourseDiagnostic })
     <div className="space-y-6">
       {/* Lo que NO se puede leer va antes que lo que sí. Un reporte que empieza
           por los números invita a usarlos sin saber qué les falta. */}
-      <Card className="p-4 border-2 border-amber-500/30 bg-amber-500/5 rounded-2xl">
+      <Card className="p-4 border-2 border-flojo/30 bg-flojo/5 rounded-2xl">
         <div className="flex gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+          <AlertTriangle className="w-5 h-5 text-flojo dark:text-flojo shrink-0 mt-0.5" />
           <div className="space-y-2 text-xs leading-relaxed">
             <p className="font-bold text-sm text-foreground">Qué no dice este reporte</p>
             <p className="text-muted-foreground">

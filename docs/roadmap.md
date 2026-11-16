@@ -89,12 +89,194 @@ Decisiones que conviene no redescubrir:
 
 Pendiente del bloque 1, a propósito:
 
-- [ ] **Verificación con sesión real.** Lo público (entrada, ingreso, link de grupo contra el aula `2UQT7J`) se verificó en browser. Los caparazones de alumno, invitado y docente se verificaron con una página temporal de datos de ejemplo, **no** con sesión: no hay `.env.staging.local`, así que el dev server apunta a producción y loguearse ahí escribe. Se re-verifica al arrancar el bloque 2, que empieza por crear la branch de staging y un login de desarrollo.
+- [x] ~~**Verificación con sesión real.**~~ Hecha el 15/11 al arrancar el bloque 2, con el ingreso de desarrollo contra staging: las tres pestañas del docente, el redirect de la raíz a `/teacher` y la vista de alumno con su aviso funcionan con sesión. Sigue sin recorrerse el camino por Google (elegir rol → Google → volver sin que la bienvenida pregunte de nuevo): necesita un OAuth client de staging (`docs/staging.md` §2.3).
 - [ ] **Ingreso por email con código**: fuera de este bloque por decisión de Mauro. Necesita proveedor de correo, una key y una migración de tokens de verificación. Va en su propio PR, apagado por variable de entorno.
 - [ ] **El panel docente por dentro es el viejo.** Las tres pestañas muestran las secciones que ya existían (aulas, materias, cuestionarios + crear) con los tokens nuevos aplicados por arrastre. Los bloques 3 y 4 lo rehacen; "+ Alumno" de la referencia llega con el bloque 3.
 - [ ] **El inicio viejo del alumno (`/`) desapareció**: racha, contador y adelanto de tips vivían ahí. Siguen accesibles en Mi progreso; el bloque 6 arma el inicio nuevo con accesos a todo lo que puede hacer (pedido de Mauro).
 - [ ] **Gráficos por tema y planilla por alumno** (pedido de Mauro al elegir maquetas): van en la ficha de alumno, bloque 3.
 - [ ] `components/math-background.tsx` sigue montado en el cuestionario, los resultados y `/practicar` (degradé + grilla de puntos). Se va con el bloque 6.
+
+### Bloque 2 — Onboarding docente (rama `rediseno/2-onboarding-docente`)
+
+Sin maquetas con pausa (acordado). La alternativa descartada está al final.
+
+- [x] **Staging en uso.** La branch `staging` de Neon del 15/08 seguía viva y anonimizada (re-verificado el 15/11: `deployment_env = staging`, 0 emails reales, 0 tokens). No hizo falta clonar producción de nuevo. Se le corrieron las migraciones 023 y 024, que le faltaban. `.env.staging.local` se armó cambiando sólo el host sobre `.env.local`, con un `AUTH_SECRET` distinto.
+- [x] **`npm run dev:staging`** ([scripts/dev-staging.mjs](../scripts/dev-staging.mjs)): levanta `next dev` contra staging. `npm run dev` a secas **sigue apuntando a producción**; para trabajar en el rediseño se usa el otro.
+- [x] **Ingreso de desarrollo** ([lib/dev-login.ts](../lib/dev-login.ts), `/sign-in/dev`): entrar como un usuario de staging sin Google. Tres candados: `next dev`, `DEV_LOGIN=1` (sólo en `.env.staging.local`) y que la base diga ser staging. En un build de producción el proveedor no se registra.
+- [x] **Cuatro hitos** — Tu materia, Tu temario, Tu primer alumno, Tu primera tarea — en una tarjeta arriba del panel que no se va hasta que hay un alumno con una tarea mandada. Dice un solo paso por vez, con un solo botón.
+- [x] **El progreso se deduce, no se guarda** ([lib/onboarding-docente.ts](../lib/onboarding-docente.ts), con tests). El encargo pedía un campo de progreso; se descartó a propósito: es exactamente la columna de cierre que nadie escribe de las "Lecciones operativas". Deducido de materias, temas, miembros y tareas mandadas, no se puede desincronizar, retoma solo en cualquier dispositivo y **no necesita migración**.
+- [x] **Grupo automático.** El docente pide el link para su primer alumno y el grupo de esa materia se crea detrás (`POST /api/teacher/onboarding/grupo`, idempotente). No ve un botón "crear aula" en el onboarding.
+- [x] **Los caminos del temario ya no se abren solos.** `teacher-onboarding-modal.tsx` perdió la pantalla de bienvenida en prosa: ahora es el primer paso de la tarjeta de hitos y lo abre el docente. Vocabulario al día ("plan oficial de la provincia").
+- [x] `scripts/capturas.mjs` acepta `ENTRAR_COMO="Nombre"` para capturar pantallas con sesión.
+
+Decisiones:
+
+- **El hito del alumno se cumple cuando alguien entra**, no cuando el docente copia el link: no hay forma de saber si lo mandó. Mientras tanto la tarjeta dice "Esperando a tu primer alumno" y deja ir armando la tarea.
+- **El docente no cuenta como su propio alumno** (la cuenta de Mauro es miembro del aula 2).
+- **El "¡Listo!" dura 48 horas** desde la primera tarea mandada y se puede cerrar. El cierre vive en localStorage: es un aviso, no un estado.
+- Descartado: guardar el progreso en `users` (migración + una columna que puede mentir) y un asistente modal a pantalla completa (tapa el panel, que es justo lo que el docente tiene que aprender a usar).
+
+Pendiente, a propósito:
+
+- [ ] **El grupo que crea el onboarding no aparece en la lista vieja de "Mis aulas" hasta recargar.** Esa lista se va en el bloque 3.
+- [ ] **Mandar la tarea sigue siendo el flujo viejo** ("Asignar a un aula" en las tareas guardadas). El bloque 5 lo rehace con la pantalla de compartir.
+- [ ] **Nombre del alumno y "qué prepara"** al invitarlo: bloque 3, que sí necesita migración.
+- [ ] No se probó un alumno entrando de verdad para ver el hito 3 completarse en pantalla: la regla está cubierta por tests, el recorrido no.
+
+### Bloque 3 — Panel: Mis alumnos (rama `rediseno/3-mis-alumnos`)
+
+> ⚠️ **Trae la migración 025 y está corrida SÓLO en staging.** Antes de mergear este bloque a `main` hay que correrla contra producción (`npx tsx scripts/run-migration-025.ts`), con el OK de Mauro. Sin ella, Mis alumnos responde 500 — es exactamente el incidente de la 023. El job `schema-gate` lo marca en rojo si se mergea sin correrla, pero Vercel despliega igual.
+
+- [x] **Migración 025** ([scripts/025-alumnos-contexto-e-invitaciones.sql](../scripts/025-alumnos-contexto-e-invitaciones.sql)): `classroom_members.contexto` (qué prepara el alumno, texto libre del docente) y la tabla `classroom_invitations` (alumnos agregados por nombre que todavía no entraron). Aditiva: una columna que admite NULL y una tabla nueva. El archivo nombra quién escribe cada cosa.
+- [x] **Mis alumnos** ([components/docente/mis-alumnos.tsx](../components/docente/mis-alumnos.tsx)): una fila por persona cruzando grupos — inicial, nombre, qué prepara, hasta dos chips (el mejor tema y el peor) y la última práctica. Cierra con **una** sugerencia que termina en un botón, y con dos números de la semana. Es la pantalla de inicio del docente.
+- [x] **Vista de planilla** del mismo listado, con todos los números en columnas (pedido de Mauro).
+- [x] **Ficha de alumno** (`/teacher/alumnos/[userId]`): qué prepara (editable en el lugar), aciertos por tema en barras con su estado escrito, errores que se le repiten, la planilla de sus últimas 50 prácticas y el botón "Asignarle una tarea" con la materia ya elegida.
+- [x] **"+ Alumno"** en la barra del docente: nombre, qué prepara y materia. El grupo se crea detrás; no hay botón "crear aula".
+- [x] **`ChipTema`** con sus tres estados: dominado, flojo (naranja) y sin datos.
+- [x] **El panel se partió.** `app/(app)/teacher/page.tsx` pasó de 1.025 líneas a 115: el estado quedó en `components/docente/use-panel-docente.ts` y cada pestaña en su componente. La presentación de Mis materias y Mis tareas se movió **tal cual**, sin cambiar lógica; se rediseñan en los bloques 4 y 5.
+- [x] `scripts/seed-staging-alumnos.ts`: tres alumnos de ejemplo con actividad, para mirar el panel con algo adentro. Se niega a correr fuera de staging.
+
+Decisiones:
+
+- **"Cómo le va en un tema" sale de `quiz_attempts.topics[]`**, no de `quiz_answers.topic_name` ni de `topic_mastery` (las dos que este documento ya midió como inservibles). El costo: la cuenta es por intento, así que un intento de tres temas le suma a los tres.
+- **Umbrales, en `lib/alumnos-docente.ts`**: menos de 5 respuestas calificadas es "sin datos"; desde 70 % de aciertos es dominado y por debajo flojo. **Es un criterio de producto y lo decide Mauro**; se cambia en dos constantes.
+- **Privacidad:** todo se filtra por los grupos del docente. Lo que el alumno practicó por su cuenta o con otro docente no aparece.
+- **Las invitaciones no tienen columna de "aceptada".** Cuando entra al grupo alguien con el mismo nombre, el listado los funde al leer y el alumno hereda el contexto. Marcarla obligaba a tocar el ingreso al grupo, que está en uso. Si el alumno entra con otro nombre ("Sofi"), el docente ve dos filas y quita la pendiente.
+- **Sin sugerencia cuando no hace falta.** Si a todos les va bien y practicaron hace poco, la tarjeta no aparece.
+- **Los nombres largos de tema se acortan** en chips y frases (lo que va antes de los dos puntos); la ficha muestra el nombre entero.
+- Descartado: una tabla de dominio por tema precalculada (otra `topic_mastery`), y fotos de perfil.
+
+Pendiente, a propósito:
+
+- [ ] **"Mis grupos" sigue siendo la gestión vieja**, plegada debajo del listado: códigos, tareas mandadas y seguimiento por grupo. Se va cuando el bloque 5 rehaga el envío de tareas.
+- [ ] **Cerrar el ciclo de "errores que se le repiten"**: la ficha muestra los `student_misconceptions` sin resolver, y sigue sin haber quién los resuelva (ítem 🔺 del backlog). La ficha del docente es el lugar natural para ese botón.
+- [ ] La ficha no se probó con un alumno en dos materias del mismo docente; la regla está en los tests.
+
+### Bloque 4 — Wizard de temario (rama `rediseno/4-wizard-temario`)
+
+Sin migraciones.
+
+- [x] **"Nivel y año" pasó al final** en las rutas de archivo y manual: Materia → Temario → Nivel y año → Cómo das la materia. Con el plan oficial el nivel sigue primero, porque hace falta para filtrar. Al editar se conserva el orden de siempre. La regla está en [lib/wizard-temario.ts](../lib/wizard-temario.ts), con tests; los pasos se identifican por su contenido y el orden es un dato.
+- [x] **El nivel y el año se leen del archivo, y el docente confirma.** La extracción le pide a la IA el nivel y el año **sólo si el documento los dice de forma explícita**; el paso llega prellenado con un aviso ("Esto lo leímos de tu archivo. Confirmalo o cambialo."). Nunca pisa lo que el docente ya eligió.
+- [x] **Se ve qué está pasando durante la lectura.** `/api/teacher/programs/extract` responde, si se le pide con `Accept: application/x-ndjson`, una línea JSON por etapa a medida que ocurren: leyendo, leído, separando unidades y temas, listo. Sin ese encabezado responde como siempre. El componente muestra los renglones uno debajo del otro, sin porcentaje.
+- [x] **Mis materias con los tokens**: las tarjetas perdieron el círculo rojo de borrar, el chip de color por materia y las sombras. Salió de `TODAVIA_VIEJOS`.
+- [x] Vocabulario: "plan oficial de la provincia" en lugar de "diseño curricular", "Cómo das la materia" en lugar de "Ajustes", y la jurisdicción ya no se nombra en el wizard.
+
+Decisiones:
+
+- **Nivel va antes de "Cómo das la materia" y no último de todo**, que es lo que decía el encargo al pie de la letra: ese paso pregunta la carrera sólo si el nivel es Superior.
+- **Sin "encontré 6 unidades" a mitad de camino.** Se probó una pasada rápida sin IA para poder decirlo: daba 4 donde la IA después encontraba 3. Un número que se corrige solo a los cinco segundos enseña a no creerle al siguiente, así que la etapa intermedia no da conteo y el final sí, que es el verdadero.
+- **Los errores de lectura quedan escritos junto al archivo**, no en un aviso que desaparece.
+- **El plan oficial no se ofrece en el paso de temario hasta que haya nivel y año.** Subiendo un archivo, aparece solo en cuanto la IA los lee.
+- Descartado: una barra de porcentaje (no hay forma honesta de calcularla) y convertir la ruta entera a streaming obligatorio (rompía a cualquier otro cliente).
+
+Verificado en browser contra staging con un PDF de ejemplo y la IA real: orden de pasos, los cinco renglones de progreso, 3 unidades y 9 temas cargados, y "5to anio" del archivo llevado a la opción "5to Año".
+
+Pendiente, a propósito:
+
+- [ ] **El interior de los pasos del wizard sigue con la presentación vieja** (1.300 líneas): se cambió el marco, el indicador de pasos, los botones y el vocabulario. Rehacer cada paso por dentro es trabajo aparte.
+- [ ] Las tarjetas de Mis materias siguen siendo un `Card` con `onClick` y doble click para el detalle: no se alcanzan con Tab. El lápiz y el tacho sí son botones.
+- [ ] No hay capturas del wizard: el script de capturas no maneja diálogos.
+- [ ] No se probó con un Word ni con una foto, sólo con PDF.
+
+### Bloque 5 — Compartir tarea (rama `rediseno/5-compartir-tarea`)
+
+Sin migraciones.
+
+- [x] **Mandar y compartir, en dos pasos del mismo diálogo** ([components/share-quiz-dialog.tsx](../components/share-quiz-dialog.tsx)). Paso 1: un solo botón, "Mandar la tarea"; las fechas y el límite de intentos están plegados porque casi nunca hacen falta. Paso 2, la pantalla de compartir: el link del grupo, grande, con su botón de copiar; un mensaje ya escrito para WhatsApp, editable, con "Copiar el mensaje" y "Abrir WhatsApp"; y el recordatorio de que el alumno entra con su nombre, sin cuenta.
+- [x] **El grupo aparece solo.** Si la materia todavía no tiene grupo, se crea al abrir el diálogo. Se fue el callejón sin salida "Todavía no tenés un aula… Ir a Aulas".
+- [x] **El mensaje no inventa** ([lib/compartir-tarea.ts](../lib/compartir-tarea.ts), con tests): no dice "para esta semana" si no hay fecha, y sólo saluda por el nombre si en esa materia hay exactamente un alumno. Nombra el tema si la tarea tiene uno o dos; con más, la materia.
+- [x] **Mis tareas con los tokens**: una acción principal por tarea ("Mandar a mi grupo") y el resto secundarias. Borrar pide confirmación en el lugar; antes borraba al primer click. Salió de `TODAVIA_VIEJOS`, que quedó vacío.
+- [x] Vocabulario: tarea, grupo, Desde / Hasta.
+
+Decisiones:
+
+- **Las fechas van plegadas**, no afuera: la decisión de esta pantalla es mandar. El encargo pedía "una decisión por pantalla".
+- **El mensaje es editable**: el docente conoce a su alumno mejor que una plantilla.
+- **"Abrir WhatsApp" usa `wa.me/?text=`**, que deja elegir el destinatario. No se pide ni se guarda ningún teléfono.
+- **El estado vacío de Mis tareas espera a que termine la primera lectura.** Mostraba "Todavía no armaste ninguna tarea" durante el instante de carga: un estado que todavía no se sabe, dibujado como un hecho. Apareció mirando una captura.
+- Descartado: una página aparte para compartir (se pierde el contexto de la tarea) y mandar el mensaje desde la app (necesita teléfonos y un proveedor).
+
+Verificado en browser contra staging: se mandó una tarea real al grupo de Lengua, la pantalla de compartir mostró el link y el mensaje, y la tarjeta de primeros pasos pasó a "¡Listo! Ya mandaste tu primera tarea." (4 de 4).
+
+Pendiente, a propósito:
+
+- [ ] **"Mis grupos"** (la gestión vieja por grupo, plegada en Mis alumnos) sigue existiendo: es donde se ve quién entregó cada tarea, se cierra un grupo o se regenera su código. Mandar tareas ya no pasa por ahí.
+- [ ] El paso de compartir no se puede reabrir para una tarea ya mandada sin volver a mandarla (lo cual es inofensivo: la asignación se actualiza, no se duplica).
+- [ ] Sin capturas del diálogo: el script no maneja diálogos. Hay capturas de Mis tareas.
+- [ ] No se probó con fecha "Hasta" en pantalla; el texto con fecha está cubierto por tests.
+
+### Bloque 6 — Lado del alumno (rama `rediseno/6-lado-alumno`)
+
+Sin migraciones. **No se tocó la lógica** del motor de cuestionarios, de la corrección ni de los inputs de respuesta: los 753 tests siguen pasando sin haber cambiado uno.
+
+- [x] **Pase de tokens a toda la app** ([scripts/codemod-tokens.py](../scripts/codemod-tokens.py)): la paleta de Tailwind pasó a los tokens en 31 archivos, cambiando sólo nombres de clase. Verdes → `logrado`, rojos y naranjas → `flojo` (naranja, nunca rojo), azules y violetas → `accion`, grises → `texto` / `borde` / `superficie`. Degradés → el color sólido de arranque; sombras y desenfoques, afuera. Es idempotente.
+- [x] **El chequeo de diseño cubre toda la app.** `tests/sistema-de-diseno.test.ts` pasó de revisar las carpetas rediseñadas a revisar `app/` y `components/` enteros (menos `components/ui/`, vendored). `TODAVIA_VIEJOS` quedó vacío.
+- [x] **Mis tareas del alumno** (`/aulas`): todas las tareas de todos sus grupos en una sola lista, lo que hay para hacer primero. Un solo botón azul: la primera tarea disponible. Debajo, los accesos a Practicar y Mi progreso (pedido de Mauro: que el alumno vea todo lo que puede hacer), sus grupos con "Te invitó…" y el campo para sumarse a otro.
+- [x] **Mi progreso**: `/history` y `/tips` se fundieron. Tres pestañas: Lo que hice, A reforzar, Mis tips. `/tips` redirige. "Cofre de Tips" dejó de llamarse así.
+- [x] **Cuestionario, resultados y Practicar con los tokens.** Verificado en pantalla respondiendo una pregunta: la opción correcta en verde `logrado`, la elegida mal en naranja `flojo`, y el mensaje en el mismo tono.
+- [x] **Sin emojis en la interfaz**: salieron de resultados, explicación, revancha, tips y temas a reforzar.
+- [x] **Un solo azul**: las materias dejaron de tener color propio (`lib/subject-appearance.ts`). `color_name` se sigue guardando; ya no cambia cómo se ve. El selector de color salió del wizard.
+- [x] **Fondo plano**: `MathBackground` (degradé + grilla + manchas) quedó como un fondo liso. Se conserva el componente para no tocar los siete lugares que lo montan.
+- [x] **Íconos de carga con Framer Motion**: los `Loader2 animate-spin` pasaron a `<Cargando />`, que respeta `prefers-reduced-motion`.
+- [x] La tarjeta que se da vuelta (`flashcard-3d`) es un `<button>` de verdad en vez de un `div` con `role="button"`.
+
+Decisiones:
+
+- **El invitado ya no ve la práctica libre del grupo**, sólo sus tareas, con una línea que dice que con cuenta la tiene. Es la decisión que este documento ya tenía tomada ("La práctica exige cuenta") y la tabla del encargo. Cambia comportamiento: antes un invitado podía generar hasta 3 por día.
+- **"analysis" era el verde de acierto** dentro del cuestionario y el color del modo práctico en el armado. En el cuestionario pasó a `logrado`; en el armado, al azul.
+- **El papel picado de los resultados se queda**, con los colores de los tokens. Es la única animación que no es de Framer Motion (usa `canvas-confetti`). **Decisión de Mauro**: si la regla es estricta, se saca en una línea.
+- **Los prompts de la IA siguen pidiendo emojis** en las explicaciones para Primario (`app/api/explain-error/route.ts`). No se tocó: es contenido pedagógico generado, no interfaz, y cambiarlo cambia cómo le habla la app a un nene de 8 años. **Decisión de Mauro.**
+- **La pantalla de error global conserva colores escritos a mano**: se muestra justo cuando la hoja de estilos no cargó. Son el espejo de los tokens y está anotado en el test.
+
+Lo que el pase rompió y cómo se atrapó (queda escrito porque el script se puede volver a usar):
+
+- **Se llevó una comilla** en dos lugares: la clase `'hover:shadow-xl …'` al principio de una cadena perdía su comilla de apertura. Lo atrapó el compilador. Corregido en el script.
+- **Dejó botones sin fondo**: los que sólo tenían color por su degradé (`from-[var(--algebra)]`) quedaban con texto blanco sobre nada. Lo atrapó una captura de la pantalla de carga. Corregido: el arranque del degradé pasa a ser el fondo.
+- **Los íconos de nivel de Practicar quedaron invisibles**: sus clases venían de `lib/nivel-options.ts`, fuera del alcance del pase. Lo atrapó otra captura.
+
+Pendiente, a propósito:
+
+- [ ] **Sólo se miró en pantalla una parte**: el cuestionario (una pregunta de opción múltiple, bien y mal), Mis tareas, Mi progreso y el primer paso de Practicar. No se recorrieron la pantalla de resultados, la explicación del error, la revancha, ni los inputs numérico, verdadero/falso y respuesta corta. Cambiaron sólo clases, pero no se vieron.
+- [ ] El interior de `/history` conserva su estructura vieja (tarjetas grandes, filtros), ahora con los tokens. No se rediseñó la disposición.
+- [ ] La racha de la home vieja no volvió a ningún lado: vivía en localStorage y contaba otra cosa que lo que decía su etiqueta (ver "Tarjetas de resumen de /history").
+- [ ] `tw-animate-css` sigue importado: lo usan los primitivos de `components/ui/`.
+
+### Bloque 7 — Onboarding del alumno (rama `rediseno/7-onboarding-alumno`)
+
+Sin migraciones.
+
+- [x] **Tres pantallas y nada más** ([components/entrada/bienvenida.tsx](../components/entrada/bienvenida.tsx)): qué es esto, cómo se entra a un grupo (se puede escribir el código ahí mismo) y dónde se ve lo que le mandaron. Con contador "1 de 3" y botón de volver.
+- [x] **Ya no pregunta nivel y año.** Eran dos pantallas de formulario antes de ver nada, tenían un "saltar por ahora", y Practicar ya los pregunta cuando hacen falta.
+- [x] **Quien llegó por el link de su profe no ve el pedido de código**: la segunda pantalla detecta que ya está en un grupo y se lo dice.
+- [x] **El rol se guarda al terminar la tercera pantalla**, no antes. Quien cierra a la mitad las vuelve a ver: no hay un "ya lo vio" que pueda quedar marcado sin que lo haya visto.
+
+#### 🚨 El JWT nunca se refrescaba — defecto que ya estaba en producción
+
+Se destapó al probar este bloque. Al terminar la bienvenida, el rol se guardaba en la base pero la persona quedaba para siempre en "Preparando tu cuenta…".
+
+**La causa:** en Auth.js v5, `useSession().update()` **sin argumento no dispara nada**. Hace un GET común de la sesión y devuelve el token tal como estaba (`node_modules/next-auth/react.js`: `typeof data === "undefined" ? undefined : { body: … }`). Sólo con un argumento hace el POST que el servidor marca como `trigger: 'update'`, que es lo que `auth.ts` espera para re-leer la base.
+
+El repo llamaba a `update()` pelado en tres lugares: al terminar el onboarding, al cambiar de rol, y en el refresco automático de nivel y año. **Ninguno de los tres funcionaba.** Esto corrige dos entradas de más abajo:
+
+- "**Refresh del JWT sin cerrar sesión**" (16/08), dada por implementada y nunca verificada en browser: **no andaba**. Los alumnos con perfil corregido seguían con el token viejo hasta volver a loguearse.
+- El `forceOnboarded` del gate de onboarding no era una optimización: era lo que tapaba el síntoma.
+
+No se notaba porque la barra vieja leía el rol de `/api/user/profile` y no del token. Se notó cuando la raíz del sitio pasó a decidir por el rol del token.
+
+**El arreglo tuvo dos intentos**, y el primero falló igual de callado que el original: un hook que llamaba a `update({})` pero guardaba la función del primer render, que nace con `loading: true` adentro y sale por su `if (loading) return` sin hacer nada. Lo mostró la pestaña de red: después de guardar el rol no salía ningún POST a `/api/auth/session`. El definitivo ([hooks/use-refrescar-sesion.ts](../hooks/use-refrescar-sesion.ts)) usa siempre la `update` del último render. Un test fija las dos cosas y prohíbe sacar `update` de `useSession` fuera del hook.
+
+Es la cuarta vez del mismo patrón: algo que no funciona y se ve igual que si funcionara (`Boolean(undefined)`, el 500 pintado como lista vacía, el JSONB reordenado, y ahora esto).
+
+**Verificado en browser contra staging**, con una cuenta nueva sin rol: las tres pantallas, el rol en `null` hasta el final, y al terminar la sesión con `role: ALUMNO`, `isOnboarded: true` y la persona en Mis tareas. También el cambio de rol desde el menú: termina en `/teacher` con sesión de docente y el primer hito del onboarding docente a la vista.
+
+**Consecuencia para producción, a tener presente al mergear:** el proxy bloquea `/teacher` a quien tenga `role: 'ALUMNO'` en el token. Con el refresco roto, un token viejo podía decir otra cosa que la base. Ahora dicen lo mismo.
+
+Pendiente, a propósito:
+
+- [ ] Las tres pantallas no tienen capturas: son un flujo con estado y el script de capturas sólo saca pantallas por URL. Hay captura de la primera (la elección de rol para una cuenta nueva).
+- [ ] No se probó la segunda pantalla con un código real (entrar al grupo desde ahí), ni el caso "ya estás en el grupo".
+- [ ] El invitado no tiene onboarding: llega por el link de su profe y cae directo en su tarea.
 
 ---
 

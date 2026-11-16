@@ -6,6 +6,7 @@ import { Flashcard3D } from '@/components/flashcard-3d'
 import { LaTeXRenderer } from './latex-renderer'
 import { Lightbulb, Sparkles, BookOpen, ChevronRight, RotateCw } from 'lucide-react'
 import type { StudentTip } from '@/lib/types'
+import { MI_PROGRESO } from '@/lib/textos'
 
 interface TipsChestProps {
   tips: StudentTip[]
@@ -16,13 +17,13 @@ interface TipsChestProps {
 export function TipsChest({ tips, limit }: TipsChestProps) {
   if (!tips || tips.length === 0) {
     return (
-      <Card className="p-8 text-center bg-card/60 backdrop-blur border-2 border-dashed border-border rounded-3xl">
-        <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
+      <Card className="p-8 text-center bg-card/60 border-2 border-dashed border-border rounded-3xl">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-flojo/10 flex items-center justify-center text-flojo">
           <Lightbulb className="w-7 h-7" />
         </div>
-        <h3 className="font-bold text-lg text-foreground mb-1">Cofre de Tips Vacío</h3>
+        <h3 className="font-bold text-lg text-foreground mb-1">{MI_PROGRESO.tips.vacio.titulo}</h3>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-          Cada vez que le pidas a la IA que te explique un error, extraerá automáticamente su mejor consejo y lo guardará aquí como apunte de estudio para tus exámenes.
+          {MI_PROGRESO.tips.vacio.detalle}
         </p>
       </Card>
     )
@@ -35,13 +36,13 @@ export function TipsChest({ tips, limit }: TipsChestProps) {
       {limit && (
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white shadow-sm">
-              <Sparkles className="w-4 h-4 fill-white" />
+            <div className="w-8 h-8 rounded-xl bg-flojo flex items-center justify-center text-texto-sobre-accion">
+              <Sparkles className="w-4 h-4 fill-texto-sobre-accion" />
             </div>
-            <h3 className="font-bold text-foreground text-lg">Mis Apuntes e Ideas Clave</h3>
+            <h3 className="font-bold text-foreground text-lg">{MI_PROGRESO.tips.resumenTitulo}</h3>
           </div>
-          <Link href="/tips" className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:translate-x-0.5 transition-transform shrink-0">
-            Ver todos
+          <Link href="/history?tab=tips" className="flex items-center gap-1 text-xs font-bold text-flojo dark:text-flojo hover:translate-x-0.5 transition-transform shrink-0">
+            {MI_PROGRESO.tips.verTodos}
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -54,15 +55,15 @@ export function TipsChest({ tips, limit }: TipsChestProps) {
             <Flashcard3D
               key={tipId}
               front={
-                <Card className="h-full w-full p-5 flex flex-col justify-between border-2 border-amber-200/80 bg-gradient-to-br from-amber-50/70 to-yellow-50/50 rounded-2xl">
+                <Card className="h-full w-full p-5 flex flex-col justify-between border-2 border-flojo/80 bg-flojo-fondo/70 rounded-2xl">
                   <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-flojo/10 border border-flojo/20 flex items-center justify-center text-flojo dark:text-flojo shrink-0">
                       <BookOpen className="w-5 h-5" />
                     </div>
-                    <RotateCw className="w-4 h-4 text-amber-500/50" />
+                    <RotateCw className="w-4 h-4 text-flojo/50" />
                   </div>
                   <div>
-                    <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider capitalize">
+                    <p className="text-[11px] font-bold text-flojo dark:text-flojo uppercase tracking-wider capitalize">
                       {tipItem.subject || 'General'}
                     </p>
                     <h4 className="font-bold text-foreground leading-snug mt-0.5">{tipItem.topicName}</h4>
@@ -71,11 +72,11 @@ export function TipsChest({ tips, limit }: TipsChestProps) {
                 </Card>
               }
               back={
-                <Card className="h-full w-full p-5 flex flex-col justify-between border-2 border-amber-300 bg-amber-50 dark:bg-amber-950/30 rounded-2xl overflow-y-auto">
+                <Card className="h-full w-full p-5 flex flex-col justify-between border-2 border-flojo bg-flojo-fondo dark:bg-flojo-fondo/30 rounded-2xl overflow-y-auto">
                   <div className="space-y-2">
                     {tipItem.misconceptionType && (
-                      <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">
-                        ⚠️ {tipItem.misconceptionType}
+                      <div className="text-xs text-flojo dark:text-flojo font-medium">
+                        {tipItem.misconceptionType}
                       </div>
                     )}
                     <div className="text-sm text-foreground/90 font-medium leading-relaxed">

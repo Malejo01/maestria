@@ -1,10 +1,13 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { BadgeCheck, Lightbulb, Loader2, Target } from 'lucide-react'
+import { BadgeCheck, Lightbulb, Target } from 'lucide-react'
 import { AccuracyBar, formatDateTime, formatScore } from '@/components/classroom-report-parts'
 
 interface StudentAttempt {
@@ -89,7 +92,7 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
           <DialogTitle className="flex items-center gap-2">
             {student?.displayName}
             {student?.isVerified ? (
-              <BadgeCheck className="w-4 h-4 text-emerald-600" aria-label="Cuenta verificada" />
+              <BadgeCheck className="w-4 h-4 text-logrado" aria-label="Cuenta verificada" />
             ) : (
               <Badge variant="outline" className="h-5 text-[10px] px-1.5">
                 sin verificar
@@ -101,7 +104,7 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
 
         {isLoading && (
           <p className="text-sm text-muted-foreground flex items-center gap-2">
-            <Loader2 className="w-4 h-4 animate-spin" /> Cargando ficha...
+            <Cargando className="w-4 h-4" /> Cargando ficha...
           </p>
         )}
 
@@ -161,7 +164,7 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
                               <span className="text-xs text-muted-foreground"> · intento {attempt.attemptNumber}</span>
                             ) : null}
                           </td>
-                          <td className={`py-2 pr-3 font-semibold ${attempt.passed ? 'text-emerald-700' : 'text-destructive'}`}>
+                          <td className={`py-2 pr-3 font-semibold ${attempt.passed ? 'text-logrado' : 'text-destructive'}`}>
                             {formatScore(attempt.score)}
                           </td>
                           <td className="py-2 pr-3 text-muted-foreground">

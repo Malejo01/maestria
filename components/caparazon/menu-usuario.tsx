@@ -1,8 +1,12 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useState } from 'react'
 import Link from 'next/link'
-import { signOut, useSession } from 'next-auth/react'
+import { signOut } from 'next-auth/react'
+import { useRefrescarSesion } from '@/hooks/use-refrescar-sesion'
 import { ArrowLeftRight, ExternalLink, LogOut, Undo2 } from 'lucide-react'
 import {
   AlertDialog,
@@ -21,7 +25,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Boton } from '@/components/sistema/boton'
-import { Cargando } from '@/components/sistema/cargando'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { inicioDe } from '@/lib/navegacion'
 import { CUENTA } from '@/lib/textos'
@@ -56,7 +59,7 @@ export function MenuUsuario({
   /** Un docente mirando las pantallas de alumno. */
   vistaPrevia: boolean
 }) {
-  const { update: actualizarSesion } = useSession()
+  const actualizarSesion = useRefrescarSesion()
   const [confirmando, setConfirmando] = useState(false)
   const [cambiando, setCambiando] = useState(false)
   const [fallo, setFallo] = useState(false)

@@ -1,5 +1,7 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -7,7 +9,7 @@ import { useAppStore } from '@/lib/store'
 import { StreakBadge } from './streak-badge'
 import { MathBackground } from './math-background'
 import { LaTeXRenderer } from './latex-renderer'
-import { Home, RotateCcw, TrendingUp, TrendingDown, Sparkles, XCircle, CheckCircle, ChevronDown, ChevronUp, AlertCircle, Loader2, Lightbulb, History } from 'lucide-react'
+import { Home, RotateCcw, TrendingUp, TrendingDown, Sparkles, XCircle, CheckCircle, ChevronDown, ChevronUp, AlertCircle, Lightbulb, History } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import confetti from 'canvas-confetti'
 import type { Answer } from '@/lib/types'
@@ -19,6 +21,15 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { aiCutoffMessage } from '@/lib/ai-cutoff-message'
+
+/**
+ * Los colores del papel picado, leídos de los tokens del modo activo. El
+ * canvas no entiende variables CSS, así que se resuelven al momento.
+ */
+function coloresDelSistema(): string[] {
+  const estilo = getComputedStyle(document.documentElement)
+  return ['--accion', '--logrado', '--flojo'].map((token) => estilo.getPropertyValue(token).trim())
+}
 
 export function ResultsScreen() {
   const { currentQuiz, userProgress, resetQuiz, setActiveView, startQuiz } = useAppStore()
@@ -120,14 +131,14 @@ export function ResultsScreen() {
           angle: 60,
           spread: 55,
           origin: { x: 0 },
-          colors: ['#6366f1', '#22c55e', '#f59e0b']
+          colors: coloresDelSistema()
         })
         confetti({
           particleCount: 3,
           angle: 120,
           spread: 55,
           origin: { x: 1 },
-          colors: ['#6366f1', '#22c55e', '#f59e0b']
+          colors: coloresDelSistema()
         })
 
         if (Date.now() < end) {
@@ -269,27 +280,24 @@ export function ResultsScreen() {
     if (results.score < 6) {
       return {
         badgeText: 'A seguir practicando',
-        title: isPrimario ? '¡A no desanimarse! 💡' : '¡Sigue practicando!',
+        title: isPrimario ? '¡A no desanimarse!' : '¡Sigue practicando!',
         subtitle: isPrimario ? 'Cada error es una oportunidad para aprender. ¡Mirá tus recomendaciones abajo!' : 'Repasá los temas fallados para mejorar tu rendimiento.',
-        badgeClass: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30',
-        emojiIcon: '💡',
+        badgeClass: 'bg-flojo/10 text-flojo dark:text-flojo border border-flojo/30',
       }
     }
     if (results.score < 9) {
       return {
         badgeText: '¡Buen trabajo!',
-        title: isPrimario ? '¡Muy bien hecho! 🌟' : '¡Buen trabajo!',
+        title: isPrimario ? '¡Muy bien hecho!' : '¡Buen trabajo!',
         subtitle: isPrimario ? '¡Estás aprendiendo muchísimo! Mirá los detalles para perfeccionarlo.' : '¡Gran avance en la materia!',
-        badgeClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
-        emojiIcon: '🌟',
+        badgeClass: 'bg-logrado/10 text-logrado dark:text-logrado border border-logrado/30',
       }
     }
     return {
       badgeText: '¡Excelente!',
-      title: isPrimario ? '¡ESPECTACULAR! 🚀' : '¡Excelente trabajo!',
+      title: isPrimario ? '¡Espectacular!' : '¡Excelente trabajo!',
       subtitle: isPrimario ? '¡Sos un/a genio/a! Dominaste este cuestionario por completo.' : '¡Rendimiento sobresaliente!',
-      badgeClass: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30',
-      emojiIcon: '🚀',
+      badgeClass: 'bg-accion/10 text-accion dark:text-accion border border-accion/30',
     }
   }
 
@@ -302,10 +310,9 @@ export function ResultsScreen() {
       {/* Header */}
       <header className="px-4 py-8 text-center relative z-10 space-y-2">
         <div className={cn(
-          'inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-xs shadow-sm',
+          'inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold text-xs',
           emotionalInfo.badgeClass
         )}>
-          <span>{emotionalInfo.emojiIcon}</span>
           <span>{emotionalInfo.badgeText}</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-black text-foreground">
@@ -320,30 +327,30 @@ export function ResultsScreen() {
       <main className="px-4 pb-[calc(9rem+env(safe-area-inset-bottom))] space-y-5 relative z-10">
         {/* Score Card */}
         <Card className={cn(
-          'p-6 text-center border-2 overflow-hidden relative rounded-3xl shadow-xl',
+          'p-6 text-center border-2 overflow-hidden relative rounded-3xl',
           results.passed 
-            ? 'border-[var(--analysis)]/30 bg-gradient-to-br from-[var(--analysis-light)] to-white' 
-            : 'border-orange-200 bg-gradient-to-br from-orange-50 to-white'
+            ? 'border-logrado/30 bg-logrado-fondo' 
+            : 'border-flojo bg-flojo-fondo '
         )}>
           {results.passed && (
             <>
-              <Sparkles className="absolute top-4 left-4 w-6 h-6 text-[var(--analysis)]/40" />
-              <Sparkles className="absolute top-8 right-6 w-4 h-4 text-[var(--analysis)]/30" />
+              <Sparkles className="absolute top-4 left-4 w-6 h-6 text-logrado/40" />
+              <Sparkles className="absolute top-8 right-6 w-4 h-4 text-logrado/30" />
             </>
           )}
           
           <div className="relative">
             <div className={cn(
               'w-36 h-36 mx-auto rounded-3xl flex items-center justify-center',
-              'border-4 shadow-xl',
+              'border-4',
               results.passed 
-                ? 'border-[var(--analysis)] bg-white shadow-[var(--analysis)]/30' 
-                : 'border-orange-400 bg-white shadow-orange-400/30'
+                ? 'border-logrado bg-superficie-tarjeta' 
+                : 'border-flojo bg-superficie-tarjeta '
             )}>
               <div>
                 <span className={cn(
                   'text-5xl font-black',
-                  results.passed ? 'text-[var(--analysis)]' : 'text-orange-500'
+                  results.passed ? 'text-logrado' : 'text-flojo'
                 )}>
                   {results.score.toFixed(2)}
                 </span>
@@ -352,15 +359,15 @@ export function ResultsScreen() {
             </div>
 
             <div className={cn(
-              'absolute -top-2 right-1/4 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg',
+              'absolute -top-2 right-1/4 w-12 h-12 rounded-2xl flex items-center justify-center',
               results.passed 
-                ? 'bg-gradient-to-br from-[var(--analysis)] to-emerald-400 shadow-[var(--analysis)]/40' 
-                : 'bg-gradient-to-br from-orange-400 to-red-400 shadow-orange-400/40'
+                ?' bg-logrado' 
+                :' bg-flojo '
             )}>
               {results.passed ? (
-                <TrendingUp className="w-6 h-6 text-white" />
+                <TrendingUp className="w-6 h-6 text-texto-sobre-accion" />
               ) : (
-                <TrendingDown className="w-6 h-6 text-white" />
+                <TrendingDown className="w-6 h-6 text-texto-sobre-accion" />
               )}
             </div>
           </div>
@@ -376,7 +383,7 @@ export function ResultsScreen() {
         </Card>
 
         {/* Streak Card */}
-        <Card className="p-5 border-2 border-border bg-card/90 backdrop-blur-sm">
+        <Card className="p-5 border-2 border-border bg-card/90">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-foreground">Tu Racha</h3>
@@ -398,18 +405,18 @@ export function ResultsScreen() {
             className={cn(
               'p-4 border-2 cursor-pointer transition-all',
               showCorrect 
-                ? 'border-[var(--analysis)] bg-[var(--analysis-light)] shadow-lg' 
-                : 'border-[var(--analysis)]/30 bg-[var(--analysis-light)]/50 hover:bg-[var(--analysis-light)]'
+                ? 'border-logrado bg-logrado-fondo' 
+                : 'border-logrado/30 bg-logrado-fondo/50 hover:bg-logrado-fondo'
             )}
             onClick={() => { setShowCorrect(!showCorrect); setShowIncorrect(false) }}
           >
             <div className="flex flex-col items-center text-center">
-              <div className="w-12 h-12 rounded-2xl bg-[var(--analysis)] flex items-center justify-center mb-2">
-                <CheckCircle className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 rounded-2xl bg-logrado flex items-center justify-center mb-2">
+                <CheckCircle className="w-6 h-6 text-texto-sobre-accion" />
               </div>
-              <span className="text-3xl font-black text-[var(--analysis)]">{results.correct}</span>
+              <span className="text-3xl font-black text-logrado">{results.correct}</span>
               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wide mt-1">Correctas</span>
-              <div className="flex items-center gap-1 mt-2 text-[var(--analysis)]">
+              <div className="flex items-center gap-1 mt-2 text-logrado">
                 <span className="text-xs font-semibold">Ver</span>
                 {showCorrect ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </div>
@@ -419,14 +426,14 @@ export function ResultsScreen() {
             className={cn(
               'p-4 border-2 cursor-pointer transition-all',
               showIncorrect 
-                ? 'border-destructive bg-destructive/10 shadow-lg' 
+                ? 'border-destructive bg-destructive/10' 
                 : 'border-destructive/30 bg-destructive/5 hover:bg-destructive/10'
             )}
             onClick={() => { setShowIncorrect(!showIncorrect); setShowCorrect(false) }}
           >
             <div className="flex flex-col items-center text-center">
               <div className="w-12 h-12 rounded-2xl bg-destructive flex items-center justify-center mb-2">
-                <XCircle className="w-6 h-6 text-white" />
+                <XCircle className="w-6 h-6 text-texto-sobre-accion" />
               </div>
               <span className="text-3xl font-black text-destructive">{results.total - results.correct}</span>
               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wide mt-1">Incorrectas</span>
@@ -440,16 +447,16 @@ export function ResultsScreen() {
 
         {/* Correct Answers List */}
         {showCorrect && results.correctAnswers.length > 0 && (
-          <div className="space-y-3 animate-in fade-in-50 slide-in-from-top-4">
+          <div className="space-y-3 fade-in-50 slide-in-from-top-4">
             <h3 className="font-bold text-foreground flex items-center gap-2 px-1">
-              <CheckCircle className="w-5 h-5 text-[var(--analysis)]" />
+              <CheckCircle className="w-5 h-5 text-logrado" />
               Respuestas Correctas
             </h3>
             {results.correctAnswers.map((answer, i) => (
-              <Card key={answer.questionId} className="p-4 border-2 border-[var(--analysis)]/30 bg-[var(--analysis-light)]">
+              <Card key={answer.questionId} className="p-4 border-2 border-logrado/30 bg-logrado-fondo">
                 <div className="space-y-2">
                   <div className="flex items-start gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-[var(--analysis)] text-white text-xs font-bold flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-lg bg-logrado text-texto-sobre-accion text-xs font-bold flex items-center justify-center shrink-0">
                       {i + 1}
                     </span>
                     <div className="flex-1">
@@ -461,8 +468,8 @@ export function ResultsScreen() {
                       </p>
                     </div>
                   </div>
-                  <div className="ml-8 p-2 bg-white rounded-lg border border-[var(--analysis)]/20">
-                    <p className="text-sm text-[var(--analysis)] font-semibold">
+                  <div className="ml-8 p-2 bg-superficie-tarjeta rounded-lg border border-logrado/20">
+                    <p className="text-sm text-logrado font-semibold">
                       <LaTeXRenderer content={answerRecapLine(answer, 'correct')} />
                     </p>
                   </div>
@@ -474,7 +481,7 @@ export function ResultsScreen() {
 
         {/* Incorrect Answers List */}
         {showIncorrect && results.incorrectAnswers.length > 0 && (
-          <div className="space-y-3 animate-in fade-in-50 slide-in-from-top-4">
+          <div className="space-y-3 fade-in-50 slide-in-from-top-4">
             <h3 className="font-bold text-foreground flex items-center gap-2 px-1">
               <XCircle className="w-5 h-5 text-destructive" />
               Respuestas Incorrectas
@@ -483,7 +490,7 @@ export function ResultsScreen() {
               <Card key={answer.questionId} className="p-4 border-2 border-destructive/30 bg-destructive/5">
                 <div className="space-y-3">
                   <div className="flex items-start gap-2">
-                    <span className="w-6 h-6 rounded-lg bg-destructive text-white text-xs font-bold flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-lg bg-destructive text-texto-sobre-accion text-xs font-bold flex items-center justify-center shrink-0">
                       {i + 1}
                     </span>
                     <div className="flex-1">
@@ -502,8 +509,8 @@ export function ResultsScreen() {
                         Tu respuesta: <LaTeXRenderer content={answerRecapLine(answer, 'selected')} />
                       </p>
                     </div>
-                    <div className="p-2 bg-[var(--analysis-light)] rounded-lg border border-[var(--analysis)]/20">
-                      <p className="text-sm text-[var(--analysis)] font-semibold">
+                    <div className="p-2 bg-logrado-fondo rounded-lg border border-logrado/20">
+                      <p className="text-sm text-logrado font-semibold">
                         Correcta: <LaTeXRenderer content={answerRecapLine(answer, 'correct')} />
                       </p>
                     </div>
@@ -532,7 +539,7 @@ export function ResultsScreen() {
                     >
                       {loadingExplanation === answer.questionId ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <Cargando className="w-4 h-4" />
                           Cargando...
                         </>
                       ) : (
@@ -551,23 +558,23 @@ export function ResultsScreen() {
       </main>
 
       {/* Fixed Action Buttons */}
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t-2 border-border bg-card/95 backdrop-blur-xl px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-12px_30px_rgba(15,23,42,0.12)]">
+      <div className="fixed bottom-0 left-0 right-0 z-20 border-t-2 border-border bg-card/95 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]">
         <div className="max-w-md mx-auto space-y-2.5">
           {!results.passed && (
             <Button
               onClick={() => handleRetry('practico')}
               disabled={isRetrying}
-              className="w-full h-13 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-sm gap-2 shadow-lg active:scale-95 transition-all"
+              className="w-full h-13 rounded-2xl bg-flojo hover:bg-flojo text-texto-sobre-accion font-bold text-sm gap-2 active:scale-95 transition-all"
             >
               {isRetrying ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin fill-white" />
+                  <Cargando className="w-5 h-5 fill-texto-sobre-accion" />
                   <span>Generando Revancha...</span>
                 </>
               ) : (
                 <>
-                  <RotateCcw className="w-5 h-5 text-white" />
-                  <span>⚡ ¡Tomar Revancha de todo el Cuestionario!</span>
+                  <RotateCcw className="w-5 h-5 text-texto-sobre-accion" />
+                  <span>Tomar revancha de todo el cuestionario</span>
                 </>
               )}
             </Button>
@@ -583,7 +590,7 @@ export function ResultsScreen() {
               >
                 {isRetrying ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Cargando className="w-4 h-4" />
                     <span>Generando...</span>
                   </>
                 ) : (
@@ -609,9 +616,9 @@ export function ResultsScreen() {
             <Button
               onClick={handleGoHome}
               className={cn(
-                'flex-1 h-13 gap-2 rounded-2xl font-bold shadow-lg text-sm text-white',
-                'bg-gradient-to-r from-[var(--algebra)] to-[var(--analysis)]',
-                'hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all'
+                'flex-1 h-13 gap-2 rounded-2xl font-bold text-sm text-texto-sobre-accion',
+                ' bg-[var(--algebra)]',
+                ' hover:scale-[1.02] active:scale-[0.98] transition-all'
               )}
             >
               <Home className="w-4 h-4" />

@@ -1,9 +1,12 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { usePathname } from 'next/navigation'
-import { CheckCircle2, Loader2, MessageSquareWarning, X } from 'lucide-react'
+import { CheckCircle2, MessageSquareWarning, X } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
@@ -244,7 +247,7 @@ export function FeedbackButton() {
             id={panelId}
             role="dialog"
             aria-label="Reportar un problema"
-            className="flex max-h-[min(80dvh,calc(100dvh_-_var(--feedback-bottom)_-_5rem))] w-[calc(100vw_-_2rem)] flex-col overflow-hidden sm:w-[22rem] origin-bottom-right rounded-3xl border border-border/60 bg-card shadow-2xl"
+            className="flex max-h-[min(80dvh,calc(100dvh_-_var(--feedback-bottom)_-_5rem))] w-[calc(100vw_-_2rem)] flex-col overflow-hidden sm:w-[22rem] origin-bottom-right rounded-3xl border border-border/60 bg-card "
           >
             <div className="flex shrink-0 items-start justify-between gap-3 px-5 pt-4">
               <div>
@@ -263,7 +266,7 @@ export function FeedbackButton() {
 
             {status === 'sent' ? (
               <div className="flex min-h-0 flex-col items-center gap-3 overflow-y-auto px-5 py-8 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-logrado/15 text-logrado dark:text-logrado">
                   <CheckCircle2 className="h-6 w-6" />
                 </div>
                 <div className="space-y-1">
@@ -306,9 +309,9 @@ export function FeedbackButton() {
                 <button
                   type="submit"
                   disabled={status === 'sending' || !description.trim()}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-md transition-all hover:bg-primary/90 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
+                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground transition-all hover:bg-primary/90 active:scale-95 disabled:pointer-events-none disabled:opacity-40"
                 >
-                  {status === 'sending' && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {status === 'sending' && <Cargando className="h-4 w-4" />}
                   {status === 'sending' ? 'Enviando...' : 'Enviar reporte'}
                 </button>
               </form>
@@ -328,7 +331,7 @@ export function FeedbackButton() {
         className={cn(
           // px-3.5 no es arbitrario: 14 + 20 (ícono) + 14 = 48 = h-12, así que
           // colapsado el botón es un círculo exacto y no un óvalo.
-          'group flex h-12 items-center rounded-full border border-border/60 bg-card px-3.5 text-sm font-semibold text-foreground shadow-lg transition-colors hover:bg-secondary',
+          'group flex h-12 items-center rounded-full border border-border/60 bg-card px-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary',
           open && 'bg-secondary'
         )}
       >

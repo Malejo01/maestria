@@ -38,85 +38,24 @@ interface SubjectColorClasses {
   border: string
 }
 
-export const SUBJECT_COLOR_CLASS: Record<SubjectColorName, SubjectColorClasses> = {
-  teal: {
-    active: 'bg-teal-500 text-white border-teal-500 shadow-lg shadow-teal-500/30',
-    inactive: 'bg-teal-100 text-teal-700 border-teal-300 hover:border-teal-500',
-    chip: 'bg-teal-500',
-    text: 'text-teal-600',
-    iconBg: 'bg-teal-100',
-    border: 'border-teal-300',
-  },
-  blue: {
-    active: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/30',
-    inactive: 'bg-blue-100 text-blue-700 border-blue-300 hover:border-blue-500',
-    chip: 'bg-blue-500',
-    text: 'text-blue-600',
-    iconBg: 'bg-blue-100',
-    border: 'border-blue-300',
-  },
-  orange: {
-    active: 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/30',
-    inactive: 'bg-orange-100 text-orange-700 border-orange-300 hover:border-orange-500',
-    chip: 'bg-orange-500',
-    text: 'text-orange-600',
-    iconBg: 'bg-orange-100',
-    border: 'border-orange-300',
-  },
-  green: {
-    active: 'bg-green-500 text-white border-green-500 shadow-lg shadow-green-500/30',
-    inactive: 'bg-green-100 text-green-700 border-green-300 hover:border-green-500',
-    chip: 'bg-green-500',
-    text: 'text-green-600',
-    iconBg: 'bg-green-100',
-    border: 'border-green-300',
-  },
-  red: {
-    active: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/30',
-    inactive: 'bg-red-100 text-red-700 border-red-300 hover:border-red-500',
-    chip: 'bg-red-500',
-    text: 'text-red-600',
-    iconBg: 'bg-red-100',
-    border: 'border-red-300',
-  },
-  indigo: {
-    active: 'bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-500/30',
-    inactive: 'bg-indigo-100 text-indigo-700 border-indigo-300 hover:border-indigo-500',
-    chip: 'bg-indigo-500',
-    text: 'text-indigo-600',
-    iconBg: 'bg-indigo-100',
-    border: 'border-indigo-300',
-  },
-  amber: {
-    active: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/30',
-    inactive: 'bg-amber-100 text-amber-700 border-amber-300 hover:border-amber-500',
-    chip: 'bg-amber-500',
-    text: 'text-amber-600',
-    iconBg: 'bg-amber-100',
-    border: 'border-amber-300',
-  },
-  cyan: {
-    active: 'bg-cyan-500 text-white border-cyan-500 shadow-lg shadow-cyan-500/30',
-    inactive: 'bg-cyan-100 text-cyan-700 border-cyan-300 hover:border-cyan-500',
-    chip: 'bg-cyan-500',
-    text: 'text-cyan-600',
-    iconBg: 'bg-cyan-100',
-    border: 'border-cyan-300',
-  },
-  emerald: {
-    active: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/30',
-    inactive: 'bg-emerald-100 text-emerald-700 border-emerald-300 hover:border-emerald-500',
-    chip: 'bg-emerald-500',
-    text: 'text-emerald-600',
-    iconBg: 'bg-emerald-100',
-    border: 'border-emerald-300',
-  },
-  pink: {
-    active: 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/30',
-    inactive: 'bg-pink-100 text-pink-700 border-pink-300 hover:border-pink-500',
-    chip: 'bg-pink-500',
-    text: 'text-pink-600',
-    iconBg: 'bg-pink-100',
-    border: 'border-pink-300',
-  },
+/**
+ * Un solo azul. Antes cada materia tenía su color (verde agua, naranja, rosa…)
+ * y el panel se llenaba de colores que no significaban nada. El sistema de
+ * diseño reserva el color para lo que informa: acción, dominado, flojo
+ * (design-reference/sistema/brand-book.md).
+ *
+ * `color_name` se sigue guardando en cada materia —y el tipo se conserva— para
+ * no tocar el modelo de datos; simplemente ya no cambia cómo se ve.
+ */
+const UN_SOLO_AZUL: SubjectColorClasses = {
+  active: 'bg-accion text-texto-sobre-accion border-accion',
+  inactive: 'bg-superficie-suave text-accion border-accion-tenue-borde hover:border-accion',
+  chip: 'bg-accion',
+  text: 'text-accion',
+  iconBg: 'bg-superficie-suave',
+  border: 'border-borde',
 }
+
+export const SUBJECT_COLOR_CLASS: Record<SubjectColorName, SubjectColorClasses> = Object.fromEntries(
+  SUBJECT_COLOR_OPTIONS.map((nombre) => [nombre, UN_SOLO_AZUL]),
+) as Record<SubjectColorName, SubjectColorClasses>

@@ -1,10 +1,13 @@
 'use client'
 
+import { Cargando } from '@/components/sistema/cargando'
+
+
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { pedirJson } from '@/lib/pedir-json'
 import { cn } from '@/lib/utils'
-import { AlertTriangle, ChevronDown, ChevronUp, ClipboardList, Loader2 } from 'lucide-react'
+import { AlertTriangle, ChevronDown, ChevronUp, ClipboardList } from 'lucide-react'
 import {
   CHANCE_FLOOR,
   QUESTION_TYPE_LABEL,
@@ -113,7 +116,7 @@ export function DiagnosticReportCard({ defaultOpen = true }: { defaultOpen?: boo
   if (loading) {
     return (
       <Card className="p-4 border-2 border-border/80 rounded-2xl flex items-center gap-3">
-        <Loader2 className="w-4 h-4 animate-spin text-primary" />
+        <Cargando className="w-4 h-4 text-primary" />
         <span className="text-sm text-muted-foreground">Buscando tu diagnóstico…</span>
       </Card>
     )
@@ -183,13 +186,13 @@ export function DiagnosticReportView({
           {/* No se esconde: quince alumnos respondieron bien y el sistema los
               reprobó. Merecen leerlo antes que cualquier número. */}
           {report.shortAnswerTotal > 0 && (
-            <div className="flex gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
-              <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+            <div className="flex gap-3 p-3 rounded-xl bg-flojo/10 border border-flojo/30">
+              <AlertTriangle className="w-4 h-4 text-flojo dark:text-flojo shrink-0 mt-0.5" />
               <div className="text-xs leading-relaxed">
-                <p className="font-bold text-amber-900 dark:text-amber-200">
+                <p className="font-bold text-flojo dark:text-flojo">
                   Hubo un problema técnico con las preguntas de respuesta escrita
                 </p>
-                <p className="text-amber-900/80 dark:text-amber-200/80 mt-1">
+                <p className="text-flojo/80 dark:text-flojo/80 mt-1">
                   Ese día, un error nuestro hizo que el corrector automático no llegara a
                   revisar las respuestas escritas y quedaran marcadas como incorrectas sin
                   haber sido leídas. Te tocaron {report.shortAnswerTotal} de esas preguntas y{' '}

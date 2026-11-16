@@ -44,28 +44,28 @@ export function MultipleChoiceInput({
 
         const containerClass = cn(
           'w-full text-left p-4 rounded-2xl border-2 transition-all duration-200',
-          'touch-manipulation bg-card/80 backdrop-blur-sm',
-          showIncorrect && 'animate-shake',
+          'touch-manipulation bg-card/80',
+          showIncorrect && '',
           editing && (isDraftCorrect
-            ? 'border-[var(--analysis)] bg-[var(--analysis-light)]'
+            ? 'border-logrado bg-logrado-fondo'
             : 'border-border'),
           !editing && disabled && 'border-border opacity-95 cursor-default',
-          !editing && !disabled && !submitted && !isSelected && 'border-border hover:border-[var(--algebra)]/50 hover:shadow-md active:scale-[0.98]',
-          !editing && !disabled && !submitted && isSelected && 'border-[var(--algebra)] bg-[var(--algebra-light)] shadow-lg shadow-[var(--algebra)]/20',
-          !editing && showCorrect && 'border-[var(--analysis)] bg-[var(--analysis-light)] shadow-lg shadow-[var(--analysis)]/20 border-4',
-          !editing && showIncorrect && 'border-destructive bg-destructive/10 shadow-lg shadow-destructive/20 border-4',
+          !editing && !disabled && !submitted && !isSelected && 'border-border hover:border-[var(--algebra)]/50 active:scale-[0.98]',
+          !editing && !disabled && !submitted && isSelected && 'border-[var(--algebra)] bg-[var(--algebra-light)]',
+          !editing && showCorrect && 'border-logrado bg-logrado-fondo border-4',
+          !editing && showIncorrect && 'border-destructive bg-destructive/10 border-4',
           !editing && !disabled && submitted && !showCorrect && !showIncorrect && 'border-border opacity-40'
         )
 
         const badgeClass = cn(
           'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-lg font-bold transition-all border-2',
           !editing && !submitted && !isSelected && 'bg-muted text-muted-foreground border-transparent',
-          !editing && !submitted && isSelected && 'bg-[var(--algebra)] text-white border-[var(--algebra)]',
-          !editing && showCorrect && 'bg-[var(--analysis)] text-white border-[var(--analysis)]',
-          !editing && showIncorrect && 'bg-destructive text-white border-destructive',
+          !editing && !submitted && isSelected && 'bg-[var(--algebra)] text-texto-sobre-accion border-[var(--algebra)]',
+          !editing && showCorrect && 'bg-logrado text-texto-sobre-accion border-logrado',
+          !editing && showIncorrect && 'bg-destructive text-texto-sobre-accion border-destructive',
           editing && (isDraftCorrect
-            ? 'bg-[var(--analysis)] text-white border-[var(--analysis)]'
-            : 'bg-muted text-muted-foreground border-transparent hover:border-[var(--analysis)]/50')
+            ? 'bg-logrado text-texto-sobre-accion border-logrado'
+            : 'bg-muted text-muted-foreground border-transparent hover:border-logrado/50')
         )
 
         const badgeContent = submitted && !editing

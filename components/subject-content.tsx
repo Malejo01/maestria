@@ -47,7 +47,7 @@ const colorConfig = {
     text: 'text-[var(--algebra)]',
     border: 'border-[var(--algebra)]',
     borderLight: 'border-[var(--algebra)]/30',
-    gradient: 'from-[var(--algebra)] to-[var(--algebra)]/80',
+    gradient: 'bg-[var(--algebra)]',
   },
   analisis: {
     bg: 'bg-[var(--analysis)]',
@@ -55,7 +55,7 @@ const colorConfig = {
     text: 'text-[var(--analysis)]',
     border: 'border-[var(--analysis)]',
     borderLight: 'border-[var(--analysis)]/30',
-    gradient: 'from-[var(--analysis)] to-[var(--analysis)]/80',
+    gradient: 'bg-[var(--analysis)]',
   },
   probabilidad: {
     bg: 'bg-[var(--probability)]',
@@ -63,7 +63,7 @@ const colorConfig = {
     text: 'text-[var(--probability)]',
     border: 'border-[var(--probability)]',
     borderLight: 'border-[var(--probability)]/30',
-    gradient: 'from-[var(--probability)] to-[var(--probability)]/80',
+    gradient: 'bg-[var(--probability)]',
   }
 }
 
@@ -444,23 +444,23 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
   }
 
   return (
-    <div className="space-y-5 pb-28 animate-in fade-in-50 slide-in-from-bottom-4 duration-300">
+    <div className="space-y-5 pb-28 fade-in-50 slide-in-from-bottom-4 duration-300">
       {/* Subject Header Card */}
       <Card className={cn('overflow-hidden border-2', colors.borderLight)}>
-        <div className={cn('bg-gradient-to-r p-4 text-white', colors.gradient)}>
+        <div className={cn('p-4 text-texto-sobre-accion', colors.gradient)}>
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold">{subject.name}</h2>
-              <p className="text-white/80 text-sm">{subject.units.length} unidades</p>
+              <p className="text-texto-sobre-accion/80 text-sm">{subject.units.length} unidades</p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-black">{Math.round(progressPercentage)}%</div>
-              <div className="text-white/80 text-xs">completado</div>
+              <div className="text-texto-sobre-accion/80 text-xs">completado</div>
             </div>
           </div>
           <Progress 
             value={progressPercentage} 
-            className="h-2.5 mt-3 bg-white/30 [&>div]:bg-white"
+            className="h-2.5 mt-3 bg-superficie-tarjeta/30 [&>div]:bg-superficie-tarjeta"
           />
         </div>
       </Card>
@@ -468,7 +468,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
       {/* Selected count */}
       {selectedTopics.length > 0 && (
         <div className="text-center">
-          <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-800 rounded-full text-sm font-semibold border-2 border-emerald-300">
+          <span className="inline-flex items-center gap-2 px-4 py-2 bg-logrado-fondo text-logrado rounded-full text-sm font-semibold border-2 border-logrado">
             <Check className="w-4 h-4" />
             {selectedTopics.length} tema{selectedTopics.length !== 1 ? 's' : ''} seleccionado{selectedTopics.length !== 1 ? 's' : ''}
           </span>
@@ -520,7 +520,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
                   )}
                 >
                   <div className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-lg',
+                    'w-10 h-10 rounded-full flex items-center justify-center font-bold text-texto-sobre-accion text-lg',
                     colors.bg
                   )}>
                     {unitIndex + 1}
@@ -573,9 +573,9 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
                               onClick={() => toggleGroup(group.topics)}
                               className={cn(
                                 'flex-1 flex items-center justify-between gap-2 px-3 py-2 rounded-xl border-2 text-xs font-bold',
-                                allSelected && 'bg-emerald-400 border-foreground text-foreground',
-                                someSelected && !allSelected && 'bg-emerald-100 border-emerald-400 text-foreground',
-                                !selectedCount && 'bg-white border-border text-muted-foreground'
+                                allSelected && 'bg-logrado border-foreground text-foreground',
+                                someSelected && !allSelected && 'bg-logrado-fondo border-logrado text-foreground',
+                                !selectedCount && 'bg-superficie-tarjeta border-border text-muted-foreground'
                               )}
                             >
                               <span>{group.group}</span>
@@ -614,17 +614,17 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
                                     'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left',
                                     'border-2',
                                     isSelected
-                                      ? 'bg-emerald-400 border-foreground shadow-md'
-                                      : 'bg-white border-border hover:border-muted-foreground/50 hover:bg-muted/30'
+                                      ? 'bg-logrado border-foreground '
+                                      : 'bg-superficie-tarjeta border-border hover:border-muted-foreground/50 hover:bg-muted/30'
                                   )}
                                 >
                                   <div className={cn(
                                     'w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all',
                                     isSelected
                                       ? 'bg-foreground border-foreground'
-                                      : 'border-muted-foreground/40 bg-white'
+                                      : 'border-muted-foreground/40 bg-superficie-tarjeta'
                                   )}>
-                                    {isSelected && <Check className="w-4 h-4 text-white" strokeWidth={3} />}
+                                    {isSelected && <Check className="w-4 h-4 text-texto-sobre-accion" strokeWidth={3} />}
                                   </div>
                                   <span className={cn(
                                     'flex-1 font-medium text-sm',
@@ -648,7 +648,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
       </div>
 
       {/* Floating Sticky Generar Cuestionario Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t-2 border-border/80 z-30 shadow-2xl transition-all">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 border-t-2 border-border/80 z-30 transition-all">
         <div className="max-w-4xl mx-auto">
           <Button
             onClick={() => setShowModeDialog(true)}
@@ -656,7 +656,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
             className={cn(
               'w-full h-16 text-lg font-bold gap-3 rounded-2xl transition-all duration-300',
               selectedTopics.length > 0
-                ? 'bg-gradient-to-r from-[var(--algebra)] to-[var(--analysis)] text-white shadow-xl hover:shadow-2xl hover:scale-[1.01] active:scale-[0.99] border-0'
+                ?' bg-[var(--algebra)] text-texto-sobre-accion hover:scale-[1.01] active:scale-[0.99] border-0'
                 : 'opacity-45 pointer-events-none bg-muted text-muted-foreground border-2 border-border'
             )}
             size="lg"
@@ -707,10 +707,6 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
             onExportMoodle={handleExportPendingShare}
             isExporting={isExportingMoodle}
             quiz={pendingSharedQuiz}
-            onGoToClassrooms={() => {
-              setShowShareDialog(false)
-              setTeacherSection('aulas')
-            }}
           />
         </>
       )}
