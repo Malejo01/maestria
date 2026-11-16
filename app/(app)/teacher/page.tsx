@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
 import { Boton } from '@/components/sistema/boton'
+import { HitosOnboarding } from '@/components/docente/hitos-onboarding'
 import { SECCION_DOCENTE_POR_DEFECTO, esSeccionDocente } from '@/lib/navegacion'
 import { PANEL_DOCENTE } from '@/lib/textos'
 import { SubjectContent } from '@/components/subject-content'
@@ -35,7 +36,6 @@ import {
   Eye,
   X,
   Download,
-  GraduationCap,
   AlertTriangle,
   Users,
   FilePlus,
@@ -146,11 +146,16 @@ export default function TeacherPage() {
   // La sección la manda la URL (?seccion=), que es lo que marcan las pestañas
   // de la barra: Mis alumnos / Mis materias / Mis tareas. Sin parámetro, la
   // pantalla de inicio del docente es Mis alumnos.
-  const seccionDeLaUrl = useSearchParams().get('seccion')
+  const parametros = useSearchParams()
+  const seccionDeLaUrl = parametros.get('seccion')
+  // `?seccion=tareas&armar=1` abre directo el armado de una tarea nueva.
+  const armarDesdeLaUrl = parametros.get('armar') === '1'
   useEffect(() => {
     const seccion = esSeccionDocente(seccionDeLaUrl) ? seccionDeLaUrl : SECCION_DOCENTE_POR_DEFECTO
-    setTeacherSection(seccion === 'alumnos' ? 'aulas' : seccion === 'materias' ? 'materias' : 'cuestionarios')
-  }, [seccionDeLaUrl, setTeacherSection])
+    setTeacherSection(
+      seccion === 'alumnos' ? 'aulas' : seccion === 'materias' ? 'materias' : armarDesdeLaUrl ? 'crear' : 'cuestionarios',
+    )
+  }, [seccionDeLaUrl, armarDesdeLaUrl, setTeacherSection])
 
   const [activeSubject, setActiveSubject] = useState<string | null>(null)
   const [showCreateWizard, setShowCreateWizard] = useState(false)
@@ -179,31 +184,10 @@ export default function TeacherPage() {
     }
   }, [isSignedIn, userProfile, isTeacher, router])
 
-  // El "ya lo vio" vive en `users.teacher_tour_seen_at` (migración 020), no en
-  // localStorage: es por cuenta y no por navegador, y se estampa recién cuando
-  // el docente CIERRA el tour — ver `dismissOnboarding`. Marcarlo al abrir,
-  // como se hacía antes, hacía que una recarga a destiempo se lo comiera para
-  // siempre.
-  useEffect(() => {
-    if (!isSignedIn || !isTeacher) return
-
-    let isMounted = true
-
-    fetch('/api/teacher/tour')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        // `data === null` es un error de red o un 5xx: se trata como "ya lo
-        // vio". Molestar con el tour a alguien que ya lo completó es peor que
-        // no mostrárselo a alguien nuevo, que igual encuentra los tres caminos
-        // dentro del wizard.
-        if (isMounted && data && !data.seenAt) setShowOnboardingModal(true)
-      })
-      .catch(() => {})
-
-    return () => {
-      isMounted = false
-    }
-  }, [isSignedIn, isTeacher])
+  // Los caminos para armar el temario ya no se abren solos en la primera
+  // visita: los abre el docente desde el primer hito del onboarding
+  // (components/docente/hitos-onboarding.tsx). `teacher_tour_seen_at` se sigue
+  // estampando al cerrarlos — ver `dismissOnboarding`.
 
   /**
    * Cierra el tour y lo da por visto. Se llama tanto si el docente elige un
@@ -531,6 +515,14 @@ export default function TeacherPage() {
 
   return (
     <div className="space-y-4">
+      <HitosOnboarding
+        onCrearMateria={() => setShowOnboardingModal(true)}
+        onCargarTemario={() => router.push('/teacher?seccion=materias')}
+        onArmarTarea={() => router.push('/teacher?seccion=tareas&armar=1')}
+        onMandarTarea={() => router.push('/teacher?seccion=tareas')}
+        refrescarCon={`${teacherPrograms.length}-${teacherQuizzes.length}-${teacherSection}`}
+      />
+
       {/* "Mis tareas" junta dos cosas que todavía son secciones separadas:
           las tareas ya armadas y el armado de una nueva. El bloque 3 del
           rediseño parte esta página; hasta entonces se alterna con estos dos. */}

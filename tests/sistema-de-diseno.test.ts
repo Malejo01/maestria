@@ -20,6 +20,8 @@ const ZONAS_REDISENADAS = [
   'components/sistema',
   'components/entrada',
   'components/caparazon',
+  'components/docente',
+  'components/teacher-onboarding-modal.tsx',
   'app/(entrada)',
   'app/(app)/layout.tsx',
   'app/layout.tsx',

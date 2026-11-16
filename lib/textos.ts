@@ -174,3 +174,91 @@ export const PANEL_DOCENTE = {
   /** Sub-entradas de "Mis tareas" hasta que el bloque 3 parta el panel. */
   tareas: { guardadas: 'Tareas guardadas', armar: 'Armar tarea' },
 } as const
+
+export const ONBOARDING_DOCENTE = {
+  etiqueta: 'Primeros pasos',
+  progreso: (hechos: number, total: number) => `${hechos} de ${total} pasos`,
+  hitos: {
+    materia: 'Tu materia',
+    temario: 'Tu temario',
+    alumno: 'Tu primer alumno',
+    tarea: 'Tu primera tarea',
+  },
+  hecho: 'Hecho',
+  pendiente: 'Pendiente',
+  materia: {
+    titulo: 'Empecemos por tu materia',
+    detalle: 'Decinos qué materia das y cargá el temario. Podés subir el archivo que ya tenés.',
+    boton: 'Crear mi materia',
+  },
+  temario: {
+    titulo: (materia: string) => `Cargá el temario de ${materia}`,
+    detalle: 'Con el temario, MaestrIA sabe sobre qué preguntar. Podés subir el archivo o escribirlo.',
+    boton: 'Cargar el temario',
+  },
+  alumno: {
+    titulo: 'Sumá a tu primer alumno',
+    detalle: 'Le pasás un link y entra con su nombre, sin crear una cuenta.',
+    boton: 'Invitar a mi primer alumno',
+    esperando: {
+      titulo: 'Esperando a tu primer alumno',
+      detalle: 'Cuando entre con el link, lo vas a ver en Mis alumnos.',
+      boton: 'Ver el link de nuevo',
+    },
+    mientrasTanto: 'Mientras tanto, armar la tarea',
+  },
+  tarea: {
+    titulo: 'Armá tu primera tarea',
+    detalle: 'Elegís los temas y MaestrIA arma las preguntas. Las revisás antes de mandarlas.',
+    boton: 'Armar la primera tarea',
+    mandar: {
+      titulo: 'Mandale la tarea a tu grupo',
+      detalle: 'Ya la tenés armada. Elegila en tus tareas guardadas y mandásela.',
+      boton: 'Mandar la tarea',
+    },
+  },
+  listo: {
+    titulo: '¡Listo! Ya mandaste tu primera tarea.',
+    detalle: 'Cuando tus alumnos la resuelvan, acá vas a ver en qué se equivoca cada uno.',
+    boton: 'Cerrar este aviso',
+  },
+  link: {
+    titulo: 'El link para tu alumno',
+    detalle: (materia: string) => `Con este link entra al grupo de ${materia}. Sirve para todos tus alumnos de esa materia.`,
+    preparando: 'Preparando el link…',
+    etiquetaLink: 'Link del grupo',
+    copiar: 'Copiar el link',
+    copiado: 'Link copiado',
+    recordatorio: 'Entra con su nombre. No necesita cuenta.',
+    codigo: (codigo: string) => `También puede escribir el código ${codigo} en la pantalla de inicio.`,
+    fallo: 'No pudimos preparar el link. Probá de nuevo.',
+    reintentar: 'Probar de nuevo',
+    noSeCopio: 'No pudimos copiarlo. Seleccioná el link y copialo a mano.',
+  },
+  queCargamos: 'tu progreso',
+} as const
+
+export const CAMINOS_TEMARIO = {
+  titulo: '¿Cómo querés armar tu temario?',
+  detalle: 'Elegí el camino que te quede más cómodo. Después lo podés editar.',
+  queSigue: 'Qué pasa después',
+  import: {
+    titulo: 'Subir el archivo que ya tengo',
+    para: 'Tenés el temario en PDF, Word o una foto.',
+    despues: 'MaestrIA lo lee y arma las unidades por vos.',
+    boton: 'Subir un archivo',
+  },
+  curriculum: {
+    titulo: 'Usar el plan oficial de la provincia',
+    para: 'Preferís partir de los contenidos oficiales.',
+    despues: 'Cargamos los ejes y temas de tu nivel y año.',
+    boton: 'Ver el plan oficial',
+  },
+  manual: {
+    titulo: 'Escribirlo yo',
+    para: 'Tenés tu propio recorte y lo querés a tu manera.',
+    despues: 'Escribís las unidades a mano.',
+    boton: 'Empezar en blanco',
+  },
+  masTarde: 'Decidir más tarde',
+} as const
