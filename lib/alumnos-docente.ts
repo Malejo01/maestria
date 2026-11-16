@@ -28,8 +28,22 @@ export type EstadoTema = 'dominado' | 'flojo' | 'sin_datos'
  * Con menos respuestas calificadas que esto, el tema está "sin datos". Un tema
  * que el alumno casi no practicó no se pinta de naranja: le haría creer al
  * docente que hay un problema donde sólo hay silencio.
+ *
+ * Cinco alcanzan para SOSPECHAR que un tema está flojo: el costo de equivocarse
+ * es mandar una tarea de más.
  */
-export const MINIMO_DE_RESPUESTAS = 5
+export const RESPUESTAS_PARA_FLOJO = 5
+
+/**
+ * Para AFIRMAR que un tema está dominado hacen falta más. Con cinco respuestas,
+ * cuatro aciertos son un 80 % que puede ser una buena tarde; y el costo de
+ * equivocarse acá es el caro: el docente deja de mirar un tema que no estaba.
+ * Hasta el 16/11/2026 las dos cosas se decidían con la misma cantidad.
+ *
+ * Entre las dos (5 a 7 respuestas, y le va bien) el tema sigue "sin datos":
+ * todavía no se puede decir ninguna de las dos cosas.
+ */
+export const RESPUESTAS_PARA_DOMINADO = 8
 
 /**
  * Desde esta proporción de aciertos el tema cuenta como dominado; por debajo,
@@ -40,8 +54,9 @@ export const MINIMO_DE_RESPUESTAS = 5
 export const UMBRAL_DOMINADO = 0.7
 
 export function estadoDeTema(correctas: number, calificadas: number): EstadoTema {
-  if (calificadas < MINIMO_DE_RESPUESTAS) return 'sin_datos'
-  return correctas / calificadas >= UMBRAL_DOMINADO ? 'dominado' : 'flojo'
+  if (calificadas < RESPUESTAS_PARA_FLOJO) return 'sin_datos'
+  if (correctas / calificadas < UMBRAL_DOMINADO) return 'flojo'
+  return calificadas >= RESPUESTAS_PARA_DOMINADO ? 'dominado' : 'sin_datos'
 }
 
 export interface TemaDeAlumno {

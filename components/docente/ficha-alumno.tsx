@@ -11,7 +11,14 @@ import { CargaFallida } from '@/components/carga-fallida'
 import { Boton } from '@/components/sistema/boton'
 import { ChipTema } from '@/components/sistema/chip-tema'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
-import { haceCuanto, resumirTemas, type EstadoTema, type TemaDeAlumno } from '@/lib/alumnos-docente'
+import {
+  RESPUESTAS_PARA_DOMINADO,
+  RESPUESTAS_PARA_FLOJO,
+  haceCuanto,
+  resumirTemas,
+  type EstadoTema,
+  type TemaDeAlumno,
+} from '@/lib/alumnos-docente'
 import type { FichaAlumno as Ficha } from '@/lib/alumnos-docente-server'
 import { CHIP_TEMA, FICHA_ALUMNO as T } from '@/lib/textos'
 import { cn } from '@/lib/utils'
@@ -101,7 +108,7 @@ export function FichaAlumno({ userId }: { userId: string }) {
         <h2 id="ficha-temas" className="titulo-m text-texto">
           {T.temas.titulo}
         </h2>
-        <p className="nota mt-1 text-texto-suave">{T.temas.detalle}</p>
+        <p className="nota mt-1 text-texto-suave">{T.temas.detalle(RESPUESTAS_PARA_FLOJO, RESPUESTAS_PARA_DOMINADO)}</p>
         {ficha.temas.length === 0 ? (
           <p className="cuerpo-s mt-4 text-texto-suave">{T.temas.vacio}</p>
         ) : (

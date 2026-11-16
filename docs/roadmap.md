@@ -139,7 +139,7 @@ Pendiente, a propósito:
 Decisiones:
 
 - **"Cómo le va en un tema" sale de `quiz_attempts.topics[]`**, no de `quiz_answers.topic_name` ni de `topic_mastery` (las dos que este documento ya midió como inservibles). El costo: la cuenta es por intento, así que un intento de tres temas le suma a los tres.
-- **Umbrales, en `lib/alumnos-docente.ts`**: menos de 5 respuestas calificadas es "sin datos"; desde 70 % de aciertos es dominado y por debajo flojo. **Es un criterio de producto y lo decide Mauro**; se cambia en dos constantes.
+- **Umbrales, en `lib/alumnos-docente.ts`**: menos de 5 respuestas calificadas es "sin datos"; desde 70 % de aciertos es dominado y por debajo flojo. (Desde B1, 16/11: dominado pide además 8 respuestas.) **Es un criterio de producto y lo decide Mauro**; se cambia en dos constantes.
 - **Privacidad:** todo se filtra por los grupos del docente. Lo que el alumno practicó por su cuenta o con otro docente no aparece.
 - **Las invitaciones no tienen columna de "aceptada".** Cuando entra al grupo alguien con el mismo nombre, el listado los funde al leer y el alumno hereda el contexto. Marcarla obligaba a tocar el ingreso al grupo, que está en uso. Si el alumno entra con otro nombre ("Sofi"), el docente ve dos filas y quita la pendiente.
 - **Sin sugerencia cuando no hace falta.** Si a todos les va bien y practicaron hace poco, la tarjeta no aparece.
@@ -300,6 +300,10 @@ Los siete bloques están en `main` (`f0911c3`) y la 025 corrida en producción. 
 - [x] **A5 · Recorrido completo a 390×844, en los dos modos** (rama `chore/a5-recorrido-celular`). 18 pantallas × 2 modos en `docs/capturas/a5-celular/`: entrada, ingreso de alumno y de docente, link de grupo, Mis tareas, cuestionario, resultados (como llega y con las incorrectas abiertas), explicación, Practicar, Mi progreso; y del docente Mis alumnos, Mis materias, Mis tareas, la ficha de un alumno y el diálogo de agregar alumno. **Sin código de producto**: sólo capturas, y `scripts/capturas.mjs` ahora encadena varios pasos en `ANTES=a.js,b.js`. Lo que está mal quedó como tareas F1–F7, abajo.
   - Bien a 390: entrada, ingreso, link de grupo, Mis tareas del alumno, el cuestionario, la explicación, Practicar, Mis alumnos, la ficha y agregar alumno.
   - **Sin recorrer** (y por lo tanto sin verificar en celular): el ingreso por Google de punta a punta; entrar al grupo con nombre (crea un invitado); las preguntas numérica, verdadero/falso y de respuesta corta (la tarea de staging sólo tiene opción múltiple); la revancha; el wizard de temario; armar y mandar una tarea; la vista de planilla; "Mis grupos". El cartel "2 Issues" de la captura de la entrada es del servidor de desarrollo (`Error: aborted`, por el navegador de capturas que se cierra), no de la app.
+
+- [x] **B1 · "Dominado" pide más respuestas que "flojo"** (rama `feat/b1-umbral-dominado`). Las dos cosas se decidían con las mismas 5 respuestas. Ahora son dos constantes con nombre en [lib/alumnos-docente.ts](../lib/alumnos-docente.ts): `RESPUESTAS_PARA_FLOJO = 5` (alcanza para sospechar: equivocarse cuesta una tarea de más) y `RESPUESTAS_PARA_DOMINADO = 8` (para afirmar hace falta más: equivocarse acá hace que el docente deje de mirar un tema). **Entre 5 y 7 respuestas, si le va bien, el tema sigue "sin datos"**; si le va mal ya es flojo. La ficha y el listado usan la misma `estadoDeTema`, y el texto de la ficha arma su frase con las constantes.
+  - Sin verificar: no se miró en pantalla (en staging ningún tema cae entre 5 y 7 respuestas, así que nada cambia de color). Efecto esperable en producción: algunos chips verdes pasan a "sin datos".
+  - **Para Mauro:** el estado intermedio se llama "Sin datos", que no es exactamente cierto (hay datos, no alcanzan). El sistema tiene tres estados de chip; un cuarto es decisión de diseño.
 
 ### Cola nueva, salida de A5 (se hace después de E3)
 

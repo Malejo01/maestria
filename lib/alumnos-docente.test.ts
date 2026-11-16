@@ -8,6 +8,8 @@ import {
   estadoDeTema,
   haceCuanto,
   normalizarNombre,
+  RESPUESTAS_PARA_DOMINADO,
+  RESPUESTAS_PARA_FLOJO,
   resumir,
   resumirTemas,
   temaCorto,
@@ -68,7 +70,28 @@ describe('estadoDeTema', () => {
   it('desde 70 % es dominado; por debajo, flojo', () => {
     expect(estadoDeTema(7, 10)).toBe('dominado')
     expect(estadoDeTema(6, 10)).toBe('flojo')
-    expect(estadoDeTema(5, 5)).toBe('dominado')
+  })
+
+  it('las dos reglas tienen su número, con nombre, y son distintos', () => {
+    expect(RESPUESTAS_PARA_FLOJO).toBe(5)
+    expect(RESPUESTAS_PARA_DOMINADO).toBe(8)
+  })
+
+  it('cinco respuestas alcanzan para sospechar que está flojo', () => {
+    expect(estadoDeTema(1, RESPUESTAS_PARA_FLOJO)).toBe('flojo')
+    expect(estadoDeTema(1, RESPUESTAS_PARA_FLOJO - 1)).toBe('sin_datos')
+  })
+
+  it('cinco respuestas NO alcanzan para afirmar que está dominado', () => {
+    // 5 de 5 es un 100 % que todavía puede ser una buena tarde.
+    expect(estadoDeTema(5, 5)).toBe('sin_datos')
+    expect(estadoDeTema(7, RESPUESTAS_PARA_DOMINADO - 1)).toBe('sin_datos')
+    expect(estadoDeTema(6, RESPUESTAS_PARA_DOMINADO)).toBe('dominado')
+    expect(estadoDeTema(8, RESPUESTAS_PARA_DOMINADO)).toBe('dominado')
+  })
+
+  it('entre 5 y 7 respuestas, mal sigue siendo flojo: la sospecha no espera', () => {
+    expect(estadoDeTema(3, 7)).toBe('flojo')
   })
 })
 
