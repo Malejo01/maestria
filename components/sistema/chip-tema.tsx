@@ -12,6 +12,11 @@ import { cn } from '@/lib/utils'
  *
  * El color nunca va solo: el chip lleva el nombre del tema escrito, y el estado
  * va además en texto para lectores de pantalla.
+ *
+ * K7: ese texto oculto es una prop (`anuncio`). Por defecto dice el estado del
+ * tema ("Dominado", "Flojo"); con `anuncio={null}` el chip anuncia sólo lo que
+ * muestra. El diagnóstico lo usa así: su chip dice "Acertó" y una sola
+ * pregunta no alcanza para decir que un tema está dominado.
  */
 const CLASES: Record<EstadoTema, string> = {
   dominado: 'bg-logrado-fondo text-logrado',
@@ -24,9 +29,12 @@ export function ChipTema({
   estado,
   titulo,
   className,
+  anuncio,
 }: {
   tema: string
   estado: EstadoTema
+  /** Lo que se agrega para lectores de pantalla después del texto. `null`: nada. Por defecto, el estado. */
+  anuncio?: string | null
   /** El nombre completo, si `tema` va acortado: sale al pasar el mouse. */
   titulo?: string
   className?: string
@@ -41,7 +49,7 @@ export function ChipTema({
       )}
     >
       <span className="truncate">{tema}</span>
-      <span className="sr-only">: {CHIP_TEMA[estado]}</span>
+      {anuncio !== null && <span className="sr-only">: {anuncio ?? CHIP_TEMA[estado]}</span>}
     </span>
   )
 }

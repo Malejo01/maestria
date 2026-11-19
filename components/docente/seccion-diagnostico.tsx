@@ -199,7 +199,8 @@ function Resultado({
                     <span className="cuerpo-s min-w-0 text-texto">{t.nombre}</span>
                     <span className="flex shrink-0 items-center gap-2">
                       {R.deTema(t.bien, t.total) && <span className="nota tabular-nums text-texto-suave">{R.deTema(t.bien, t.total)}</span>}
-                      <ChipTema tema={R.estado[t.estado]} estado={CHIP[t.estado]} />
+                      {/* K7: anuncia sólo lo que muestra ("Acertó"), no "Dominado". */}
+                      <ChipTema tema={R.estado[t.estado]} estado={CHIP[t.estado]} anuncio={null} />
                     </span>
                   </div>
                   {t.error && (
