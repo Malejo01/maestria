@@ -1,5 +1,6 @@
 'use client'
 
+import { EVENTO_TAREA_MANDADA } from '@/lib/eventos'
 import { Cargando } from '@/components/sistema/cargando'
 
 
@@ -178,6 +179,9 @@ export function ShareQuizDialog({
         }),
       )
       setMandada(true)
+      // K4: los primeros pasos del panel ("mandá tu primera tarea") se ponen al
+      // día aunque el diálogo se haya abierto desde la materia, fuera del panel.
+      window.dispatchEvent(new Event(EVENTO_TAREA_MANDADA))
     } catch (causa) {
       setError(causa instanceof Error ? causa.message : T.mandar.fallo)
     } finally {

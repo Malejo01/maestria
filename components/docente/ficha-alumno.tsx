@@ -66,13 +66,21 @@ export function FichaAlumno({ userId }: { userId: string }) {
 
   // J6: marcar los temas que falló cambia "Qué le cuesta": se vuelve a leer la ficha.
   const [versionFicha, setVersionFicha] = useState(0)
+  // K4: el formulario se rearma cuando LLEGA la ficha releída, no cuando se pide.
+  // Con `key={versionFicha}` se remontaba enseguida con la ficha vieja, y como el
+  // formulario guarda su propio estado, la nueva ya no entraba: "Qué le cuesta"
+  // seguía sin los temas recién marcados y un "Guardar" los pisaba.
+  const [lecturaFicha, setLecturaFicha] = useState(0)
 
   useEffect(() => {
     let vigente = true
     fetch(`/api/teacher/fichas?alumno=${encodeURIComponent(userId)}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((datos: FichaLeida | null) => {
-        if (vigente && datos) setPedagogica(datos)
+        if (vigente && datos) {
+          setPedagogica(datos)
+          setLecturaFicha((n) => n + 1)
+        }
       })
       .catch(() => {})
     return () => {
@@ -134,7 +142,7 @@ export function FichaAlumno({ userId }: { userId: string }) {
 
       {pedagogica?.disponible && (
         <FichaPedagogica
-          key={versionFicha}
+          key={lecturaFicha}
           url={`/api/teacher/fichas?alumno=${encodeURIComponent(ficha.userId)}`}
           nombreInicial={pedagogica.nombre}
           inicial={pedagogica.ficha}

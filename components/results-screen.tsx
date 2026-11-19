@@ -47,6 +47,8 @@ export function ResultsScreen() {
   const isSignedIn = status === 'authenticated'
   const isAlumno = session?.user?.role === 'ALUMNO'
   const hasSavedRef = useRef(false)
+  /** El guardado del intento en curso, para esperarlo al salir (K4). */
+  const guardadoRef = useRef<Promise<void> | null>(null)
   const router = useRouter()
 
   const results = useMemo(() => {
@@ -118,7 +120,7 @@ export function ResultsScreen() {
       }
     }
     
-    saveResult()
+    guardadoRef.current = saveResult()
   }, [isSignedIn, config, answers, questions.length, results.correct, results.score])
 
   // El papel picado al aprobar: la única animación decorativa de la app y la
@@ -271,11 +273,25 @@ export function ResultsScreen() {
     }
   }, [config, questions, setActiveView, startQuiz, toast])
 
-  const handleGoHome = () => {
+  /**
+   * K4: salir de los resultados espera a que el intento termine de guardarse
+   * (a lo sumo unos segundos). Quien está detrás —Mis aulas, el historial—
+   * vuelve a leer al cerrarse esto, y si leía antes de que se guardara seguía
+   * mostrando "0 de 1 intento".
+   */
+  const esperarGuardado = async () => {
+    const guardado = guardadoRef.current
+    if (!guardado) return
+    await Promise.race([guardado, new Promise((r) => setTimeout(r, 5000))])
+  }
+
+  const handleGoHome = async () => {
+    await esperarGuardado()
     resetQuiz()
   }
 
-  const handleGoToHistory = () => {
+  const handleGoToHistory = async () => {
+    await esperarGuardado()
     resetQuiz()
     router.push('/history')
   }

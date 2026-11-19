@@ -62,7 +62,6 @@ export function ArmarDiagnostico({
     if (ocupado) return
     onCambiar(siguiente)
     if (!siguiente) {
-      if (paso.tipo === 'generando') alTerminar()
       setPaso({ tipo: 'elegir' })
       setError(null)
       setBloqueo(null)
@@ -103,6 +102,8 @@ export function ArmarDiagnostico({
       estados[i] = resultado
       setPaso({ tipo: 'generando', diagnosticoId, estados: [...estados] })
     }
+    // K4: la ficha de abajo ya muestra los cuestionarios, sin esperar a que se cierre.
+    alTerminar()
   }
 
   async function generar() {
