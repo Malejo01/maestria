@@ -1,5 +1,6 @@
 'use client'
 
+import { ultimaActividad } from '@/lib/alumnos-docente'
 import { etiquetaPorId, type MateriaConNivel } from '@/lib/etiqueta-materia'
 import { useState } from 'react'
 import { Cargando } from '@/components/sistema/cargando'
@@ -15,6 +16,8 @@ const V = MIS_ALUMNOS.quitados
 export interface AQuitar {
   userId: string
   nombre: string
+  /** K8: su última práctica en tus grupos, para decirla al confirmar. */
+  ultimaVez?: string | null
 }
 
 /**
@@ -76,12 +79,20 @@ export function ConfirmarQuitar({
         </DialogTitle>
         <DialogDescription className="cuerpo-s text-texto-suave">{lote ? L.detalle : Q.detalle}</DialogDescription>
 
+        {!lote && quienes?.[0] && quienes[0].ultimaVez !== undefined && (
+          <p className="nota text-texto-suave">{L.ultimaActividad(ultimaActividad(quienes[0].ultimaVez ?? null, new Date()))}</p>
+        )}
+
         {lote && quienes && (
           <div>
             <p className="nota mb-2 font-semibold text-texto-suave">{L.lista}</p>
             <ul className="cuerpo-s flex max-h-60 flex-col gap-1 overflow-y-auto rounded-md border border-borde bg-superficie-base p-3 text-texto">
               {quienes.map((q) => (
-                <li key={q.userId}>{q.nombre}</li>
+                <li key={q.userId} className="flex flex-wrap justify-between gap-x-3">
+                  <span className="min-w-0">{q.nombre}</span>
+                  {/* K8: qué está quitando: "nunca", o "practicó hace 12 días". */}
+                  <span className="nota text-texto-suave">{ultimaActividad(q.ultimaVez ?? null, new Date())}</span>
+                </li>
               ))}
             </ul>
           </div>

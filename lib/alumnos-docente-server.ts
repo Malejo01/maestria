@@ -229,8 +229,12 @@ export async function leerMisAlumnos(teacherId: string, ahora: Date = new Date()
   const temasDeAlumnos = new Map([...temas].filter(([userId]) => enListado.has(userId)))
 
   const fichas = await leerResumenDeFichas(teacherId)
-  const alumnos = armarFilas(miembros, invitaciones, actividad, temasDeAlumnos, quitadosCrudos).map((fila) =>
-    conFicha(fila, fichas),
+  const filas = armarFilas(miembros, invitaciones, actividad, temasDeAlumnos, quitadosCrudos)
+  // K8: sólo de los que no tienen intentos en los grupos hace falta saber si respondieron en otro lado.
+  const sinIntentosAca = filas.filter((fila) => fila.userId && fila.intentos === 0).map((fila) => fila.userId as string)
+  const respondieron = await respondieronAlgunaVez(sinIntentosAca)
+  const alumnos = filas.map((fila) =>
+    conFicha({ ...fila, respondioAlgunaVez: fila.intentos > 0 || (fila.userId !== null && respondieron.has(fila.userId)) }, fichas),
   )
 
   return {
@@ -431,14 +435,24 @@ export async function quitarAlumno(teacherId: string, userId: string): Promise<n
  */
 export async function filtrarSinRespuestas(teacherId: string, userIds: string[]): Promise<string[]> {
   if (userIds.length === 0) return []
+  // K8: el mismo criterio que el listado: nunca respondió NADA en MaestrIA.
+  // Antes miraba sólo los intentos dentro de los grupos (quiz_attempts.classroom_id)
+  // y se llevaba a alumnos que sí habían practicado.
+  void teacherId
   const conIntentos = (await sql`
-    SELECT DISTINCT att.user_id
-    FROM quiz_attempts att
-    JOIN classrooms c ON c.id = att.classroom_id
-    WHERE c.teacher_id = ${teacherId} AND c.status = 'open' AND att.user_id = ANY(${userIds})
+    SELECT DISTINCT att.user_id FROM quiz_attempts att WHERE att.user_id = ANY(${userIds})
   `) as Fila[]
   const respondieron = new Set(conIntentos.map((fila) => String(fila.user_id)))
   return userIds.filter((userId) => !respondieron.has(userId))
+}
+
+/** K8: de estos alumnos, los que respondieron algo en MaestrIA alguna vez (en cualquier grupo o por su cuenta). */
+async function respondieronAlgunaVez(userIds: string[]): Promise<Set<string>> {
+  if (userIds.length === 0) return new Set()
+  const filas = (await sql`
+    SELECT DISTINCT user_id FROM quiz_attempts WHERE user_id = ANY(${userIds})
+  `) as Fila[]
+  return new Set(filas.map((fila) => String(fila.user_id)))
 }
 
 /**
