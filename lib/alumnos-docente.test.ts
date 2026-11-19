@@ -117,6 +117,11 @@ describe('normalizarNombre', () => {
   it('ignora tildes, mayúsculas y espacios de más', () => {
     expect(normalizarNombre('  SOFÍA   Ramírez ')).toBe(normalizarNombre('sofia ramirez'))
   })
+
+  it('J2: no importa el orden (el alumno escribe el apellido primero)', () => {
+    expect(normalizarNombre('ayarde sofia')).toBe(normalizarNombre('Sofía Ayarde'))
+    expect(normalizarNombre('Sofía Ayarde')).not.toBe(normalizarNombre('Sofía Ayala'))
+  })
 })
 
 describe('haceCuanto', () => {

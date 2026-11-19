@@ -13,6 +13,7 @@ import { ChipTema } from '@/components/sistema/chip-tema'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { haceCuanto, nuncaRespondieron, temaCorto, type FilaAlumno } from '@/lib/alumnos-docente'
 import type { MisAlumnos as Datos } from '@/lib/alumnos-docente-server'
+import { avisoDeExamen } from '@/lib/fichas'
 import { pedirJson } from '@/lib/pedir-json'
 import { MIS_ALUMNOS as T } from '@/lib/textos'
 import { cn } from '@/lib/utils'
@@ -233,22 +234,35 @@ function Fila({
   onQuitar: (invitacionId: number) => void
   onQuitarAlumno: (quien: AQuitar) => void
 }) {
+  const rinde = avisoDeExamen(alumno.fechaExamen ?? null, ahora)
+  const aviso = rinde && <span className="nota block font-semibold text-flojo">{rinde}</span>
   const quien = (
     <span className="min-w-0 flex-1 basis-40">
       <span className="cuerpo block truncate text-texto">{alumno.nombre}</span>
       <span className="nota block truncate text-texto-suave">{alumno.contexto}</span>
+      {aviso}
     </span>
   )
 
-  // Quien todavía no entró no tiene ficha: la fila no es un enlace.
+  // J2: quien todavía no entró también tiene ficha (la de su invitación).
   if (alumno.pendiente || !alumno.userId) {
     return (
-      <div className={CLASE_FILA}>
+      <div className={cn(CLASE_FILA, 'relative')}>
         <Inicial nombre={alumno.nombre} />
-        {quien}
+        {alumno.pendiente ? (
+          <Link
+            href={`/teacher/alumnos/invitacion/${alumno.pendiente.invitacionId}`}
+            aria-label={T.verFicha(alumno.nombre)}
+            className="min-w-0 flex-1 basis-40 rounded-sm after:absolute after:inset-0 after:rounded-lg after:content-['']"
+          >
+            {quien}
+          </Link>
+        ) : (
+          quien
+        )}
         <span className="nota text-texto-suave">{T.todaviaNoEntro}</span>
         {alumno.pendiente && (
-          <span className="flex items-center gap-2">
+          <span className="relative z-10 flex items-center gap-2">
             <Boton variante="secundario" asChild>
               <a href={`/aula/${alumno.pendiente.codigo}`} target="_blank" rel="noopener noreferrer">
                 {T.verLink}
@@ -282,6 +296,7 @@ function Fila({
       >
         <span className="cuerpo block truncate text-texto">{alumno.nombre}</span>
         <span className="nota block truncate text-texto-suave">{alumno.contexto}</span>
+        {aviso}
         {/* En celular la columna de la fecha no entra junto al botón de quitar:
             baja a un renglón propio, debajo de qué prepara. */}
         <span className="nota block text-texto-suave sm:hidden">{cuando}</span>
