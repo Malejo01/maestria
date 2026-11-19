@@ -200,7 +200,9 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
           questionCount,
           questionTypes: selectedQuestionTypes,
           pedagogyContext,
-          previousQuestionIds: getUsedQuestionIds()
+          previousQuestionIds: getUsedQuestionIds(),
+          // J3: para que el servidor sume lo pedagógico de las fichas del grupo.
+          ...(subject.source === 'teacher' && subject.programId ? { teacherProgramId: subject.programId } : {}),
         })
       })
       

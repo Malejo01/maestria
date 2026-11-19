@@ -17,6 +17,7 @@ import { generateObject, generateText, type RepairTextFunction } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 import { buildEducationSystemPrompt, type ContextoProfesionalCarrera } from '@/lib/education-context'
+import type { PerfilAlumnos } from '@/lib/perfil-alumnos'
 import { captureAiSchemaFailure, captureRouteFailure } from '@/lib/observability'
 import type { AiSdkUsage } from '@/lib/ai-usage'
 import { normalizeQuestionText, numericSignature } from '@/lib/question-dedup'
@@ -345,6 +346,7 @@ async function generateQuizBatchWithFallback({
   nivel,
   grado,
   contextoProfesional,
+  perfilAlumnos,
   questionTypes,
   questionMix,
   onUsage,
@@ -361,6 +363,7 @@ async function generateQuizBatchWithFallback({
   nivel?: string
   grado?: string
   contextoProfesional?: ContextoProfesionalCarrera
+  perfilAlumnos?: PerfilAlumnos | null
   questionTypes: QuestionType[]
   /** Reparto por tipo que declara el programa de cátedra (migración 023). */
   questionMix?: QuestionTypeMix
@@ -377,6 +380,7 @@ async function generateQuizBatchWithFallback({
     materia: subject,
     difficulty,
     contextoProfesional,
+    perfilAlumnos,
   })
 
   const systemPrompt = `${educationPrompt}
@@ -746,6 +750,16 @@ export interface QuizRequestParams {
    * el programa. Ver el bloque que lo usa en generateQuiz.
    */
   rejectionNote?: string
+  /**
+   * J3: la materia del docente para la que se genera. La ruta la usa para
+   * buscar las fichas de los alumnos de ese grupo; no viaja a la IA.
+   */
+  teacherProgramId?: number
+  /**
+   * J3: lo pedagógico de esas fichas. Lo carga la ruta en el servidor, NUNCA
+   * sale del cuerpo de la request.
+   */
+  perfilAlumnos?: PerfilAlumnos | null
 }
 
 export type ResolveQuizRequestResult =
@@ -860,8 +874,15 @@ export function resolveQuizRequest(body: unknown): ResolveQuizRequestResult {
       carrera: typeof rawCarrera === 'string' ? rawCarrera.trim() : '',
       difficulty,
       explicitQuestionTypes,
+      ...(teacherProgramIdDe(body) ? { teacherProgramId: teacherProgramIdDe(body) } : {}),
     },
   }
+}
+
+/** J3: la materia del docente, si el cuerpo la trae y es un id válido. */
+function teacherProgramIdDe(body: unknown): number | undefined {
+  const valor = Number((body as { teacherProgramId?: unknown } | null)?.teacherProgramId)
+  return Number.isInteger(valor) && valor > 0 ? valor : undefined
 }
 
 /**
@@ -922,6 +943,7 @@ export async function generateQuiz(
     difficulty,
     explicitQuestionTypes,
     rejectionNote,
+    perfilAlumnos,
   } = params
 
   const topicsText = topics.map((t: { id: string; name: string }) => `- ${t.name}`).join('\n')
@@ -1061,6 +1083,7 @@ situaciones diferentes.${rejectionBlock}`
           nivel,
           grado,
           contextoProfesional,
+          perfilAlumnos,
           questionTypes: teoricoQuestionTypes,
           questionMix: teoricoQuestionMix,
           onUsage,
@@ -1089,6 +1112,7 @@ situaciones diferentes.${rejectionBlock}`
           nivel,
           grado,
           contextoProfesional,
+          perfilAlumnos,
           questionTypes: finalQuestionTypes,
           questionMix,
           onUsage,
@@ -1129,6 +1153,7 @@ situaciones diferentes.${rejectionBlock}`
       nivel,
       grado,
       contextoProfesional,
+      perfilAlumnos,
       questionTypes: batchQuestionTypes,
       questionMix: batchQuestionMix,
       onUsage,

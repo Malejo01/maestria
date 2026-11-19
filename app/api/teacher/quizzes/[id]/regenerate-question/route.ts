@@ -7,6 +7,7 @@ import { captureRouteFailure } from '@/lib/observability'
 import { generateQuiz, type QuizRequestParams } from '@/lib/quiz-generation'
 import type { Question, QuestionType } from '@/lib/types'
 import { bloqueoParaGenerar } from '@/lib/planes-server'
+import { perfilSinRomper } from '@/lib/fichas-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -138,6 +139,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       difficulty: 'intermedio',
       explicitQuestionTypes: [objetivo.type as QuestionType],
       rejectionNote: rejectionNote || undefined,
+      // J3: la pregunta nueva también se parece al examen real del alumno.
+      perfilAlumnos: await perfilSinRomper(teacher.id, Number(quiz.teacher_program_id)),
     }
 
     const guard = await guardAiCall({
