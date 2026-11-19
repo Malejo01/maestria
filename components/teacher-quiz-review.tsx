@@ -33,7 +33,7 @@ import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { stableStringify } from '@/lib/stable-json'
 import { comaDecimal, formatearNumero, respuestaNumerica } from '@/lib/numeros'
-import { parseNumericAnswer } from '@/lib/numeric-answer'
+import { leerRespuesta, type Fraccion } from '@/lib/fraccion'
 import type { Question, TeacherQuiz } from '@/lib/types'
 import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
 import { DialogoDeLimite } from '@/components/docente/pantalla-de-limite'
@@ -649,7 +649,8 @@ function VistaDePregunta({ question }: { question: Question }) {
 
       {question.type === 'numeric' && (
         <p className="text-sm">
-          Correcta: <strong>{respuestaNumerica(question.correctAnswer, question.tolerance)}</strong>
+          Correcta: <strong><LaTeXRenderer content={respuestaNumerica(question.correctAnswer, question.tolerance, question.fraccion)} /></strong>
+          {question.exigeIrreducible ? ' (sólo la fracción irreducible)' : ''}
         </p>
       )}
 
@@ -733,11 +734,13 @@ function EditorDePregunta({
 
       {question.type === 'numeric' && (
         <div className="grid gap-3 sm:grid-cols-2">
-          <Campo label="Respuesta correcta">
+          <Campo label="Respuesta correcta (número o fracción: 3/4)">
             <CampoNumerico
               valor={question.correctAnswer}
-              onValor={(valor) => {
-                if (valor !== null) onChange({ correctAnswer: valor } as Partial<Question>)
+              fraccion={question.fraccion}
+              onValor={(valor, _vacio, fraccion) => {
+                // K2: escribir una fracción la guarda como fracción; un decimal la saca.
+                if (valor !== null) onChange({ correctAnswer: valor, fraccion: fraccion ?? undefined } as Partial<Question>)
               }}
             />
           </Campo>
@@ -750,6 +753,17 @@ function EditorDePregunta({
               }}
             />
           </Campo>
+          {question.fraccion && (
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={question.exigeIrreducible === true}
+                onChange={(e) => onChange({ exigeIrreducible: e.target.checked } as Partial<Question>)}
+                className="size-5 shrink-0 accent-accion"
+              />
+              Sólo vale la fracción irreducible
+            </label>
+          )}
         </div>
       )}
 
@@ -785,17 +799,28 @@ function EditorDePregunta({
  * desde el número, al tipear `0,` se volvería `0` y no se podría seguir.
  * Lee igual que el campo del alumno (coma, punto, fracción, miles con punto).
  */
-function CampoNumerico({ valor, onValor }: { valor: number | null; onValor: (valor: number | null, vacio: boolean) => void }) {
-  const [texto, setTexto] = useState(() => (valor === null ? '' : formatearNumero(valor)))
+function CampoNumerico({
+  valor,
+  fraccion,
+  onValor,
+}: {
+  valor: number | null
+  fraccion?: Fraccion
+  onValor: (valor: number | null, vacio: boolean, fraccion: Fraccion | null) => void
+}) {
+  const [texto, setTexto] = useState(() =>
+    fraccion ? `${fraccion.numerador}/${fraccion.denominador}` : valor === null ? '' : formatearNumero(valor),
+  )
   return (
     <Input
       type="text"
       inputMode="decimal"
       value={texto}
-      aria-invalid={texto.trim() !== '' && parseNumericAnswer(texto) === null}
+      aria-invalid={texto.trim() !== '' && leerRespuesta(texto) === null}
       onChange={(e) => {
         setTexto(e.target.value)
-        onValor(parseNumericAnswer(e.target.value), e.target.value.trim() === '')
+        const lectura = leerRespuesta(e.target.value)
+        onValor(lectura?.valor ?? null, e.target.value.trim() === '', lectura?.fraccion ?? null)
       }}
     />
   )

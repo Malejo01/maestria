@@ -3,7 +3,8 @@
 import { useMemo, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { parseNumericAnswer } from '@/lib/numeric-answer'
+import { corregirNumerica, leerRespuesta, textoDelMotivo } from '@/lib/fraccion'
+import { LaTeXRenderer } from '@/components/latex-renderer'
 import { formatearNumero, respuestaNumerica } from '@/lib/numeros'
 import type { NumericQuestion } from '@/lib/types'
 
@@ -11,7 +12,8 @@ interface NumericInputProps {
   question: NumericQuestion
   value: number | null
   submitted: boolean
-  onChange: (value: number | null) => void
+  /** El número leído y el texto tal cual (K2: la forma importa en una fracción). */
+  onChange: (value: number | null, texto: string) => void
   isCorrect?: boolean | null
   disabled?: boolean
 }
@@ -45,8 +47,14 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
    */
   const [raw, setRaw] = useState(() => (value === null ? '' : formatearNumero(value)))
 
-  const parsed = useMemo(() => parseNumericAnswer(raw), [raw])
+  // K2: lee también el número mixto (`1 1/2`) si la pregunta lo admite, y
+  // conserva la fracción tal como la escribió.
+  const lectura = useMemo(() => leerRespuesta(raw, { admiteMixto: question.admiteMixto }), [raw, question.admiteMixto])
+  const parsed = lectura?.valor ?? null
+  const esFraccion = Boolean(question.fraccion)
   const hasText = raw.trim().length > 0
+  // K2: si el valor era el correcto pero la forma no (`6/8` por la irreducible), se le dice por qué.
+  const motivo = submitted && isCorrect === false && parsed !== null ? corregirNumerica(question, parsed, raw).motivo : undefined
   const noSeEntiende = hasText && parsed === null
   // K1: `1.500` se lee mil quinientos. Se le dice siempre, aunque el número
   // mostrado coincida con lo que escribió: quien quiso decir 1,5 tiene que verlo.
@@ -65,10 +73,10 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
         onChange={(event) => {
           const next = event.target.value
           setRaw(next)
-          onChange(parseNumericAnswer(next))
+          onChange(leerRespuesta(next, { admiteMixto: question.admiteMixto })?.valor ?? null, next)
         }}
         disabled={submitted || disabled}
-        placeholder="Tu respuesta (coma o fracción)"
+        placeholder={esFraccion ? 'Tu respuesta (una fracción, como 3/4)' : 'Tu respuesta (coma o fracción)'}
         aria-invalid={noSeEntiende}
         aria-describedby={noSeEntiende ? 'numeric-input-error' : !hasText && !submitted ? 'numeric-input-ayuda' : undefined}
         className={cn(
@@ -84,7 +92,7 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
       {/* Qué entendimos. Sólo cuando aporta algo: si el alumno escribió "3,5"
           y leímos 3,5, repetírselo es ruido; el valor está en confirmar las
           formas que se transforman — fracciones, LaTeX, porcentajes. */}
-      {!submitted && parsed !== null && (usaPuntoDeMiles || formatearNumero(parsed) !== raw.trim()) && (
+      {!submitted && parsed !== null && !(esFraccion && lectura?.fraccion) && (usaPuntoDeMiles || formatearNumero(parsed) !== raw.trim()) && (
         <p className="text-center text-sm text-muted-foreground">
           Leímos: <strong className="text-foreground">{formatearNumero(parsed)}</strong>
           {usaPuntoDeMiles ? ' (el punto separa los miles)' : ''}
@@ -93,8 +101,17 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
 
       {!submitted && !hasText && (
         <p id="numeric-input-ayuda" className="text-center text-xs text-muted-foreground">
-          Decimales con coma o con punto: <code>0,75</code> o <code>0.75</code>. El punto con tres cifras
-          después cuenta como miles: <code>1.500</code> es mil quinientos.
+          {esFraccion ? (
+            <>
+              Escribí la fracción con la barra: <code>3/4</code>
+              {question.admiteMixto ? <>, o el número mixto con un espacio: <code>1 1/2</code></> : null}.
+            </>
+          ) : (
+            <>
+              Decimales con coma o con punto: <code>0,75</code> o <code>0.75</code>. El punto con tres cifras
+              después cuenta como miles: <code>1.500</code> es mil quinientos.
+            </>
+          )}
         </p>
       )}
 
@@ -103,15 +120,22 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
       {!submitted && noSeEntiende && (
         <p id="numeric-input-error" className="text-center text-sm text-flojo">
           No entendimos ese número. Podés escribirlo con coma (<code>3,5</code>), con punto
-          (<code>3.5</code>) o como fracción (<code>7/2</code>).
+          (<code>3.5</code>) o como fracción (<code>7/2</code>)
+          {question.admiteMixto ? <>; el número mixto, con un espacio (<code>1 1/2</code>)</> : null}.
         </p>
       )}
 
       {submitted && isCorrect === false && (
         <Card className="p-3 rounded-xl border border-logrado/30 bg-logrado-fondo text-center">
           <span className="text-sm font-semibold text-logrado">
-            Respuesta correcta: {respuestaNumerica(question.correctAnswer, question.tolerance)}
+            Respuesta correcta:{' '}
+            <LaTeXRenderer content={respuestaNumerica(question.correctAnswer, question.tolerance, question.fraccion)} />
           </span>
+          {motivo && question.fraccion && (
+            <p className="mt-1 text-sm text-foreground">
+              <LaTeXRenderer content={textoDelMotivo(motivo, question.fraccion)} />
+            </p>
+          )}
         </Card>
       )}
     </div>

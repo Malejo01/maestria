@@ -13,7 +13,7 @@
  * numerador y también del denominador — no es un error, y tampoco un acierto.
  */
 import type { Answer, MultipleChoiceQuestion, NumericQuestion, TrueFalseQuestion } from './types'
-import { isNumericallyEquivalent } from './numeric-answer'
+import { corregirNumerica } from './fraccion'
 
 // ─── Corrección en el proceso, por tipo ──────────────────────────────────────
 // Estos tres se resuelven sin salir del browser, así que nunca quedan sin
@@ -41,8 +41,10 @@ export function isCorrectTrueFalse(question: TrueFalseQuestion, selected: boolea
  * `1.75` por un error de representación de 1e-17, imposible de explicarle a
  * nadie.
  */
-export function isCorrectNumeric(question: NumericQuestion, selected: number): boolean {
-  return isNumericallyEquivalent(selected, question.correctAnswer, question.tolerance)
+export function isCorrectNumeric(question: NumericQuestion, selected: number, texto?: string): boolean {
+  // K2: con `fraccion`, la forma importa (`6/8` contra una irreducible); sin
+  // ella, `corregirNumerica` es exactamente la comparación de siempre.
+  return corregirNumerica(question, selected, texto).correcta
 }
 
 // ─── Conteo para la nota ─────────────────────────────────────────────────────

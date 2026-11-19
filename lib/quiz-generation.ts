@@ -21,6 +21,7 @@ import type { PerfilAlumnos } from '@/lib/perfil-alumnos'
 import { captureAiSchemaFailure, captureRouteFailure } from '@/lib/observability'
 import type { AiSdkUsage } from '@/lib/ai-usage'
 import { normalizeQuestionText, numericSignature } from '@/lib/question-dedup'
+import { normalizarFraccionGenerada } from '@/lib/fraccion'
 import {
   buildQuestionMixInstruction,
   mergeQuestionTypeMixes,
@@ -72,6 +73,11 @@ const numericQuestionSchema = z.object({
   type: z.literal('numeric'),
   correctAnswer: z.number(),
   tolerance: z.number().optional(),
+  // K2: la respuesta como fracción. Opcional, y se normaliza después
+  // (`normalizarFraccionGenerada`): la fracción manda sobre `correctAnswer`.
+  fraccion: z.object({ numerador: z.number().int(), denominador: z.number().int() }).optional(),
+  exigeIrreducible: z.boolean().optional(),
+  admiteMixto: z.boolean().optional(),
 })
 
 const questionSchema = z.discriminatedUnion('type', [
@@ -121,6 +127,9 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - type: "numeric"
 - correctAnswer: number
 - tolerance: number opcional (margen de error aceptado, omitir si la respuesta debe ser exacta)
+- fraccion: { "numerador": entero, "denominador": entero } OPCIONAL. Ponelo SIEMPRE que la respuesta sea una fracción que no da un decimal exacto (2/3 + 1/4 → { "numerador": 11, "denominador": 12 }, nunca 0.9166666666666666), cuando el tema sea de fracciones, o cuando la consigna pida "fracción", "expresión irreducible" o "simplificá" (Simplificá 42/56 → { "numerador": 3, "denominador": 4 }, nunca 0.75). Con fraccion, correctAnswer es su valor decimal.
+- exigeIrreducible: boolean OPCIONAL. true si la consigna pide la expresión irreducible o simplificar: entonces 6/8 no vale por 3/4.
+- admiteMixto: boolean OPCIONAL. true sólo si el enunciado admite responder con un número mixto (1 1/2).
 - Usalo SOLO cuando la respuesta es un único número que sale de un cálculo o un conteo (ej: "Calculá el MCD(24, 36)" → 12).
 - NUNCA lo uses para preguntas que se responden con palabras (explicar, justificar, identificar un error, nombrar un concepto o una propiedad), ni para codificar sí/no o verdadero/falso como 1/0. Si la respuesta es conceptual, usá otro de los tipos pedidos.`,
 }
@@ -258,7 +267,9 @@ function normalizeLogicalNotation(text: string): string {
 }
 
 function normalizeQuestionSetLogicalNotation(questions: any[]) {
-  return questions.map((question) => ({
+  // K2: la fracción de una `numeric` (simplificada, y recuperada del decimal si
+  // la consigna pide una fracción y la IA mandó sólo el número).
+  return questions.map((original) => (original?.type === 'numeric' ? normalizarFraccionGenerada(original) : original)).map((question) => ({
     ...question,
     question: normalizeLogicalNotation(String(question.question || '')),
     explanation: normalizeLogicalNotation(String(question.explanation || '')),

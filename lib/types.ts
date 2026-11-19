@@ -97,6 +97,16 @@ export interface NumericQuestion extends BaseQuestion {
   correctAnswer: number
   /** Absolute tolerance for correctness; 0/omitted means exact match. */
   tolerance?: number
+  /**
+   * K2: la respuesta es una fracción (`3/4`), no su decimal. Opcional: las
+   * preguntas guardadas antes no lo tienen y se corrigen como siempre. Ver
+   * `lib/fraccion.ts`.
+   */
+  fraccion?: { numerador: number; denominador: number }
+  /** K2: sólo vale la fracción irreducible (`6/8` está mal si pide `3/4`). */
+  exigeIrreducible?: boolean
+  /** K2: el enunciado admite el número mixto (`1 1/2`). */
+  admiteMixto?: boolean
 }
 
 export type Question = MultipleChoiceQuestion | ShortAnswerQuestion | TrueFalseQuestion | NumericQuestion
@@ -180,6 +190,10 @@ export interface NumericAnswer extends BaseAnswer {
   selectedValue: number
   correctAnswer: number
   tolerance?: number
+  /** K2: lo que escribió el alumno (`6/8`), para mostrarlo y para el error. */
+  selectedText?: string
+  fraccion?: { numerador: number; denominador: number }
+  exigeIrreducible?: boolean
 }
 
 export type Answer = MultipleChoiceAnswer | ShortAnswerAnswer | TrueFalseAnswer | NumericAnswer

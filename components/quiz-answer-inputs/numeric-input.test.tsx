@@ -62,7 +62,7 @@ describe('acepta las formas que se escriben en Argentina', () => {
   ])('interpreta %j como %s (%s)', (texto, esperado) => {
     const { onChange, input } = renderInput()
     fireEvent.change(input, { target: { value: texto } })
-    expect(onChange).toHaveBeenLastCalledWith(esperado)
+    expect(onChange.mock.lastCall?.[0]).toBe(esperado)
   })
 
   it('deja escribir lo que el alumno tipeó, sin reformatearlo mientras escribe', () => {
@@ -102,7 +102,7 @@ describe('avisa ANTES de enviar cuando no puede interpretar', () => {
 
     // El padre recibe null, así que "Verificar" sigue deshabilitado — pero
     // ahora el alumno sabe por qué y cómo arreglarlo.
-    expect(onChange).toHaveBeenLastCalledWith(null)
+    expect(onChange.mock.lastCall?.[0]).toBe(null)
     expect(screen.getByText(/No entendimos ese número/)).toBeTruthy()
     expect(input.getAttribute('aria-invalid')).toBe('true')
   })
@@ -128,7 +128,7 @@ describe('avisa ANTES de enviar cuando no puede interpretar', () => {
     // 11/2 = 5,5. Mejor pedirle al alumno que lo reescriba.
     const { onChange, input } = renderInput()
     fireEvent.change(input, { target: { value: texto } })
-    expect(onChange).toHaveBeenLastCalledWith(null)
+    expect(onChange.mock.lastCall?.[0]).toBe(null)
   })
 })
 
@@ -167,7 +167,7 @@ describe('estado ya enviado', () => {
         onChange={vi.fn()}
       />
     )
-    expect(screen.getByText(/Respuesta correcta: 3,5/)).toBeTruthy()
+    expect(document.body.textContent).toMatch(/Respuesta correcta: 3,5/)
   })
 
   it('no muestra el aviso de interpretación una vez enviada', () => {
@@ -181,7 +181,7 @@ describe('estado ya enviado', () => {
     const { input, onChange } = renderInput()
     expect(screen.getByText(/1\.500/)).toBeTruthy() // la ayuda del campo
     fireEvent.change(input, { target: { value: '1.500' } })
-    expect(onChange).toHaveBeenLastCalledWith(1500)
+    expect(onChange.mock.lastCall?.[0]).toBe(1500)
     expect(screen.getByText(/el punto separa los miles/)).toBeTruthy()
   })
 
@@ -195,6 +195,25 @@ describe('estado ya enviado', () => {
         onChange={vi.fn()}
       />
     )
-    expect(screen.getByText(/Respuesta correcta: 0,9167/)).toBeTruthy()
+    expect(document.body.textContent).toMatch(/Respuesta correcta: 0,9167/)
+  })
+
+  it('K2: si la pregunta pide una fracción, el campo lo dice y pasa el texto tal cual', () => {
+    const conFraccion: NumericQuestion = { ...pregunta, correctAnswer: 0.75, fraccion: { numerador: 3, denominador: 4 }, exigeIrreducible: true }
+    const onChange = vi.fn()
+    render(<NumericInput question={conFraccion} value={null} submitted={false} onChange={onChange} />)
+    const input = screen.getByRole('textbox') as HTMLInputElement
+    expect(input.placeholder).toMatch(/fracción/)
+    expect(document.body.textContent).toMatch(/Escribí la fracción con la barra/)
+    fireEvent.change(input, { target: { value: '6/8' } })
+    expect(onChange).toHaveBeenLastCalledWith(0.75, '6/8')
+  })
+
+  it('K2: 6/8 contra la irreducible dice que no la simplificó del todo', () => {
+    const conFraccion: NumericQuestion = { ...pregunta, correctAnswer: 0.75, fraccion: { numerador: 3, denominador: 4 }, exigeIrreducible: true }
+    const { rerender } = render(<NumericInput question={conFraccion} value={null} submitted={false} onChange={vi.fn()} />)
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '6/8' } })
+    rerender(<NumericInput question={conFraccion} value={0.75} submitted isCorrect={false} onChange={vi.fn()} />)
+    expect(document.body.textContent).toMatch(/no la simplificaste del todo/)
   })
 })

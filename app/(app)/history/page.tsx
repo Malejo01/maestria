@@ -43,7 +43,8 @@ import {
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { formatearNumero } from '@/lib/numeros'
+import { formatearNumero, respuestaEscrita, respuestaNumerica } from '@/lib/numeros'
+import { fraccionValida } from '@/lib/fraccion'
 import { SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
 import Link from 'next/link'
 import type {
@@ -92,7 +93,10 @@ function formatAttemptAnswerText(answer: AttemptAnswer, which: 'selected' | 'cor
     }
     case 'numeric': {
       const value = which === 'selected' ? payload.selectedValue : payload.correctAnswer
-      return typeof value === 'number' ? formatearNumero(value) : String(value ?? '')
+      if (typeof value !== 'number') return String(value ?? '')
+      // K2: la fracción, si la pregunta la traía; las filas de antes no la tienen.
+      if (which === 'selected') return respuestaEscrita(value, typeof payload.selectedText === 'string' ? payload.selectedText : null)
+      return respuestaNumerica(value, undefined, fraccionValida(payload.fraccion) ? payload.fraccion : null)
     }
     case 'short_answer':
       return which === 'selected' ? String(payload.selectedText ?? '') : (Array.isArray(payload.acceptedAnswers) ? payload.acceptedAnswers.join(' / ') : '')
