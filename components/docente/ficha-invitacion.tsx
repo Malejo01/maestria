@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { CargaFallida } from '@/components/carga-fallida'
 import { FichaPedagogica } from '@/components/docente/ficha-pedagogica'
+import { SeccionDiagnostico } from '@/components/docente/seccion-diagnostico'
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import type { FichaLeida } from '@/lib/fichas-server'
@@ -81,6 +82,8 @@ export function FichaInvitacion({ invitacionId }: { invitacionId: number }) {
           </Boton>
         )}
       </header>
+
+      <SeccionDiagnostico destino={{ invitacion: invitacionId }} />
 
       {datos.disponible && (
         <FichaPedagogica

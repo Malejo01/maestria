@@ -12,6 +12,7 @@ import { CargaFallida } from '@/components/carga-fallida'
 import { Boton } from '@/components/sistema/boton'
 import { ConfirmarQuitar } from '@/components/docente/quitar-alumnos'
 import { FichaPedagogica } from '@/components/docente/ficha-pedagogica'
+import { SeccionDiagnostico } from '@/components/docente/seccion-diagnostico'
 import type { FichaLeida } from '@/lib/fichas-server'
 import { ChipTema } from '@/components/sistema/chip-tema'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
@@ -125,6 +126,8 @@ export function FichaAlumno({ userId }: { userId: string }) {
           <Link href={`/teacher?seccion=tareas&armar=1${materiaId ? `&materia=${materiaId}` : ''}`}>{T.asignar}</Link>
         </Boton>
       </header>
+
+      <SeccionDiagnostico destino={{ alumno: ficha.userId }} />
 
       {pedagogica?.disponible && (
         <FichaPedagogica
