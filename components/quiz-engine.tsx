@@ -11,6 +11,7 @@ import { useAppStore } from '@/lib/store'
 import { LaTeXRenderer } from './latex-renderer'
 import { MathBackground } from './math-background'
 import { ExplanationModal } from './explanation-modal'
+import { DIAGNOSTICO } from '@/lib/textos'
 import { AnswerInput, emptySelectionFor, type AnswerSelection } from './quiz-answer-inputs'
 import { AnswerRecap, answerRecapLine } from './answer-recap'
 import { isCorrectMultipleChoice, isCorrectNumeric, isCorrectTrueFalse } from '@/lib/answer-grading'
@@ -44,9 +45,16 @@ export function QuizEngine() {
   const { currentQuiz } = useAppStore()
   const { questions, currentIndex } = currentQuiz
   const currentQuestion = questions[currentIndex]
+  // J5: el aviso de "esto es un diagnóstico" va antes de la primera pregunta.
+  const [empezo, setEmpezo] = useState(false)
 
   if (!currentQuestion) {
     return null
+  }
+
+  const alFinal = currentQuiz.config?.devolucion === 'al_final' && !currentQuiz.config?.previewOnly
+  if (alFinal && !empezo && currentIndex === 0 && currentQuiz.answers.length === 0) {
+    return <AvisoDeDiagnostico onEmpezar={() => setEmpezo(true)} />
   }
 
   /**
@@ -92,6 +100,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
   const [pendingAction, setPendingAction] = useState<'exit' | 'next' | 'prev' | 'cancel-edit' | null>(null)
 
   const isPreviewMode = Boolean(config?.previewOnly)
+  // J5: sin devolución hasta el final. Responder guarda la respuesta y pasa a
+  // la siguiente; lo que acertó o erró, y la explicación, recién en resultados.
+  const alFinal = config?.devolucion === 'al_final' && !isPreviewMode
   const progress = isPreviewMode
     ? ((currentIndex + 1) / questions.length) * 100
     : ((currentIndex + (answerState.submitted ? 1 : 0)) / questions.length) * 100
@@ -311,6 +322,17 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     await gradeShortAnswer(currentQuestion, selection)
   }, [currentQuestion, answerState.selection, gradeShortAnswer])
 
+  /** J5, `al_final`: la respuesta ya quedó guardada; se pasa a la siguiente sin mostrar nada. */
+  const avanzarSinDevolucion = useCallback(() => {
+    if (!alFinal) return
+    if (isLastQuestion) {
+      finishQuiz()
+      setActiveView('results')
+    } else {
+      nextQuestion()
+    }
+  }, [alFinal, isLastQuestion, finishQuiz, nextQuestion, setActiveView])
+
   const handleSubmit = useCallback(async () => {
     if (isEditingQuestion) return
     const selection = answerState.selection
@@ -320,6 +342,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       const isCorrect = isCorrectMultipleChoice(currentQuestion, selection.value)
       setAnswerState(prev => ({ ...prev, submitted: true, isCorrect }))
       answerQuestion(buildAnswer(currentQuestion, selection, isCorrect))
+      avanzarSinDevolucion()
       return
     }
 
@@ -328,6 +351,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       const isCorrect = isCorrectTrueFalse(currentQuestion, selection.value)
       setAnswerState(prev => ({ ...prev, submitted: true, isCorrect }))
       answerQuestion(buildAnswer(currentQuestion, selection, isCorrect))
+      avanzarSinDevolucion()
       return
     }
 
@@ -336,14 +360,16 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       const isCorrect = isCorrectNumeric(currentQuestion, selection.value)
       setAnswerState(prev => ({ ...prev, submitted: true, isCorrect }))
       answerQuestion(buildAnswer(currentQuestion, selection, isCorrect))
+      avanzarSinDevolucion()
       return
     }
 
     if (currentQuestion.type === 'short_answer' && selection.type === 'short_answer') {
       if (selection.value.trim().length === 0) return
       await gradeShortAnswer(currentQuestion, selection)
+      avanzarSinDevolucion()
     }
-  }, [answerState.selection, currentQuestion, answerQuestion, isEditingQuestion, buildAnswer, gradeShortAnswer])
+  }, [answerState.selection, currentQuestion, answerQuestion, isEditingQuestion, buildAnswer, gradeShortAnswer, avanzarSinDevolucion])
 
   const handleNext = useCallback(() => {
     if (isPreviewMode) {
@@ -476,6 +502,17 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     }
   }, [isPreviewMode, requestOrRunAction, setActiveView])
 
+  // J5: con la respuesta ya enviada no se dibuja la pregunta corregida (ni
+  // colores, ni explicación) mientras se pasa a la siguiente.
+  if (alFinal && answerState.submitted) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center" role="status">
+        <Cargando className="w-6 h-6" />
+        <span className="sr-only">{DIAGNOSTICO.alumno.guardando}</span>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen relative flex flex-col">
       <MathBackground />
@@ -520,7 +557,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
           <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             {isPreviewMode
               ? `Previsualizacion - ${currentQuestion.topicName}`
-              : `${config?.mode === 'teorico' ? 'Modo teórico' : config?.mode === 'practico' ? 'Modo práctico' : 'Modo mixto'} - ${currentQuestion.topicName}`}
+              : alFinal
+                ? `${DIAGNOSTICO.alumno.etiqueta} - ${currentQuestion.topicName}`
+                : `${config?.mode === 'teorico' ? 'Modo teórico' : config?.mode === 'practico' ? 'Modo práctico' : 'Modo mixto'} - ${currentQuestion.topicName}`}
           </span>
         </div>
       </header>
@@ -847,6 +886,8 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
             >
               {isGradingShortAnswer ? (
                 <span className="flex items-center gap-2"><Cargando className="w-4 h-4" /> Corrigiendo...</span>
+              ) : alFinal ? (
+                isLastQuestion ? DIAGNOSTICO.alumno.terminar : DIAGNOSTICO.alumno.siguiente
               ) : (
                 'Verificar'
               )}
@@ -919,6 +960,19 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
           allowRevancha={currentQuestion.type === 'multiple_choice'}
         />
       )}
+    </div>
+  )
+}
+
+/** J5: antes de la primera pregunta de un diagnóstico. */
+function AvisoDeDiagnostico({ onEmpezar }: { onEmpezar: () => void }) {
+  return (
+    <div className="mx-auto flex min-h-[60vh] max-w-md flex-col justify-center gap-4 px-4">
+      <h1 className="titulo-l text-texto">{DIAGNOSTICO.alumno.titulo}</h1>
+      <p className="cuerpo text-texto-suave">{DIAGNOSTICO.alumno.aviso}</p>
+      <Button onClick={onEmpezar} className="h-14 rounded-2xl text-base font-bold">
+        {DIAGNOSTICO.alumno.empezar}
+      </Button>
     </div>
   )
 }
