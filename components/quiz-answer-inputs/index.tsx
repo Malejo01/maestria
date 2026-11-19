@@ -12,7 +12,8 @@ export type AnswerSelection =
   | { type: 'multiple_choice'; value: number | null }
   | { type: 'short_answer'; value: string }
   | { type: 'true_false'; value: boolean | null }
-  | { type: 'numeric'; value: number | null }
+  // `texto`: lo que escribió (K2: `6/8` no es `3/4` si pide la irreducible).
+  | { type: 'numeric'; value: number | null; texto?: string }
 
 export function emptySelectionFor(question: Question): AnswerSelection {
   switch (question.type) {
@@ -92,7 +93,7 @@ export function AnswerInput({
         submitted={submitted}
         disabled={disabled}
         isCorrect={isCorrect}
-        onChange={(value) => onChange({ type: 'numeric', value })}
+        onChange={(value, texto) => onChange({ type: 'numeric', value, texto })}
       />
     )
   }

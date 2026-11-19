@@ -1,5 +1,6 @@
 import type { MarcaDePregunta } from '@/lib/diagnostico-resultados'
 import { comaDecimal, respuestaNumerica } from '@/lib/numeros'
+import { fraccionValida } from '@/lib/fraccion'
 
 /**
  * J7: la versión para imprimir y la carga a mano. Parte pura.
@@ -34,7 +35,9 @@ export function preguntaImpresa(cruda: unknown, indice: number): PreguntaImpresa
   } else if (tipo === 'true_false') {
     correcta = q.correctAnswer === true ? 'Verdadero' : 'Falso'
   } else if (tipo === 'numeric') {
-    correcta = respuestaNumerica(Number(q.correctAnswer), Number(q.tolerance))
+    // K2: si la respuesta es una fracción, va como fracción.
+    correcta = respuestaNumerica(Number(q.correctAnswer), Number(q.tolerance), fraccionValida(q.fraccion) ? q.fraccion : null)
+    if (fraccionValida(q.fraccion) && q.exigeIrreducible === true) correcta += ' (irreducible)'
   } else {
     correcta = Array.isArray(q.acceptedAnswers) ? comaDecimal(q.acceptedAnswers.map(String).join(' / ')) : ''
   }

@@ -11,6 +11,8 @@
  * exige punto decimal en las respuestas numéricas (`{#0.75:0.01}`).
  */
 
+import { fraccionEnLatex, leerRespuesta } from '@/lib/fraccion'
+
 const MAX_DECIMALES = 4
 
 const conDecimales = new Map<string, Intl.NumberFormat>()
@@ -93,7 +95,28 @@ export function comaDecimal(texto: string): string {
  * La respuesta correcta de una pregunta numérica, como se le muestra al
  * docente o al alumno: `0,75`, o `3,5 (± 0,1)` si la pregunta trae margen.
  */
-export function respuestaNumerica(correcta: number, tolerancia?: number | null): string {
+export function respuestaNumerica(
+  correcta: number,
+  tolerancia?: number | null,
+  fraccion?: { numerador: number; denominador: number } | null,
+): string {
+  // K2: si la respuesta es una fracción, se muestra como fracción (KaTeX).
+  if (fraccion && Number.isInteger(fraccion.numerador) && Number.isInteger(fraccion.denominador) && fraccion.denominador !== 0) {
+    return fraccionEnLatex(fraccion)
+  }
   const valor = formatearNumero(Number(correcta))
   return typeof tolerancia === 'number' && tolerancia > 0 ? `${valor} (± ${formatearNumero(tolerancia)})` : valor
+}
+
+/**
+ * K2: la respuesta del alumno como la escribió cuando es una fracción (`6/8`
+ * se muestra `\frac{6}{8}`, no `0,75`: si no la simplificó, tiene que verse).
+ * Sin texto guardado (las respuestas de antes) o con un decimal, el número.
+ */
+export function respuestaEscrita(valor: number, texto?: string | null): string {
+  if (typeof texto === 'string' && texto.trim()) {
+    const lectura = leerRespuesta(texto, { admiteMixto: true })
+    if (lectura?.fraccion) return lectura.mixto ? texto.trim().replace(/\s+/g, ' ') : fraccionEnLatex(lectura.fraccion)
+  }
+  return formatearNumero(valor)
 }

@@ -534,7 +534,9 @@ export function lintQuestions(questions: Question[], context: LintContext): Find
       const tolerance = question.tolerance
       const isInteger = Number.isInteger(question.correctAnswer)
 
-      if (!isInteger && (tolerance === undefined || tolerance === null || tolerance === 0)) {
+      // K2: con `fraccion` la respuesta es la fracción, no un flotante.
+      const esFraccion = Boolean((question as { fraccion?: unknown }).fraccion)
+      if (!isInteger && !esFraccion && (tolerance === undefined || tolerance === null || tolerance === 0)) {
         findings.push(
           finding(
             'higiene_formato',

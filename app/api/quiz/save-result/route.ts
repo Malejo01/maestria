@@ -187,7 +187,15 @@ export async function POST(req: Request) {
       if (questionType === 'true_false') {
         answerPayload = JSON.stringify({ selectedAnswer: answer.selectedAnswer, correctAnswer: answer.correctAnswer })
       } else if (questionType === 'numeric') {
-        answerPayload = JSON.stringify({ selectedValue: answer.selectedValue, correctAnswer: answer.correctAnswer, tolerance: answer.tolerance ?? null })
+        answerPayload = JSON.stringify({
+          selectedValue: answer.selectedValue,
+          correctAnswer: answer.correctAnswer,
+          tolerance: answer.tolerance ?? null,
+          // K2: lo que escribió (`6/8`) y la fracción esperada, si la pregunta
+          // la trae. Ausentes en las filas de antes: el historial cae al número.
+          ...(typeof answer.selectedText === 'string' ? { selectedText: answer.selectedText.slice(0, 100) } : {}),
+          ...(answer.fraccion ? { fraccion: answer.fraccion, exigeIrreducible: answer.exigeIrreducible === true } : {}),
+        })
       } else if (questionType === 'short_answer') {
         answerPayload = JSON.stringify({
           selectedText: answer.selectedText,

@@ -1,6 +1,6 @@
 import { LaTeXRenderer } from '@/components/latex-renderer'
 import type { Answer } from '@/lib/types'
-import { formatearNumero } from '@/lib/numeros'
+import { respuestaEscrita, respuestaNumerica } from '@/lib/numeros'
 
 function formatValue(answer: Answer, which: 'selected' | 'correct'): string {
   switch (answer.type) {
@@ -13,8 +13,8 @@ function formatValue(answer: Answer, which: 'selected' | 'correct'): string {
       return value ? 'Verdadero' : 'Falso'
     }
     case 'numeric': {
-      if (which === 'selected') return formatearNumero(answer.selectedValue)
-      return formatearNumero(answer.correctAnswer)
+      if (which === 'selected') return respuestaEscrita(answer.selectedValue, answer.selectedText)
+      return respuestaNumerica(answer.correctAnswer, undefined, answer.fraccion)
     }
     case 'short_answer':
       return which === 'selected' ? answer.selectedText : answer.acceptedAnswers.join(' / ')

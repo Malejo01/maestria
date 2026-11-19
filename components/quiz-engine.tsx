@@ -216,7 +216,15 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       return { ...base, type: 'true_false', selectedAnswer: selection.value ?? false, correctAnswer: question.correctAnswer }
     }
     if (question.type === 'numeric' && selection.type === 'numeric') {
-      return { ...base, type: 'numeric', selectedValue: selection.value ?? NaN, correctAnswer: question.correctAnswer, tolerance: question.tolerance }
+      return {
+        ...base,
+        type: 'numeric',
+        selectedValue: selection.value ?? NaN,
+        correctAnswer: question.correctAnswer,
+        tolerance: question.tolerance,
+        ...(selection.texto ? { selectedText: selection.texto } : {}),
+        ...(question.fraccion ? { fraccion: question.fraccion, exigeIrreducible: question.exigeIrreducible === true } : {}),
+      }
     }
     if (question.type === 'short_answer' && selection.type === 'short_answer') {
       return { ...base, type: 'short_answer', selectedText: selection.value, acceptedAnswers: question.acceptedAnswers }
@@ -357,7 +365,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
 
     if (currentQuestion.type === 'numeric' && selection.type === 'numeric') {
       if (selection.value === null) return
-      const isCorrect = isCorrectNumeric(currentQuestion, selection.value)
+      const isCorrect = isCorrectNumeric(currentQuestion, selection.value, selection.texto)
       setAnswerState(prev => ({ ...prev, submitted: true, isCorrect }))
       answerQuestion(buildAnswer(currentQuestion, selection, isCorrect))
       avanzarSinDevolucion()

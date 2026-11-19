@@ -491,7 +491,8 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
                     )}
                     {q.type === 'numeric' && (
                       <div className="px-3 py-2 rounded-xl text-sm bg-logrado-fondo dark:bg-logrado-fondo/40 border border-logrado dark:border-logrado text-logrado dark:text-logrado">
-                        Respuesta correcta: {respuestaNumerica(q.correctAnswer, q.tolerance)}
+                        Respuesta correcta: <LaTeXRenderer content={respuestaNumerica(q.correctAnswer, q.tolerance, q.fraccion)} />
+                        {q.exigeIrreducible ? ' (irreducible)' : ''}
                       </div>
                     )}
                     {q.type === 'short_answer' && (

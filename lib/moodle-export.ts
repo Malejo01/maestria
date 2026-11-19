@@ -92,8 +92,15 @@ function buildQuestionBlock(question: Question, index: number): string {
       // K1: acá NO va `formatearNumero`. GIFT exige punto decimal en la
       // respuesta numérica (`{#0.75:0.01}`); Moodle muestra el número en el
       // idioma del curso. El enunciado sí lleva lo que escribió la IA.
-      const tolerance = question.tolerance ? `:${question.tolerance}` : ''
-      return `::${questionTitle}::${questionText} {#${question.correctAnswer}${tolerance}}${buildFeedback(question)}`
+      // K2: GIFT no tiene fracciones. Una que no da decimal exacto (11/12) se
+      // exporta redondeada a cuatro decimales con ese margen, para que en
+      // Moodle se pueda acertar escribiendo el decimal.
+      const valor = Number(question.correctAnswer)
+      const periodica = Boolean(question.fraccion) && !question.tolerance && Math.abs(valor * 1e4 - Math.round(valor * 1e4)) > 1e-6
+      const numero = periodica ? Number(valor.toFixed(4)) : question.correctAnswer
+      const margen = question.tolerance || (periodica ? 0.0001 : 0)
+      const tolerance = margen ? `:${margen}` : ''
+      return `::${questionTitle}::${questionText} {#${numero}${tolerance}}${buildFeedback(question)}`
     }
     case 'short_answer': {
       if (question.acceptedAnswers.length === 0) {
