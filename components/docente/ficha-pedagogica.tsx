@@ -183,7 +183,7 @@ export function FichaPedagogica({
               <option value="">{T.campos.materia.ninguna}</option>
               {materias.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.nombre}
+                  {m.etiqueta ?? m.nombre}
                 </option>
               ))}
             </select>

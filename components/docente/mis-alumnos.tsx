@@ -202,7 +202,7 @@ export function MisAlumnos({
         </div>
       )}
 
-      <ListaQuitados quitados={quitados} alCambiar={releerTrasCambio} />
+      <ListaQuitados quitados={quitados} alCambiar={releerTrasCambio} materias={materias} />
 
       <ConfirmarQuitar
         quienes={aQuitar?.quienes ?? null}

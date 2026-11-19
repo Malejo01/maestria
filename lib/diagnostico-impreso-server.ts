@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { etiquetaDeMateriaDe } from '@/lib/etiqueta-materia-server'
 import { leerInvitaciones, leerMiembros } from '@/lib/alumnos-docente-server'
 import { marcasDelImpreso, preguntasDelCuestionario, type MarcaDePregunta } from '@/lib/diagnostico-resultados'
 import { preguntaImpresa, type PreguntaImpresa } from '@/lib/diagnostico-impreso'
@@ -38,7 +39,7 @@ async function quien(
 
 async function cuestionario(teacherId: string, quizId: number): Promise<Fila | null> {
   const filas = (await sql`
-    SELECT q.id, q.title, q.subject_name, q.questions, q.selected_topics, d.classroom_id
+    SELECT q.id, q.title, q.subject_name, q.teacher_program_id, q.questions, q.selected_topics, d.classroom_id
     FROM teacher_quizzes q
     JOIN diagnosticos d ON d.id = q.diagnostico_id
     WHERE q.id = ${quizId} AND q.user_id = ${teacherId} AND q.tipo = 'diagnostico'
@@ -64,7 +65,8 @@ export async function leerParaImprimir(teacherId: string, quizId: number, destin
   return {
     quizId,
     titulo: String(q.title),
-    materia: String(q.subject_name),
+    // K6: con nivel y año si el docente tiene otra materia que se llama igual.
+    materia: await etiquetaDeMateriaDe(teacherId, Number(q.teacher_program_id), String(q.subject_name)),
     alumno: alumno.nombre,
     preguntas: crudas.map(preguntaImpresa),
     cargaPrevia: previas[0] ? marcasDelImpreso(preguntasDelCuestionario(crudas, temas), previas[0].respuestas) : null,

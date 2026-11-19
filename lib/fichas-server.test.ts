@@ -36,6 +36,8 @@ const { db, sqlMock, leerMiembros, leerInvitaciones } = vi.hoisted(() => {
         {
           id: 4,
           subject_name: 'Análisis I',
+          nivel: 'Superior',
+          grado: '1er Año',
           units: [{ id: 'u1', name: 'Unidad 1', topics: [{ id: 't1', name: 'Límites' }, { id: 't2', name: 'Derivadas' }] }],
         },
       ]
@@ -141,6 +143,11 @@ describe('guarda y vuelve a cargar cada campo', () => {
     expect(await guardarFicha('docente', { invitacionId: 7 }, 'Sofía Ayarde', COMPLETA)).toBe(true)
     const leida = await leerFicha('docente', { invitacionId: 7 })
     expect(leida).toMatchObject({ disponible: true, origen: 'ficha', nombre: 'Sofía Ayarde', ficha: COMPLETA })
+  })
+
+  it('K6: las materias del selector traen su etiqueta', async () => {
+    const leida = await leerFicha('docente', { invitacionId: 7 })
+    expect(leida?.materias[0]).toMatchObject({ id: 4, nombre: 'Análisis I', etiqueta: 'Análisis I' })
   })
 
   it('para un alumno que ya entró', async () => {

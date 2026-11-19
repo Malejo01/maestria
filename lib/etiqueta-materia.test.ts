@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { etiquetaDeMateria, nombreRepetido, type MateriaConNivel } from './etiqueta-materia'
+import { etiquetaDeMateria, etiquetaPorId, nombreRepetido, type MateriaConNivel } from './etiqueta-materia'
 
 const m = (id: number, nombre: string, nivel: string | null = null, grado: string | null = null): MateriaConNivel => ({
   id,
@@ -78,5 +78,41 @@ describe('nombreRepetido', () => {
     ]
     expect(nombreRepetido(todos[0], todos)).toBe(true)
     expect(nombreRepetido(todos[2], todos)).toBe(false)
+  })
+})
+
+describe('K6 · el selector de "Qué rinde" ya no repite "Matemática"', () => {
+  // Las materias de la queja: "Matemática · Matemática · Matemática y su Didáctica · Matemática · Matemática".
+  const deMauro: MateriaConNivel[] = [
+    { id: 1, nombre: 'Matemática', nivel: 'Secundario', grado: '3er Año' },
+    { id: 2, nombre: 'Matemática', nivel: 'Secundario', grado: '4to Año' },
+    { id: 3, nombre: 'Matemática y su Didáctica', nivel: 'Superior', grado: '1er Año' },
+    { id: 4, nombre: 'Matemática', nivel: 'Secundario', grado: '5to Año' },
+    { id: 5, nombre: 'Matemática', nivel: 'Superior', grado: '1er Año' },
+  ]
+
+  it('cada opción se distingue', () => {
+    const etiquetas = deMauro.map((m) => etiquetaDeMateria(m, deMauro))
+    expect(etiquetas).toEqual([
+      'Matemática · 3.º Sec.',
+      'Matemática · 4.º Sec.',
+      'Matemática y su Didáctica',
+      'Matemática · 5.º Sec.',
+      'Matemática · 1.º Sup.',
+    ])
+    expect(new Set(etiquetas).size).toBe(deMauro.length)
+  })
+
+  it('etiquetaPorId: una materia que llega sólo con id y nombre (membresía, alumno quitado)', () => {
+    expect(etiquetaPorId({ id: 2, nombre: 'Matemática' }, deMauro)).toBe('Matemática · 4.º Sec.')
+    expect(etiquetaPorId({ id: 99, nombre: 'Física' }, deMauro)).toBe('Física')
+  })
+})
+
+describe('K6 · la etiqueta en el texto de "Armar diagnóstico"', () => {
+  it('no duplica el punto de "Sec."', async () => {
+    const { DIAGNOSTICO } = await import('./textos')
+    expect(DIAGNOSTICO.dialogo.detalle('Matemática · 3.º Sec.')).toBe('Sobre el programa de Matemática · 3.º Sec. Se asigna al grupo con un intento por cuestionario.')
+    expect(DIAGNOSTICO.dialogo.detalle('Lengua')).toMatch(/^Sobre el programa de Lengua\. /)
   })
 })
