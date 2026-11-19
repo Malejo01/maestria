@@ -32,6 +32,8 @@ import { LaTeXRenderer } from '@/components/latex-renderer'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { stableStringify } from '@/lib/stable-json'
+import { comaDecimal, formatearNumero, respuestaNumerica } from '@/lib/numeros'
+import { parseNumericAnswer } from '@/lib/numeric-answer'
 import type { Question, TeacherQuiz } from '@/lib/types'
 import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
 import { DialogoDeLimite } from '@/components/docente/pantalla-de-limite'
@@ -647,14 +649,13 @@ function VistaDePregunta({ question }: { question: Question }) {
 
       {question.type === 'numeric' && (
         <p className="text-sm">
-          Correcta: <strong>{question.correctAnswer}</strong>
-          {question.tolerance ? ` (± ${question.tolerance})` : ''}
+          Correcta: <strong>{respuestaNumerica(question.correctAnswer, question.tolerance)}</strong>
         </p>
       )}
 
       {question.type === 'short_answer' && (
         <p className="text-sm">
-          Acepta: <strong>{question.acceptedAnswers.join(' · ')}</strong>
+          Acepta: <strong>{comaDecimal(question.acceptedAnswers.join(' · '))}</strong>
         </p>
       )}
 
@@ -733,29 +734,19 @@ function EditorDePregunta({
       {question.type === 'numeric' && (
         <div className="grid gap-3 sm:grid-cols-2">
           <Campo label="Respuesta correcta">
-            <Input
-              // `text` y no `number`: en es-AR el input numérico del navegador
-              // descarta la coma decimal. Es el mismo bug que ya se arregló en
-              // el input del alumno (numeric-input.tsx).
-              type="text"
-              inputMode="decimal"
-              value={String(question.correctAnswer)}
-              onChange={(e) => {
-                const parsed = Number(e.target.value.replace(',', '.'))
-                if (!Number.isNaN(parsed)) onChange({ correctAnswer: parsed } as Partial<Question>)
+            <CampoNumerico
+              valor={question.correctAnswer}
+              onValor={(valor) => {
+                if (valor !== null) onChange({ correctAnswer: valor } as Partial<Question>)
               }}
             />
           </Campo>
           <Campo label="Tolerancia (opcional)">
-            <Input
-              type="text"
-              inputMode="decimal"
-              value={question.tolerance === undefined ? '' : String(question.tolerance)}
-              onChange={(e) => {
-                const raw = e.target.value.trim()
-                if (raw === '') return onChange({ tolerance: undefined } as Partial<Question>)
-                const parsed = Number(raw.replace(',', '.'))
-                if (!Number.isNaN(parsed)) onChange({ tolerance: parsed } as Partial<Question>)
+            <CampoNumerico
+              valor={question.tolerance ?? null}
+              onValor={(valor, vacio) => {
+                if (vacio) return onChange({ tolerance: undefined } as Partial<Question>)
+                if (valor !== null) onChange({ tolerance: valor } as Partial<Question>)
               }}
             />
           </Campo>
@@ -784,6 +775,29 @@ function EditorDePregunta({
         />
       </Campo>
     </div>
+  )
+}
+
+/**
+ * Un número que edita el docente. `text` y no `number`: en es-AR el input
+ * numérico del navegador descarta la coma decimal (el mismo bug que se arregló
+ * en el campo del alumno). El texto crudo es del campo: si se reescribiera
+ * desde el número, al tipear `0,` se volvería `0` y no se podría seguir.
+ * Lee igual que el campo del alumno (coma, punto, fracción, miles con punto).
+ */
+function CampoNumerico({ valor, onValor }: { valor: number | null; onValor: (valor: number | null, vacio: boolean) => void }) {
+  const [texto, setTexto] = useState(() => (valor === null ? '' : formatearNumero(valor)))
+  return (
+    <Input
+      type="text"
+      inputMode="decimal"
+      value={texto}
+      aria-invalid={texto.trim() !== '' && parseNumericAnswer(texto) === null}
+      onChange={(e) => {
+        setTexto(e.target.value)
+        onValor(parseNumericAnswer(e.target.value), e.target.value.trim() === '')
+      }}
+    />
   )
 }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { comaDecimal, respuestaNumerica } from '@/lib/numeros'
 import { Cargando } from '@/components/sistema/cargando'
 
 
@@ -490,12 +491,12 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
                     )}
                     {q.type === 'numeric' && (
                       <div className="px-3 py-2 rounded-xl text-sm bg-logrado-fondo dark:bg-logrado-fondo/40 border border-logrado dark:border-logrado text-logrado dark:text-logrado">
-                        Respuesta correcta: {q.correctAnswer}{q.tolerance ? ` (± ${q.tolerance})` : ''}
+                        Respuesta correcta: {respuestaNumerica(q.correctAnswer, q.tolerance)}
                       </div>
                     )}
                     {q.type === 'short_answer' && (
                       <div className="px-3 py-2 rounded-xl text-sm bg-logrado-fondo dark:bg-logrado-fondo/40 border border-logrado dark:border-logrado text-logrado dark:text-logrado">
-                        Respuestas aceptadas: {q.acceptedAnswers.join(' / ')}
+                        Respuestas aceptadas: {comaDecimal(q.acceptedAnswers.join(' / '))}
                       </div>
                     )}
                     {q.explanation && (

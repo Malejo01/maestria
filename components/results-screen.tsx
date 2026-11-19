@@ -1,5 +1,6 @@
 'use client'
 
+import { formatearNumero } from '@/lib/numeros'
 import { Cargando } from '@/components/sistema/cargando'
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
@@ -363,7 +364,7 @@ export function ResultsScreen() {
                   'text-5xl font-black',
                   results.passed ? 'text-logrado' : 'text-flojo'
                 )}>
-                  {results.score.toFixed(2)}
+                  {formatearNumero(results.score)}
                 </span>
                 <span className="text-lg text-muted-foreground font-bold">/10</span>
               </div>

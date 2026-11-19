@@ -1,4 +1,5 @@
 import type { MarcaDePregunta } from '@/lib/diagnostico-resultados'
+import { comaDecimal, respuestaNumerica } from '@/lib/numeros'
 
 /**
  * J7: la versión para imprimir y la carga a mano. Parte pura.
@@ -33,10 +34,9 @@ export function preguntaImpresa(cruda: unknown, indice: number): PreguntaImpresa
   } else if (tipo === 'true_false') {
     correcta = q.correctAnswer === true ? 'Verdadero' : 'Falso'
   } else if (tipo === 'numeric') {
-    const tolerancia = Number(q.tolerance)
-    correcta = `${q.correctAnswer}${tolerancia > 0 ? ` (± ${tolerancia})` : ''}`
+    correcta = respuestaNumerica(Number(q.correctAnswer), Number(q.tolerance))
   } else {
-    correcta = Array.isArray(q.acceptedAnswers) ? q.acceptedAnswers.map(String).join(' / ') : ''
+    correcta = Array.isArray(q.acceptedAnswers) ? comaDecimal(q.acceptedAnswers.map(String).join(' / ')) : ''
   }
   return {
     indice,

@@ -43,6 +43,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { formatearNumero } from '@/lib/numeros'
 import { SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
 import Link from 'next/link'
 import type {
@@ -91,7 +92,7 @@ function formatAttemptAnswerText(answer: AttemptAnswer, which: 'selected' | 'cor
     }
     case 'numeric': {
       const value = which === 'selected' ? payload.selectedValue : payload.correctAnswer
-      return String(value)
+      return typeof value === 'number' ? formatearNumero(value) : String(value ?? '')
     }
     case 'short_answer':
       return which === 'selected' ? String(payload.selectedText ?? '') : (Array.isArray(payload.acceptedAnswers) ? payload.acceptedAnswers.join(' / ') : '')
@@ -431,7 +432,7 @@ function HistoryPageContent() {
                         <TrendingUp className="w-5 h-5 text-logrado" />
                       </div>
                       <div className="text-xl font-black text-foreground leading-none">
-                        {stats.promedio!.toFixed(1)}
+                        {formatearNumero(stats.promedio!, { decimales: 1 })}
                       </div>
                       <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide leading-tight">
                         Promedio de práctica
@@ -582,7 +583,7 @@ function HistoryPageContent() {
                               <div className="flex items-center gap-2 shrink-0">
                                 <div className="text-right">
                                   <p className={cn('text-2xl font-black leading-none', classes.text)}>
-                                    {Number(attempt.score).toFixed(1)}
+                                    {formatearNumero(Number(attempt.score), { decimales: 1 })}
                                   </p>
                                   <p className="text-[11px] text-muted-foreground">
                                     {attempt.correct_answers}/{attempt.total_questions}
@@ -719,7 +720,7 @@ function HistoryPageContent() {
                               <div className="flex items-center gap-1">
                                 <TrendingUp className={cn('w-4 h-4', classes.text)} />
                                 <span className={cn('font-black text-base', classes.text)}>
-                                  {Number(item.max_score).toFixed(1)}
+                                  {formatearNumero(Number(item.max_score), { decimales: 1 })}
                                 </span>
                               </div>
                               <p className="text-[11px] text-muted-foreground">

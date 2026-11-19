@@ -1,5 +1,7 @@
 'use client'
 
+import { formatearNumero } from '@/lib/numeros'
+
 /**
  * Small shared pieces of the seguimiento panel, kept in one place so the aula
  * view and the per-student dialog format marks and accuracy identically.
@@ -13,7 +15,7 @@ export function formatDateTime(value: string | null | undefined): string {
 export function formatScore(value: number | string | null | undefined): string {
   if (value === null || value === undefined) return '—'
   const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed.toFixed(1) : '—'
+  return Number.isFinite(parsed) ? formatearNumero(parsed, { decimales: 1 }) : '—'
 }
 
 export function formatPercent(value: number | null | undefined): string {

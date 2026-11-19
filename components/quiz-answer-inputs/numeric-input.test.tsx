@@ -176,4 +176,25 @@ describe('estado ya enviado', () => {
     )
     expect(screen.queryByText(/Leímos:/)).toBeNull()
   })
+
+  it('K1: el punto de miles se lee como miles y se lo dice', () => {
+    const { input, onChange } = renderInput()
+    expect(screen.getByText(/1\.500/)).toBeTruthy() // la ayuda del campo
+    fireEvent.change(input, { target: { value: '1.500' } })
+    expect(onChange).toHaveBeenLastCalledWith(1500)
+    expect(screen.getByText(/el punto separa los miles/)).toBeTruthy()
+  })
+
+  it('K1: la correcta con decimal de máquina se muestra redondeada y con coma', () => {
+    render(
+      <NumericInput
+        question={{ ...pregunta, correctAnswer: 0.9166666666666666 }}
+        value={1}
+        submitted
+        isCorrect={false}
+        onChange={vi.fn()}
+      />
+    )
+    expect(screen.getByText(/Respuesta correcta: 0,9167/)).toBeTruthy()
+  })
 })

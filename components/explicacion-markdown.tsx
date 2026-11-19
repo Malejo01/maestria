@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo } from 'react'
 import { LaTeXRenderer } from './latex-renderer'
+import { comaDecimal } from '@/lib/numeros'
 import {
   parsearMarkdown,
   type Bloque,
@@ -53,7 +54,7 @@ function EnLinea({ nodos }: { nodos: NodoEnLinea[] }) {
       {nodos.map((nodo, i) => {
         switch (nodo.tipo) {
           case 'texto':
-            return <Fragment key={i}>{nodo.texto}</Fragment>
+            return <Fragment key={i}>{comaDecimal(nodo.texto)}</Fragment>
           case 'formula':
             return <LaTeXRenderer key={i} content={nodo.crudo} />
           case 'codigo':

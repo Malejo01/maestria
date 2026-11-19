@@ -32,7 +32,11 @@ describe('preguntaImpresa — la respuesta correcta, escrita, para la hoja del d
     expect(preguntaImpresa({ type: 'multiple_choice', question: '¿?', options: ['1', '2', '3'], correctAnswer: 1 }, 0).correcta).toBe('B. 2')
   })
   it('numérica, con tolerancia', () => {
-    expect(preguntaImpresa({ type: 'numeric', question: '¿?', correctAnswer: 3.5, tolerance: 0.1 }, 0).correcta).toBe('3.5 (± 0.1)')
+    expect(preguntaImpresa({ type: 'numeric', question: '¿?', correctAnswer: 3.5, tolerance: 0.1 }, 0).correcta).toBe('3,5 (± 0,1)')
+  })
+  it('K1: el decimal de máquina sale redondeado y con coma', () => {
+    expect(preguntaImpresa({ type: 'numeric', question: '¿?', correctAnswer: 0.9166666666666666 }, 0).correcta).toBe('0,9167')
+    expect(preguntaImpresa({ type: 'numeric', question: '¿?', correctAnswer: 12500 }, 0).correcta).toBe('12.500')
   })
   it('verdadero o falso', () => {
     expect(preguntaImpresa({ type: 'true_false', question: '¿?', correctAnswer: false }, 0).correcta).toBe('Falso')
