@@ -1,7 +1,9 @@
 import { sql } from '@/lib/db'
+import { captureRouteFailure } from '@/lib/observability'
 import { invitacionDe } from '@/lib/alumnos-docente'
 import { leerInvitaciones, leerMiembros } from '@/lib/alumnos-docente-server'
 import { normalizeUnits } from '@/lib/teacher-programs'
+import { combinarFichas, type PerfilAlumnos } from '@/lib/perfil-alumnos'
 import { FICHA_VACIA, fichaDesdeContexto, fichaDesdeFila, type DatosFicha, type MateriaConTemas } from '@/lib/fichas'
 
 /**
@@ -262,4 +264,50 @@ export async function leerResumenDeFichas(teacherId: string): Promise<{
     else if (fila.invitation_id) vacio.porInvitacion.set(Number(fila.invitation_id), resumen)
   }
   return vacio
+}
+
+/**
+ * J3: lo pedagógico de las fichas de los alumnos de esa materia, combinado
+ * (lib/perfil-alumnos.ts). Los alumnos son los del grupo (o grupos abiertos)
+ * de esa materia: miembros activos y quienes todavía no entraron. null si no
+ * hay fichas, si la materia no es del docente o si la 027 no corrió: la
+ * generación sigue como siempre.
+ */
+export async function perfilParaMateria(teacherId: string, teacherProgramId: number): Promise<PerfilAlumnos | null> {
+  try {
+    const materia = (await leerMaterias(teacherId)).find((m) => m.id === teacherProgramId)
+    if (!materia) return null
+    const filas = (await sql`
+      SELECT f.*
+      FROM fichas_alumno f
+      WHERE f.teacher_id = ${teacherId}
+        AND (
+          f.user_id IN (
+            SELECT m.user_id FROM classroom_members m
+            JOIN classrooms c ON c.id = m.classroom_id
+            WHERE c.teacher_id = ${teacherId} AND c.teacher_program_id = ${teacherProgramId}
+              AND c.status = 'open' AND m.status = 'active'
+          )
+          OR f.invitation_id IN (
+            SELECT i.id FROM classroom_invitations i
+            JOIN classrooms c ON c.id = i.classroom_id
+            WHERE c.teacher_id = ${teacherId} AND c.teacher_program_id = ${teacherProgramId} AND c.status = 'open'
+          )
+        )
+    `) as Fila[]
+    return combinarFichas(filas.map(fichaDesdeFila), materia)
+  } catch (error) {
+    if (faltaLa027(error)) return null
+    throw error
+  }
+}
+
+/** Para las rutas que generan: el perfil, o null si algo falla. Generar no se cae por la ficha. */
+export async function perfilSinRomper(teacherId: string, teacherProgramId: number): Promise<PerfilAlumnos | null> {
+  try {
+    return await perfilParaMateria(teacherId, teacherProgramId)
+  } catch (error) {
+    captureRouteFailure(error, { endpoint: 'lib/fichas-server', operation: 'perfilParaMateria' })
+    return null
+  }
 }

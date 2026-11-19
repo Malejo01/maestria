@@ -16,6 +16,7 @@ import { captureRouteFailure } from '@/lib/observability'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { generateQuiz, resolveQuizRequest } from '@/lib/quiz-generation'
 import { bloqueoParaGenerar } from '@/lib/planes-server'
+import { perfilSinRomper } from '@/lib/fichas-server'
 import { getViewer } from '@/lib/auth-session'
 
 export async function POST(req: Request) {
@@ -33,6 +34,11 @@ export async function POST(req: Request) {
   if (viewer && !viewer.isGuest && viewer.role === 'DOCENTE') {
     const bloqueo = await bloqueoParaGenerar(viewer.id, viewer.email, { questions: [] }, { cuestionario: true })
     if (bloqueo) return bloqueo
+    // J3: si genera para una materia suya, lo pedagógico de las fichas de los
+    // alumnos de ese grupo entra al prompt. Se carga acá, nunca del cuerpo.
+    if (params.teacherProgramId) {
+      params.perfilAlumnos = await perfilSinRomper(viewer.id, params.teacherProgramId)
+    }
   }
 
   // Recién acá, con el nivel ya resuelto, para que el mensaje de corte le hable

@@ -1,3 +1,5 @@
+import { seccionPerfilAlumnos, type PerfilAlumnos } from '@/lib/perfil-alumnos'
+
 export interface EducationContext {
   nivel: 'Primario' | 'Secundario' | 'Superior'
   grado: string
@@ -496,12 +498,15 @@ export function buildEducationSystemPrompt({
   materia,
   difficulty = 'intermedio',
   contextoProfesional,
+  perfilAlumnos,
 }: {
   nivel?: string
   grado?: string
   materia: string
   difficulty?: string
   contextoProfesional?: ContextoProfesionalCarrera
+  /** J3: lo pedagógico de la ficha de los alumnos del grupo. Ver lib/perfil-alumnos.ts. */
+  perfilAlumnos?: PerfilAlumnos | null
 }): string {
   const ctx = getEducationContext(nivel, grado, materia)
 
@@ -533,7 +538,7 @@ PÚBLICO OBJETIVO Y EDAD:
 
 DISCIPLINA Y MATERIA:
 ${ctx.estrategiaMateria}
-${buildProfessionalContextSection(contextoProfesional)}
+${buildProfessionalContextSection(contextoProfesional)}${seccionPerfilAlumnos(perfilAlumnos)}
 
 REGISTRO LINGÜÍSTICO Y FORMATO:
 ${ctx.registroLinguistico}

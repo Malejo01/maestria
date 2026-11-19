@@ -31,7 +31,9 @@ const {
   sqlMock,
   getViewer,
   bloqueoParaGenerar,
+  perfilSinRomper,
 } = vi.hoisted(() => ({
+  perfilSinRomper: vi.fn(),
   getViewer: vi.fn(),
   bloqueoParaGenerar: vi.fn(),
   generateObject: vi.fn(),
@@ -59,6 +61,8 @@ vi.mock('@/lib/db', () => ({ sql: sqlMock }))
 vi.mock('@/lib/auth-session', () => ({ getViewer }))
 
 vi.mock('@/lib/planes-server', () => ({ bloqueoParaGenerar }))
+
+vi.mock('@/lib/fichas-server', () => ({ perfilSinRomper }))
 
 import { POST } from './route'
 
@@ -661,5 +665,34 @@ describe('POST — usage con la forma real del SDK', () => {
       outputTokens: 1500,
       totalTokens: 3800,
     })
+  })
+})
+
+describe('POST — J3: la ficha de los alumnos entra al prompt', () => {
+  const perfil = {
+    edades: [16],
+    anios: ['4to año'],
+    orientaciones: ['Técnica en electrónica'],
+    comoEvalua: '4 ejercicios de desarrollo, sin calculadora',
+    temasDificiles: ['Ecuación de la recta'],
+  }
+  const promptEnviado = () => String(generateObject.mock.calls[0][0].system)
+
+  it('un docente que genera para su materia: se carga en el servidor y llega al prompt', async () => {
+    getViewer.mockResolvedValue({ id: 'doc', role: 'DOCENTE', isGuest: false, email: 'd@x.com' })
+    perfilSinRomper.mockResolvedValue(perfil)
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+
+    expect((await POST(request({ teacherProgramId: 13 }))).status).toBe(200)
+    expect(perfilSinRomper).toHaveBeenCalledWith('doc', 13)
+    expect(promptEnviado()).toContain('Ecuación de la recta')
+    expect(promptEnviado()).toContain('sin calculadora')
+  })
+
+  it('un perfil que viene en el cuerpo de la request se ignora', async () => {
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+    await POST(request({ perfilAlumnos: { ...perfil, temasDificiles: ['INYECTADO'] } }))
+    expect(promptEnviado()).not.toContain('INYECTADO')
+    expect(perfilSinRomper).not.toHaveBeenCalled()
   })
 })
