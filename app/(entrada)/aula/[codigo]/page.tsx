@@ -60,6 +60,9 @@ export default function LinkDeGrupoPage() {
   const [isLoading, setIsLoading] = useState(codigoValido)
   const [guestName, setGuestName] = useState('')
   const [isJoining, setIsJoining] = useState(false)
+  // K5: los que el docente sumó por nombre y no entraron todavía.
+  const [pendientes, setPendientes] = useState<{ id: number; nombre: string }[]>([])
+  const [esOtraPersona, setEsOtraPersona] = useState(false)
 
   useEffect(() => {
     if (!codigoValido) return
@@ -76,6 +79,7 @@ export default function LinkDeGrupoPage() {
         }
         setPreview(data.classroom)
         setQuienEntra(data.viewer ?? null)
+        setPendientes(Array.isArray(data.pendientes) ? data.pendientes : [])
       })
       .catch(() => {
         if (isMounted) setError(GRUPO.sinConexion)
@@ -89,7 +93,7 @@ export default function LinkDeGrupoPage() {
     }
   }, [code, codigoValido])
 
-  const join = async (displayName?: string) => {
+  const join = async (displayName?: string, invitacionId?: number) => {
     setIsJoining(true)
     setError(null)
 
@@ -97,12 +101,17 @@ export default function LinkDeGrupoPage() {
       const response = await fetch('/api/classrooms/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code, displayName }),
+        body: JSON.stringify({ code, displayName, invitacionId }),
       })
       const data = await response.json()
 
       if (!response.ok) {
         setError(data?.error || GRUPO.noPudimosSumarte)
+        // Alguien ya entró con ese nombre: se saca de la lista y sigue el camino de siempre.
+        if (data?.invitacionUsada) {
+          setPendientes((actuales) => actuales.filter((p) => p.id !== invitacionId))
+          setEsOtraPersona(true)
+        }
         return
       }
 
@@ -160,7 +169,31 @@ export default function LinkDeGrupoPage() {
             {[preview.name, preview.nivel, preview.grado].filter(Boolean).join(' · ')}
           </BajadaEntrada>
 
-          {yaTieneIdentidad ? (
+          {pendientes.length > 0 && !esOtraPersona ? (
+            <section aria-labelledby={`${idNombre}-sos`}>
+              <h2 id={`${idNombre}-sos`} className="titulo-m text-texto">
+                {GRUPO.sosAlguno}
+              </h2>
+              <p className="nota mb-3 mt-1 text-texto-suave">{GRUPO.sosAlgunoDetalle}</p>
+              <ul className="flex flex-col gap-2">
+                {pendientes.map((p) => (
+                  <li key={p.id}>
+                    <Boton ancho variante="secundario" disabled={isJoining} onClick={() => join(undefined, p.id)}>
+                      {GRUPO.soyYo(p.nombre)}
+                    </Boton>
+                  </li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                className={`${CLASE_ENLACE_ENTRADA} mt-3`}
+                disabled={isJoining}
+                onClick={() => setEsOtraPersona(true)}
+              >
+                {GRUPO.soyOtraPersona}
+              </button>
+            </section>
+          ) : yaTieneIdentidad ? (
             <Boton ancho disabled={isJoining} onClick={() => join()}>
               {isJoining && <Cargando />}
               {isJoining ? GRUPO.entrando : nombreConocido ? GRUPO.entrarComo(nombreConocido) : GRUPO.entrar}

@@ -77,6 +77,18 @@ const { db, sqlMock, getViewerMock, captureGuestJoinCapReached } = vi.hoisted(()
 
 vi.mock('@/lib/db', () => ({ sql: sqlMock }))
 vi.mock('@/lib/auth-session', () => ({ getViewer: getViewerMock }))
+const invitaciones = vi.hoisted(() => ({
+  pendientes: [] as { id: number; nombre: string }[],
+  usar: vi.fn(async () => true),
+}))
+vi.mock('@/lib/invitacion-al-entrar-server', async () => {
+  const real = await vi.importActual<typeof import('@/lib/invitacion-al-entrar-server')>('@/lib/invitacion-al-entrar-server')
+  return {
+    invitacionPorNombre: real.invitacionPorNombre,
+    pendientesDelGrupo: vi.fn(async () => invitaciones.pendientes),
+    usarInvitacion: invitaciones.usar,
+  }
+})
 vi.mock('@/lib/observability', () => ({
   captureRouteFailure: vi.fn(),
   captureGuestJoinCapReached,
@@ -109,6 +121,8 @@ beforeEach(() => {
   getViewerMock.mockReset()
   captureGuestJoinCapReached.mockReset()
   delete process.env.CLASSROOM_DAILY_NEW_GUEST_LIMIT
+  invitaciones.pendientes = []
+  invitaciones.usar.mockClear()
 })
 
 describe('tope de invitados nuevos por aula', () => {
@@ -201,5 +215,50 @@ describe('J1 — un alumno quitado que vuelve a entrar con el link', () => {
 
     expect((await join('Beto')).status).toBe(200)
     expect(db.members).toEqual([{ classroomId: db.classroom.id, userId: 'guest-beto', status: 'active' }])
+  })
+})
+
+describe('K5 — entrar como el alumno que el docente ya sumó', () => {
+  function entrar(cuerpo: Record<string, unknown>) {
+    return POST(new Request('http://localhost/api/classrooms/join', { method: 'POST', body: JSON.stringify({ code: db.joinCode, ...cuerpo }) }))
+  }
+
+  it('eligió su nombre en "¿Sos alguno de estos?": entra con ese nombre y la invitación se usa', async () => {
+    invitaciones.pendientes = [{ id: 5, nombre: 'Sofía Ayarde' }, { id: 6, nombre: 'Tomás Villa' }]
+    getViewerMock.mockResolvedValueOnce(null)
+    expect((await entrar({ invitacionId: 5 })).status).toBe(200)
+    expect(db.users).toEqual([expect.objectContaining({ name: 'Sofía Ayarde', isGuest: true })])
+    expect(invitaciones.usar).toHaveBeenCalledWith({ classroomId: db.classroom.id, invitacionId: 5, userId: db.users[0].id })
+  })
+
+  it('escribió su nombre (aunque sea en otro orden y sin tildes): se usa la misma invitación', async () => {
+    invitaciones.pendientes = [{ id: 5, nombre: 'Sofía Ayarde' }]
+    getViewerMock.mockResolvedValueOnce(null)
+    expect((await entrar({ displayName: 'ayarde sofia' })).status).toBe(200)
+    expect(db.users[0].name).toBe('Sofía Ayarde')
+    expect(invitaciones.usar).toHaveBeenCalledTimes(1)
+  })
+
+  it('"No, soy otra persona": entra con su nombre y no toca ninguna invitación', async () => {
+    invitaciones.pendientes = [{ id: 5, nombre: 'Sofía Ayarde' }]
+    getViewerMock.mockResolvedValueOnce(null)
+    expect((await entrar({ displayName: 'Lucía Pérez' })).status).toBe(200)
+    expect(db.users[0].name).toBe('Lucía Pérez')
+    expect(invitaciones.usar).not.toHaveBeenCalled()
+  })
+
+  it('una invitación que ya se usó no se puede volver a elegir, y no crea a nadie', async () => {
+    invitaciones.pendientes = []
+    getViewerMock.mockResolvedValueOnce(null)
+    const respuesta = await entrar({ invitacionId: 5 })
+    expect(respuesta.status).toBe(409)
+    expect(db.users).toHaveLength(0)
+  })
+
+  it('con cuenta (o cookie de invitado): también puede elegir su nombre', async () => {
+    invitaciones.pendientes = [{ id: 6, nombre: 'Tomás Villa' }]
+    getViewerMock.mockResolvedValueOnce({ id: 'user-tomi', displayName: 'Tomi', isGuest: false })
+    expect((await entrar({ invitacionId: 6 })).status).toBe(200)
+    expect(invitaciones.usar).toHaveBeenCalledWith({ classroomId: db.classroom.id, invitacionId: 6, userId: 'user-tomi' })
   })
 })

@@ -111,6 +111,11 @@ export const GRUPO = {
   sinConexion: 'No pudimos conectarnos. Probá de nuevo en un momento.',
   noPudimosSumarte: 'No pudimos sumarte al grupo. Probá de nuevo.',
   volverAlInicio: 'Volver al inicio',
+  /** K5: el docente ya sumó alumnos por nombre y todavía no entraron. */
+  sosAlguno: '¿Sos alguno de estos?',
+  sosAlgunoDetalle: 'Tu docente ya te sumó al grupo con tu nombre. Tocá el tuyo para entrar.',
+  soyYo: (nombre: string) => `Soy ${nombre}`,
+  soyOtraPersona: 'No, soy otra persona',
 } as const
 
 export const INVITADO = {
