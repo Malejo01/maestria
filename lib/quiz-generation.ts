@@ -22,6 +22,7 @@ import { captureAiSchemaFailure, captureRouteFailure } from '@/lib/observability
 import type { AiSdkUsage } from '@/lib/ai-usage'
 import { normalizeQuestionText, numericSignature } from '@/lib/question-dedup'
 import { normalizarFraccionGenerada } from '@/lib/fraccion'
+import { pideMasDeUnValor } from '@/lib/consigna-multiple'
 import {
   buildQuestionMixInstruction,
   mergeQuestionTypeMixes,
@@ -119,7 +120,8 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - correctAnswer: number (índice 0-based de la opción correcta)`,
   short_answer: `TIPO "short_answer":
 - type: "short_answer"
-- acceptedAnswers: array de 1 a 3 strings con respuestas correctas aceptadas (variantes cortas, sin explicación)`,
+- acceptedAnswers: array de 1 a 3 strings con respuestas correctas aceptadas (variantes cortas, sin explicación)
+- UNA CONSIGNA, UNA RESPUESTA: la pregunta pide exactamente un resultado. Si el tema tiene dos cálculos (por ejemplo media y mediana), hacé dos preguntas separadas.`,
   true_false: `TIPO "true_false":
 - type: "true_false"
 - correctAnswer: boolean (true o false)`,
@@ -131,6 +133,7 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - exigeIrreducible: boolean OPCIONAL. true si la consigna pide la expresión irreducible o simplificar: entonces 6/8 no vale por 3/4.
 - admiteMixto: boolean OPCIONAL. true sólo si el enunciado admite responder con un número mixto (1 1/2).
 - Usalo SOLO cuando la respuesta es un único número que sale de un cálculo o un conteo (ej: "Calculá el MCD(24, 36)" → 12).
+- UNA CONSIGNA, UNA RESPUESTA: hay un solo casillero, así que la pregunta pide exactamente un resultado. NUNCA "calculá la media y la mediana", "el perímetro y el área", "el MCD y el MCM", dos preguntas en una ("¿cuánto…? ¿y cuántos…?") ni "a) … b) …". Si el tema tiene dos cálculos, hacé dos preguntas separadas.
 - NUNCA lo uses para preguntas que se responden con palabras (explicar, justificar, identificar un error, nombrar un concepto o una propiedad), ni para codificar sí/no o verdadero/falso como 1/0. Si la respuesta es conceptual, usá otro de los tipos pedidos.`,
 }
 
@@ -404,6 +407,7 @@ INSTRUCCIONES CRÍTICAS:
 1. Genera EXACTAMENTE ${questionCount} preguntas.
 2. Responde SOLO con JSON válido. Sin markdown, sin explicaciones fuera del JSON, sin comentarios.
 3. Estructura: { "questions": [ { ...campos según tipo... }, ... ] }
+4. Ortografía: todo el texto (enunciados, opciones, respuestas y explicaciones) respeta la ortografía del español, con todas sus tildes: "Sí, es correcta" (no "Si, es correcta"), "más", "qué", "cuál", "está".
 
 FORMATO ESTRICTO PARA CONTENIDO MATEMÁTICO (si aplica):
 - TODO contenido matemático debe estar entre $...$
@@ -1050,6 +1054,12 @@ situaciones diferentes.${rejectionBlock}`
   const shouldDrop = (question: { question: string; topic?: string; topicName?: string; type?: string }): boolean => {
     if (isConceptualNumericQuestion(question)) {
       console.log('[generate-quiz] Dropped a numeric question that asks for words:', question.question)
+      return true
+    }
+    // K3: un solo casillero y una consigna que pide dos resultados. Se descarta
+    // y el bucle pide otra, igual que la de arriba.
+    if (pideMasDeUnValor(question)) {
+      console.log('[generate-quiz] Dropped a question that asks for more than one value:', question.question)
       return true
     }
 
