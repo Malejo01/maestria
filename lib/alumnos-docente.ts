@@ -233,6 +233,12 @@ export interface FilaAlumno {
   invitacionId: number | null
   /** J2: la fecha del examen de su ficha (AAAA-MM-DD), para "Rinde en N días". */
   fechaExamen: string | null
+  /**
+   * K8: si respondió algo en MaestrIA alguna vez, dentro o fuera de los grupos
+   * del docente. Sólo sí o no: cuándo y qué practicó por su cuenta es del alumno.
+   * Ausente: se mira sólo `intentos`.
+   */
+  respondioAlgunaVez?: boolean
 }
 
 /**
@@ -399,10 +405,24 @@ function unicasPorId<T extends { id: number }>(items: T[]): T[] {
  * caso exacto de fin de cuatrimestre. Los que todavía no entraron no cuentan
  * acá: no son alumnos que se fueron, son links sin usar, y se quitan con su X.
  */
-export function nuncaRespondieron(filas: FilaAlumno[]): { userId: string; nombre: string }[] {
+/**
+ * Los que nunca respondieron NADA en MaestrIA (K8): ni en los grupos del
+ * docente ni por su cuenta. Antes alcanzaba con no tener intentos en el grupo,
+ * y el lote se llevaba a alumnos que sí habían practicado.
+ */
+export function nuncaRespondieron(filas: FilaAlumno[]): { userId: string; nombre: string; ultimaVez: string | null }[] {
   return filas
-    .filter((fila) => fila.userId && !fila.pendiente && fila.intentos === 0)
-    .map((fila) => ({ userId: fila.userId as string, nombre: fila.nombre }))
+    .filter((fila) => fila.userId && !fila.pendiente && fila.intentos === 0 && !fila.respondioAlgunaVez)
+    .map((fila) => ({ userId: fila.userId as string, nombre: fila.nombre, ultimaVez: fila.ultimaVez }))
+}
+
+/** K8: la última actividad, dicha para el que confirma: "nunca", "practicó hoy", "practicó hace 12 días". */
+export function ultimaActividad(ultimaVez: string | null, ahora: Date): string {
+  if (!ultimaVez) return 'nunca'
+  const dias = diasDesde(new Date(ultimaVez), ahora)
+  if (dias === 0) return 'practicó hoy'
+  if (dias === 1) return 'practicó ayer'
+  return `practicó hace ${dias} días`
 }
 
 export interface QuitadoCrudo {

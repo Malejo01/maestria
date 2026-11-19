@@ -328,7 +328,7 @@ function Fila({
         className="relative z-10"
         aria-label={T.quitarAlumno.aria(alumno.nombre)}
         title={T.quitarAlumno.boton}
-        onClick={() => onQuitarAlumno({ userId, nombre: alumno.nombre })}
+        onClick={() => onQuitarAlumno({ userId, nombre: alumno.nombre, ultimaVez: alumno.ultimaVez })}
       >
         <UserMinus aria-hidden="true" strokeWidth={TRAZO_ICONO} />
       </Boton>

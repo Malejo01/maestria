@@ -92,8 +92,9 @@ const { db, sqlMock } = vi.hoisted(() => {
       }))
     }
 
-    if (text.includes('SELECT DISTINCT att.user_id')) {
-      const pedidos = values[1] as string[]
+    // K8: cualquier intento en MaestrIA, también fuera de los grupos.
+    if (text.includes('SELECT DISTINCT att.user_id') || text.includes('SELECT DISTINCT user_id FROM quiz_attempts')) {
+      const pedidos = values.find(Array.isArray) as string[]
       return [...new Set(db.intentos.map((i) => i.userId))].filter((u) => pedidos.includes(u)).map((u) => ({ user_id: u }))
     }
 
@@ -176,5 +177,10 @@ describe('volver a sumar', () => {
 describe('el lote de los que nunca respondieron', () => {
   it('el servidor vuelve a mirar: quien respondió entre que se vio la lista y se confirmó, se queda', async () => {
     expect(await filtrarSinRespuestas('docente', ['ana', 'beto', 'cami'])).toEqual(['beto', 'cami'])
+  })
+
+  it('K8: quien practicó fuera de los grupos (por su cuenta, sin classroom_id) también se queda', async () => {
+    db.intentos.push({ userId: 'beto' })
+    expect(await filtrarSinRespuestas('docente', ['beto', 'cami'])).toEqual(['cami'])
   })
 })

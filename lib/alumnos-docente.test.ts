@@ -11,6 +11,7 @@ import {
   contarLugares,
   armarQuitados,
   nuncaRespondieron,
+  ultimaActividad,
   RESPUESTAS_PARA_DOMINADO,
   RESPUESTAS_PARA_FLOJO,
   resumir,
@@ -369,9 +370,25 @@ describe('nuncaRespondieron (J1, quitar en lote)', () => {
       new Map(),
     )
     expect(nuncaRespondieron(filas)).toEqual([
-      { userId: 'u2', nombre: 'Tomás' },
-      { userId: 'u3', nombre: 'Uma' },
+      { userId: 'u2', nombre: 'Tomás', ultimaVez: null },
+      { userId: 'u3', nombre: 'Uma', ultimaVez: null },
     ])
+  })
+
+  it('K8: el mismo criterio que el listado: quien respondió algo en MaestrIA (aunque sea fuera del grupo) no entra', () => {
+    const filas = armarFilas([miembro({ userId: 'u2', nombre: 'Tomás' }), miembro({ userId: 'u3', nombre: 'Uma' })], [], [], new Map())
+    const conPractica = filas.map((f) => ({ ...f, respondioAlgunaVez: f.userId === 'u2' }))
+    expect(nuncaRespondieron(conPractica).map((q) => q.nombre)).toEqual(['Uma'])
+  })
+})
+
+describe('ultimaActividad (K8)', () => {
+  const ahora = new Date('2026-11-19T15:00:00')
+  it('"nunca", o cuándo practicó', () => {
+    expect(ultimaActividad(null, ahora)).toBe('nunca')
+    expect(ultimaActividad('2026-11-19T10:00:00', ahora)).toBe('practicó hoy')
+    expect(ultimaActividad('2026-11-18T10:00:00', ahora)).toBe('practicó ayer')
+    expect(ultimaActividad('2026-11-07T10:00:00', ahora)).toBe('practicó hace 12 días')
   })
 })
 

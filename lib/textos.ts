@@ -336,6 +336,8 @@ export const MIS_ALUMNOS = {
     detalle: 'Entraron a tu grupo y no respondieron ninguna tarea ni práctica. No se borra nada: podés volver a sumarlos cuando quieras.',
     lista: 'Se quitan',
     confirmar: (n: number) => (n === 1 ? 'Quitar a 1 alumno' : `Quitar a ${n} alumnos`),
+    /** K8: para confirmar el de uno. */
+    ultimaActividad: (actividad: string) => `Última actividad en tus grupos: ${actividad}.`,
   },
   quitados: {
     titulo: (n: number) => `Quitados (${n})`,
