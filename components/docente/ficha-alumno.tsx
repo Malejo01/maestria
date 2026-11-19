@@ -64,6 +64,9 @@ export function FichaAlumno({ userId }: { userId: string }) {
     void leer()
   }, [leer])
 
+  // J6: marcar los temas que falló cambia "Qué le cuesta": se vuelve a leer la ficha.
+  const [versionFicha, setVersionFicha] = useState(0)
+
   useEffect(() => {
     let vigente = true
     fetch(`/api/teacher/fichas?alumno=${encodeURIComponent(userId)}`)
@@ -75,7 +78,7 @@ export function FichaAlumno({ userId }: { userId: string }) {
     return () => {
       vigente = false
     }
-  }, [userId])
+  }, [userId, versionFicha])
 
   const volver = (
     <Link
@@ -127,10 +130,11 @@ export function FichaAlumno({ userId }: { userId: string }) {
         </Boton>
       </header>
 
-      <SeccionDiagnostico destino={{ alumno: ficha.userId }} />
+      <SeccionDiagnostico destino={{ alumno: ficha.userId }} alMarcarTemas={() => setVersionFicha((v) => v + 1)} />
 
       {pedagogica?.disponible && (
         <FichaPedagogica
+          key={versionFicha}
           url={`/api/teacher/fichas?alumno=${encodeURIComponent(ficha.userId)}`}
           nombreInicial={pedagogica.nombre}
           inicial={pedagogica.ficha}
@@ -180,7 +184,10 @@ export function FichaAlumno({ userId }: { userId: string }) {
         {ficha.intentos.length === 0 ? (
           <p className="cuerpo-s mt-4 text-texto-suave">{T.planilla.vacio}</p>
         ) : (
-          <div className="mt-4 overflow-x-auto">
+          // `relative`: el texto para lector de pantalla de la celda de temas es
+          // `sr-only` (posición absoluta) y, sin un ancestro posicionado, se
+          // escapaba del scroll y ensanchaba la página entera a 390 px.
+          <div className="relative mt-4 overflow-x-auto">
             <table className="cuerpo-s w-full min-w-[560px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-borde">

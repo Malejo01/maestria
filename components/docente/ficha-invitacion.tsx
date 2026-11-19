@@ -21,6 +21,8 @@ export function FichaInvitacion({ invitacionId }: { invitacionId: number }) {
   const [datos, setDatos] = useState<FichaLeida | null>(null)
   const [nombre, setNombre] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // J6: marcar los temas que falló cambia la ficha; se relee y se vuelve a montar.
+  const [version, setVersion] = useState(0)
   const url = `/api/teacher/fichas?invitacion=${invitacionId}`
 
   const leer = useCallback(async () => {
@@ -83,10 +85,17 @@ export function FichaInvitacion({ invitacionId }: { invitacionId: number }) {
         )}
       </header>
 
-      <SeccionDiagnostico destino={{ invitacion: invitacionId }} />
+      <SeccionDiagnostico
+        destino={{ invitacion: invitacionId }}
+        alMarcarTemas={() => {
+          setVersion((v) => v + 1)
+          void leer()
+        }}
+      />
 
       {datos.disponible && (
         <FichaPedagogica
+          key={`${version}-${datos.ficha.temasDificiles.join(',')}`}
           url={url}
           nombreInicial={datos.nombre}
           inicial={datos.ficha}
