@@ -2,15 +2,16 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { X } from 'lucide-react'
+import { UserMinus, X } from 'lucide-react'
 import { CargaFallida } from '@/components/carga-fallida'
 import { AgregarAlumno } from '@/components/docente/agregar-alumno'
 import { EsqueletoMisAlumnos } from '@/components/docente/esqueletos'
+import { ConfirmarQuitar, ListaQuitados, type AQuitar } from '@/components/docente/quitar-alumnos'
 import { Aparecer } from '@/components/sistema/aparecer'
 import { Boton } from '@/components/sistema/boton'
 import { ChipTema } from '@/components/sistema/chip-tema'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
-import { haceCuanto, temaCorto, type FilaAlumno } from '@/lib/alumnos-docente'
+import { haceCuanto, nuncaRespondieron, temaCorto, type FilaAlumno } from '@/lib/alumnos-docente'
 import type { MisAlumnos as Datos } from '@/lib/alumnos-docente-server'
 import { pedirJson } from '@/lib/pedir-json'
 import { MIS_ALUMNOS as T } from '@/lib/textos'
@@ -51,6 +52,8 @@ export function MisAlumnos({
   const [vista, setVista] = useState<Vista>('lista')
   // Se fija al recibir los datos: "hace 2 d" no puede depender del reloj al dibujar.
   const [ahora, setAhora] = useState<Date | null>(null)
+  // J1: a quién se está por quitar (uno, o el lote de los que nunca respondieron).
+  const [aQuitar, setAQuitar] = useState<{ quienes: AQuitar[]; lote: boolean } | null>(null)
 
   const leer = useCallback(async () => {
     const res = await pedirJson<Datos>('/api/teacher/alumnos')
@@ -78,6 +81,9 @@ export function MisAlumnos({
   if (!datos || !ahora) return <EsqueletoMisAlumnos />
 
   const { alumnos, sugerencia, resumen, materias } = datos
+  // Con un servidor viejo (antes de J1) no viene: lista vacía.
+  const quitados = datos.quitados ?? []
+  const sinRespuestas = nuncaRespondieron(alumnos)
 
   return (
     <div className="flex flex-col gap-3">
@@ -106,12 +112,26 @@ export function MisAlumnos({
         <ul className="flex flex-col gap-3">
           {alumnos.map((alumno) => (
             <li key={alumno.clave}>
-              <Fila alumno={alumno} ahora={ahora} onQuitar={quitar} />
+              <Fila
+                alumno={alumno}
+                ahora={ahora}
+                onQuitar={quitar}
+                onQuitarAlumno={(quien) => setAQuitar({ quienes: [quien], lote: false })}
+              />
             </li>
           ))}
         </ul>
       ) : (
         <Planilla alumnos={alumnos} ahora={ahora} />
+      )}
+
+      {sinRespuestas.length > 0 && (
+        <div>
+          <Boton variante="secundario" onClick={() => setAQuitar({ quienes: sinRespuestas, lote: true })}>
+            <UserMinus aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+            {T.sinRespuestas.boton(sinRespuestas.length)}
+          </Boton>
+        </div>
       )}
 
       {sugerencia && (
@@ -168,6 +188,15 @@ export function MisAlumnos({
         </div>
       )}
 
+      <ListaQuitados quitados={quitados} alCambiar={leer} />
+
+      <ConfirmarQuitar
+        quienes={aQuitar?.quienes ?? null}
+        lote={aQuitar?.lote ?? false}
+        onCerrar={() => setAQuitar(null)}
+        alQuitar={leer}
+      />
+
       {materias.length > 0 && (
         <AgregarAlumno
           abierto={agregarAbierto}
@@ -197,10 +226,12 @@ function Fila({
   alumno,
   ahora,
   onQuitar,
+  onQuitarAlumno,
 }: {
   alumno: FilaAlumno
   ahora: Date
   onQuitar: (invitacionId: number) => void
+  onQuitarAlumno: (quien: AQuitar) => void
 }) {
   const quien = (
     <span className="min-w-0 flex-1 basis-40">
@@ -236,14 +267,25 @@ function Fila({
     )
   }
 
+  const userId = alumno.userId
+  const cuando = haceCuanto(alumno.ultimaVez ? new Date(alumno.ultimaVez) : null, ahora)
+  // La fila entera lleva a la ficha (el enlace se estira sobre la tarjeta con
+  // `after:`), y el botón de quitar queda encima: un botón no puede ir dentro
+  // de un enlace.
   return (
-    <Link
-      href={`/teacher/alumnos/${encodeURIComponent(alumno.userId)}`}
-      aria-label={T.verFicha(alumno.nombre)}
-      className={cn(CLASE_FILA, 'transition-colors hover:border-borde-fuerte')}
-    >
+    <div className={cn(CLASE_FILA, 'relative transition-colors hover:border-borde-fuerte')}>
       <Inicial nombre={alumno.nombre} />
-      {quien}
+      <Link
+        href={`/teacher/alumnos/${encodeURIComponent(userId)}`}
+        aria-label={T.verFicha(alumno.nombre)}
+        className="min-w-0 flex-1 basis-0 rounded-sm after:absolute after:inset-0 after:rounded-lg after:content-['']"
+      >
+        <span className="cuerpo block truncate text-texto">{alumno.nombre}</span>
+        <span className="nota block truncate text-texto-suave">{alumno.contexto}</span>
+        {/* En celular la columna de la fecha no entra junto al botón de quitar:
+            baja a un renglón propio, debajo de qué prepara. */}
+        <span className="nota block text-texto-suave sm:hidden">{cuando}</span>
+      </Link>
       {alumno.chips.length > 0 && (
         <span className="order-3 flex w-full min-w-0 gap-2 pl-[58px] sm:order-none sm:w-auto sm:pl-0">
           {alumno.chips.map((chip) => (
@@ -251,10 +293,17 @@ function Fila({
           ))}
         </span>
       )}
-      <span className="nota w-[72px] shrink-0 text-right text-texto-suave">
-        {haceCuanto(alumno.ultimaVez ? new Date(alumno.ultimaVez) : null, ahora)}
-      </span>
-    </Link>
+      <span className="nota hidden w-[72px] shrink-0 text-right text-texto-suave sm:block">{cuando}</span>
+      <Boton
+        variante="icono"
+        className="relative z-10"
+        aria-label={T.quitarAlumno.aria(alumno.nombre)}
+        title={T.quitarAlumno.boton}
+        onClick={() => onQuitarAlumno({ userId, nombre: alumno.nombre })}
+      >
+        <UserMinus aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+      </Boton>
+    </div>
   )
 }
 

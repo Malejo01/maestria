@@ -226,16 +226,22 @@ export interface FilaAlumno {
  * nombre coincide con un miembro de su grupo no suma aparte. Las invitaciones
  * pendientes sí ocupan: el docente ya sumó a ese alumno. Es el número contra el
  * que se mide el cupo del plan (lib/planes.ts).
+ *
+ * J1: un alumno quitado no ocupa lugar, y la invitación con la que había
+ * entrado tampoco: ya se usó. Sin ese cruce, quitar a alguien que entró por
+ * una invitación la hacía reaparecer como "Todavía no entró" y el lugar
+ * seguía ocupado.
  */
 export function contarLugares(
   miembros: Pick<MiembroCrudo, 'userId' | 'nombre' | 'grupoId'>[],
   invitaciones: Pick<InvitacionCruda, 'id' | 'nombre' | 'grupoId'>[],
+  quitados: Pick<MiembroCrudo, 'nombre' | 'grupoId'>[] = [],
 ): number {
   const porPersona = new Map<string, Pick<MiembroCrudo, 'nombre' | 'grupoId'>[]>()
   for (const miembro of miembros) {
     porPersona.set(miembro.userId, [...(porPersona.get(miembro.userId) ?? []), miembro])
   }
-  const usadas = new Set<number>()
+  const usadas = invitacionesDeQuitados(invitaciones, quitados)
   for (const membresias of porPersona.values()) {
     const suya = invitaciones.find((invitacion) =>
       membresias.some(
@@ -248,6 +254,25 @@ export function contarLugares(
 }
 
 /**
+ * Las invitaciones que ya usó alguien que después fue quitado: mismo grupo,
+ * mismo nombre. No se muestran ni ocupan lugar.
+ */
+function invitacionesDeQuitados(
+  invitaciones: Pick<InvitacionCruda, 'id' | 'nombre' | 'grupoId'>[],
+  quitados: Pick<MiembroCrudo, 'nombre' | 'grupoId'>[],
+): Set<number> {
+  return new Set(
+    invitaciones
+      .filter((invitacion) =>
+        quitados.some(
+          (q) => q.grupoId === invitacion.grupoId && normalizarNombre(q.nombre) === normalizarNombre(invitacion.nombre),
+        ),
+      )
+      .map((invitacion) => invitacion.id),
+  )
+}
+
+/**
  * Una fila por persona. Un alumno que está en dos grupos del mismo docente es
  * UNA fila; una invitación cuyo nombre coincide con un miembro de ese grupo no
  * se muestra aparte: el miembro hereda su contexto.
@@ -257,6 +282,7 @@ export function armarFilas(
   invitaciones: InvitacionCruda[],
   actividad: ActividadCruda[],
   temasPorAlumno: Map<string, TemaDeAlumno[]>,
+  quitados: Pick<MiembroCrudo, 'nombre' | 'grupoId'>[] = [],
 ): FilaAlumno[] {
   const actividadDe = new Map(actividad.map((fila) => [fila.userId, fila]))
   const porPersona = new Map<string, MiembroCrudo[]>()
@@ -264,7 +290,7 @@ export function armarFilas(
     porPersona.set(miembro.userId, [...(porPersona.get(miembro.userId) ?? []), miembro])
   }
 
-  const invitacionesUsadas = new Set<number>()
+  const invitacionesUsadas = invitacionesDeQuitados(invitaciones, quitados)
   const filas: FilaAlumno[] = []
 
   for (const [userId, membresias] of porPersona) {
@@ -333,6 +359,55 @@ export function armarFilas(
 
 function unicasPorId<T extends { id: number }>(items: T[]): T[] {
   return [...new Map(items.map((item) => [item.id, item])).values()]
+}
+
+// ─── Quitar alumnos (J1) ──────────────────────────────────────────────────────
+
+/**
+ * Los que entraron y nunca respondieron nada en los grupos del docente: el
+ * caso exacto de fin de cuatrimestre. Los que todavía no entraron no cuentan
+ * acá: no son alumnos que se fueron, son links sin usar, y se quitan con su X.
+ */
+export function nuncaRespondieron(filas: FilaAlumno[]): { userId: string; nombre: string }[] {
+  return filas
+    .filter((fila) => fila.userId && !fila.pendiente && fila.intentos === 0)
+    .map((fila) => ({ userId: fila.userId as string, nombre: fila.nombre }))
+}
+
+export interface QuitadoCrudo {
+  userId: string
+  nombre: string
+  materia: string
+  materiaId: number
+  /** `removed_at`, o `updated_at` si la 027 no corrió. */
+  quitadoEl: string
+}
+
+export interface FilaQuitado {
+  userId: string
+  nombre: string
+  materias: { id: number; nombre: string }[]
+  quitadoEl: string
+}
+
+/**
+ * Una fila por persona quitada. Quien sigue activo en otro grupo del docente
+ * no está "quitado": sigue en el listado.
+ */
+export function armarQuitados(quitados: QuitadoCrudo[], activos: Set<string>): FilaQuitado[] {
+  const porPersona = new Map<string, QuitadoCrudo[]>()
+  for (const fila of quitados) {
+    if (activos.has(fila.userId)) continue
+    porPersona.set(fila.userId, [...(porPersona.get(fila.userId) ?? []), fila])
+  }
+  return [...porPersona.entries()]
+    .map(([userId, filas]) => ({
+      userId,
+      nombre: filas[0].nombre,
+      materias: unicasPorId(filas.map((f) => ({ id: f.materiaId, nombre: f.materia }))),
+      quitadoEl: filas.map((f) => f.quitadoEl).sort().at(-1) as string,
+    }))
+    .sort((a, b) => (a.quitadoEl === b.quitadoEl ? a.nombre.localeCompare(b.nombre, 'es') : a.quitadoEl > b.quitadoEl ? -1 : 1))
 }
 
 // ─── Sugerencia y resumen ─────────────────────────────────────────────────────

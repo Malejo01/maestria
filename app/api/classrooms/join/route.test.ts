@@ -192,3 +192,14 @@ describe('tope de invitados nuevos por aula', () => {
     expect((await joinAsNewGuest(3)).status).toBe(429)
   })
 })
+
+describe('J1 — un alumno quitado que vuelve a entrar con el link', () => {
+  it('vuelve a activo, en la misma fila (con su historia)', async () => {
+    db.users.push({ id: 'guest-beto', name: 'Beto', isGuest: true, createdAt: db.now })
+    db.members.push({ classroomId: db.classroom.id, userId: 'guest-beto', status: 'removed' })
+    getViewerMock.mockResolvedValueOnce({ id: 'guest-beto', displayName: 'Beto', isGuest: true })
+
+    expect((await join('Beto')).status).toBe(200)
+    expect(db.members).toEqual([{ classroomId: db.classroom.id, userId: 'guest-beto', status: 'active' }])
+  })
+})

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { captureRouteFailure } from '@/lib/observability'
-import { LARGO_MAXIMO_CONTEXTO, guardarContexto, leerFichaAlumno } from '@/lib/alumnos-docente-server'
+import { LARGO_MAXIMO_CONTEXTO, guardarContexto, leerFichaAlumno, quitarAlumno } from '@/lib/alumnos-docente-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,6 +59,31 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ userId
     captureRouteFailure(error, { endpoint: '/api/teacher/alumnos/[userId]', operation: 'PATCH' })
     return NextResponse.json(
       { error: 'No se pudo guardar', details: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
+    )
+  }
+}
+
+/**
+ * DELETE /api/teacher/alumnos/[userId]
+ *
+ * J1: quita al alumno de todos los grupos de este docente. Reversible: no se
+ * borra nada de lo que respondió (lib/alumnos-docente-server.ts, quitarAlumno).
+ */
+export async function DELETE(_req: Request, { params }: { params: Promise<{ userId: string }> }) {
+  const teacher = await getTeacherViewer()
+  if (!teacher) return NextResponse.json({ error: 'Solo docentes' }, { status: 403 })
+
+  const { userId } = await params
+
+  try {
+    const quitadas = await quitarAlumno(teacher.id, userId)
+    if (quitadas === 0) return NextResponse.json({ error: 'Ese alumno no está en tus grupos' }, { status: 404 })
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/alumnos/[userId]', operation: 'DELETE' })
+    return NextResponse.json(
+      { error: 'No se pudo quitar', details: error instanceof Error ? error.message : String(error) },
       { status: 500 },
     )
   }

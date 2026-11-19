@@ -9,6 +9,8 @@ import {
   haceCuanto,
   normalizarNombre,
   contarLugares,
+  armarQuitados,
+  nuncaRespondieron,
   RESPUESTAS_PARA_DOMINADO,
   RESPUESTAS_PARA_FLOJO,
   resumir,
@@ -326,5 +328,65 @@ describe('contarLugares', () => {
 
   it('una invitación de otro grupo con el mismo nombre no se funde', () => {
     expect(contarLugares([m('a', 'Ana', 1)], [i(1, 'Ana', 2)])).toBe(2)
+  })
+})
+
+describe('J1 — un alumno quitado no ocupa lugar', () => {
+  const m = (userId: string, nombre: string, grupoId: number) => ({ userId, nombre, grupoId })
+  const i = (id: number, nombre: string, grupoId: number) => ({ id, nombre, grupoId })
+
+  it('el quitado no cuenta (las consultas sólo traen activos como miembros)', () => {
+    expect(contarLugares([m('a', 'Ana', 1)], [], [{ nombre: 'Beto', grupoId: 1 }])).toBe(1)
+  })
+
+  it('la invitación con la que había entrado tampoco vuelve a ocupar lugar', () => {
+    // Beto entró por la invitación 7 y después lo quitaron: sin el cruce, la
+    // invitación volvía a aparecer como pendiente y el lugar seguía ocupado.
+    expect(contarLugares([m('a', 'Ana', 1)], [i(7, 'Beto Gómez', 1)], [{ nombre: 'beto gomez', grupoId: 1 }])).toBe(1)
+  })
+
+  it('una invitación de otro grupo con el mismo nombre sigue ocupando lugar', () => {
+    expect(contarLugares([], [i(7, 'Beto', 2)], [{ nombre: 'Beto', grupoId: 1 }])).toBe(1)
+  })
+
+  it('armarFilas tampoco muestra la invitación de un quitado como "Todavía no entró"', () => {
+    const filas = armarFilas([], [invitacion({ id: 7, nombre: 'Beto' })], [], new Map(), [{ nombre: 'Beto', grupoId: 1 }])
+    expect(filas).toEqual([])
+  })
+})
+
+describe('nuncaRespondieron (J1, quitar en lote)', () => {
+  it('los que entraron y no tienen ningún intento; no los pendientes ni los que respondieron', () => {
+    const filas = armarFilas(
+      [miembro({ userId: 'u1', nombre: 'Sofía' }), miembro({ userId: 'u2', nombre: 'Tomás' }), miembro({ userId: 'u3', nombre: 'Uma' })],
+      [invitacion({ id: 9, nombre: 'Pendiente' })],
+      [actividad({ userId: 'u1' })],
+      new Map(),
+    )
+    expect(nuncaRespondieron(filas)).toEqual([
+      { userId: 'u2', nombre: 'Tomás' },
+      { userId: 'u3', nombre: 'Uma' },
+    ])
+  })
+})
+
+describe('armarQuitados (J1)', () => {
+  const q = (userId: string, materiaId: number, quitadoEl: string) => ({
+    userId,
+    nombre: `Alumno ${userId}`,
+    materia: `Materia ${materiaId}`,
+    materiaId,
+    quitadoEl,
+  })
+
+  it('una fila por persona, con sus materias y la fecha más reciente', () => {
+    const filas = armarQuitados([q('a', 1, hace(5)), q('a', 2, hace(1)), q('b', 1, hace(3))], new Set())
+    expect(filas.map((f) => f.userId)).toEqual(['a', 'b'])
+    expect(filas[0].materias).toHaveLength(2)
+    expect(filas[0].quitadoEl).toBe(hace(1))
+  })
+
+  it('quien sigue activo en otro grupo del docente no está quitado', () => {
+    expect(armarQuitados([q('a', 1, hace(1))], new Set(['a']))).toEqual([])
   })
 })

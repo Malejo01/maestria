@@ -5,10 +5,12 @@ import { Cargando } from '@/components/sistema/cargando'
 
 import { useCallback, useEffect, useId, useState, type FormEvent } from 'react'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, UserMinus } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { CargaFallida } from '@/components/carga-fallida'
 import { Boton } from '@/components/sistema/boton'
+import { ConfirmarQuitar } from '@/components/docente/quitar-alumnos'
 import { ChipTema } from '@/components/sistema/chip-tema'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import {
@@ -20,7 +22,7 @@ import {
   type TemaDeAlumno,
 } from '@/lib/alumnos-docente'
 import type { FichaAlumno as Ficha } from '@/lib/alumnos-docente-server'
-import { CHIP_TEMA, FICHA_ALUMNO as T } from '@/lib/textos'
+import { CHIP_TEMA, FICHA_ALUMNO as T, MIS_ALUMNOS } from '@/lib/textos'
 import { cn } from '@/lib/utils'
 
 const TARJETA = 'rounded-lg border border-borde bg-superficie-tarjeta p-4 sm:p-6'
@@ -36,6 +38,8 @@ export function FichaAlumno({ userId }: { userId: string }) {
   const [ficha, setFicha] = useState<Ficha | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [ahora, setAhora] = useState<Date | null>(null)
+  const [confirmandoQuitar, setConfirmandoQuitar] = useState(false)
+  const router = useRouter()
 
   const leer = useCallback(async () => {
     try {
@@ -179,6 +183,20 @@ export function FichaAlumno({ userId }: { userId: string }) {
           </div>
         )}
       </section>
+
+      {/* J1: quitar es reversible y va al final, lejos de la acción principal. */}
+      <div>
+        <Boton variante="secundario" onClick={() => setConfirmandoQuitar(true)}>
+          <UserMinus aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+          {MIS_ALUMNOS.quitarAlumno.boton}
+        </Boton>
+      </div>
+      <ConfirmarQuitar
+        quienes={confirmandoQuitar ? [{ userId: ficha.userId, nombre: ficha.nombre }] : null}
+        lote={false}
+        onCerrar={() => setConfirmandoQuitar(false)}
+        alQuitar={() => router.push('/teacher')}
+      />
     </div>
   )
 }
