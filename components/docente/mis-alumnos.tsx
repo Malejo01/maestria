@@ -35,6 +35,7 @@ export function MisAlumnos({
   onAgregarCambia,
   onArmarTarea,
   refrescarCon,
+  alCambiarAlumnos,
 }: {
   agregarAbierto: boolean
   onAgregarCambia: (abierto: boolean) => void
@@ -47,6 +48,12 @@ export function MisAlumnos({
    * logro del docente.
    */
   refrescarCon?: unknown
+  /**
+   * K4: agregar, quitar o volver a sumar cambia cuántos lugares del plan se
+   * usan. La lista se relee sola; el contador del plan y los hitos son del
+   * panel, y sin este aviso seguían con el número de antes hasta recargar.
+   */
+  alCambiarAlumnos?: () => void
 }) {
   const [datos, setDatos] = useState<Datos | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -71,9 +78,15 @@ export function MisAlumnos({
     void leer()
   }, [leer, refrescarCon])
 
+  /** Después de agregar, quitar o volver a sumar: la lista y el plan del panel. */
+  const releerTrasCambio = useCallback(async () => {
+    await leer()
+    alCambiarAlumnos?.()
+  }, [leer, alCambiarAlumnos])
+
   async function quitar(invitacionId: number) {
     await fetch(`/api/teacher/alumnos/invitaciones/${invitacionId}`, { method: 'DELETE' }).catch(() => null)
-    void leer()
+    void releerTrasCambio()
   }
 
   if (error && !datos) return <CargaFallida que={T.queCargamos} detalle={error} onReintentar={leer} />
@@ -189,13 +202,13 @@ export function MisAlumnos({
         </div>
       )}
 
-      <ListaQuitados quitados={quitados} alCambiar={leer} />
+      <ListaQuitados quitados={quitados} alCambiar={releerTrasCambio} />
 
       <ConfirmarQuitar
         quienes={aQuitar?.quienes ?? null}
         lote={aQuitar?.lote ?? false}
         onCerrar={() => setAQuitar(null)}
-        alQuitar={leer}
+        alQuitar={releerTrasCambio}
       />
 
       {materias.length > 0 && (
@@ -203,7 +216,7 @@ export function MisAlumnos({
           abierto={agregarAbierto}
           onCambiar={onAgregarCambia}
           materias={materias}
-          alAgregar={leer}
+          alAgregar={releerTrasCambio}
         />
       )}
     </div>

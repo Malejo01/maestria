@@ -92,6 +92,8 @@ export default function TeacherPage() {
                 router.push(`/teacher?seccion=tareas&armar=1${materiaId ? `&materia=${materiaId}` : ''}`)
               }
               refrescarCon={teacherPrograms.length}
+              // K4: el contador del plan y los hitos se releen con `version`.
+              alCambiarAlumnos={() => panel.setVersion((v) => v + 1)}
             />
 
             {/* La gestión por grupo de la versión anterior (códigos, tareas

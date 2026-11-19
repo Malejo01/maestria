@@ -1,5 +1,6 @@
 'use client'
 
+import { EVENTO_TAREA_MANDADA } from '@/lib/eventos'
 import { useCallback, useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Check } from 'lucide-react'
@@ -72,8 +73,13 @@ export function HitosOnboarding({ onCrearMateria, onCargarTemario, onArmarTarea,
     const alVolver = () => {
       if (document.visibilityState === 'visible') void leer()
     }
+    const alMandar = () => void leer()
     document.addEventListener('visibilitychange', alVolver)
-    return () => document.removeEventListener('visibilitychange', alVolver)
+    window.addEventListener(EVENTO_TAREA_MANDADA, alMandar)
+    return () => {
+      document.removeEventListener('visibilitychange', alVolver)
+      window.removeEventListener(EVENTO_TAREA_MANDADA, alMandar)
+    }
   }, [leer])
 
   if (error && !estado) {

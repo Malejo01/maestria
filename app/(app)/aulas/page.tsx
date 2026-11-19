@@ -81,6 +81,33 @@ export default function MisAulasPage() {
   }, [load])
 
   /**
+   * K4: la tarea se rinde en el cuestionario que se abre encima de esta
+   * pantalla (`startQuiz`), sin navegar: al cerrarlo, esta página sigue
+   * montada con lo que leyó antes, y la tarea seguía diciendo "0 de 1 intento"
+   * hasta apretar F5. Se vuelve a leer cuando se sale del cuestionario.
+   */
+  const vista = useAppStore((state) => state.activeView)
+  const vistaAnterior = useRef(vista)
+  useEffect(() => {
+    const antes = vistaAnterior.current
+    vistaAnterior.current = vista
+    const enCuestionario = (v: typeof vista) => v === 'quiz' || v === 'results' || v === 'loading'
+    if (enCuestionario(antes) && !enCuestionario(vista)) void load()
+  }, [vista, load])
+
+  // K4: una tarea que el docente manda mientras esta pestaña está abierta
+  // aparece al volver a ella, sin recargar (como los hitos del docente).
+  useEffect(() => {
+    const alVolver = () => {
+      if (document.visibilityState === 'visible' && !['quiz', 'results', 'loading'].includes(useAppStore.getState().activeView)) {
+        void load()
+      }
+    }
+    document.addEventListener('visibilitychange', alVolver)
+    return () => document.removeEventListener('visibilitychange', alVolver)
+  }, [load])
+
+  /**
    * A student who practised as a guest and then signed in arrives here with
    * both identities. Claiming once on mount folds the guest's attempts and
    * memberships into the account; it no-ops when there's no guest cookie.

@@ -99,7 +99,12 @@ export function SeccionDiagnostico({
 
       <ArmarDiagnostico
         abierto={armando}
-        onCambiar={setArmando}
+        onCambiar={(abierto) => {
+          setArmando(abierto)
+          // K4: al cerrar el diálogo, siempre se vuelve a leer, se haya cerrado
+          // como se haya cerrado; antes dependía del paso en que estaba.
+          if (!abierto) void leer()
+        }}
         destino={destino}
         materia={estado.grupo.materia}
         unidades={estado.grupo.unidades}
