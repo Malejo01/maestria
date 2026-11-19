@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { ClipboardCheck } from 'lucide-react'
+import Link from 'next/link'
+import { ClipboardCheck, ListChecks, Printer } from 'lucide-react'
 import { ArmarDiagnostico } from '@/components/docente/armar-diagnostico'
 import { Cargando } from '@/components/sistema/cargando'
 import { Boton } from '@/components/sistema/boton'
@@ -122,6 +123,7 @@ function Resultado({
   alMarcar: () => void
 }) {
   const fallados = temasFallados(d.temas).filter((t) => !yaMarcados.includes(t.temaId))
+  const consulta = 'alumno' in destino ? `alumno=${encodeURIComponent(destino.alumno)}` : `invitacion=${destino.invitacion}`
 
   return (
     <article className="flex flex-col gap-4 border-t border-borde pt-4 first:border-t-0 first:pt-0">
@@ -136,6 +138,27 @@ function Resultado({
                 {T.preguntas(c.preguntas)} ·{' '}
                 {c.fuente === 'app' && c.fecha ? R.enLaApp(fechaCorta(c.fecha)) : c.fuente === 'impreso' && c.fecha ? R.impreso(fechaCorta(c.fecha)) : R.noRindio}
               </span>
+            </span>
+            {/* J7: la versión en papel y la carga a mano de lo que respondió. */}
+            <span className="flex gap-2">
+              <Boton variante="icono" asChild>
+                <Link
+                  href={`/teacher/diagnosticos/imprimir/${c.id}?${consulta}`}
+                  aria-label={T.impreso.imprimirAria(c.titulo)}
+                  title={T.impreso.imprimir}
+                >
+                  <Printer aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                </Link>
+              </Boton>
+              <Boton variante="icono" asChild>
+                <Link
+                  href={`/teacher/diagnosticos/cargar/${c.id}?${consulta}`}
+                  aria-label={T.impreso.cargarAria(c.titulo)}
+                  title={T.impreso.cargar}
+                >
+                  <ListChecks aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                </Link>
+              </Boton>
             </span>
           </li>
         ))}

@@ -36,12 +36,13 @@
 --     el `contexto` que ya existía a `observaciones`.
 --
 --   diagnosticos, teacher_quizzes.tipo/diagnostico_id/unidad_id
---     Los escribe POST /api/teacher/diagnosticos al generar el diagnóstico.
+--     `diagnosticos` lo escribe POST /api/teacher/diagnosticos; cada
+--     cuestionario, POST /api/teacher/diagnosticos/[id]/cuestionarios.
 --     `tipo` vale 'tarea' para todo lo demás (el DEFAULT); el motor de
 --     cuestionarios lo lee para no mostrar la devolución hasta el final.
 --
 --   diagnostico_resultados_impresos
---     Los escribe POST /api/teacher/diagnosticos/[id]/impreso, cuando el
+--     Los escribe POST /api/teacher/diagnosticos/impreso/[quizId], cuando el
 --     docente carga bien / mal / sin responder desde el papel.
 --
 -- LO QUE A PROPÓSITO NO HAY
@@ -162,4 +163,4 @@ CREATE TABLE IF NOT EXISTS diagnostico_resultados_impresos (
 
 CREATE INDEX IF NOT EXISTS idx_diagnostico_impresos_quiz ON diagnostico_resultados_impresos(teacher_quiz_id);
 
-COMMENT ON COLUMN diagnostico_resultados_impresos.respuestas IS '{ "<índice de pregunta>": "bien" | "mal" | "sin_responder" }. Lo escribe POST /api/teacher/diagnosticos/[id]/impreso.';
+COMMENT ON COLUMN diagnostico_resultados_impresos.respuestas IS '{ "<índice de pregunta>": "bien" | "mal" | "sin_responder" }. Lo escribe POST /api/teacher/diagnosticos/impreso/[quizId].';
