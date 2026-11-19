@@ -25,6 +25,7 @@
  *                                archivos separados por coma corren en orden.
  *   NOMBRE=explicacion           nombre del archivo, en lugar del de la ruta
  *   MOVIMIENTO=reducido          emula prefers-reduced-motion: reduce
+ *   MEDIO=print                  emula el medio de impresión (@media print): lo que sale en papel
  *   COMPLETA=1                   la página entera, de arriba abajo, no sólo la pantalla
  *   PUERTO=9333                  puerto de DevTools (otro para correr dos a la vez)
  *
@@ -135,8 +136,11 @@ try {
 
   await cdp('Page.enable')
   await cdp('Network.enable')
-  if (process.env.MOVIMIENTO === 'reducido') {
-    await cdp('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] })
+  if (process.env.MOVIMIENTO === 'reducido' || process.env.MEDIO) {
+    await cdp('Emulation.setEmulatedMedia', {
+      ...(process.env.MEDIO ? { media: process.env.MEDIO } : {}),
+      features: process.env.MOVIMIENTO === 'reducido' ? [{ name: 'prefers-reduced-motion', value: 'reduce' }] : [],
+    })
   }
   if (process.env.COOKIE) {
     const [name, ...resto] = process.env.COOKIE.split('=')
