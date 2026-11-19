@@ -1,11 +1,14 @@
 import { sql } from '@/lib/db'
 import {
   armarFilas,
+  armarQuitados,
   armarTemas,
   contarLugares,
   elegirSugerencia,
   resumir,
   type ActividadCruda,
+  type FilaQuitado,
+  type QuitadoCrudo,
   type FilaAlumno,
   type InvitacionCruda,
   type MiembroCrudo,
@@ -55,6 +58,51 @@ async function leerMiembros(teacherId: string): Promise<MiembroCrudo[]> {
     esInvitadoSinCuenta: Boolean(fila.is_guest),
     seSumoEl: new Date(fila.joined_at as string).toISOString(),
   }))
+}
+
+/**
+ * Las membresías quitadas (J1) de los grupos abiertos del docente. Lee
+ * `removed_at` (027); sin la columna, `updated_at`, que es lo que escribe el
+ * mismo UPDATE sin la 027.
+ */
+async function leerQuitadosCrudos(teacherId: string): Promise<(QuitadoCrudo & { grupoId: number })[]> {
+  let filas: Fila[]
+  try {
+    filas = (await sql`
+      SELECT m.user_id, m.display_name, c.id AS grupo_id, p.id AS materia_id, p.subject_name,
+             COALESCE(m.removed_at, m.updated_at) AS quitado_el
+      FROM classroom_members m
+      JOIN classrooms c ON c.id = m.classroom_id
+      JOIN teacher_programs p ON p.id = c.teacher_program_id
+      WHERE c.teacher_id = ${teacherId} AND c.status = 'open'
+        AND m.status = 'removed' AND m.user_id <> ${teacherId}
+    `) as Fila[]
+  } catch (error) {
+    if (!esColumnaInexistente(error)) throw error
+    filas = (await sql`
+      SELECT m.user_id, m.display_name, c.id AS grupo_id, p.id AS materia_id, p.subject_name,
+             m.updated_at AS quitado_el
+      FROM classroom_members m
+      JOIN classrooms c ON c.id = m.classroom_id
+      JOIN teacher_programs p ON p.id = c.teacher_program_id
+      WHERE c.teacher_id = ${teacherId} AND c.status = 'open'
+        AND m.status = 'removed' AND m.user_id <> ${teacherId}
+    `) as Fila[]
+  }
+
+  return filas.map((fila) => ({
+    userId: String(fila.user_id),
+    nombre: String(fila.display_name),
+    grupoId: Number(fila.grupo_id),
+    materia: String(fila.subject_name),
+    materiaId: Number(fila.materia_id),
+    quitadoEl: new Date((fila.quitado_el as string | null) ?? 0).toISOString(),
+  }))
+}
+
+/** 42703: la columna no existe (la migración todavía no corrió en esta base). */
+export function esColumnaInexistente(error: unknown): boolean {
+  return (error as { code?: string })?.code === '42703'
 }
 
 async function leerInvitaciones(teacherId: string): Promise<InvitacionCruda[]> {
@@ -111,12 +159,18 @@ async function leerTemas(teacherId: string, soloDe: string | null = null): Promi
 
 /** Los alumnos distintos del docente, invitados incluidos: lo que mide el cupo. */
 export async function contarAlumnosDelDocente(teacherId: string): Promise<number> {
-  const [miembros, invitaciones] = await Promise.all([leerMiembros(teacherId), leerInvitaciones(teacherId)])
-  return contarLugares(miembros, invitaciones)
+  const [miembros, invitaciones, quitados] = await Promise.all([
+    leerMiembros(teacherId),
+    leerInvitaciones(teacherId),
+    leerQuitadosCrudos(teacherId),
+  ])
+  return contarLugares(miembros, invitaciones, quitados)
 }
 
 export interface MisAlumnos {
   alumnos: FilaAlumno[]
+  /** J1: los que el docente quitó, para volver a sumarlos. */
+  quitados: FilaQuitado[]
   sugerencia: Sugerencia | null
   resumen: ResumenAlumnos
   /** Las materias del docente, para elegir a cuál sumar a un alumno nuevo. Nivel y año, para H6. */
@@ -124,9 +178,10 @@ export interface MisAlumnos {
 }
 
 export async function leerMisAlumnos(teacherId: string, ahora: Date = new Date()): Promise<MisAlumnos> {
-  const [miembros, invitaciones, temas, actividadFilas, semanaFilas, materiaFilas] = await Promise.all([
+  const [miembros, invitaciones, quitadosCrudos, temas, actividadFilas, semanaFilas, materiaFilas] = await Promise.all([
     leerMiembros(teacherId),
     leerInvitaciones(teacherId),
+    leerQuitadosCrudos(teacherId),
     leerTemas(teacherId),
     sql`
       SELECT att.user_id,
@@ -172,10 +227,11 @@ export async function leerMisAlumnos(teacherId: string, ahora: Date = new Date()
   const enListado = new Set(miembros.map((miembro) => miembro.userId))
   const temasDeAlumnos = new Map([...temas].filter(([userId]) => enListado.has(userId)))
 
-  const alumnos = armarFilas(miembros, invitaciones, actividad, temasDeAlumnos)
+  const alumnos = armarFilas(miembros, invitaciones, actividad, temasDeAlumnos, quitadosCrudos)
 
   return {
     alumnos,
+    quitados: armarQuitados(quitadosCrudos, enListado),
     sugerencia: elegirSugerencia(alumnos, ahora),
     resumen: resumir(temasDeAlumnos, Number(semanaFilas[0]?.total ?? 0)),
     materias: materiaFilas.map((fila) => ({
@@ -326,4 +382,87 @@ export async function borrarInvitacion(teacherId: string, invitacionId: number):
     RETURNING i.id
   `) as Fila[]
   return filas.length > 0
+}
+
+// ─── Quitar y volver a sumar (J1) ─────────────────────────────────────────────
+
+/**
+ * Quita a un alumno de TODOS los grupos de ese docente. Es reversible: la fila
+ * de `classroom_members` queda con `status = 'removed'` y sus intentos, errores
+ * y dominio no se tocan. Si vuelve —con "Volver a sumar" o entrando otra vez
+ * con el link—, vuelve con su historia.
+ *
+ * Sin la 027, el mismo UPDATE sin `removed_at`: queda `updated_at`, que es lo
+ * que se lee en su lugar. Devuelve cuántas membresías quitó.
+ */
+export async function quitarAlumno(teacherId: string, userId: string): Promise<number> {
+  try {
+    const filas = (await sql`
+      UPDATE classroom_members m
+      SET status = 'removed', removed_at = NOW(), updated_at = NOW()
+      FROM classrooms c
+      WHERE c.id = m.classroom_id AND c.teacher_id = ${teacherId}
+        AND m.user_id = ${userId} AND m.user_id <> ${teacherId} AND m.status = 'active'
+      RETURNING m.id
+    `) as Fila[]
+    return filas.length
+  } catch (error) {
+    if (!esColumnaInexistente(error)) throw error
+    const filas = (await sql`
+      UPDATE classroom_members m
+      SET status = 'removed', updated_at = NOW()
+      FROM classrooms c
+      WHERE c.id = m.classroom_id AND c.teacher_id = ${teacherId}
+        AND m.user_id = ${userId} AND m.user_id <> ${teacherId} AND m.status = 'active'
+      RETURNING m.id
+    `) as Fila[]
+    return filas.length
+  }
+}
+
+/**
+ * De esa lista, los que nunca respondieron nada en los grupos del docente. Se
+ * vuelve a mirar acá: si entre que el docente vio la lista y confirmó alguien
+ * respondió, a ese no se lo quita.
+ */
+export async function filtrarSinRespuestas(teacherId: string, userIds: string[]): Promise<string[]> {
+  if (userIds.length === 0) return []
+  const conIntentos = (await sql`
+    SELECT DISTINCT att.user_id
+    FROM quiz_attempts att
+    JOIN classrooms c ON c.id = att.classroom_id
+    WHERE c.teacher_id = ${teacherId} AND c.status = 'open' AND att.user_id = ANY(${userIds})
+  `) as Fila[]
+  const respondieron = new Set(conIntentos.map((fila) => String(fila.user_id)))
+  return userIds.filter((userId) => !respondieron.has(userId))
+}
+
+/**
+ * Vuelve a sumar a un alumno quitado: sus membresías quitadas en los grupos
+ * abiertos del docente pasan a `active`. El cupo del plan lo mira quien llama:
+ * vuelve a ocupar un lugar. Devuelve cuántas reactivó.
+ */
+export async function volverASumarAlumno(teacherId: string, userId: string): Promise<number> {
+  try {
+    const filas = (await sql`
+      UPDATE classroom_members m
+      SET status = 'active', removed_at = NULL, updated_at = NOW()
+      FROM classrooms c
+      WHERE c.id = m.classroom_id AND c.teacher_id = ${teacherId} AND c.status = 'open'
+        AND m.user_id = ${userId} AND m.status = 'removed'
+      RETURNING m.id
+    `) as Fila[]
+    return filas.length
+  } catch (error) {
+    if (!esColumnaInexistente(error)) throw error
+    const filas = (await sql`
+      UPDATE classroom_members m
+      SET status = 'active', updated_at = NOW()
+      FROM classrooms c
+      WHERE c.id = m.classroom_id AND c.teacher_id = ${teacherId} AND c.status = 'open'
+        AND m.user_id = ${userId} AND m.status = 'removed'
+      RETURNING m.id
+    `) as Fila[]
+    return filas.length
+  }
 }

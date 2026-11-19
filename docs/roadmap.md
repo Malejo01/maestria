@@ -1,6 +1,6 @@
 # MaestrIA — Roadmap
 
-Documento vivo. Última actualización: **16 de noviembre de 2026**.
+Documento vivo. Última actualización: **19 de noviembre de 2026**.
 
 ## Tesis de producto
 
@@ -404,6 +404,15 @@ Después de leer 16 programas reales de seis institutos (en `C:\Programacion\Mat
 - [x] **Tanda I, los 16 en producción** (deploy `a8f3d57`, con todo I1–I5). Con la sesión de docente de Mauro en su Chrome, cada archivo mandado a `/api/teacher/programs/extract` desde una página del sitio, sin crear materias: **16 de 16 dan 200 por IA**, entre 1,7 y 6,9 s. 01: 5 u/44 t · 02: 5/42 · 03: 7/32 · 04: 7/36 · 05: 5/48 · 06: 4/30 · 07: 4/37 · 08: 4/40 · 09: 3/35 · 10: 4/12 ("Unidad 1"…) · 11: 4/18 ("Unidad 1"…) · 12: 1/5 · 13: 3/36 · 14: 5/47 · **15 (escaneo): 4/41 en 4,8 s** · **16 (foto): 4/10 en 2,0 s**. Ningún tema pasa de 89 caracteres. Cada subida deja su copia temporal de 24 h en `teacher_program_uploads`.
 
 ---
+
+## 🧑‍🏫 Tanda J — ficha del alumno y diagnóstico inicial (19/11/2026)
+
+Primer tramo del módulo de clases particulares, primero para uso propio de Mauro con sus alumnos de matemática y física (mesas de diciembre a febrero). Orden: J1 → J2 → J3 → J4 → J5 → J6 → J7. **Migración 027** ([scripts/027-fichas-y-diagnostico.sql](../scripts/027-fichas-y-diagnostico.sql), runner `run-migration-027.ts`), entera desde J1 para no cambiarla a mitad de tanda: `classroom_members.removed_at`, `fichas_alumno` (con el backfill del `contexto` a `observaciones`), `diagnosticos`, `teacher_quizzes.tipo/diagnostico_id/unidad_id` y `diagnostico_resultados_impresos`. **Corrida sólo en staging (dos veces, para probar que es idempotente); en producción la corre Mauro.** Válvula de toda la tanda: si falta un objeto de la 027, la función nueva no aparece y lo demás sigue como hoy. Diferencias con la forma del encargo: `invitation_id` es `ON DELETE CASCADE` (con `SET NULL` y el `CHECK` de "alumno o invitación", borrar una invitación con ficha fallaba), y los resultados impresos también llevan ese `CHECK`.
+
+- [x] **J1 · Quitar alumnos** (rama `feat/j1-quitar-alumnos`). En la fila (ícono, con confirmación que dice el nombre y que no se borra lo que respondió) y al pie de la ficha: **Quitar de mis grupos**, que pasa a `removed` todas sus membresías con ese docente y anota `removed_at` (sin la 027: `status` y `updated_at`). **"Quitar a los que nunca respondieron (N)"** abajo del listado, con la lista de quiénes antes de confirmar; el servidor vuelve a mirar quién sigue sin intentos antes de quitar. **Quitados (N)**, plegado, con **Volver a sumar**, que pasa por el cupo del plan (402 si no hay lugar). Quien vuelve a entrar con el link ya volvía a `active` (test nuevo en `join`). **De paso, un defecto del cupo:** quitar a alguien que había entrado por una invitación hacía reaparecer la invitación como "Todavía no entró" y el lugar seguía ocupado; ahora la invitación usada por un quitado no se muestra ni cuenta (`contarLugares` y `armarFilas` reciben a los quitados). En celular la fecha de la última práctica bajó a un renglón propio para que entre el botón de quitar. Capturas en `docs/capturas/j1-quitar-alumnos/`.
+  - Verificado en staging: el lote quitó a tres alumnos sin intentos (filas intactas, `removed_at` puesto), el contador pasó de 6 a 3, y "Volver a sumar" devolvió a uno (4 de 10).
+  - Datos de prueba que quedan en staging: tres invitados `stg-j1-*` en el grupo de Lengua de Irina (dos quitados, uno activo). La prueba de Irina se arrancó a mano para que el aviso de bienvenida no tape las capturas; se le devuelve a NULL al cerrar la tanda.
+  - Sin verificar: el lote con la cuenta de Mauro en producción (necesita la 027 o no: sin ella quita igual, con `updated_at`).
 
 ## ⏸️ PENDIENTE ESPERANDO PRESUPUESTO
 

@@ -314,6 +314,36 @@ export const MIS_ALUMNOS = {
     mostrar: 'Ver mis grupos',
     ocultar: 'Ocultar mis grupos',
   },
+  /** J1: quitar alumnos sin borrar su historia. */
+  quitarAlumno: {
+    boton: 'Quitar de mis grupos',
+    aria: (nombre: string) => `Quitar a ${nombre} de mis grupos`,
+    titulo: (nombre: string) => `¿Quitar a ${nombre} de tus grupos?`,
+    detalle: 'Deja de aparecer en tu listado y de ocupar un lugar en tu plan. No se borra nada de lo que respondió: si vuelve, vuelve con su historia.',
+    confirmar: 'Quitar',
+    quitando: 'Quitando…',
+    cancelar: 'Cancelar',
+    fallo: 'No se pudo quitar. Probá de nuevo.',
+  },
+  sinRespuestas: {
+    boton: (n: number) => `Quitar a los que nunca respondieron (${n})`,
+    titulo: (n: number) => (n === 1 ? '¿Quitar al alumno que nunca respondió?' : `¿Quitar a los ${n} alumnos que nunca respondieron?`),
+    detalle: 'Entraron a tu grupo y no respondieron ninguna tarea ni práctica. No se borra nada: podés volver a sumarlos cuando quieras.',
+    lista: 'Se quitan',
+    confirmar: (n: number) => (n === 1 ? 'Quitar a 1 alumno' : `Quitar a ${n} alumnos`),
+  },
+  quitados: {
+    titulo: (n: number) => `Quitados (${n})`,
+    mostrar: (n: number) => `Ver quitados (${n})`,
+    ocultar: 'Ocultar quitados',
+    detalle: 'No ocupan lugar en tu plan. Si vuelven, vuelven con todo lo que respondieron.',
+    volver: 'Volver a sumar',
+    volverAria: (nombre: string) => `Volver a sumar a ${nombre}`,
+    volviendo: 'Sumando…',
+    quitadoEl: (fecha: string) => `Quitado el ${fecha}`,
+    sinLugar: 'No tenés lugar en tu plan para sumarlo de nuevo.',
+    fallo: 'No se pudo volver a sumar. Probá de nuevo.',
+  },
 } as const
 
 export const AGREGAR_ALUMNO = {
