@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { etiquetaDeMateria } from '@/lib/etiqueta-materia'
 import { captureRouteFailure } from '@/lib/observability'
 import { invitacionDe } from '@/lib/alumnos-docente'
 import { leerInvitaciones, leerMiembros } from '@/lib/alumnos-docente-server'
@@ -49,14 +50,21 @@ export function faltaLa027(error: unknown): boolean {
 
 async function leerMaterias(teacherId: string): Promise<MateriaConTemas[]> {
   const filas = (await sql`
-    SELECT id, subject_name, units
+    SELECT id, subject_name, units, nivel, grado
     FROM teacher_programs
     WHERE user_id = ${teacherId} AND status = 'active'
     ORDER BY created_at ASC, id ASC
   `) as Fila[]
-  return filas.map((fila) => ({
+  const conNivel = filas.map((fila) => ({
     id: Number(fila.id),
     nombre: String(fila.subject_name),
+    nivel: typeof fila.nivel === 'string' ? fila.nivel : null,
+    grado: typeof fila.grado === 'string' ? fila.grado : null,
+  }))
+  return filas.map((fila, i) => ({
+    ...conNivel[i],
+    // K6: el selector de "Qué rinde" decía "Matemática · Matemática · Matemática…".
+    etiqueta: etiquetaDeMateria(conNivel[i], conNivel),
     unidades: normalizeUnits(fila.units),
   }))
 }

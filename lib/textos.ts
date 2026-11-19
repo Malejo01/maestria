@@ -471,7 +471,9 @@ export const DIAGNOSTICO = {
   vacio: 'Todavía no le armaste un diagnóstico.',
   dialogo: {
     titulo: 'Armar diagnóstico',
-    detalle: (materia: string) => `Sobre el programa de ${materia}. Se asigna al grupo con un intento por cuestionario.`,
+    // K6: la etiqueta puede terminar en punto ("Matemática · 3.º Sec."): no se duplica.
+    detalle: (materia: string) =>
+      `Sobre el programa de ${materia.replace(/\.$/, '')}. Se asigna al grupo con un intento por cuestionario.`,
     modo: 'Cómo lo querés',
     porUnidad: { titulo: 'Por unidad', detalle: 'Un cuestionario por unidad. Se pueden rendir en días distintos.' },
     integral: { titulo: 'Integral', detalle: 'Un solo examen con todo el programa, hasta 40 preguntas.' },

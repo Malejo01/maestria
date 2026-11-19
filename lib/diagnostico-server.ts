@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { etiquetaDeMateriaDe } from '@/lib/etiqueta-materia-server'
 import { invitacionDe } from '@/lib/alumnos-docente'
 import { leerInvitaciones, leerMiembros } from '@/lib/alumnos-docente-server'
 import { fichaDesdeFila } from '@/lib/fichas'
@@ -26,6 +27,8 @@ export interface GrupoDelDiagnostico {
   classroomId: number
   materiaId: number
   materia: string
+  /** K6: "Matemática · 3.º Sec." si el docente tiene otra materia que se llama igual. Sólo para mostrar. */
+  etiqueta: string
   unidades: ProgramUnit[]
   nivel: string | null
   grado: string | null
@@ -184,17 +187,19 @@ export async function guardarYAsignar(params: {
   teacherId: string
   diagnostico: DiagnosticoGuardado
   materia: string
+  /** K6: la etiqueta de la materia, para el título ("Diagnóstico integral · Matemática · 3.º Sec."). */
+  etiqueta?: string
   cuestionario: CuestionarioPlaneado
   preguntas: unknown[]
 }): Promise<number> {
-  const { teacherId, diagnostico, materia, cuestionario, preguntas } = params
+  const { teacherId, diagnostico, materia, etiqueta, cuestionario, preguntas } = params
   const temas = cuestionario.temas.map((t) => ({ id: t.id, name: t.nombre }))
   const filas = (await sql`
     INSERT INTO teacher_quizzes (
       user_id, teacher_program_id, title, subject_name, mode, status, selected_topics,
       question_count, questions, pedagogy_context, tipo, diagnostico_id, unidad_id, created_at, updated_at
     ) VALUES (
-      ${teacherId}, ${diagnostico.materiaId}, ${tituloDeCuestionario(materia, cuestionario)}, ${materia}, 'practico', 'saved',
+      ${teacherId}, ${diagnostico.materiaId}, ${tituloDeCuestionario(etiqueta ?? materia, cuestionario)}, ${materia}, 'practico', 'saved',
       ${JSON.stringify(temas)}, ${preguntas.length}, ${JSON.stringify(preguntas)}, NULL,
       'diagnostico', ${diagnostico.id}, ${cuestionario.unidadId}, NOW(), NOW()
     )
@@ -272,6 +277,7 @@ async function cargarGrupo(teacherId: string, classroomId: number, materiaId: nu
     classroomId,
     materiaId,
     materia: String(programa.subject_name),
+    etiqueta: await etiquetaDeMateriaDe(teacherId, materiaId, String(programa.subject_name)),
     unidades: normalizeUnits(programa.units),
     nivel: typeof programa.nivel === 'string' ? programa.nivel : null,
     grado: typeof programa.grado === 'string' ? programa.grado : null,

@@ -36,7 +36,7 @@ export async function GET(req: Request) {
     if (!grupo) return NextResponse.json({ error: 'Ese alumno no está en tus grupos' }, { status: 404 })
     return NextResponse.json({
       disponible: true,
-      grupo: { classroomId: grupo.classroomId, materiaId: grupo.materiaId, materia: grupo.materia, unidades: grupo.unidades },
+      grupo: { classroomId: grupo.classroomId, materiaId: grupo.materiaId, materia: grupo.etiqueta, unidades: grupo.unidades },
       // Los temas que le cuestan sólo cuentan si la ficha es de esta materia.
       temasDificiles: dificiles.materiaId === grupo.materiaId ? dificiles.temas : [],
       // J6: cada diagnóstico con el resultado de ESTE alumno.

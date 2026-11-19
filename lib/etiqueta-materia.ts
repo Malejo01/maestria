@@ -86,3 +86,16 @@ export function nombreRepetido(
 ): boolean {
   return todos.some((otro) => otro.id !== programa.id && clave(otro.subjectName) === clave(programa.subjectName))
 }
+
+/**
+ * K6: la etiqueta de una materia que llega sólo con id y nombre (de una
+ * membresía, de un alumno quitado), buscándola en la lista completa de las
+ * materias del docente para saber su nivel y año. Si no está, el nombre.
+ */
+export function etiquetaPorId(
+  materia: { id: number | string; nombre: string },
+  todasLasMaterias: readonly MateriaConNivel[],
+): string {
+  const completa = todasLasMaterias.find((otra) => otra.id === materia.id)
+  return completa ? etiquetaDeMateria(completa, todasLasMaterias) : materia.nombre
+}

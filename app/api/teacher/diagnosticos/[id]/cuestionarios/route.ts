@@ -69,6 +69,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       teacherId: teacher.id,
       diagnostico,
       materia: grupo.materia,
+      etiqueta: grupo.etiqueta,
       cuestionario,
       preguntas: resultado.questions,
     })

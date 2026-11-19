@@ -1,5 +1,6 @@
 'use client'
 
+import { etiquetaPorId, type MateriaConNivel } from '@/lib/etiqueta-materia'
 import { useState } from 'react'
 import { Cargando } from '@/components/sistema/cargando'
 import { Boton } from '@/components/sistema/boton'
@@ -111,7 +112,16 @@ export function ConfirmarQuitar({
  * que vuelve a ocupar un lugar del plan (el servidor lo mira y responde 402 si
  * no hay).
  */
-export function ListaQuitados({ quitados, alCambiar }: { quitados: FilaQuitado[]; alCambiar: () => void }) {
+export function ListaQuitados({
+  quitados,
+  alCambiar,
+  materias = [],
+}: {
+  quitados: FilaQuitado[]
+  alCambiar: () => void
+  /** K6: todas las materias del docente, para "Matemática · 3.º Sec.". */
+  materias?: readonly MateriaConNivel[]
+}) {
   const [abierto, setAbierto] = useState(false)
   const [volviendo, setVolviendo] = useState<string | null>(null)
   const [aviso, setAviso] = useState<{ userId: string; texto: string } | null>(null)
@@ -154,7 +164,7 @@ export function ListaQuitados({ quitados, alCambiar }: { quitados: FilaQuitado[]
                 <span className="min-w-0 flex-1 basis-40">
                   <span className="cuerpo block truncate text-texto">{q.nombre}</span>
                   <span className="nota block truncate text-texto-suave">
-                    {q.materias.map((m) => m.nombre).join(' · ')}
+                    {q.materias.map((m) => etiquetaPorId(m, materias)).join(' · ')}
                     {' · '}
                     {V.quitadoEl(new Date(q.quitadoEl).toLocaleDateString('es-AR', { day: 'numeric', month: 'numeric' }))}
                   </span>

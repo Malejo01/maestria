@@ -1,5 +1,6 @@
 'use client'
 
+import { etiquetaPorId } from '@/lib/etiqueta-materia'
 import { Cargando } from '@/components/sistema/cargando'
 
 
@@ -124,7 +125,7 @@ export function FichaAlumno({ userId }: { userId: string }) {
         <div className="min-w-0 flex-1">
           <h1 className="titulo-l text-texto">{ficha.nombre}</h1>
           <p className="nota mt-1 text-texto-suave">
-            {ficha.materias.map((materia) => materia.nombre).join(' · ')}
+            {ficha.materias.map((materia) => etiquetaPorId(materia, pedagogica?.materias ?? [])).join(' · ')}
             {' · '}
             {ficha.ultimaVez
               ? T.ultimaPractica(haceCuanto(new Date(ficha.ultimaVez), ahora))

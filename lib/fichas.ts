@@ -34,6 +34,11 @@ export interface DatosFicha {
 export interface MateriaConTemas {
   id: number
   nombre: string
+  /** K6: nivel y año del temario, para la etiqueta. */
+  nivel?: string | null
+  grado?: string | null
+  /** K6: lo que se muestra ("Matemática · 3.º Sec."); `nombre` es lo que se manda a la IA. */
+  etiqueta?: string
   unidades: ProgramUnit[]
 }
 
