@@ -488,6 +488,16 @@ export const DIAGNOSTICO = {
   },
   armado: (fecha: string, modo: 'por_unidad' | 'integral') => `${modo === 'integral' ? 'Integral' : 'Por unidad'}, armado el ${fecha}`,
   preguntas: (n: number) => (n === 1 ? '1 pregunta' : `${n} preguntas`),
+  /** J5: del lado del alumno. */
+  alumno: {
+    titulo: 'Diagnóstico',
+    aviso: 'Esto es un diagnóstico: respondé lo que sepas, sin ayuda. Al final ves cómo te fue.',
+    empezar: 'Empezar',
+    siguiente: 'Siguiente',
+    terminar: 'Terminar',
+    guardando: 'Guardando tu respuesta',
+    etiqueta: 'Diagnóstico',
+  },
 } as const
 
 export const WIZARD_TEMARIO = {

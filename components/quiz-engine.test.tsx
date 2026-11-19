@@ -156,3 +156,58 @@ describe('QuizEngine — advancing between questions of different types', () => 
     expect(screen.getByText(secondMultipleChoice.question)).toBeTruthy()
   })
 })
+
+describe('QuizEngine — J5, devolución al final (diagnóstico)', () => {
+  const segunda: MultipleChoiceQuestion = {
+    ...multipleChoice,
+    id: 'q2',
+    question: '¿Cuánto es 1/4 + 1/4?',
+    explanation: 'Dos cuartos son un medio.',
+    options: ['1/2', '2/8', '1/8', '1'],
+    correctAnswer: 0,
+  }
+
+  function elegirYSeguir(texto: string, boton: string) {
+    act(() => {
+      screen.getAllByRole('button').filter((b) => b.textContent?.includes(texto))[0].click()
+    })
+    act(() => {
+      screen.getByRole('button', { name: boton }).click()
+    })
+  }
+
+  it('avisa antes de empezar, y no muestra si acertó ni la explicación hasta terminar', () => {
+    act(() => {
+      useAppStore.getState().startQuiz({ ...config, devolucion: 'al_final' }, [multipleChoice, segunda])
+    })
+    render(<QuizEngine />)
+
+    expect(screen.getByText(/Esto es un diagnóstico: respondé lo que sepas, sin ayuda/)).toBeTruthy()
+    act(() => {
+      screen.getByRole('button', { name: 'Empezar' }).click()
+    })
+
+    // Primera pregunta, mal respondida (elige "2").
+    elegirYSeguir('2', 'Siguiente')
+    expect(screen.queryByText(multipleChoice.explanation)).toBeNull()
+    expect(screen.queryByText(/Explicar con IA|Revancha|Incorrect|Correct/i)).toBeNull()
+    // Ya está en la segunda, sin haber pasado por la corrección de la primera.
+    expect(screen.getByText(segunda.question)).toBeTruthy()
+    expect(useAppStore.getState().currentQuiz.answers).toHaveLength(1)
+    expect(useAppStore.getState().currentQuiz.answers[0].isCorrect).toBe(false)
+
+    // Última: "Terminar" lleva a los resultados, que es donde aparece todo.
+    elegirYSeguir('1/2', 'Terminar')
+    expect(screen.queryByText(segunda.explanation)).toBeNull()
+    expect(useAppStore.getState().activeView).toBe('results')
+    expect(useAppStore.getState().currentQuiz.answers).toHaveLength(2)
+  })
+
+  it('sin `devolucion`, sigue como siempre: verificar muestra la corrección', () => {
+    startQuizWith([multipleChoice, segunda])
+    render(<QuizEngine />)
+    answerMultipleChoice(2)
+    expect(screen.getByRole('button', { name: /Siguiente/ })).toBeTruthy()
+    expect(screen.queryByText(/Esto es un diagnóstico/)).toBeNull()
+  })
+})

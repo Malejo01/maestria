@@ -119,6 +119,14 @@ export interface QuizConfig {
   classroomId?: number
   /** Set only for an assigned cuestionario; enforces the deadline and attempt cap. */
   assignmentId?: number
+  /**
+   * J5: cuándo ve el alumno si acertó. `inmediata` (lo de siempre): después de
+   * cada respuesta, con la explicación. `al_final`: de corrido, sin devolución,
+   * y todo junto en la pantalla de resultados. El diagnóstico usa `al_final`:
+   * si ve la explicación de un tema, la siguiente pregunta de ese tema ya no
+   * mide lo que sabía.
+   */
+  devolucion?: 'inmediata' | 'al_final'
 }
 
 interface BaseAnswer {

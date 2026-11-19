@@ -80,9 +80,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       )
     }
 
+    const tipo = await tipoDeCuestionario(Number(row.quiz_id))
+
     return NextResponse.json({
       assignment: {
         id: Number(row.id),
+        // J5: un diagnóstico se rinde sin devolución hasta el final.
+        tipo,
         classroomId: Number(row.classroom_id),
         teacherProgramId: Number(row.teacher_program_id),
         title: row.title,
@@ -103,5 +107,22 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       { error: 'No se pudo abrir el cuestionario', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * J5: el tipo del cuestionario ('tarea' o 'diagnostico'). Va en su propia
+ * consulta, no en la de arriba, para que esta ruta —la que usan los alumnos
+ * para rendir— no dependa de la 027: sin la columna, todo es 'tarea'.
+ */
+async function tipoDeCuestionario(quizId: number): Promise<'tarea' | 'diagnostico'> {
+  try {
+    const filas = (await sql`SELECT tipo FROM teacher_quizzes WHERE id = ${quizId} LIMIT 1`) as { tipo?: string }[]
+    return filas[0]?.tipo === 'diagnostico' ? 'diagnostico' : 'tarea'
+  } catch (error) {
+    if ((error as { code?: string })?.code !== '42703') {
+      captureRouteFailure(error, { endpoint: '/api/student/assignments/[id]', operation: 'tipo' })
+    }
+    return 'tarea'
   }
 }
