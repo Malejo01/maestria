@@ -46,32 +46,25 @@ export const MIN_ABSOLUTE_TOLERANCE = 0.005
  */
 const FLOAT_SLACK_RATIO = 1e-9
 
-/** Decimales que se muestran al alumno al devolverle lo que interpretamos. */
-const DISPLAY_DECIMALS = 6
-
-/**
- * Para valores muy chicos, 6 decimales imprimirían "0" — que es peor que no
- * mostrar nada, porque le estaríamos mintiendo sobre lo que leímos.
- */
-const TINY_VALUE_DECIMALS = 12
-const TINY_VALUE_THRESHOLD = 1e-4
-
 /**
  * Un número "pelado": entero o decimal, con punto o con coma, con signo
- * opcional, admitiendo `.5` / `,5` sin el cero adelante.
- *
- * Sobre separadores de miles: NO se soportan, y es una decisión, no un olvido.
- * `1.234` es genuinamente ambiguo — mil doscientos treinta y cuatro para quien
- * escribe a la europea, uno coma dos tres cuatro para quien escribe a la
- * inglesa — y en una corrección automática adivinar mal es peor que no
- * soportarlo: el alumno no ve el criterio y no puede defenderse. La regla acá
- * es una sola y se puede explicar en una línea: *el separador siempre es
- * decimal*. Como consecuencia esta expresión admite a lo sumo uno, así que
- * `1.234.567` y `1,234,567` caen a `null` en vez de convertirse en un número
- * inventado. Es también la razón por la que `formatNumericAnswer` imprime sin
- * separador de miles: todo lo que mostramos tiene que poder volver a entrar.
+ * opcional, admitiendo `.5` / `,5` sin el cero adelante. Con un solo separador,
+ * el separador es decimal: `0.75` y `0,75` son lo mismo (los teclados de
+ * celular y las calculadoras ponen punto).
  */
 const PLAIN_NUMBER = /^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/
+
+/**
+ * K1: el punto de miles a la argentina. `1.500` es mil quinientos, `12.500.000`
+ * doce millones y medio, `1.234,5` lleva miles y decimales. Antes se rechazaba
+ * por ambiguo; ahora MaestrIA muestra los miles con punto (`formatearNumero`),
+ * y lo que mostramos tiene que poder volver a entrar igual.
+ *
+ * El costo es conocido y está dicho en la ayuda del campo: `3.141` (pi con
+ * punto y tres decimales) se lee 3141. Un entero que empieza en 0 (`0.750`) no
+ * es de miles: ese sigue siendo decimal.
+ */
+const MILES_CON_PUNTO = /^([+-]?)([1-9]\d{0,2}(?:\.\d{3})+)(?:,(\d+))?$/
 
 /** `\frac{7}{4}`, `\dfrac`, `\tfrac`, con signo opcional adelante. */
 const LATEX_FRACTION = /^([+-]?)\\[dt]?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}$/
@@ -162,6 +155,12 @@ function divide(numerator: number | null, denominator: number | null): number | 
 
 function parsePlainNumber(text: string): number | null {
   const candidate = text.trim()
+  const miles = candidate.match(MILES_CON_PUNTO)
+  if (miles) {
+    const [, signo, entera, decimal] = miles
+    const value = Number.parseFloat(`${signo}${entera.replace(/\./g, '')}${decimal ? `.${decimal}` : ''}`)
+    return Number.isFinite(value) ? value : null
+  }
   if (!PLAIN_NUMBER.test(candidate)) return null
 
   // Llegado acá hay a lo sumo un separador y el regex ya garantizó que tiene
@@ -193,6 +192,8 @@ function normalizeSymbols(text: string): string {
     .replace(/\\(?:left|right)\s*/g, '')
     .replace(/\\[,;:!]/g, '')
     .replace(/\\%/g, '%')
+    // La coma decimal en LaTeX (`3{,}14`, K1) es una coma.
+    .replace(/\{,\}/g, ',')
     .replace(/[\u2044\u2215\u00F7]/g, '/')
     .trim()
 }
@@ -240,32 +241,4 @@ export function isNumericallyEquivalent(studentValue: number, expected: number, 
 
   const slack = FLOAT_SLACK_RATIO * Math.max(1, Math.abs(expected))
   return Math.abs(studentValue - expected) <= effectiveTolerance + slack
-}
-
-/**
- * Representación en es-AR (coma decimal) para devolverle al alumno lo que
- * entendimos: "leímos: 3,5". Es la mitad visible del arreglo — aceptar más
- * formas no sirve de nada si el alumno no puede confirmar que lo aceptado es lo
- * que quiso decir.
- *
- * Formatea a mano en vez de con `Intl.NumberFormat('es-AR')` por dos razones:
- * el formato local agrupa los miles (`1.234,5`) y este módulo se niega a
- * interpretar esos puntos, así que estaríamos mostrando algo que no volvería a
- * entrar por `parseNumericAnswer`; y el resultado queda idéntico en cualquier
- * build de Node, con ICU completo o sin él.
- *
- * Sin notación científica: `toFixed` la evita para todo el rango normal, y los
- * decimales se recortan para no exponer el ruido binario (0,30000000000000004).
- */
-export function formatNumericAnswer(value: number): string {
-  if (!Number.isFinite(value)) return ''
-
-  const decimals = value !== 0 && Math.abs(value) < TINY_VALUE_THRESHOLD ? TINY_VALUE_DECIMALS : DISPLAY_DECIMALS
-  const fixed = value.toFixed(decimals)
-
-  // El recorte de ceros sólo aplica a la parte decimal: sobre "100" comerse los
-  // ceros finales daría "1".
-  const trimmed = fixed.includes('.') ? fixed.replace(/0+$/, '').replace(/\.$/, '') : fixed
-
-  return trimmed.replace('.', ',')
 }

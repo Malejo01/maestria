@@ -399,6 +399,7 @@ FORMATO ESTRICTO PARA CONTENIDO MATEMÁTICO (si aplica):
 - Usa LaTeX estándar: \\frac{a}{b}, \\sqrt{x}, x^2, etc.
 - Operadores lógicos: $p \\wedge q$ (y), $p \\vee q$ (o), $\\neg p$ (no), $p \\rightarrow q$ (si...entonces), $p \\leftrightarrow q$ (si y solo si)
 - Escapa backslashes: \\\\frac, \\\\sqrt, \\\\wedge (dos barras en JSON)
+- COMA DECIMAL (Argentina): en enunciados, opciones, respuestas aceptadas y explicaciones los decimales se escriben con coma, nunca con punto: 3,14 · 0,75. Dentro de LaTeX la coma decimal va como {,} para que no quede un espacio: $3{,}14$. Los miles, si hacen falta, con punto: 12.500. Un decimal largo se redondea a lo sumo a cuatro cifras (0,9167), y si el resultado es una fracción que no da un decimal exacto, se escribe como fracción. El campo numérico "correctAnswer" del JSON sigue siendo un número JSON con punto (0.75): la coma es sólo para el texto.
 
 ${buildTypeInstructions(questionTypes, questionMix, questionCount)}`
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { formatearNumero } from '@/lib/numeros'
 import { Cargando } from '@/components/sistema/cargando'
 
 
@@ -247,7 +248,7 @@ export default function MisAulasPage() {
                           disponible ? null : ASSIGNMENT_STATE_LABEL[assignment.state],
                           assignment.opensAt && assignment.state === 'programada' ? T.desde(formatDate(assignment.opensAt)) : null,
                           T.intentos(assignment.attemptsUsed, assignment.maxAttempts),
-                          assignment.bestScore !== null ? T.mejorNota(Number(assignment.bestScore).toFixed(1)) : null,
+                          assignment.bestScore !== null ? T.mejorNota(formatearNumero(Number(assignment.bestScore), { decimales: 1 })) : null,
                         ]
                           .filter(Boolean)
                           .join(' · ')}

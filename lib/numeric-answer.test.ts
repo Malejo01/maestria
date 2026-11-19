@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
   defaultToleranceFor,
-  formatNumericAnswer,
   isNumericallyEquivalent,
   parseNumericAnswer,
   MIN_ABSOLUTE_TOLERANCE,
@@ -63,15 +62,20 @@ describe('parseNumericAnswer', () => {
     expect(parseNumericAnswer('1e3')).toBeNull()
   })
 
-  it('no adivina separadores de miles: un separador siempre es decimal', () => {
-    // Decisión documentada en el módulo. `1.234` se lee como uno coma dos tres
-    // cuatro, igual que `1,234`, para que la regla sea una sola.
-    expect(parseNumericAnswer('1.234')).toBe(1.234)
+  it('K1: el punto de miles a la argentina; con un solo separador decimal, coma o punto', () => {
+    expect(parseNumericAnswer('0.75')).toBe(0.75)
+    expect(parseNumericAnswer('0,75')).toBe(0.75)
     expect(parseNumericAnswer('1,234')).toBe(1.234)
-    // Con más de un separador no hay lectura consistente posible: se rechaza.
-    expect(parseNumericAnswer('1.234.567')).toBeNull()
+    // Tres cifras después del punto y entero que no empieza en 0: miles.
+    expect(parseNumericAnswer('1.500')).toBe(1500)
+    expect(parseNumericAnswer('12.500')).toBe(12500)
+    expect(parseNumericAnswer('1.234.567')).toBe(1234567)
+    expect(parseNumericAnswer('-1.234,56')).toBe(-1234.56)
+    expect(parseNumericAnswer('0.750')).toBe(0.75)
+    expect(parseNumericAnswer('3{,}14')).toBe(3.14)
+    // Lo que no es ni una cosa ni la otra se rechaza.
     expect(parseNumericAnswer('1,234,567')).toBeNull()
-    expect(parseNumericAnswer('1.234,56')).toBeNull()
+    expect(parseNumericAnswer('1.23.4')).toBeNull()
   })
 
   it('rechaza el número mixto en vez de leerlo mal', () => {
@@ -160,38 +164,5 @@ describe('isNumericallyEquivalent', () => {
     expect(isNumericallyEquivalent(NaN, 3)).toBe(false)
     expect(isNumericallyEquivalent(Infinity, 3)).toBe(false)
     expect(isNumericallyEquivalent(3, NaN)).toBe(false)
-  })
-})
-
-describe('formatNumericAnswer', () => {
-  it('usa coma decimal y no muestra decimales de más', () => {
-    expect(formatNumericAnswer(3.5)).toBe('3,5')
-    expect(formatNumericAnswer(13)).toBe('13')
-    expect(formatNumericAnswer(100)).toBe('100')
-    expect(formatNumericAnswer(-0.5)).toBe('-0,5')
-    expect(formatNumericAnswer(0)).toBe('0')
-    expect(formatNumericAnswer(1 / 3)).toBe('0,333333')
-    expect(formatNumericAnswer(0.1 + 0.2)).toBe('0,3')
-  })
-
-  it('no agrupa los miles: lo que mostramos tiene que poder volver a entrar', () => {
-    expect(formatNumericAnswer(1234.5)).toBe('1234,5')
-    expect(parseNumericAnswer(formatNumericAnswer(1234.5))).toBe(1234.5)
-  })
-
-  it('no cae en notación científica ni imprime "0" para un valor chico', () => {
-    expect(formatNumericAnswer(1e-7)).toBe('0,0000001')
-    expect(formatNumericAnswer(1234567)).toBe('1234567')
-  })
-
-  it('devuelve string vacío para lo que no es un número', () => {
-    expect(formatNumericAnswer(NaN)).toBe('')
-    expect(formatNumericAnswer(Infinity)).toBe('')
-  })
-
-  it('sobrevive el viaje de ida y vuelta', () => {
-    for (const valor of [3.5, -1.75, 0.1, 13, 0.25, 1234.5]) {
-      expect(parseNumericAnswer(formatNumericAnswer(valor))).toBe(valor)
-    }
   })
 })

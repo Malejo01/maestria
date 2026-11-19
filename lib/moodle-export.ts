@@ -89,6 +89,9 @@ function buildQuestionBlock(question: Question, index: number): string {
     case 'true_false':
       return `::${questionTitle}::${questionText} {${question.correctAnswer ? 'TRUE' : 'FALSE'}}${buildFeedback(question)}`
     case 'numeric': {
+      // K1: acá NO va `formatearNumero`. GIFT exige punto decimal en la
+      // respuesta numérica (`{#0.75:0.01}`); Moodle muestra el número en el
+      // idioma del curso. El enunciado sí lleva lo que escribió la IA.
       const tolerance = question.tolerance ? `:${question.tolerance}` : ''
       return `::${questionTitle}::${questionText} {#${question.correctAnswer}${tolerance}}${buildFeedback(question)}`
     }

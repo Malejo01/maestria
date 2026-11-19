@@ -3,6 +3,7 @@
 import 'katex/dist/katex.min.css'
 import { useMemo } from 'react'
 import katex from 'katex'
+import { comaDecimal } from '@/lib/numeros'
 
 interface LaTeXRendererProps {
   content: string
@@ -31,8 +32,11 @@ function isLikelyTextNotMath(str: string): boolean {
   return false
 }
 
-export function LaTeXRenderer({ content, className = '' }: LaTeXRendererProps) {
+export function LaTeXRenderer({ content: original, className = '' }: LaTeXRendererProps) {
   const renderedContent = useMemo(() => {
+    // K1: coma decimal en todo lo que dibuja este componente (enunciados,
+    // opciones, respuestas, fórmulas), también en lo ya generado con punto.
+    const content = comaDecimal(original)
     const parts: (string | { type: 'latex'; content: string; display: boolean })[] = []
     let lastIndex = 0
 
@@ -49,7 +53,7 @@ export function LaTeXRenderer({ content, className = '' }: LaTeXRendererProps) {
         if (match.index > lastIndex) {
           parts.push(content.slice(lastIndex, match.index))
         }
-        parts.push(match[0].replace(/^\$|\$$/g, ''))
+        parts.push(match[0].replace(/^\$|\$$/g, '').replace(/\{,\}/g, ','))
         lastIndex = match.index + match[0].length
         continue
       }
@@ -79,7 +83,7 @@ export function LaTeXRenderer({ content, className = '' }: LaTeXRendererProps) {
     }
 
     return parts
-  }, [content])
+  }, [original])
 
   return (
     <span className={`inline-block max-w-full min-w-0 break-words ${className}`}>
