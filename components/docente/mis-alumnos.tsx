@@ -314,8 +314,9 @@ function Fila({
             baja a un renglón propio, debajo de qué prepara. */}
         <span className="nota block text-texto-suave sm:hidden">{cuando}</span>
       </Link>
+      {/* K5: con dos temas de nombre largo, sin `flex-wrap` la fila se pasaba de 390 px. */}
       {alumno.chips.length > 0 && (
-        <span className="order-3 flex w-full min-w-0 gap-2 pl-[58px] sm:order-none sm:w-auto sm:pl-0">
+        <span className="order-3 flex w-full min-w-0 flex-wrap gap-2 pl-[58px] sm:order-none sm:w-auto sm:pl-0">
           {alumno.chips.map((chip) => (
             <ChipTema key={chip.tema} tema={temaCorto(chip.tema)} titulo={chip.tema} estado={chip.estado} />
           ))}

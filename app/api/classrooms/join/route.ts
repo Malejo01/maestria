@@ -16,6 +16,12 @@ import {
 } from '@/lib/guest-session'
 import { grupoTieneLugarPara } from '@/lib/planes-server'
 import { MENSAJE_GRUPO_SIN_LUGAR } from '@/lib/planes'
+import {
+  invitacionPorNombre,
+  pendientesDelGrupo,
+  usarInvitacion,
+  type InvitacionPendiente,
+} from '@/lib/invitacion-al-entrar-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -55,9 +61,22 @@ export async function GET(req: Request) {
 
     const viewer = await getViewer()
 
+    // K5: los alumnos que el docente ya sumó por nombre y todavía no entraron,
+    // para que quien llega pueda decir "soy yo". No a quien ya está en el grupo.
+    let pendientes: InvitacionPendiente[] = []
+    const yaEsMiembro = viewer
+      ? ((await sql`
+          SELECT 1 FROM classroom_members
+          WHERE classroom_id = ${rows[0].id} AND user_id = ${viewer.id} AND status = 'active'
+          LIMIT 1
+        `) as unknown[]).length > 0
+      : false
+    if (!yaEsMiembro) pendientes = await pendientesSinRomper(Number(rows[0].id))
+
     return NextResponse.json({
       classroom: rows[0],
       viewer: viewer ? { displayName: viewer.displayName, isGuest: viewer.isGuest } : null,
+      pendientes,
     })
   } catch (error) {
     // Camino de invitado sin cuenta: si esto falla, el alumno no reporta nada
@@ -86,6 +105,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const code = normalizeJoinCode(body?.code ?? '')
     const requestedName = String(body?.displayName ?? '').trim().slice(0, 80)
+    const invitacionPedida = Number.isInteger(body?.invitacionId) && body.invitacionId > 0 ? Number(body.invitacionId) : null
 
     if (!isValidJoinCode(code)) {
       return NextResponse.json({ error: 'El código tiene 6 caracteres.' }, { status: 400 })
@@ -110,9 +130,26 @@ export async function POST(req: Request) {
 
     const viewer = await getViewer()
 
+    // K5: ¿entra como un alumno que el docente ya había sumado por nombre? Lo
+    // eligió en "¿Sos alguno de estos?", o escribió exactamente ese nombre.
+    const pendientes = await pendientesSinRomper(Number(classroom.id))
+    let invitacion: InvitacionPendiente | null = null
+    if (invitacionPedida !== null) {
+      invitacion = pendientes.find((i) => i.id === invitacionPedida) ?? null
+      if (!invitacion) {
+        return NextResponse.json(
+          { error: 'Ese nombre ya no está esperando en el grupo. Entrá con el tuyo.', invitacionUsada: true },
+          { status: 409 },
+        )
+      }
+    } else {
+      invitacion = invitacionPorNombre(pendientes, requestedName || (viewer?.displayName ?? ''))
+    }
+    const nombreDeInvitacion = invitacion?.nombre ?? ''
+
     // Already identified (Google account or an existing guest cookie).
     if (viewer) {
-      const displayName = requestedName || viewer.displayName || 'Alumno/a'
+      const displayName = nombreDeInvitacion || requestedName || viewer.displayName || 'Alumno/a'
 
       // Cupo del plan del docente (lib/planes.ts): sólo frena a quien ocuparía
       // un lugar nuevo.
@@ -138,9 +175,11 @@ export async function POST(req: Request) {
 
       // A guest who re-joins under a new name should be renamed everywhere,
       // otherwise the teacher sees two different labels for the same person.
-      if (viewer.isGuest && requestedName) {
-        await sql`UPDATE users SET name = ${requestedName}, updated_at = NOW() WHERE id = ${viewer.id}`
+      if (viewer.isGuest && (nombreDeInvitacion || requestedName)) {
+        await sql`UPDATE users SET name = ${nombreDeInvitacion || requestedName}, updated_at = NOW() WHERE id = ${viewer.id}`
       }
+
+      if (invitacion) await usarInvitacionSinRomper(Number(classroom.id), invitacion.id, viewer.id)
 
       return NextResponse.json({
         classroomId: classroom.id,
@@ -151,7 +190,8 @@ export async function POST(req: Request) {
     }
 
     // Brand-new guest: the name is the only identity we'll have.
-    if (!requestedName) {
+    const nombreDelInvitado = nombreDeInvitacion || requestedName
+    if (!nombreDelInvitado) {
       return NextResponse.json(
         { error: 'Escribí tu nombre y apellido para entrar al aula.', needsName: true },
         { status: 400 }
@@ -167,7 +207,7 @@ export async function POST(req: Request) {
       teacherId: String(classroom.teacher_id),
       classroomId: Number(classroom.id),
       userId: null,
-      nombre: requestedName,
+      nombre: nombreDelInvitado,
     })
     if (!hayLugar) {
       return NextResponse.json({ error: MENSAJE_GRUPO_SIN_LUGAR, grupoSinLugar: true }, { status: 402 })
@@ -184,13 +224,15 @@ export async function POST(req: Request) {
 
     await sql`
       INSERT INTO users (id, email, name, role, is_onboarded, is_guest, created_at, updated_at)
-      VALUES (${guestId}, NULL, ${requestedName}, 'ALUMNO', true, true, NOW(), NOW())
+      VALUES (${guestId}, NULL, ${nombreDelInvitado}, 'ALUMNO', true, true, NOW(), NOW())
     `
 
     await sql`
       INSERT INTO classroom_members (classroom_id, user_id, display_name, is_verified, status, joined_at, updated_at)
-      VALUES (${classroom.id}, ${guestId}, ${requestedName}, false, 'active', NOW(), NOW())
+      VALUES (${classroom.id}, ${guestId}, ${nombreDelInvitado}, false, 'active', NOW(), NOW())
     `
+
+    if (invitacion) await usarInvitacionSinRomper(Number(classroom.id), invitacion.id, guestId)
 
     const response = NextResponse.json({
       classroomId: classroom.id,
@@ -208,5 +250,26 @@ export async function POST(req: Request) {
       { error: 'No se pudo entrar al aula', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * K5: lo de las invitaciones es una ayuda para entrar, no una condición. Si
+ * falla (o falta la migración que lo sostiene), se entra como siempre.
+ */
+async function pendientesSinRomper(classroomId: number): Promise<InvitacionPendiente[]> {
+  try {
+    return await pendientesDelGrupo(classroomId)
+  } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/classrooms/join', operation: 'pendientes' })
+    return []
+  }
+}
+
+async function usarInvitacionSinRomper(classroomId: number, invitacionId: number, userId: string): Promise<void> {
+  try {
+    await usarInvitacion({ classroomId, invitacionId, userId })
+  } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/classrooms/join', operation: 'usar-invitacion' })
   }
 }
