@@ -174,3 +174,13 @@ export function avisoDeExamen(fecha: string | null, ahora: Date): string | null 
   if (dias === 1) return FICHA_PEDAGOGICA.rinde.manana
   return FICHA_PEDAGOGICA.rinde.en(dias)
 }
+
+/**
+ * J6: suma los temas que falló en el diagnóstico a los que le cuestan. Los
+ * temas son de una materia: si la ficha tenía otra (o ninguna), pasa a la del
+ * diagnóstico y los de la otra se descartan.
+ */
+export function sumarTemasDificiles(ficha: DatosFicha, materiaId: number, temas: string[]): DatosFicha {
+  const base = ficha.materiaId === materiaId ? ficha.temasDificiles : []
+  return { ...ficha, materiaId, temasDificiles: [...new Set([...base, ...temas])] }
+}

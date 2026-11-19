@@ -3,7 +3,8 @@ import { z } from 'zod'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { captureRouteFailure } from '@/lib/observability'
 import { bloqueoParaGenerar } from '@/lib/planes-server'
-import { crearDiagnostico, diagnosticoDisponible, grupoDe, listarDiagnosticos, temasDificilesDe } from '@/lib/diagnostico-server'
+import { crearDiagnostico, diagnosticoDisponible, grupoDe, temasDificilesDe } from '@/lib/diagnostico-server'
+import { leerResultados } from '@/lib/diagnostico-resultados-server'
 import type { Destino } from '@/lib/fichas-server'
 
 export const dynamic = 'force-dynamic'
@@ -38,7 +39,8 @@ export async function GET(req: Request) {
       grupo: { classroomId: grupo.classroomId, materiaId: grupo.materiaId, materia: grupo.materia, unidades: grupo.unidades },
       // Los temas que le cuestan sólo cuentan si la ficha es de esta materia.
       temasDificiles: dificiles.materiaId === grupo.materiaId ? dificiles.temas : [],
-      diagnosticos: await listarDiagnosticos(teacher.id, grupo.classroomId),
+      // J6: cada diagnóstico con el resultado de ESTE alumno.
+      diagnosticos: await leerResultados(teacher.id, grupo, destino),
     })
   } catch (error) {
     captureRouteFailure(error, { endpoint: '/api/teacher/diagnosticos', operation: 'GET' })

@@ -3,24 +3,45 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ClipboardCheck } from 'lucide-react'
 import { ArmarDiagnostico } from '@/components/docente/armar-diagnostico'
+import { Cargando } from '@/components/sistema/cargando'
 import { Boton } from '@/components/sistema/boton'
+import { ChipTema } from '@/components/sistema/chip-tema'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
-import type { DiagnosticoListado } from '@/lib/diagnostico-server'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { temasFallados, type EstadoDeTema } from '@/lib/diagnostico-resultados'
+import type { DiagnosticoConResultado } from '@/lib/diagnostico-resultados-server'
+import type { EstadoTema } from '@/lib/alumnos-docente'
 import { DIAGNOSTICO as T } from '@/lib/textos'
 import type { ProgramUnit } from '@/lib/types'
+import { cn } from '@/lib/utils'
+
+const R = T.resultado
 
 export interface EstadoDiagnostico {
   disponible: boolean
   grupo?: { classroomId: number; materiaId: number; materia: string; unidades: ProgramUnit[] }
   temasDificiles?: string[]
-  diagnosticos?: DiagnosticoListado[]
+  diagnosticos?: DiagnosticoConResultado[]
 }
 
+/** El color del chip: acertó en verde, falló en naranja, sin respuesta en gris. El estado va escrito igual. */
+const CHIP: Record<EstadoDeTema, EstadoTema> = { acerto: 'dominado', fallo: 'flojo', no_respondio: 'sin_datos' }
+
+const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString('es-AR', { day: 'numeric', month: 'numeric' })
+
 /**
- * La sección Diagnóstico de la ficha (J4; el resultado llega con J6). Sin la
+ * La sección Diagnóstico de la ficha (J4 + J6): armar el diagnóstico y, cuando
+ * lo rindió (en la app o en papel), su resultado por unidad y por tema. Sin la
  * 027 no se dibuja nada: la válvula.
  */
-export function SeccionDiagnostico({ destino }: { destino: { alumno: string } | { invitacion: number } }) {
+export function SeccionDiagnostico({
+  destino,
+  alMarcarTemas,
+}: {
+  destino: { alumno: string } | { invitacion: number }
+  /** Para que la ficha vuelva a leer "Qué le cuesta" después de marcar. */
+  alMarcarTemas?: () => void
+}) {
   const consulta = 'alumno' in destino ? `alumno=${encodeURIComponent(destino.alumno)}` : `invitacion=${destino.invitacion}`
   const [estado, setEstado] = useState<EstadoDiagnostico | null>(null)
   const [armando, setArmando] = useState(false)
@@ -59,23 +80,20 @@ export function SeccionDiagnostico({ destino }: { destino: { alumno: string } | 
       {diagnosticos.length === 0 ? (
         <p className="cuerpo-s mt-4 text-texto-suave">{T.vacio}</p>
       ) : (
-        <ul className="mt-4 flex flex-col gap-4">
+        <div className="mt-4 flex flex-col gap-6">
           {diagnosticos.map((d) => (
-            <li key={d.id}>
-              <p className="nota font-semibold text-texto-suave">
-                {T.armado(new Date(d.creadoEl).toLocaleDateString('es-AR', { day: 'numeric', month: 'numeric' }), d.modo)}
-              </p>
-              <ul className="mt-1 flex flex-col">
-                {d.cuestionarios.map((c) => (
-                  <li key={c.id} className="cuerpo-s flex items-center justify-between gap-3 border-b border-borde py-2 last:border-b-0">
-                    <span className="min-w-0 text-texto">{c.titulo}</span>
-                    <span className="nota shrink-0 text-texto-suave">{T.preguntas(c.preguntas)}</span>
-                  </li>
-                ))}
-              </ul>
-            </li>
+            <Resultado
+              key={d.id}
+              diagnostico={d}
+              destino={destino}
+              yaMarcados={estado.temasDificiles ?? []}
+              alMarcar={() => {
+                void leer()
+                alMarcarTemas?.()
+              }}
+            />
           ))}
-        </ul>
+        </div>
       )}
 
       <ArmarDiagnostico
@@ -88,5 +106,151 @@ export function SeccionDiagnostico({ destino }: { destino: { alumno: string } | 
         alTerminar={leer}
       />
     </section>
+  )
+}
+
+function Resultado({
+  diagnostico: d,
+  destino,
+  yaMarcados,
+  alMarcar,
+}: {
+  diagnostico: DiagnosticoConResultado
+  destino: { alumno: string } | { invitacion: number }
+  /** Los que ya están en "Qué le cuesta": no se vuelven a ofrecer. */
+  yaMarcados: string[]
+  alMarcar: () => void
+}) {
+  const fallados = temasFallados(d.temas).filter((t) => !yaMarcados.includes(t.temaId))
+
+  return (
+    <article className="flex flex-col gap-4 border-t border-borde pt-4 first:border-t-0 first:pt-0">
+      <p className="nota font-semibold text-texto-suave">{T.armado(fechaCorta(d.creadoEl), d.modo)}</p>
+
+      <ul className="flex flex-col">
+        {d.cuestionarios.map((c) => (
+          <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-borde py-2 last:border-b-0">
+            <span className="min-w-0 flex-1 basis-48">
+              <span className="cuerpo-s block text-texto">{c.titulo}</span>
+              <span className="nota block text-texto-suave">
+                {T.preguntas(c.preguntas)} ·{' '}
+                {c.fuente === 'app' && c.fecha ? R.enLaApp(fechaCorta(c.fecha)) : c.fuente === 'impreso' && c.fecha ? R.impreso(fechaCorta(c.fecha)) : R.noRindio}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      {d.temas.length === 0 ? (
+        <p className="cuerpo-s text-texto-suave">{R.sinResultados}</p>
+      ) : (
+        <>
+          <div>
+            <h3 className="cuerpo-s font-bold text-texto">{R.porUnidad}</h3>
+            <ul className="mt-2 flex flex-col gap-3">
+              {d.unidades.map((u) => {
+                const porcentaje = u.total > 0 ? Math.round((u.bien / u.total) * 100) : 0
+                return (
+                  <li key={u.unidadId ?? u.nombre}>
+                    <p className="cuerpo-s text-texto">{R.unidad(u.nombre, u.bien, u.total)}</p>
+                    <div aria-hidden="true" className="mt-1 h-2 overflow-hidden rounded-full bg-superficie-base">
+                      <div className="h-full rounded-full bg-accion" style={{ width: `${porcentaje}%` }} />
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="cuerpo-s font-bold text-texto">{R.porTema}</h3>
+            <ul className="mt-2 flex flex-col">
+              {d.temas.map((t) => (
+                <li key={t.temaId} className="border-b border-borde py-2 last:border-b-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="cuerpo-s min-w-0 text-texto">{t.nombre}</span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      {R.deTema(t.bien, t.total) && <span className="nota tabular-nums text-texto-suave">{R.deTema(t.bien, t.total)}</span>}
+                      <ChipTema tema={R.estado[t.estado]} estado={CHIP[t.estado]} />
+                    </span>
+                  </div>
+                  {t.error && (
+                    <p className="nota mt-1 border-l-2 border-flojo pl-2 text-texto-suave">
+                      <span className="font-semibold">{R.errorDetectado}</span> {t.error}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="nota mt-2 text-texto-suave">{R.nota}</p>
+          </div>
+
+          {fallados.length > 0 && <MarcarFallados destino={destino} temas={fallados.map((t) => t.temaId)} alMarcar={alMarcar} />}
+        </>
+      )}
+    </article>
+  )
+}
+
+/** El docente confirma; los temas no se marcan solos. */
+function MarcarFallados({
+  destino,
+  temas,
+  alMarcar,
+}: {
+  destino: { alumno: string } | { invitacion: number }
+  temas: string[]
+  alMarcar: () => void
+}) {
+  const [abierto, setAbierto] = useState(false)
+  const [estado, setEstado] = useState<'quieto' | 'enviando' | 'listo' | 'fallo'>('quieto')
+
+  async function confirmar() {
+    setEstado('enviando')
+    try {
+      const res = await fetch('/api/teacher/diagnosticos/marcar-temas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...destino, temas }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      setEstado('listo')
+      setAbierto(false)
+      alMarcar()
+    } catch {
+      setEstado('fallo')
+    }
+  }
+
+  return (
+    <div>
+      {/* Texto largo: a 390 px tiene que poder partirse en dos renglones. */}
+      <Boton variante="secundario" className="whitespace-normal text-left" onClick={() => setAbierto(true)}>
+        {R.marcar(temas.length)}
+      </Boton>
+      <p role="status" className={cn('nota mt-2 empty:hidden', estado === 'fallo' ? 'text-flojo' : 'text-texto-suave')}>
+        {estado === 'listo' ? R.marcados : ''}
+      </p>
+      <Dialog open={abierto} onOpenChange={(siguiente) => estado !== 'enviando' && setAbierto(siguiente)}>
+        <DialogContent className="rounded-lg border-borde sm:max-w-[440px]">
+          <DialogTitle className="titulo-m text-texto">{R.marcarTitulo}</DialogTitle>
+          <DialogDescription className="cuerpo-s text-texto-suave">{R.marcarDetalle}</DialogDescription>
+          {estado === 'fallo' && (
+            <p className="nota text-flojo" role="alert">
+              {R.marcarFallo}
+            </p>
+          )}
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Boton variante="secundario" onClick={() => setAbierto(false)} disabled={estado === 'enviando'}>
+              {R.cancelar}
+            </Boton>
+            <Boton onClick={confirmar} disabled={estado === 'enviando'}>
+              {estado === 'enviando' && <Cargando />}
+              {estado === 'enviando' ? R.marcando : R.marcarConfirmar}
+            </Boton>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   )
 }

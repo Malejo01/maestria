@@ -488,6 +488,28 @@ export const DIAGNOSTICO = {
   },
   armado: (fecha: string, modo: 'por_unidad' | 'integral') => `${modo === 'integral' ? 'Integral' : 'Por unidad'}, armado el ${fecha}`,
   preguntas: (n: number) => (n === 1 ? '1 pregunta' : `${n} preguntas`),
+  /** J6: el resultado. */
+  resultado: {
+    porUnidad: 'Por unidad',
+    porTema: 'Por tema',
+    unidad: (nombre: string, bien: number, total: number) => `${nombre} — ${bien} de ${total}`,
+    estado: { acerto: 'Acertó', fallo: 'Falló', no_respondio: 'No respondió' },
+    deTema: (bien: number, total: number) => (total > 1 ? `${bien} de ${total}` : ''),
+    errorDetectado: 'Lo que detectó MaestrIA:',
+    noRindio: 'Todavía no lo rindió',
+    enLaApp: (fecha: string) => `Rendido en la app el ${fecha}`,
+    impreso: (fecha: string) => `Cargado del impreso el ${fecha}`,
+    sinResultados: 'Cuando lo rinda (en la app o en papel), acá vas a ver tema por tema dónde está.',
+    nota: 'Una foto del punto de partida: no usa los umbrales de "Cómo le va en cada tema".',
+    marcar: (n: number) => (n === 1 ? 'Marcar el tema que falló como tema que le cuesta' : `Marcar los ${n} temas que falló como temas que le cuestan`),
+    marcarTitulo: '¿Sumarlos a "Qué le cuesta"?',
+    marcarDetalle: 'Se suman a los temas que ya tenía marcados en su ficha. Después los podés destildar.',
+    marcarConfirmar: 'Sumarlos',
+    marcando: 'Sumando…',
+    marcados: 'Listo, quedaron en su ficha.',
+    marcarFallo: 'No se pudieron sumar. Probá de nuevo.',
+    cancelar: 'Cancelar',
+  },
   /** J5: del lado del alumno. */
   alumno: {
     titulo: 'Diagnóstico',
