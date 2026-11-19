@@ -457,6 +457,39 @@ export const FICHA_PEDAGOGICA = {
   rinde: { hoy: 'Rinde hoy', manana: 'Rinde mañana', en: (dias: number) => `Rinde en ${dias} días` },
 } as const
 
+/** J4 a J7: el diagnóstico inicial. */
+export const DIAGNOSTICO = {
+  titulo: 'Diagnóstico',
+  detalle: 'Para saber dónde está antes de empezar: una o dos preguntas por tema, sin ayuda y sin ver si acertó hasta el final.',
+  armar: 'Armar diagnóstico',
+  armarOtro: 'Armar otro diagnóstico',
+  vacio: 'Todavía no le armaste un diagnóstico.',
+  dialogo: {
+    titulo: 'Armar diagnóstico',
+    detalle: (materia: string) => `Sobre el programa de ${materia}. Se asigna al grupo con un intento por cuestionario.`,
+    modo: 'Cómo lo querés',
+    porUnidad: { titulo: 'Por unidad', detalle: 'Un cuestionario por unidad. Se pueden rendir en días distintos.' },
+    integral: { titulo: 'Integral', detalle: 'Un solo examen con todo el programa, hasta 40 preguntas.' },
+    unidades: 'Unidades que entran',
+    unidadesAyuda: 'Destildá las que todavía no vio.',
+    temas: (n: number) => (n === 1 ? '1 tema' : `${n} temas`),
+    resumen: (cuestionarios: number, preguntas: number, minutos: number) =>
+      `${cuestionarios === 1 ? '1 cuestionario' : `${cuestionarios} cuestionarios`} · ${preguntas} preguntas · unos ${minutos} minutos en total`,
+    nada: 'Elegí al menos una unidad con temas.',
+    tipos: 'Sobre todo opción múltiple y numéricas, de dificultad pareja y sin pistas.',
+    generar: 'Generar y asignar',
+    cancelar: 'Cancelar',
+    generando: (n: number, total: number) => `Generando ${n} de ${total}…`,
+    listo: 'Listo. Quedó asignado al grupo, con un intento por cuestionario.',
+    fallaron: (n: number) => (n === 1 ? 'Un cuestionario no se pudo generar.' : `${n} cuestionarios no se pudieron generar.`),
+    reintentar: 'Reintentar los que fallaron',
+    cerrar: 'Cerrar',
+    fallo: 'No se pudo armar el diagnóstico. Probá de nuevo.',
+  },
+  armado: (fecha: string, modo: 'por_unidad' | 'integral') => `${modo === 'integral' ? 'Integral' : 'Por unidad'}, armado el ${fecha}`,
+  preguntas: (n: number) => (n === 1 ? '1 pregunta' : `${n} preguntas`),
+} as const
+
 export const WIZARD_TEMARIO = {
   tituloCrear: 'Crear materia',
   tituloEditar: 'Editar materia',
