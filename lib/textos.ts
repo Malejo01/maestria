@@ -411,6 +411,52 @@ export const FICHA_ALUMNO = {
   },
 } as const
 
+/** J2: la ficha del alumno, por secciones. Todo opcional salvo el nombre. */
+export const FICHA_PEDAGOGICA = {
+  titulo: 'Ficha',
+  detalle: 'Completá lo que sepas. Nada es obligatorio salvo el nombre, y lo podés cambiar cuando quieras.',
+  queCargamos: 'la ficha',
+  secciones: {
+    alumno: 'El alumno',
+    donde: 'Dónde estudia',
+    rinde: 'Qué rinde',
+    evalua: 'Cómo lo evalúan',
+    cuesta: 'Qué le cuesta',
+    observaciones: 'Observaciones',
+  },
+  campos: {
+    nombre: { etiqueta: 'Nombre y apellido', ayuda: 'Corregilo si entró con otro nombre.' },
+    edad: { etiqueta: 'Edad' },
+    contacto: { etiqueta: 'Contacto', ejemplo: 'Teléfono o mail' },
+    responsable: { etiqueta: 'Adulto responsable', ejemplo: 'Nombre y teléfono', ayuda: 'Porque es menor de 18.' },
+    institucion: { etiqueta: 'Institución', ejemplo: 'Colegio, instituto o universidad' },
+    anioCursa: { etiqueta: 'Año que cursa', ejemplo: '3er año, 1er año de la carrera' },
+    orientacion: { etiqueta: 'Orientación', ejemplo: 'Técnica en electrónica, bachiller en economía' },
+    materia: { etiqueta: 'Materia', ninguna: 'Sin elegir', ayuda: 'Una de Mis materias.' },
+    fechaExamen: { etiqueta: 'Fecha del examen o de la mesa' },
+    comoEvalua: {
+      etiqueta: 'Cómo toma examen su profesor',
+      ejemplo: 'Su profe toma 4 ejercicios de desarrollo, sin calculadora, uno de demostración',
+    },
+    observaciones: { etiqueta: 'Observaciones', ejemplo: 'Lo que quieras recordar de este alumno' },
+  },
+  cuesta: {
+    sinMateria: 'Elegí la materia en "Qué rinde" para marcar los temas que le cuestan.',
+    sinTemas: 'Esa materia todavía no tiene temas cargados.',
+    marcados: (n: number) => (n === 1 ? '1 tema marcado' : `${n} temas marcados`),
+  },
+  privacidad: 'Para armarle tareas y diagnósticos, MaestrIA usa la edad, el año, la orientación, cómo lo evalúan y lo que le cuesta. Nunca el nombre, el contacto, el responsable ni la institución.',
+  guardar: 'Guardar la ficha',
+  guardando: 'Guardando…',
+  guardado: 'Guardado',
+  fallo: 'No se pudo guardar. Probá de nuevo.',
+  sinNombre: 'El nombre no puede quedar vacío.',
+  todaviaNoEntro: 'Todavía no entró',
+  pasaleElLink: 'Cuando entre con este link, la ficha pasa a ser suya.',
+  verLink: 'Ver su link',
+  rinde: { hoy: 'Rinde hoy', manana: 'Rinde mañana', en: (dias: number) => `Rinde en ${dias} días` },
+} as const
+
 export const WIZARD_TEMARIO = {
   tituloCrear: 'Crear materia',
   tituloEditar: 'Editar materia',

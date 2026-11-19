@@ -60,7 +60,7 @@ function normalizeTopicOrigin(input: unknown): Pick<ProgramTopic, 'origin' | 'so
   return origin === 'curriculum' && sourceEje ? { origin, sourceEje } : { origin }
 }
 
-function normalizeUnits(units: ProgramUnit[] | unknown): ProgramUnit[] {
+export function normalizeUnits(units: ProgramUnit[] | unknown): ProgramUnit[] {
   if (!Array.isArray(units)) {
     return []
   }

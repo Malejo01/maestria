@@ -135,14 +135,22 @@ export function resumirTemas(temas: string[]): { visibles: string[]; resto: numb
 
 // ─── Nombres ──────────────────────────────────────────────────────────────────
 
-/** Para comparar nombres: sin tildes, sin mayúsculas, sin espacios de más. */
+/**
+ * Para comparar nombres: sin tildes, sin mayúsculas, sin espacios de más y
+ * sin importar el orden de las palabras. J2: los alumnos que entran solos
+ * escriben "ayarde sofia" donde el docente había puesto "Sofía Ayarde"; con el
+ * orden importando, la invitación no se fundía y el alumno no heredaba su
+ * ficha.
+ */
 export function normalizarNombre(nombre: string): string {
   return nombre
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .sort()
+    .join(' ')
 }
 
 // ─── Fechas ───────────────────────────────────────────────────────────────────
@@ -218,6 +226,13 @@ export interface FilaAlumno {
   tareasEntregadas: number
   correctas: number
   calificadas: number
+  /**
+   * J2: la invitación con la que entró (o la pendiente misma). Es por donde se
+   * encuentra la ficha armada antes de que el alumno entrara.
+   */
+  invitacionId: number | null
+  /** J2: la fecha del examen de su ficha (AAAA-MM-DD), para "Rinde en N días". */
+  fechaExamen: string | null
 }
 
 /**
@@ -251,6 +266,18 @@ export function contarLugares(
     if (suya) usadas.add(suya.id)
   }
   return porPersona.size + invitaciones.filter((invitacion) => !usadas.has(invitacion.id)).length
+}
+
+/** La invitación que le corresponde a un miembro: mismo grupo, mismo nombre. */
+export function invitacionDe<I extends Pick<InvitacionCruda, 'nombre' | 'grupoId'>>(
+  membresias: Pick<MiembroCrudo, 'nombre' | 'grupoId'>[],
+  invitaciones: I[],
+): I | undefined {
+  return invitaciones.find((invitacion) =>
+    membresias.some(
+      (m) => m.grupoId === invitacion.grupoId && normalizarNombre(m.nombre) === normalizarNombre(invitacion.nombre),
+    ),
+  )
 }
 
 /**
@@ -322,6 +349,8 @@ export function armarFilas(
       tareasEntregadas: suActividad?.tareasEntregadas ?? 0,
       correctas: suActividad?.correctas ?? 0,
       calificadas: suActividad?.calificadas ?? 0,
+      invitacionId: suInvitacion?.id ?? null,
+      fechaExamen: null,
     })
   }
 
@@ -341,6 +370,8 @@ export function armarFilas(
       tareasEntregadas: 0,
       correctas: 0,
       calificadas: 0,
+      invitacionId: invitacion.id,
+      fechaExamen: null,
     })
   }
 

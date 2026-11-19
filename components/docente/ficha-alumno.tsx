@@ -11,6 +11,8 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { CargaFallida } from '@/components/carga-fallida'
 import { Boton } from '@/components/sistema/boton'
 import { ConfirmarQuitar } from '@/components/docente/quitar-alumnos'
+import { FichaPedagogica } from '@/components/docente/ficha-pedagogica'
+import type { FichaLeida } from '@/lib/fichas-server'
 import { ChipTema } from '@/components/sistema/chip-tema'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import {
@@ -39,6 +41,9 @@ export function FichaAlumno({ userId }: { userId: string }) {
   const [error, setError] = useState<string | null>(null)
   const [ahora, setAhora] = useState<Date | null>(null)
   const [confirmandoQuitar, setConfirmandoQuitar] = useState(false)
+  // J2: la ficha por secciones. null mientras se lee; si la 027 no corrió
+  // (`disponible: false`) o la lectura falla, queda el campo único de siempre.
+  const [pedagogica, setPedagogica] = useState<FichaLeida | null>(null)
   const router = useRouter()
 
   const leer = useCallback(async () => {
@@ -57,6 +62,19 @@ export function FichaAlumno({ userId }: { userId: string }) {
   useEffect(() => {
     void leer()
   }, [leer])
+
+  useEffect(() => {
+    let vigente = true
+    fetch(`/api/teacher/fichas?alumno=${encodeURIComponent(userId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((datos: FichaLeida | null) => {
+        if (vigente && datos) setPedagogica(datos)
+      })
+      .catch(() => {})
+    return () => {
+      vigente = false
+    }
+  }, [userId])
 
   const volver = (
     <Link
@@ -101,12 +119,22 @@ export function FichaAlumno({ userId }: { userId: string }) {
               : T.nuncaPractico}
             {ficha.sinCuenta ? ` · ${T.sinCuenta}` : ''}
           </p>
-          <EditarContexto userId={ficha.userId} inicial={ficha.contexto} />
+          {pedagogica && !pedagogica.disponible && <EditarContexto userId={ficha.userId} inicial={ficha.contexto} />}
         </div>
         <Boton className="shrink-0" asChild>
           <Link href={`/teacher?seccion=tareas&armar=1${materiaId ? `&materia=${materiaId}` : ''}`}>{T.asignar}</Link>
         </Boton>
       </header>
+
+      {pedagogica?.disponible && (
+        <FichaPedagogica
+          url={`/api/teacher/fichas?alumno=${encodeURIComponent(ficha.userId)}`}
+          nombreInicial={pedagogica.nombre}
+          inicial={pedagogica.ficha}
+          materias={pedagogica.materias}
+          alGuardar={(nombre) => setFicha((actual) => (actual ? { ...actual, nombre } : actual))}
+        />
+      )}
 
       <section className={TARJETA} aria-labelledby="ficha-temas">
         <h2 id="ficha-temas" className="titulo-m text-texto">

@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { leerResumenDeFichas } from '@/lib/fichas-server'
 import {
   armarFilas,
   armarQuitados,
@@ -30,7 +31,7 @@ import {
 
 type Fila = Record<string, unknown>
 
-async function leerMiembros(teacherId: string): Promise<MiembroCrudo[]> {
+export async function leerMiembros(teacherId: string): Promise<MiembroCrudo[]> {
   const filas = (await sql`
     SELECT m.user_id, m.display_name, m.contexto, m.joined_at,
            c.id AS grupo_id, c.name AS grupo_nombre,
@@ -105,7 +106,7 @@ export function esColumnaInexistente(error: unknown): boolean {
   return (error as { code?: string })?.code === '42703'
 }
 
-async function leerInvitaciones(teacherId: string): Promise<InvitacionCruda[]> {
+export async function leerInvitaciones(teacherId: string): Promise<InvitacionCruda[]> {
   const filas = (await sql`
     SELECT i.id, i.nombre, i.contexto, i.created_at,
            c.id AS grupo_id, c.name AS grupo_nombre, c.join_code,
@@ -227,7 +228,10 @@ export async function leerMisAlumnos(teacherId: string, ahora: Date = new Date()
   const enListado = new Set(miembros.map((miembro) => miembro.userId))
   const temasDeAlumnos = new Map([...temas].filter(([userId]) => enListado.has(userId)))
 
-  const alumnos = armarFilas(miembros, invitaciones, actividad, temasDeAlumnos, quitadosCrudos)
+  const fichas = await leerResumenDeFichas(teacherId)
+  const alumnos = armarFilas(miembros, invitaciones, actividad, temasDeAlumnos, quitadosCrudos).map((fila) =>
+    conFicha(fila, fichas),
+  )
 
   return {
     alumnos,
@@ -465,4 +469,21 @@ export async function volverASumarAlumno(teacherId: string, userId: string): Pro
     `) as Fila[]
     return filas.length
   }
+}
+
+/**
+ * J2: la fila toma de la ficha la fecha del examen y, si el docente escribió
+ * observaciones, las usa como línea de "qué prepara" (es donde quedó el
+ * `contexto` viejo). La ficha propia del alumno gana a la de su invitación.
+ */
+function conFicha(
+  fila: FilaAlumno,
+  fichas: Awaited<ReturnType<typeof leerResumenDeFichas>>,
+): FilaAlumno {
+  const ficha =
+    (fila.userId ? fichas.porAlumno.get(fila.userId) : undefined) ??
+    (fila.invitacionId !== null ? fichas.porInvitacion.get(fila.invitacionId) : undefined)
+  if (!ficha) return fila
+  const primeraLinea = ficha.observaciones.split(/\r?\n/)[0]?.trim()
+  return { ...fila, fechaExamen: ficha.fechaExamen, contexto: primeraLinea || fila.contexto }
 }
