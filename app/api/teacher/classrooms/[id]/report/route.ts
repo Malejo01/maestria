@@ -3,6 +3,7 @@ import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { getOwnedClassroom } from '@/lib/classrooms-server'
 import { captureRouteFailure } from '@/lib/observability'
+import { destinatarioDeFila, esDelGrupo } from '@/lib/destinatario'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,6 +28,11 @@ function accuracy(correct: number, total: number): number {
  * because a score only says "6 out of 10", while the answers say *which*
  * topics went wrong — which is what actually changes what the teacher does
  * next class.
+ *
+ * L0: las asignaciones individuales (un diagnóstico armado para un alumno) no
+ * cuentan para el promedio del grupo, ni para "quién no respondió", ni para la
+ * lectura por tema del grupo: van aparte, con el nombre del destinatario. Las
+ * columnas se leen con to_jsonb, así que sin la 028 todo es del grupo.
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const teacher = await getTeacherViewer()
@@ -61,6 +67,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         FROM classroom_members m
         LEFT JOIN quiz_attempts a
           ON a.user_id = m.user_id AND a.classroom_id = ${classroomId}
+         AND (a.assignment_id IS NULL OR a.assignment_id NOT IN (
+               SELECT ia.id FROM classroom_assignments ia
+               WHERE ia.classroom_id = ${classroomId}
+                 AND COALESCE(to_jsonb(ia) ->> 'solo_user_id', to_jsonb(ia) ->> 'solo_invitacion_id') IS NOT NULL))
         WHERE m.classroom_id = ${classroomId} AND m.status = 'active'
         GROUP BY m.id, m.user_id, m.display_name, m.is_verified, m.joined_at
         ORDER BY m.display_name
@@ -73,6 +83,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         FROM quiz_answers ans
         JOIN quiz_attempts att ON att.id = ans.quiz_attempt_id
         WHERE att.classroom_id = ${classroomId} AND ans.topic_name <> ''
+          AND (att.assignment_id IS NULL OR att.assignment_id NOT IN (
+                SELECT ia.id FROM classroom_assignments ia
+                WHERE ia.classroom_id = ${classroomId}
+                  AND COALESCE(to_jsonb(ia) ->> 'solo_user_id', to_jsonb(ia) ->> 'solo_invitacion_id') IS NOT NULL))
         GROUP BY ans.topic_name
       `,
       sql`
@@ -92,6 +106,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
                a.max_attempts,
                q.title,
                q.question_count,
+               to_jsonb(a) ->> 'solo_user_id'       AS solo_user_id,
+               to_jsonb(a) ->> 'solo_invitacion_id' AS solo_invitacion_id,
+               COALESCE(dm.display_name, di.nombre) AS destinatario,
                COUNT(DISTINCT att.user_id)::int AS submitted_count,
                COUNT(att.id)::int               AS attempt_count,
                -- Each student counts once, with their best try: averaging raw
@@ -109,8 +126,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         FROM classroom_assignments a
         JOIN teacher_quizzes q ON q.id = a.teacher_quiz_id
         LEFT JOIN quiz_attempts att ON att.assignment_id = a.id
+        LEFT JOIN classroom_members dm
+          ON dm.classroom_id = a.classroom_id AND dm.user_id = to_jsonb(a) ->> 'solo_user_id'
+        LEFT JOIN classroom_invitations di
+          ON di.id = (to_jsonb(a) ->> 'solo_invitacion_id')::int
         WHERE a.classroom_id = ${classroomId}
-        GROUP BY a.id, q.title, q.question_count
+        GROUP BY a.id, q.title, q.question_count, dm.display_name, di.nombre
         ORDER BY a.created_at DESC
       `,
     ])
@@ -196,6 +217,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       topics,
       assignments: (assignmentRows as Record<string, any>[]).map((row) => {
         const submitted = Number(row.submitted_count)
+        const individual = !esDelGrupo(destinatarioDeFila(row))
         return {
           id: Number(row.id),
           title: String(row.title),
@@ -204,7 +226,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
           dueAt: row.due_at,
           maxAttempts: row.max_attempts === null ? null : Number(row.max_attempts),
           submittedCount: submitted,
-          pendingCount: Math.max(0, studentCount - submitted),
+          // Una individual tiene un solo destinatario: no suma pendientes al grupo.
+          pendingCount: Math.max(0, (individual ? 1 : studentCount) - submitted),
+          individual,
+          destinatario: individual ? (row.destinatario ? String(row.destinatario) : null) : null,
           attemptCount: Number(row.attempt_count),
           averageScore: row.average_score === null ? null : Number(row.average_score),
         }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
+import { traspasarDeInvitadoACuenta } from '@/lib/destinatario-server'
 import { auth } from '@/auth'
 import { cookies } from 'next/headers'
 import { GUEST_COOKIE_NAME, verifyGuestToken } from '@/lib/guest-session'
@@ -103,6 +104,9 @@ export async function POST() {
     // cuenta sería la forma de resetear el contador, y el gasto quedaría
     // huérfano en el dashboard.
     await sql`UPDATE ai_usage_log SET user_id = ${userId}, is_guest = false WHERE user_id = ${guestId}`
+
+    // L0: las asignaciones y los diagnósticos que eran sólo para el invitado.
+    await traspasarDeInvitadoACuenta(guestId, userId)
 
     await sql`
       UPDATE users SET claimed_by_user_id = ${userId}, updated_at = NOW() WHERE id = ${guestId}

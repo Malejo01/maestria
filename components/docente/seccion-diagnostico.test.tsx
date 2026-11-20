@@ -40,3 +40,20 @@ describe('SeccionDiagnostico · el chip del resultado (K7)', () => {
     expect(seccion.textContent).not.toMatch(/Dominado|Flojo|Sin datos/)
   })
 })
+
+describe('SeccionDiagnostico · la válvula de la 028 (L0)', () => {
+  it('sin la 028 el botón queda deshabilitado y dice por qué', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...estado, individualDisponible: false }), { status: 200 })))
+    render(<SeccionDiagnostico destino={{ alumno: 'u9' }} />)
+    const boton = await screen.findByRole('button', { name: /Armar otro diagnóstico/ })
+    expect(boton).toHaveProperty('disabled', true)
+    expect(screen.getByText('Falta una actualización de la base para armar diagnósticos individuales')).toBeTruthy()
+  })
+
+  it('con la 028 se puede armar', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...estado, individualDisponible: true }), { status: 200 })))
+    render(<SeccionDiagnostico destino={{ alumno: 'u9' }} />)
+    const boton = await screen.findByRole('button', { name: /Armar otro diagnóstico/ })
+    expect(boton).toHaveProperty('disabled', false)
+  })
+})

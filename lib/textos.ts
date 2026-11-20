@@ -118,6 +118,16 @@ export const GRUPO = {
   soyOtraPersona: 'No, soy otra persona',
 } as const
 
+/** L0: en el seguimiento de un grupo, lo armado para un solo alumno. */
+export const ASIGNACIONES_INDIVIDUALES = {
+  titulo: 'Sólo para un alumno',
+  detalle: 'Los diagnósticos que armaste desde la ficha de un alumno. No cuentan para el promedio del grupo ni para los pendientes.',
+  para: (nombre: string) => `Para ${nombre}`,
+  sinNombre: 'un alumno que todavía no entró',
+  entregado: 'Entregado',
+  pendiente: 'Pendiente',
+} as const
+
 export const INVITADO = {
   aviso: 'Estás entrando como invitado. Creá tu cuenta para no perder tu progreso.',
   conCuenta: 'Con tu cuenta también vas a poder practicar por tu cuenta y ver cómo te va en cada tema.',
@@ -471,11 +481,13 @@ export const DIAGNOSTICO = {
   armar: 'Armar diagnóstico',
   armarOtro: 'Armar otro diagnóstico',
   vacio: 'Todavía no le armaste un diagnóstico.',
+  /** L0: sin la migración 028 no se puede guardar que un diagnóstico es sólo para un alumno. */
+  faltaActualizacion: 'Falta una actualización de la base para armar diagnósticos individuales',
   dialogo: {
     titulo: 'Armar diagnóstico',
     // K6: la etiqueta puede terminar en punto ("Matemática · 3.º Sec."): no se duplica.
     detalle: (materia: string) =>
-      `Sobre el programa de ${materia.replace(/\.$/, '')}. Se asigna al grupo con un intento por cuestionario.`,
+      `Sobre el programa de ${materia.replace(/\.$/, '')}. Lo ve sólo este alumno, con un intento por cuestionario.`,
     modo: 'Cómo lo querés',
     porUnidad: { titulo: 'Por unidad', detalle: 'Un cuestionario por unidad. Se pueden rendir en días distintos.' },
     integral: { titulo: 'Integral', detalle: 'Un solo examen con todo el programa, hasta 40 preguntas.' },
@@ -489,7 +501,7 @@ export const DIAGNOSTICO = {
     generar: 'Generar y asignar',
     cancelar: 'Cancelar',
     generando: (n: number, total: number) => `Generando ${n} de ${total}…`,
-    listo: 'Listo. Quedó asignado al grupo, con un intento por cuestionario.',
+    listo: 'Listo. Quedó asignado sólo a este alumno, con un intento por cuestionario.',
     fallaron: (n: number) => (n === 1 ? 'Un cuestionario no se pudo generar.' : `${n} cuestionarios no se pudieron generar.`),
     reintentar: 'Reintentar los que fallaron',
     cerrar: 'Cerrar',

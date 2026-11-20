@@ -5,7 +5,9 @@ import { captureRouteFailure } from '@/lib/observability'
 import { bloqueoParaGenerar } from '@/lib/planes-server'
 import { crearDiagnostico, diagnosticoDisponible, grupoDe, temasDificilesDe } from '@/lib/diagnostico-server'
 import { leerResultados } from '@/lib/diagnostico-resultados-server'
+import { destinatarioDisponible } from '@/lib/destinatario-server'
 import type { Destino } from '@/lib/fichas-server'
+import { DIAGNOSTICO } from '@/lib/textos'
 
 export const dynamic = 'force-dynamic'
 
@@ -36,6 +38,9 @@ export async function GET(req: Request) {
     if (!grupo) return NextResponse.json({ error: 'Ese alumno no está en tus grupos' }, { status: 404 })
     return NextResponse.json({
       disponible: true,
+      // L0: sin la 028 no hay dónde guardar que es sólo para este alumno, y
+      // armarlo lo asignaría al grupo entero. El botón queda deshabilitado.
+      individualDisponible: await destinatarioDisponible(),
       grupo: { classroomId: grupo.classroomId, materiaId: grupo.materiaId, materia: grupo.etiqueta, unidades: grupo.unidades },
       // Los temas que le cuestan sólo cuentan si la ficha es de esta materia.
       temasDificiles: dificiles.materiaId === grupo.materiaId ? dificiles.temas : [],
@@ -60,7 +65,8 @@ const crearSchema = z.object({
 /**
  * POST /api/teacher/diagnosticos — { alumno | invitacion, modo }
  *
- * Crea el diagnóstico del grupo. Los cuestionarios se generan después, uno
+ * Crea el diagnóstico de ESE alumno o invitación (L0: sólo para él, no para
+ * el resto del grupo; sin la 028, 409). Los cuestionarios se generan después, uno
  * por pedido (POST /api/teacher/diagnosticos/[id]/cuestionarios), para que el
  * docente vea el avance y una falla no se lleve puestos a los demás.
  */
@@ -78,6 +84,9 @@ export async function POST(req: Request) {
     if (!(await diagnosticoDisponible())) {
       return NextResponse.json({ error: 'El diagnóstico todavía no está disponible.' }, { status: 409 })
     }
+    if (!(await destinatarioDisponible())) {
+      return NextResponse.json({ error: DIAGNOSTICO.faltaActualizacion }, { status: 409 })
+    }
     const dificiles = await temasDificilesDe(teacher.id, destino)
     const grupo = await grupoDe(teacher.id, destino, dificiles.materiaId)
     if (!grupo) return NextResponse.json({ error: 'Ese alumno no está en tus grupos' }, { status: 404 })
@@ -86,6 +95,7 @@ export async function POST(req: Request) {
       classroomId: grupo.classroomId,
       materiaId: grupo.materiaId,
       modo: datos.data.modo,
+      destinatario: destino,
     })
     return NextResponse.json({ diagnosticoId })
   } catch (error) {

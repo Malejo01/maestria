@@ -12,6 +12,8 @@ const { db, sqlMock, leerMiembros, leerInvitaciones } = vi.hoisted(() => {
     invitaciones: [] as { id: number; nombre: string; contexto: string | null; grupoId: number }[],
     miembros: [] as { userId: string; nombre: string; contexto: string | null; grupoId: number }[],
     impresos: [] as { userId: string | null; invitationId: number | null }[],
+    // L0: asignaciones individuales (classroom_assignments.solo_*).
+    asignaciones: [] as { soloUserId: string | null; soloInvitacionId: number | null }[],
   }
   const COLUMNAS = [
     'edad',
@@ -77,8 +79,18 @@ const { db, sqlMock, leerMiembros, leerInvitaciones } = vi.hoisted(() => {
       return []
     }
 
+    if (text.includes('SELECT solo_user_id') || text.includes('SELECT user_id, invitation_id FROM diagnosticos')) return []
+    if (text.includes('UPDATE diagnosticos SET user_id')) return []
+    if (text.includes('UPDATE classroom_assignments SET solo_user_id')) {
+      const [userId, invitacionId] = values
+      for (const a of db.asignaciones) if (a.soloInvitacionId === invitacionId) Object.assign(a, { soloUserId: userId, soloInvitacionId: null })
+      return []
+    }
+
     if (text.includes('DELETE FROM classroom_invitations')) {
       const id = values[1]
+      // ON DELETE CASCADE de solo_invitacion_id
+      db.asignaciones = db.asignaciones.filter((a) => a.soloInvitacionId !== id)
       db.invitaciones = db.invitaciones.filter((i) => i.id !== id)
       // ON DELETE CASCADE
       db.fichas = db.fichas.filter((f) => f.invitation_id !== id)
@@ -107,7 +119,7 @@ const { db, sqlMock, leerMiembros, leerInvitaciones } = vi.hoisted(() => {
   const leerInvitaciones = vi.fn(async () =>
     db.invitaciones.map((i) => ({ ...i, ...comun, codigo: 'ABC234', creadaEl: '2026-11-01T00:00:00Z' })),
   )
-  return { db, sqlMock, leerMiembros, leerInvitaciones }
+  return { db, sqlMock: Object.assign(sqlMock, { transaction: (lista: Promise<unknown>[]) => Promise.all(lista) }), leerMiembros, leerInvitaciones }
 })
 
 vi.mock('@/lib/db', () => ({ sql: sqlMock }))
@@ -136,6 +148,7 @@ beforeEach(() => {
   db.invitaciones = [{ id: 7, nombre: 'Sofía Ayarde', contexto: 'Análisis I · rinde el 12/12', grupoId: 1 }]
   db.miembros = []
   db.impresos = []
+  db.asignaciones = []
 })
 
 describe('guarda y vuelve a cargar cada campo', () => {
@@ -176,6 +189,7 @@ describe('de invitación a alumno', () => {
   it('al guardarla desde el alumno pasa a ser suya, y la invitación usada se va (con sus impresos)', async () => {
     await guardarFicha('docente', { invitacionId: 7 }, 'Sofía Ayarde', COMPLETA)
     db.impresos = [{ userId: null, invitationId: 7 }]
+    db.asignaciones = [{ soloUserId: null, soloInvitacionId: 7 }]
     db.miembros = [{ userId: 'u9', nombre: 'ayarde sofia', contexto: null, grupoId: 1 }]
 
     await guardarFicha('docente', { userId: 'u9' }, 'Sofía Ayarde', { ...COMPLETA, observaciones: 'Ya entró' })
@@ -184,6 +198,8 @@ describe('de invitación a alumno', () => {
     expect(db.fichas[0]).toMatchObject({ user_id: 'u9', invitation_id: null, observaciones: 'Ya entró' })
     expect(db.invitaciones).toEqual([])
     expect(db.impresos).toEqual([{ userId: 'u9', invitationId: null }])
+    // L0: su diagnóstico individual no se fue con la invitación: pasó a él.
+    expect(db.asignaciones).toEqual([{ soloUserId: 'u9', soloInvitacionId: null }])
     // Y el nombre que había escrito el alumno queda corregido.
     expect(db.miembros[0].nombre).toBe('Sofía Ayarde')
     expect((await leerFicha('docente', { userId: 'u9' }))?.origen).toBe('ficha')

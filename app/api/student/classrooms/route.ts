@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getViewer } from '@/lib/auth-session'
 import { assignmentState } from '@/lib/classrooms'
+import { destinatarioDeFila, visibleParaAlumno } from '@/lib/destinatario'
 import { captureRouteFailure } from '@/lib/observability'
 
 export const dynamic = 'force-dynamic'
@@ -61,6 +62,9 @@ export async function GET() {
              q.title,
              q.mode,
              q.question_count,
+             -- L0: a quién va (to_jsonb: sin la 028 da NULL y todo es del grupo).
+             to_jsonb(a) ->> 'solo_user_id'       AS solo_user_id,
+             to_jsonb(a) ->> 'solo_invitacion_id' AS solo_invitacion_id,
              COUNT(att.id)::int AS attempts_used,
              MAX(att.score)     AS best_score
       FROM classroom_assignments a
@@ -77,6 +81,8 @@ export async function GET() {
     const classrooms = classroomRows.map((row) => {
       const assignments = assignmentRows
         .filter((assignment) => Number(assignment.classroom_id) === Number(row.id))
+        // L0: las del grupo y las que son sólo para él. Nunca las de otro.
+        .filter((assignment) => visibleParaAlumno(destinatarioDeFila(assignment), viewer.id))
         .map((assignment) => {
           const window = {
             opensAt: assignment.opens_at ? new Date(assignment.opens_at).toISOString() : null,

@@ -29,6 +29,11 @@ export const sql = Object.assign(
   (...args: unknown[]) => (connect() as (...params: unknown[]) => unknown)(...args),
   {
     query: (text: string, params?: unknown[]) => connect().query(text, params),
+    // L0: varias consultas que tienen que pasar juntas o no pasar (el "Soy yo"
+    // que traspasa la ficha y las asignaciones antes de borrar la invitación).
+    // Recibe las consultas SIN await: el driver las manda en un solo pedido.
+    transaction: (queries: Parameters<NeonQueryFunction<false, false>['transaction']>[0]) =>
+      connect().transaction(queries),
   },
 ) as NeonQueryFunction<false, false>
 
