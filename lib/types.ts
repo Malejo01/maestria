@@ -107,6 +107,12 @@ export interface NumericQuestion extends BaseQuestion {
   exigeIrreducible?: boolean
   /** K2: el enunciado admite el número mixto (`1 1/2`). */
   admiteMixto?: boolean
+  /**
+   * L3: 'factorizacion' — se responde con el producto de primos (`2^2·3·5`) y
+   * `correctAnswer` es el número (60). Sin `forma`, una consigna que pide
+   * factorizar también se corrige así (lib/factorizacion.ts).
+   */
+  forma?: 'factorizacion'
 }
 
 export type Question = MultipleChoiceQuestion | ShortAnswerQuestion | TrueFalseQuestion | NumericQuestion
@@ -194,6 +200,8 @@ export interface NumericAnswer extends BaseAnswer {
   selectedText?: string
   fraccion?: { numerador: number; denominador: number }
   exigeIrreducible?: boolean
+  /** L3: si se corrigió como factorización (también las guardadas sin `forma`). */
+  forma?: 'factorizacion'
 }
 
 export type Answer = MultipleChoiceAnswer | ShortAnswerAnswer | TrueFalseAnswer | NumericAnswer

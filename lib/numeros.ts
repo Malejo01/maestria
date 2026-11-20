@@ -12,6 +12,7 @@
  */
 
 import { fraccionEnLatex, leerRespuesta } from '@/lib/fraccion'
+import { esFactorizacion, factorizacionEnLatex, leerProducto, productoEscrito } from '@/lib/factorizacion'
 
 const MAX_DECIMALES = 4
 
@@ -109,6 +110,22 @@ export function respuestaNumerica(
 }
 
 /**
+ * La respuesta correcta de una numérica, lista para KaTeX. L3: una
+ * factorización va como producto de potencias (`2^{2} \cdot 3 \cdot 5`), también
+ * las guardadas sin `forma` cuya consigna pide factorizar.
+ */
+export function respuestaCorrectaNumerica(pregunta: {
+  correctAnswer: number
+  tolerance?: number | null
+  fraccion?: { numerador: number; denominador: number } | null
+  forma?: unknown
+  question?: unknown
+}): string {
+  if (esFactorizacion(pregunta)) return factorizacionEnLatex(Number(pregunta.correctAnswer))
+  return respuestaNumerica(Number(pregunta.correctAnswer), pregunta.tolerance, pregunta.fraccion)
+}
+
+/**
  * K2: la respuesta del alumno como la escribió cuando es una fracción (`6/8`
  * se muestra `\frac{6}{8}`, no `0,75`: si no la simplificó, tiene que verse).
  * Sin texto guardado (las respuestas de antes) o con un decimal, el número.
@@ -116,6 +133,12 @@ export function respuestaNumerica(
 export function respuestaEscrita(valor: number, texto?: string | null): string {
   if (typeof texto === 'string' && texto.trim()) {
     const lectura = leerRespuesta(texto, { admiteMixto: true })
+    // L3: lo que no es un número pero sí un producto (`2x2x3x5`, `2.2.3.5`)
+    // se muestra como producto, no como 60. Primero el número: `0.75` es 0,75.
+    if (!lectura) {
+      const producto = leerProducto(texto)
+      if (producto && (producto.factores.length > 1 || producto.factores[0].exponente > 1)) return productoEscrito(texto) ?? texto
+    }
     if (lectura?.fraccion) return lectura.mixto ? texto.trim().replace(/\s+/g, ' ') : fraccionEnLatex(lectura.fraccion)
   }
   return formatearNumero(valor)

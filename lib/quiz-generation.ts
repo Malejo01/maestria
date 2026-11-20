@@ -79,6 +79,9 @@ const numericQuestionSchema = z.object({
   fraccion: z.object({ numerador: z.number().int(), denominador: z.number().int() }).optional(),
   exigeIrreducible: z.boolean().optional(),
   admiteMixto: z.boolean().optional(),
+  // L3: la consigna pide factorizar; `correctAnswer` es el número. Si la IA no
+  // lo marca y la consigna lo pide, lo marca `normalizarFraccionGenerada`.
+  forma: z.enum(['factorizacion']).optional(),
 })
 
 const questionSchema = z.discriminatedUnion('type', [
@@ -132,6 +135,7 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - fraccion: { "numerador": entero, "denominador": entero } OPCIONAL. Ponelo SIEMPRE que la respuesta sea una fracción que no da un decimal exacto (2/3 + 1/4 → { "numerador": 11, "denominador": 12 }, nunca 0.9166666666666666), cuando el tema sea de fracciones, o cuando la consigna pida "fracción", "expresión irreducible" o "simplificá" (Simplificá 42/56 → { "numerador": 3, "denominador": 4 }, nunca 0.75). Con fraccion, correctAnswer es su valor decimal.
 - exigeIrreducible: boolean OPCIONAL. true si la consigna pide la expresión irreducible o simplificar: entonces 6/8 no vale por 3/4.
 - admiteMixto: boolean OPCIONAL. true sólo si el enunciado admite responder con un número mixto (1 1/2).
+- forma: "factorizacion" OPCIONAL. OBLIGATORIO cuando la consigna pide factorizar, descomponer en factores primos o escribir como producto de potencias o de primos ("Descomponé 60 en factores primos" → correctAnswer: 60, forma: "factorizacion"). correctAnswer es el NÚMERO; el alumno responde el producto (2^2·3·5) y se corrige que todos los factores sean primos y den ese número.
 - Usalo SOLO cuando la respuesta es un único número que sale de un cálculo o un conteo (ej: "Calculá el MCD(24, 36)" → 12).
 - UNA CONSIGNA, UNA RESPUESTA: hay un solo casillero, así que la pregunta pide exactamente un resultado. NUNCA "calculá la media y la mediana", "el perímetro y el área", "el MCD y el MCM", dos preguntas en una ("¿cuánto…? ¿y cuántos…?") ni "a) … b) …". Si el tema tiene dos cálculos, hacé dos preguntas separadas.
 - NUNCA lo uses para preguntas que se responden con palabras (explicar, justificar, identificar un error, nombrar un concepto o una propiedad), ni para codificar sí/no o verdadero/falso como 1/0. Si la respuesta es conceptual, usá otro de los tipos pedidos.`,

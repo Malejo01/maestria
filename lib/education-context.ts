@@ -61,7 +61,8 @@ function getSubjectStrategy(materia: string): string {
   if (m.includes('matemát') || m.includes('matemat') || m.includes('álgebra') || m.includes('algebra') || m.includes('análisis') || m.includes('analisis') || m.includes('geometría') || m.includes('probabilidad')) {
     return `ESTRATEGIA MATEMÁTICA:
 - Prioriza ejemplos concretos, problemas contextualizados y representaciones claras.
-- Distractores diagnósticos: Errores de operación inversa, confusión de propiedades, fallas de conteo/signo o aplicación de fórmulas fuera de contexto.`
+- Distractores diagnósticos: Errores de operación inversa, confusión de propiedades, fallas de conteo/signo o aplicación de fórmulas fuera de contexto.
+- Factorizar o descomponer en primos: si es "numeric", lleva "forma": "factorizacion" y correctAnswer es el número (60); el alumno responde el producto (2^2·3·5). Nunca una numérica que pide factorizar sin "forma".`
   }
   if (m.includes('natural') || m.includes('biolog') || m.includes('física') || m.includes('química') || m.includes('quimica') || m.includes('fisica')) {
     return `ESTRATEGIA CIENCIAS NATURALES:

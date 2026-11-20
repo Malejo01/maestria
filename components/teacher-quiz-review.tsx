@@ -32,11 +32,12 @@ import { LaTeXRenderer } from '@/components/latex-renderer'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { stableStringify } from '@/lib/stable-json'
-import { comaDecimal, formatearNumero, respuestaNumerica } from '@/lib/numeros'
+import { comaDecimal, formatearNumero, respuestaCorrectaNumerica } from '@/lib/numeros'
 import { leerRespuesta, type Fraccion } from '@/lib/fraccion'
 import type { Question, TeacherQuiz } from '@/lib/types'
 import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
 import { DialogoDeLimite } from '@/components/docente/pantalla-de-limite'
+import { TECLADO_MATEMATICO } from '@/lib/textos'
 
 /**
  * Revisión y edición de un cuestionario guardado, pregunta por pregunta.
@@ -649,7 +650,7 @@ function VistaDePregunta({ question }: { question: Question }) {
 
       {question.type === 'numeric' && (
         <p className="text-sm">
-          Correcta: <strong><LaTeXRenderer content={respuestaNumerica(question.correctAnswer, question.tolerance, question.fraccion)} /></strong>
+          Correcta: <strong><LaTeXRenderer content={respuestaCorrectaNumerica(question)} /></strong>
           {question.exigeIrreducible ? ' (sólo la fracción irreducible)' : ''}
         </p>
       )}
@@ -762,6 +763,18 @@ function EditorDePregunta({
                 className="size-5 shrink-0 accent-accion"
               />
               Sólo vale la fracción irreducible
+            </label>
+          )}
+          {/* L3: la respuesta es el producto de primos; la correcta sigue siendo el número. */}
+          {!question.fraccion && Number.isInteger(question.correctAnswer) && question.correctAnswer > 1 && (
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={question.forma === 'factorizacion'}
+                onChange={(e) => onChange({ forma: e.target.checked ? 'factorizacion' : undefined } as Partial<Question>)}
+                className="size-5 shrink-0 accent-accion"
+              />
+              {TECLADO_MATEMATICO.editor.factorizacion}
             </label>
           )}
         </div>
