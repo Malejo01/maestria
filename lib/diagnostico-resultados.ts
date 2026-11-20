@@ -156,3 +156,62 @@ export function elegirFuente<A extends { fecha: string }, B extends { fecha: str
 export function temasFallados(temas: ResultadoDeTema[]): ResultadoDeTema[] {
   return temas.filter((t) => t.estado === 'fallo' && !t.temaId.startsWith('sin-tema:'))
 }
+
+/**
+ * L4: lo que generó la IA, contra los temas que se pidieron. Una pregunta de
+ * un tema que no se pidió (un tema destildado, "todavía no lo vimos") se
+ * descarta en el SERVIDOR: no alcanza con pedírselo bien en el prompt.
+ */
+export function separarPorTemasPedidos<T>(
+  preguntas: T[],
+  temas: { id: string; nombre: string }[],
+): { dentro: T[]; fuera: T[] } {
+  const pedidos = temas.map((t) => ({ id: t.id, name: t.nombre }))
+  const dentro: T[] = []
+  const fuera: T[] = []
+  for (const pregunta of preguntas) {
+    const tema = temaDePregunta((pregunta ?? {}) as { topic?: unknown; topicName?: unknown }, pedidos)
+    if (tema.id.startsWith('sin-tema:')) fuera.push(pregunta)
+    else dentro.push(pregunta)
+  }
+  return { dentro, fuera }
+}
+
+export interface TemaDelGrupo {
+  temaId: string
+  nombre: string
+  unidadId: string | null
+  acertaron: number
+  fallaron: number
+  sinResponder: number
+  /** Cuántos alumnos rindieron un cuestionario con este tema. */
+  rindieron: number
+}
+
+/**
+ * L4: la lectura por tema del alumno (acertó, falló, no respondió), sumada
+ * por grupo: "Fracciones equivalentes: 9 de 12 la acertaron". Una lista de
+ * resultados por alumno; los temas, en el orden en que aparecen.
+ */
+export function sumarPorGrupo(porAlumno: ResultadoDeTema[][]): TemaDelGrupo[] {
+  const temas = new Map<string, TemaDelGrupo>()
+  for (const resultados of porAlumno) {
+    for (const r of resultados) {
+      const tema = temas.get(r.temaId) ?? {
+        temaId: r.temaId,
+        nombre: r.nombre,
+        unidadId: r.unidadId,
+        acertaron: 0,
+        fallaron: 0,
+        sinResponder: 0,
+        rindieron: 0,
+      }
+      tema.rindieron++
+      if (r.estado === 'acerto') tema.acertaron++
+      else if (r.estado === 'fallo') tema.fallaron++
+      else tema.sinResponder++
+      temas.set(r.temaId, tema)
+    }
+  }
+  return [...temas.values()]
+}

@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { captureRouteFailure } from '@/lib/observability'
 import { validarCarga } from '@/lib/diagnostico-impreso'
-import { cantidadDePreguntas, guardarCarga, leerParaImprimir } from '@/lib/diagnostico-impreso-server'
+import { cantidadDePreguntas, guardarCarga, leerParaImprimir, leerParaImprimirGrupo } from '@/lib/diagnostico-impreso-server'
 import { faltaLa027, type Destino } from '@/lib/fichas-server'
 
 export const dynamic = 'force-dynamic'
@@ -26,10 +26,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ quizId: 
   const quizId = Number((await params).quizId)
   const busqueda = new URL(req.url).searchParams
   const destino = destinoDe(busqueda.get('alumno'), busqueda.get('invitacion'))
-  if (!Number.isInteger(quizId) || !destino) return NextResponse.json({ error: 'Pedido inválido' }, { status: 400 })
+  // L4: la hoja de un grupo entero, sin nombre.
+  const grupo = Number(busqueda.get('grupo'))
+  const deGrupo = Number.isInteger(grupo) && grupo > 0
+  if (!Number.isInteger(quizId) || (!destino && !deGrupo)) return NextResponse.json({ error: 'Pedido inválido' }, { status: 400 })
 
   try {
-    const datos = await leerParaImprimir(teacher.id, quizId, destino)
+    const datos = destino ? await leerParaImprimir(teacher.id, quizId, destino) : await leerParaImprimirGrupo(teacher.id, quizId, grupo)
     if (!datos) return NextResponse.json({ error: 'Ese cuestionario no es de este alumno' }, { status: 404 })
     return NextResponse.json(datos)
   } catch (error) {

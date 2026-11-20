@@ -210,8 +210,15 @@ export async function parametrosDeGeneracion(
   }
 }
 
-/** El título de cada cuestionario: "Diagnóstico · Unidad II · Ecuaciones" o "Diagnóstico integral · Matemática". */
-export function tituloDeCuestionario(materia: string, cuestionario: CuestionarioPlaneado): string {
+/**
+ * El título de cada cuestionario: "Diagnóstico · Unidad II · Ecuaciones" o
+ * "Diagnóstico integral · Matemática". L4: con un título propio del docente
+ * ("Práctica parcial"), "Práctica parcial · Unidad III" o "Práctica parcial ·
+ * Matemática".
+ */
+export function tituloDeCuestionario(materia: string, cuestionario: CuestionarioPlaneado, propio?: string): string {
+  const base = propio?.trim()
+  if (base) return cuestionario.unidadId ? `${base} · ${cuestionario.titulo}` : `${base} · ${materia}`
   return cuestionario.unidadId ? `Diagnóstico · ${cuestionario.titulo}` : `Diagnóstico integral · ${materia}`
 }
 
@@ -228,15 +235,17 @@ export async function guardarYAsignar(params: {
   etiqueta?: string
   cuestionario: CuestionarioPlaneado
   preguntas: unknown[]
+  /** L4: el título que eligió el docente antes de generar. */
+  titulo?: string
 }): Promise<number> {
-  const { teacherId, diagnostico, materia, etiqueta, cuestionario, preguntas } = params
+  const { teacherId, diagnostico, materia, etiqueta, cuestionario, preguntas, titulo } = params
   const temas = cuestionario.temas.map((t) => ({ id: t.id, name: t.nombre }))
   const filas = (await sql`
     INSERT INTO teacher_quizzes (
       user_id, teacher_program_id, title, subject_name, mode, status, selected_topics,
       question_count, questions, pedagogy_context, tipo, diagnostico_id, unidad_id, created_at, updated_at
     ) VALUES (
-      ${teacherId}, ${diagnostico.materiaId}, ${tituloDeCuestionario(etiqueta ?? materia, cuestionario)}, ${materia}, 'practico', 'saved',
+      ${teacherId}, ${diagnostico.materiaId}, ${tituloDeCuestionario(etiqueta ?? materia, cuestionario, titulo)}, ${materia}, 'practico', 'saved',
       ${JSON.stringify(temas)}, ${preguntas.length}, ${JSON.stringify(preguntas)}, NULL,
       'diagnostico', ${diagnostico.id}, ${cuestionario.unidadId}, NOW(), NOW()
     )
@@ -280,7 +289,7 @@ export function grupoDelDiagnostico(teacherId: string, diagnostico: DiagnosticoG
   return cargarGrupo(teacherId, diagnostico.classroomId, diagnostico.materiaId)
 }
 
-async function cargarGrupo(teacherId: string, classroomId: number, materiaId: number): Promise<GrupoDelDiagnostico | null> {
+export async function cargarGrupo(teacherId: string, classroomId: number, materiaId: number): Promise<GrupoDelDiagnostico | null> {
   const filas = (await sql`
     SELECT id, subject_name, units, nivel, grado, pedagogy_profile
     FROM teacher_programs WHERE id = ${materiaId} AND user_id = ${teacherId} LIMIT 1

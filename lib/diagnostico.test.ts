@@ -7,6 +7,7 @@ import {
   repartirProporcional,
   resumirPlan,
   validarCuestionario,
+  hastaEsteTema,
 } from './diagnostico'
 import type { ProgramUnit } from './types'
 
@@ -131,5 +132,49 @@ describe('validarCuestionario (lo que manda el cliente)', () => {
     expect(validarCuestionario({ unidadId: 'a', temas: [{ id: 'b-t1', preguntas: 1 }] }, unidades, 'por_unidad')).toBeNull()
     expect(validarCuestionario({ unidadId: 'a', temas: [{ id: 'x', preguntas: 1 }] }, unidades, 'por_unidad')).toBeNull()
     expect(validarCuestionario({ unidadId: 'a', temas: [{ id: 'a-t1', preguntas: 16 }] }, unidades, 'por_unidad')).toBeNull()
+  })
+})
+
+describe('L4 · elegir temas dentro de cada unidad', () => {
+  const programa = [
+    { id: 'u1', name: 'Unidad I · Números', topics: ['Naturales', 'Enteros', 'Decimales', 'Porcentaje', 'Potencias', 'Raíces'].map((name, i) => ({ id: `n${i}`, name })) },
+    { id: 'u2', name: 'Unidad II · Fracciones', topics: ['Equivalentes', 'Suma y resta', 'Multiplicación', 'División', 'Problemas'].map((name, i) => ({ id: `f${i}`, name })) },
+    { id: 'u3', name: 'Unidad III · Geometría', topics: ['Ángulos', 'Triángulos'].map((name, i) => ({ id: `g${i}`, name })) },
+  ]
+  const temasDe = (plan: { temas: { id: string }[] }[]) => plan.flatMap((c) => c.temas.map((t) => t.id))
+
+  it('destildar temas sueltos los saca del plan', () => {
+    const plan = planDiagnostico(programa, 'por_unidad', { temasExcluidos: ['n2', 'n3'] })
+    expect(temasDe(plan)).not.toContain('n2')
+    expect(temasDe(plan)).not.toContain('n3')
+    expect(plan[0].temas.map((t) => t.id)).toEqual(['n0', 'n1', 'n4', 'n5'])
+  })
+
+  it('destildar todos los temas de una unidad la excluye', () => {
+    const plan = planDiagnostico(programa, 'por_unidad', { temasExcluidos: ['g0', 'g1'] })
+    expect(plan.map((c) => c.unidadId)).toEqual(['u1', 'u2'])
+  })
+
+  it('con menos temas la unidad puede pasar a 2 preguntas por tema, y el resumen cambia', () => {
+    const todos = resumirPlan(planDiagnostico(programa, 'por_unidad'))
+    const menos = resumirPlan(planDiagnostico(programa, 'por_unidad', { temasExcluidos: ['n2', 'n3'] }))
+    expect(menos.preguntas).not.toBe(todos.preguntas)
+  })
+
+  it('"Hasta este tema" deja lo anterior y saca lo posterior, en el orden del programa', () => {
+    const excluidos = hastaEsteTema(programa, 'f1')
+    expect(excluidos).toEqual(['f2', 'f3', 'f4', 'g0', 'g1'])
+    const plan = planDiagnostico(programa, 'por_unidad', { temasExcluidos: excluidos })
+    expect(plan.map((c) => c.unidadId)).toEqual(['u1', 'u2'])
+    expect(temasDe(plan)).toEqual(['n0', 'n1', 'n2', 'n3', 'n4', 'n5', 'f0', 'f1'])
+  })
+
+  it('en el integral también', () => {
+    const plan = planDiagnostico(programa, 'integral', { temasExcluidos: hastaEsteTema(programa, 'n5') })
+    expect(temasDe(plan)).toEqual(['n0', 'n1', 'n2', 'n3', 'n4', 'n5'])
+  })
+
+  it('un tema que no existe no excluye nada', () => {
+    expect(hastaEsteTema(programa, 'x')).toEqual([])
   })
 })

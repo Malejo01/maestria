@@ -108,3 +108,39 @@ describe('sumarTemasDificiles — "Marcar los N temas que falló"', () => {
     expect(sumarTemasDificiles(ficha, 4, ['t1'])).toMatchObject({ materiaId: 4, temasDificiles: ['t1'] })
   })
 })
+
+describe('L4 · las preguntas se validan contra los temas pedidos', () => {
+  it('descarta las de un tema que no se pidió, por id o por nombre', async () => {
+    const { separarPorTemasPedidos } = await import('./diagnostico-resultados')
+    const pedidos = [
+      { id: 'f0', nombre: 'Fracciones equivalentes' },
+      { id: 'f1', nombre: 'Suma y resta de fracciones' },
+    ]
+    const preguntas = [
+      { id: 'a', topic: 'f0' },
+      { id: 'b', topic: 'Suma y resta de fracciones' },
+      { id: 'c', topicName: 'suma y resta de FRACCIONES' },
+      { id: 'd', topic: 'Decimales' },
+      { id: 'e', topic: 'Porcentaje', topicName: 'Porcentaje' },
+    ]
+    const { dentro, fuera } = separarPorTemasPedidos(preguntas, pedidos)
+    expect(dentro.map((p) => p.id)).toEqual(['a', 'b', 'c'])
+    expect(fuera.map((p) => p.id)).toEqual(['d', 'e'])
+  })
+})
+
+describe('L4 · la lectura por tema, sumada por grupo', () => {
+  it('cuenta cuántos acertaron, fallaron o no respondieron cada tema', async () => {
+    const { sumarPorGrupo } = await import('./diagnostico-resultados')
+    const tema = (temaId: string, estado: 'acerto' | 'fallo' | 'no_respondio') => ({ temaId, nombre: temaId, unidadId: 'u', bien: 0, total: 1, estado })
+    const grupo = sumarPorGrupo([
+      [tema('equivalentes', 'acerto'), tema('suma', 'fallo')],
+      [tema('equivalentes', 'acerto'), tema('suma', 'acerto')],
+      [tema('equivalentes', 'fallo'), tema('suma', 'no_respondio')],
+    ])
+    expect(grupo).toEqual([
+      { temaId: 'equivalentes', nombre: 'equivalentes', unidadId: 'u', acertaron: 2, fallaron: 1, sinResponder: 0, rindieron: 3 },
+      { temaId: 'suma', nombre: 'suma', unidadId: 'u', acertaron: 1, fallaron: 1, sinResponder: 1, rindieron: 3 },
+    ])
+  })
+})

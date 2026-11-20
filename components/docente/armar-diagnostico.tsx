@@ -1,14 +1,14 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Check, X } from 'lucide-react'
+import { Check, ChevronDown, X } from 'lucide-react'
 import { Cargando } from '@/components/sistema/cargando'
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { PantallaDeLimite } from '@/components/docente/pantalla-de-limite'
 import { AccionesDeCuestionario } from '@/components/docente/acciones-de-cuestionario'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import { planDiagnostico, resumirPlan, type CuestionarioPlaneado, type ModoDiagnostico } from '@/lib/diagnostico'
+import { hastaEsteTema, planDiagnostico, resumirPlan, type CuestionarioPlaneado, type ModoDiagnostico } from '@/lib/diagnostico'
 import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
 import { DIAGNOSTICO } from '@/lib/textos'
 import type { ProgramUnit } from '@/lib/types'
@@ -49,7 +49,7 @@ export function ArmarDiagnostico({
   abierto: boolean
   onCambiar: (abierto: boolean) => void
   /** { alumno } o { invitacion }, tal cual lo espera POST /api/teacher/diagnosticos. */
-  destino: { alumno: string } | { invitacion: number }
+  destino: { alumno: string } | { invitacion: number } | { grupo: number }
   materia: string
   unidades: ProgramUnit[]
   temasDificiles: string[]
@@ -57,17 +57,25 @@ export function ArmarDiagnostico({
   /** L1: a quién quedó asignado, para el "Listo". null: al grupo. */
   nombre?: string | null
 }) {
-  const consulta = 'alumno' in destino ? `alumno=${encodeURIComponent(destino.alumno)}` : `invitacion=${destino.invitacion}`
+  const consulta =
+    'alumno' in destino
+      ? `alumno=${encodeURIComponent(destino.alumno)}`
+      : 'grupo' in destino
+        ? `grupo=${destino.grupo}`
+        : `invitacion=${destino.invitacion}`
+  const deGrupo = 'grupo' in destino
   const [modo, setModo] = useState<ModoDiagnostico>('por_unidad')
-  const [excluidas, setExcluidas] = useState<Set<string>>(new Set())
+  // L4: los temas destildados (destildar todos los de una unidad la excluye).
+  const [temasExcluidos, setTemasExcluidos] = useState<Set<string>>(new Set())
+  const [titulo, setTitulo] = useState('')
   const [paso, setPaso] = useState<Paso>({ tipo: 'elegir' })
   const [error, setError] = useState<string | null>(null)
   const [bloqueo, setBloqueo] = useState<CuerpoDeBloqueo | null>(null)
 
   const conTemas = unidades.filter((u) => u.topics.length > 0)
   const plan = useMemo(
-    () => planDiagnostico(unidades, modo, { temasDificiles, unidadesExcluidas: [...excluidas] }),
-    [unidades, modo, temasDificiles, excluidas],
+    () => planDiagnostico(unidades, modo, { temasDificiles, temasExcluidos: [...temasExcluidos] }),
+    [unidades, modo, temasDificiles, temasExcluidos],
   )
   const resumen = resumirPlan(plan)
   const ocupado = paso.tipo === 'generando' && paso.estados.some((e) => e === 'generando' || e === 'pendiente')
@@ -79,7 +87,8 @@ export function ArmarDiagnostico({
       setPaso({ tipo: 'elegir' })
       setError(null)
       setBloqueo(null)
-      setExcluidas(new Set())
+      setTemasExcluidos(new Set())
+      setTitulo('')
     }
   }
 
@@ -91,7 +100,11 @@ export function ArmarDiagnostico({
       const res = await fetch(`/api/teacher/diagnosticos/${diagnosticoId}/cuestionarios`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unidadId: cuestionario.unidadId, temas: cuestionario.temas.map(({ id, preguntas }) => ({ id, preguntas })) }),
+        body: JSON.stringify({
+          unidadId: cuestionario.unidadId,
+          temas: cuestionario.temas.map(({ id, preguntas }) => ({ id, preguntas })),
+          ...(titulo.trim() ? { titulo: titulo.trim() } : {}),
+        }),
       })
       const datos = await res.json().catch(() => null)
       if (res.status === 402) {
@@ -179,7 +192,7 @@ export function ArmarDiagnostico({
         ) : (
           <>
             <DialogTitle className="titulo-m text-texto">{T.titulo}</DialogTitle>
-            <DialogDescription className="cuerpo-s text-texto-suave">{T.detalle(materia)}</DialogDescription>
+            <DialogDescription className="cuerpo-s text-texto-suave">{T.detalle(materia, deGrupo)}</DialogDescription>
 
             {paso.tipo === 'elegir' ? (
               <div className="flex flex-col gap-4">
@@ -214,33 +227,23 @@ export function ArmarDiagnostico({
                   </div>
                 </fieldset>
 
-                <fieldset>
-                  <legend className="nota mb-1 font-semibold text-texto-suave">{T.unidades}</legend>
-                  <p className="nota mb-2 text-texto-suave">{T.unidadesAyuda}</p>
-                  <ul className="flex max-h-56 flex-col overflow-y-auto">
-                    {conTemas.map((u) => (
-                      <li key={u.id}>
-                        <label className="cuerpo-s flex min-h-11 cursor-pointer items-center gap-3 text-texto">
-                          <input
-                            type="checkbox"
-                            checked={!excluidas.has(u.id)}
-                            onChange={() =>
-                              setExcluidas((actual) => {
-                                const siguiente = new Set(actual)
-                                if (siguiente.has(u.id)) siguiente.delete(u.id)
-                                else siguiente.add(u.id)
-                                return siguiente
-                              })
-                            }
-                            className="size-5 shrink-0 accent-accion"
-                          />
-                          <span className="min-w-0 flex-1">{u.name}</span>
-                          <span className="nota shrink-0 text-texto-suave">{T.temas(u.topics.length)}</span>
-                        </label>
-                      </li>
-                    ))}
-                  </ul>
-                </fieldset>
+                <SelectorDeTemas
+                  unidades={conTemas}
+                  excluidos={temasExcluidos}
+                  alCambiar={setTemasExcluidos}
+                />
+
+                <label className="flex flex-col gap-1">
+                  <span className="nota font-semibold text-texto-suave">{T.tituloPropio}</span>
+                  <input
+                    value={titulo}
+                    onChange={(evento) => setTitulo(evento.target.value)}
+                    maxLength={80}
+                    placeholder={T.tituloEjemplo}
+                    className="cuerpo-s min-h-11 rounded-md border border-borde-fuerte bg-superficie-tarjeta px-3 text-texto"
+                  />
+                  <span className="nota text-texto-suave">{T.tituloAyuda}</span>
+                </label>
 
                 <div className="rounded-md border border-borde bg-superficie-base p-3">
                   <p className="cuerpo-s font-bold text-texto" aria-live="polite">
@@ -317,5 +320,107 @@ export function ArmarDiagnostico({
         )}
       </DialogContent>
     </Dialog>
+  )
+}
+
+/**
+ * L4: qué entra, tema por tema. Cada unidad se despliega con sus temas
+ * tildados; se puede destildar uno suelto, destildar todos excluye la unidad,
+ * y "Hasta este tema" tilda todo lo anterior en el orden del programa y
+ * destilda todo lo posterior ("vimos hasta suma y resta de fracciones").
+ */
+function SelectorDeTemas({
+  unidades,
+  excluidos,
+  alCambiar,
+}: {
+  unidades: ProgramUnit[]
+  excluidos: Set<string>
+  alCambiar: (siguiente: Set<string>) => void
+}) {
+  const [abiertas, setAbiertas] = useState<Set<string>>(new Set())
+  const alternar = (ids: string[], incluir: boolean) => {
+    const siguiente = new Set(excluidos)
+    for (const id of ids) {
+      if (incluir) siguiente.delete(id)
+      else siguiente.add(id)
+    }
+    alCambiar(siguiente)
+  }
+
+  return (
+    <fieldset>
+      <legend className="nota mb-1 font-semibold text-texto-suave">{T.unidades}</legend>
+      <p className="nota mb-2 text-texto-suave">{T.unidadesAyuda}</p>
+      <ul className="flex max-h-72 flex-col overflow-y-auto">
+        {unidades.map((u) => {
+          const ids = u.topics.map((t) => t.id)
+          const incluidos = ids.filter((id) => !excluidos.has(id)).length
+          const abierta = abiertas.has(u.id)
+          return (
+            <li key={u.id} className="border-b border-borde last:border-b-0">
+              <div className="flex min-h-11 items-center gap-3">
+                <input
+                  type="checkbox"
+                  aria-label={u.name}
+                  checked={incluidos > 0}
+                  ref={(el) => {
+                    if (el) el.indeterminate = incluidos > 0 && incluidos < ids.length
+                  }}
+                  onChange={() => alternar(ids, incluidos === 0)}
+                  className="size-5 shrink-0 accent-accion"
+                />
+                <button
+                  type="button"
+                  aria-expanded={abierta}
+                  onClick={() =>
+                    setAbiertas((actual) => {
+                      const siguiente = new Set(actual)
+                      if (siguiente.has(u.id)) siguiente.delete(u.id)
+                      else siguiente.add(u.id)
+                      return siguiente
+                    })
+                  }
+                  className="cuerpo-s flex min-h-11 min-w-0 flex-1 items-center justify-between gap-3 text-left text-texto"
+                >
+                  <span className="min-w-0 flex-1">{u.name}</span>
+                  <span className="nota shrink-0 text-texto-suave">{T.temasDe(incluidos, ids.length)}</span>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className={cn('size-4 shrink-0 text-texto-suave transition-transform', abierta && 'rotate-180')}
+                    strokeWidth={TRAZO_ICONO}
+                  />
+                </button>
+              </div>
+              {abierta && (
+                <ul className="mb-2 ml-8 flex flex-col">
+                  {u.topics.map((t) => (
+                    <li key={t.id} className="flex flex-wrap items-center gap-x-3">
+                      <label className="cuerpo-s flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-3 text-texto">
+                        <input
+                          type="checkbox"
+                          checked={!excluidos.has(t.id)}
+                          onChange={() => alternar([t.id], excluidos.has(t.id))}
+                          className="size-5 shrink-0 accent-accion"
+                        />
+                        <span className="min-w-0">{t.name}</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => alCambiar(new Set(hastaEsteTema(unidades, t.id)))}
+                        aria-label={T.hastaEsteTemaAria(t.name)}
+                        className="nota min-h-11 shrink-0 underline underline-offset-2 text-texto-suave hover:text-texto"
+                      >
+                        {T.hastaEsteTema}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </fieldset>
   )
 }

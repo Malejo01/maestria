@@ -486,13 +486,19 @@ export const DIAGNOSTICO = {
   dialogo: {
     titulo: 'Armar diagnóstico',
     // K6: la etiqueta puede terminar en punto ("Matemática · 3.º Sec."): no se duplica.
-    detalle: (materia: string) =>
-      `Sobre el programa de ${materia.replace(/\.$/, '')}. Lo ve sólo este alumno, con un intento por cuestionario.`,
+    detalle: (materia: string, deGrupo = false) =>
+      `Sobre el programa de ${materia.replace(/\.$/, '')}. ${deGrupo ? 'Lo ven todos los alumnos del grupo' : 'Lo ve sólo este alumno'}, con un intento por cuestionario.`,
     modo: 'Cómo lo querés',
     porUnidad: { titulo: 'Por unidad', detalle: 'Un cuestionario por unidad. Se pueden rendir en días distintos.' },
     integral: { titulo: 'Integral', detalle: 'Un solo examen con todo el programa, hasta 40 preguntas.' },
-    unidades: 'Unidades que entran',
-    unidadesAyuda: 'Destildá las que todavía no vio.',
+    unidades: 'Qué temas entran',
+    unidadesAyuda: 'Abrí cada unidad para destildar los temas que todavía no vieron.',
+    temasDe: (incluidos: number, total: number) => (incluidos === total ? (total === 1 ? '1 tema' : `${total} temas`) : `${incluidos} de ${total} temas`),
+    hastaEsteTema: 'Hasta este tema',
+    hastaEsteTemaAria: (tema: string) => `Hasta ${tema}: tildar lo anterior y destildar lo que sigue`,
+    tituloPropio: 'Título (opcional)',
+    tituloEjemplo: 'Por ejemplo: Práctica parcial',
+    tituloAyuda: 'Por unidad, cada cuestionario suma el nombre de la unidad: "Práctica parcial · Unidad III".',
     temas: (n: number) => (n === 1 ? '1 tema' : `${n} temas`),
     resumen: (cuestionarios: number, preguntas: number, minutos: number) =>
       `${cuestionarios === 1 ? '1 cuestionario' : `${cuestionarios} cuestionarios`} · ${preguntas} preguntas · unos ${minutos} minutos en total`,
@@ -542,6 +548,7 @@ export const DIAGNOSTICO = {
     cargarAria: (titulo: string) => `Cargar los resultados de ${titulo} desde el papel`,
     queCargamos: 'el cuestionario',
     volver: 'Volver a la ficha',
+    volverAGrupos: 'Volver a Mis grupos',
     imprimirAhora: 'Imprimir o guardar en PDF',
     ayudaImprimir: 'Salen dos hojas: la del alumno, sin respuestas, y la tuya con las correctas, en una página aparte.',
     alumno: 'Alumno',
@@ -752,6 +759,53 @@ export const ATAJOS = {
     detalle: 'Se pierde lo que respondiste hasta ahora.',
     confirmar: 'Salir',
     quedarme: 'Seguir respondiendo',
+  },
+} as const
+
+/** L4: la pestaña Mis grupos, al lado de Mis alumnos. */
+export const MIS_GRUPOS = {
+  pestanas: { etiqueta: 'Ver', alumnos: 'Mis alumnos', grupos: 'Mis grupos' },
+  cargando: 'Buscando tus grupos…',
+  queCargamos: 'tus grupos',
+  vacio: {
+    titulo: 'Todavía no tenés grupos abiertos',
+    detalle: 'Un grupo se crea solo cuando sumás un alumno o mandás una tarea desde una materia.',
+  },
+  resumen: (codigo: string, alumnos: number, tareas: number) =>
+    `Código ${codigo} · ${alumnos === 1 ? '1 alumno' : `${alumnos} alumnos`} · ${tareas === 1 ? '1 tarea mandada' : `${tareas} tareas mandadas`}`,
+  armar: 'Armar diagnóstico o práctica',
+  cerrar: 'Cerrar grupo',
+  copiar: 'Copiar link',
+  copiado: 'Copiado',
+  copiarLink: (grupo: string) => `Copiar el link del grupo ${grupo}`,
+  reabrir: 'Reabrir',
+  borrar: 'Borrar',
+  cerrados: {
+    titulo: (n: number) => `Cerrados (${n})`,
+    detalle: 'Sus alumnos ya no ven las tareas. La materia sigue en Mis materias.',
+  },
+  borrarDialogo: {
+    titulo: (grupo: string) => `¿Borrar el grupo ${grupo}?`,
+    detalle: (alumnos: number, tareas: number) =>
+      `Se pierden ${alumnos === 1 ? '1 alumno' : `${alumnos} alumnos`} del grupo y ${tareas === 1 ? '1 tarea mandada' : `${tareas} tareas mandadas`}. No se puede deshacer.`,
+    materia: 'La materia no se borra: si la volvés a usar, se arma un grupo nuevo.',
+    cancelar: 'No borrar',
+    confirmar: 'Sí, borrar el grupo',
+  },
+  seguimiento: {
+    titulo: (n: number) => (n === 1 ? 'Diagnóstico o práctica del grupo (1)' : `Diagnósticos y prácticas del grupo (${n})`),
+    armado: (fecha: string, modo: 'por_unidad' | 'integral') => `${modo === 'integral' ? 'Integral' : 'Por unidad'}, armado el ${fecha}`,
+    hicieron: (preguntas: number, hicieron: number, total: number) =>
+      `${preguntas === 1 ? '1 pregunta' : `${preguntas} preguntas`} · ${hicieron} de ${total} lo ${hicieron === 1 ? 'hizo' : 'hicieron'}`,
+    porTema: 'Por tema',
+    tema: (nombre: string, acertaron: number, rindieron: number) => `${nombre}: ${acertaron} de ${rindieron} la acertaron`,
+    sinRespuestas: 'Cuando lo hagan, acá vas a ver tema por tema cuántos lo acertaron.',
+  },
+  gestion: {
+    titulo: 'Seguimiento detallado y gestión',
+    detalle: 'Notas por alumno, regenerar el código, sumar alumnos de otro grupo y exportar.',
+    mostrar: 'Ver',
+    ocultar: 'Ocultar',
   },
 } as const
 

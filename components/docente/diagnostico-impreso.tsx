@@ -38,6 +38,8 @@ function useCuestionario(quizId: number, consulta: string) {
 function urlDeLaFicha(consulta: string): string {
   const params = new URLSearchParams(consulta)
   const alumno = params.get('alumno')
+  // L4: la hoja de un grupo vuelve a Mis grupos.
+  if (params.get('grupo')) return '/teacher?seccion=aulas&vista=grupos'
   return alumno ? `/teacher/alumnos/${encodeURIComponent(alumno)}` : `/teacher/alumnos/invitacion/${params.get('invitacion')}`
 }
 
@@ -62,7 +64,7 @@ export function ImprimirDiagnostico({ quizId, consulta }: { quizId: number; cons
           className="cuerpo-s inline-flex min-h-11 items-center gap-2 rounded-sm font-semibold text-texto-suave hover:text-texto"
         >
           <ArrowLeft aria-hidden="true" className="size-4" strokeWidth={TRAZO_ICONO} />
-          {T.volver}
+          {new URLSearchParams(consulta).get('grupo') ? T.volverAGrupos : T.volver}
         </Link>
         <Boton onClick={() => window.print()}>
           <Printer aria-hidden="true" strokeWidth={TRAZO_ICONO} />
