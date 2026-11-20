@@ -666,6 +666,10 @@ export const MIS_TAREAS = {
   nota: (nota: string) => `Nota ${nota}`,
 } as const
 
+/** L5: cuántas preguntas y cuánto tiempo lleva una tarea. Los minutos salen de minutosEstimados (lib/diagnostico.ts). */
+export const TAMANO_DE_TAREA = (preguntas: number, minutos: number) =>
+  `${preguntas === 1 ? '1 pregunta' : `${preguntas} preguntas`} · unos ${minutos} min`
+
 export const MIS_TAREAS_ALUMNO = {
   titulo: 'Mis tareas',
   cargando: 'Buscando tus tareas…',

@@ -1,4 +1,5 @@
 import type { ProgramUnit } from '@/lib/types'
+import { TAMANO_DE_TAREA } from '@/lib/textos'
 
 /**
  * El diagnóstico inicial (tanda J, J4): cuántas preguntas de cada tema y en
@@ -159,14 +160,28 @@ export interface ResumenPlan {
   minutos: number
 }
 
+/**
+ * Cuánto lleva responder tantas preguntas: 1,2 minutos cada una, redondeado a
+ * 5 y nunca menos de 5. La única estimación de tiempo de MaestrIA: la usan el
+ * resumen del diagnóstico y la tarjeta de cada tarea (L5).
+ */
+export function minutosEstimados(preguntas: number): number {
+  return preguntas <= 0 ? 0 : Math.max(5, Math.round((preguntas * MINUTOS_POR_PREGUNTA) / 5) * 5)
+}
+
 /** "4 cuestionarios · 37 preguntas · unos 45 minutos en total". Los minutos, redondeados a 5. */
 export function resumirPlan(plan: CuestionarioPlaneado[]): ResumenPlan {
   const preguntas = plan.reduce((acc, c) => acc + c.total, 0)
   return {
     cuestionarios: plan.length,
     preguntas,
-    minutos: preguntas === 0 ? 0 : Math.max(5, Math.round((preguntas * MINUTOS_POR_PREGUNTA) / 5) * 5),
+    minutos: minutosEstimados(preguntas),
   }
+}
+
+/** L5: "15 preguntas · unos 20 min", para elegir una tarea por su largo. */
+export function tamanoDeTarea(preguntas: number): string {
+  return TAMANO_DE_TAREA(preguntas, minutosEstimados(preguntas))
 }
 
 /**

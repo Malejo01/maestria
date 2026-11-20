@@ -14,6 +14,7 @@ import type { MisAlumnos } from '@/lib/alumnos-docente-server'
 import { aQuienSaludar, armarMensaje, linkDeWhatsApp } from '@/lib/compartir-tarea'
 import { COMPARTIR_TAREA as T } from '@/lib/textos'
 import type { TeacherQuiz } from '@/lib/types'
+import { tamanoDeTarea } from '@/lib/diagnostico'
 
 interface Grupo {
   id: number
@@ -285,6 +286,12 @@ export function ShareQuizDialog({
               <DialogDescription className="cuerpo-s mt-1 text-texto-suave">
                 {T.mandar.detalle(quiz?.subjectName ?? '')}
               </DialogDescription>
+              {/* L5: qué se manda y cuánto lleva, antes de mandarlo. */}
+              {quiz && quiz.questionCount > 0 && (
+                <p className="nota mt-2 text-texto-suave">
+                  <span className="font-semibold text-texto">{quiz.title}</span> · {tamanoDeTarea(quiz.questionCount)}
+                </p>
+              )}
             </div>
 
             {grupos === null && (

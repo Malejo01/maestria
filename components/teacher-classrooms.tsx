@@ -47,6 +47,7 @@ import { AccuracyBar, formatDateTime, formatPercent, formatScore } from '@/compo
 import type { SubjectColorName, SubjectIconName, TeacherProgram } from '@/lib/types'
 import { etiquetaDeMateria, materiaDePrograma, nombreRepetido } from '@/lib/etiqueta-materia'
 import { ASIGNACIONES_INDIVIDUALES } from '@/lib/textos'
+import { tamanoDeTarea } from '@/lib/diagnostico'
 
 interface ClassroomRow {
   id: number
@@ -662,7 +663,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
                   <Card key={assignment.id} className="p-3 space-y-2 border self-start">
                     <div>
                       <p className="font-semibold text-sm break-words">{assignment.title}</p>
-                      <p className="text-xs text-muted-foreground">{assignment.questionCount} preguntas</p>
+                      <p className="text-xs text-muted-foreground">{tamanoDeTarea(assignment.questionCount)}</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 text-xs">
