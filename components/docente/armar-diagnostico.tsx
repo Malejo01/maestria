@@ -6,6 +6,7 @@ import { Cargando } from '@/components/sistema/cargando'
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { PantallaDeLimite } from '@/components/docente/pantalla-de-limite'
+import { AccionesDeCuestionario } from '@/components/docente/acciones-de-cuestionario'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { planDiagnostico, resumirPlan, type CuestionarioPlaneado, type ModoDiagnostico } from '@/lib/diagnostico'
 import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
@@ -17,7 +18,13 @@ const T = DIAGNOSTICO.dialogo
 
 type Paso =
   | { tipo: 'elegir' }
-  | { tipo: 'generando'; diagnosticoId: number; estados: ('pendiente' | 'generando' | 'listo' | 'fallo')[] }
+  | {
+      tipo: 'generando'
+      diagnosticoId: number
+      estados: ('pendiente' | 'generando' | 'listo' | 'fallo')[]
+      /** L1: el id de cada cuestionario ya guardado, para sus acciones. */
+      ids: (number | null)[]
+    }
 
 /**
  * J4: armar el diagnóstico. Se elige el modo y qué unidades entran, se ve el
@@ -25,6 +32,9 @@ type Paso =
  *
  * Cada cuestionario es un pedido aparte: el docente ve el avance, y si uno
  * falla, los demás quedan asignados y se puede reintentar sólo ése.
+ *
+ * L1: al terminar ya está todo guardado y asignado; cada cuestionario listo
+ * trae sus acciones (revisar y editar, ver como alumno, hacerlo, imprimir).
  */
 export function ArmarDiagnostico({
   abierto,
@@ -34,6 +44,7 @@ export function ArmarDiagnostico({
   unidades,
   temasDificiles,
   alTerminar,
+  nombre = null,
 }: {
   abierto: boolean
   onCambiar: (abierto: boolean) => void
@@ -43,7 +54,10 @@ export function ArmarDiagnostico({
   unidades: ProgramUnit[]
   temasDificiles: string[]
   alTerminar: () => void
+  /** L1: a quién quedó asignado, para el "Listo". null: al grupo. */
+  nombre?: string | null
 }) {
+  const consulta = 'alumno' in destino ? `alumno=${encodeURIComponent(destino.alumno)}` : `invitacion=${destino.invitacion}`
   const [modo, setModo] = useState<ModoDiagnostico>('por_unidad')
   const [excluidas, setExcluidas] = useState<Set<string>>(new Set())
   const [paso, setPaso] = useState<Paso>({ tipo: 'elegir' })
@@ -69,18 +83,22 @@ export function ArmarDiagnostico({
     }
   }
 
-  async function generarUno(diagnosticoId: number, cuestionario: CuestionarioPlaneado): Promise<'listo' | 'fallo' | CuerpoDeBloqueo> {
+  async function generarUno(
+    diagnosticoId: number,
+    cuestionario: CuestionarioPlaneado,
+  ): Promise<{ quizId: number } | 'fallo' | CuerpoDeBloqueo> {
     try {
       const res = await fetch(`/api/teacher/diagnosticos/${diagnosticoId}/cuestionarios`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ unidadId: cuestionario.unidadId, temas: cuestionario.temas.map(({ id, preguntas }) => ({ id, preguntas })) }),
       })
+      const datos = await res.json().catch(() => null)
       if (res.status === 402) {
-        const frenado = leerBloqueo(await res.json().catch(() => null))
+        const frenado = leerBloqueo(datos)
         if (frenado) return frenado
       }
-      return res.ok ? 'listo' : 'fallo'
+      return res.ok && datos?.quizId ? { quizId: Number(datos.quizId) } : 'fallo'
     } catch {
       return 'fallo'
     }
@@ -88,19 +106,26 @@ export function ArmarDiagnostico({
 
   async function correr(diagnosticoId: number, indices: number[], base: Paso & { tipo: 'generando' }) {
     const estados = [...base.estados]
+    const ids = [...base.ids]
+    const mostrar = () => setPaso({ tipo: 'generando', diagnosticoId, estados: [...estados], ids: [...ids] })
     for (const i of indices) {
       estados[i] = 'generando'
-      setPaso({ tipo: 'generando', diagnosticoId, estados: [...estados] })
+      mostrar()
       const resultado = await generarUno(diagnosticoId, plan[i])
-      if (typeof resultado === 'object') {
+      if (resultado !== 'fallo' && !('quizId' in resultado)) {
         // Se frenó por el plan: lo que falta queda sin generar.
         for (const j of indices) if (estados[j] !== 'listo') estados[j] = 'fallo'
-        setPaso({ tipo: 'generando', diagnosticoId, estados: [...estados] })
+        mostrar()
         setBloqueo(resultado)
         return
       }
-      estados[i] = resultado
-      setPaso({ tipo: 'generando', diagnosticoId, estados: [...estados] })
+      if (resultado === 'fallo') {
+        estados[i] = 'fallo'
+      } else {
+        estados[i] = 'listo'
+        ids[i] = resultado.quizId
+      }
+      mostrar()
     }
     // K4: la ficha de abajo ya muestra los cuestionarios, sin esperar a que se cierre.
     alTerminar()
@@ -128,6 +153,7 @@ export function ArmarDiagnostico({
         tipo: 'generando',
         diagnosticoId: datos.diagnosticoId,
         estados: plan.map(() => 'pendiente' as const),
+        ids: plan.map(() => null),
       }
       setPaso(inicial)
       await correr(datos.diagnosticoId, plan.map((_, i) => i), inicial)
@@ -240,9 +266,12 @@ export function ArmarDiagnostico({
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                <p className="cuerpo-s font-bold text-texto" aria-live="polite">
-                  {enCurso >= 0 ? T.generando(enCurso + 1, plan.length) : fallados > 0 ? T.fallaron(fallados) : T.listo}
-                </p>
+                <div aria-live="polite">
+                  <p className="cuerpo-s font-bold text-texto">
+                    {enCurso >= 0 ? T.generando(enCurso + 1, plan.length) : fallados > 0 ? T.fallaron(fallados) : T.listo(nombre)}
+                  </p>
+                  {!ocupado && fallados === 0 && <p className="nota mt-1 text-texto-suave">{T.listoDetalle}</p>}
+                </div>
                 <ul className="flex flex-col gap-2">
                   {plan.map((c, i) => (
                     <li key={`${c.unidadId}-${i}`} className="cuerpo-s flex items-center gap-3 text-texto">
@@ -257,8 +286,20 @@ export function ArmarDiagnostico({
                           <span aria-hidden="true" className="size-2 rounded-full bg-borde-fuerte" />
                         )}
                       </span>
-                      <span className="min-w-0 flex-1">{c.titulo}</span>
-                      <span className="nota shrink-0 text-texto-suave">{DIAGNOSTICO.preguntas(c.total)}</span>
+                      <span className="min-w-0 flex-1">
+                        {c.titulo}
+                        <span className="nota block text-texto-suave">{DIAGNOSTICO.preguntas(c.total)}</span>
+                      </span>
+                      {!ocupado && paso.estados[i] === 'listo' && paso.ids[i] !== null && (
+                        <AccionesDeCuestionario
+                          quizId={paso.ids[i]!}
+                          titulo={c.titulo}
+                          consulta={consulta}
+                          acciones={['revisar', 'verComoAlumno', 'hacerlo', 'imprimir']}
+                          // El cuestionario se abre encima de la ficha: el diálogo se cierra antes.
+                          antesDeAbrir={() => cerrar(false)}
+                        />
+                      )}
                     </li>
                   ))}
                 </ul>

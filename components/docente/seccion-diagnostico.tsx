@@ -1,9 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import Link from 'next/link'
-import { ClipboardCheck, ListChecks, Printer } from 'lucide-react'
+import { ClipboardCheck } from 'lucide-react'
 import { ArmarDiagnostico } from '@/components/docente/armar-diagnostico'
+import { AccionesDeCuestionario } from '@/components/docente/acciones-de-cuestionario'
 import { Cargando } from '@/components/sistema/cargando'
 import { Boton } from '@/components/sistema/boton'
 import { ChipTema } from '@/components/sistema/chip-tema'
@@ -39,9 +39,12 @@ const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString('es-AR', { 
  */
 export function SeccionDiagnostico({
   destino,
+  nombre = null,
   alMarcarTemas,
 }: {
   destino: { alumno: string } | { invitacion: number }
+  /** L1: para el "Listo. … asignados a {nombre}". */
+  nombre?: string | null
   /** Para que la ficha vuelva a leer "Qué le cuesta" después de marcar. */
   alMarcarTemas?: () => void
 }) {
@@ -126,6 +129,7 @@ export function SeccionDiagnostico({
         unidades={estado.grupo.unidades}
         temasDificiles={estado.temasDificiles ?? []}
         alTerminar={leer}
+        nombre={nombre}
       />
     </section>
   )
@@ -160,27 +164,13 @@ function Resultado({
                 {c.fuente === 'app' && c.fecha ? R.enLaApp(fechaCorta(c.fecha)) : c.fuente === 'impreso' && c.fecha ? R.impreso(fechaCorta(c.fecha)) : R.noRindio}
               </span>
             </span>
-            {/* J7: la versión en papel y la carga a mano de lo que respondió. */}
-            <span className="flex gap-2">
-              <Boton variante="icono" asChild>
-                <Link
-                  href={`/teacher/diagnosticos/imprimir/${c.id}?${consulta}`}
-                  aria-label={T.impreso.imprimirAria(c.titulo)}
-                  title={T.impreso.imprimir}
-                >
-                  <Printer aria-hidden="true" strokeWidth={TRAZO_ICONO} />
-                </Link>
-              </Boton>
-              <Boton variante="icono" asChild>
-                <Link
-                  href={`/teacher/diagnosticos/cargar/${c.id}?${consulta}`}
-                  aria-label={T.impreso.cargarAria(c.titulo)}
-                  title={T.impreso.cargar}
-                >
-                  <ListChecks aria-hidden="true" strokeWidth={TRAZO_ICONO} />
-                </Link>
-              </Boton>
-            </span>
+            {/* J7 + L1: revisar y editar, verlo como alumno, la versión en papel y la carga a mano. */}
+            <AccionesDeCuestionario
+              quizId={c.id}
+              titulo={c.titulo}
+              consulta={consulta}
+              acciones={['revisar', 'verComoAlumno', 'imprimir', 'cargar']}
+            />
           </li>
         ))}
       </ul>

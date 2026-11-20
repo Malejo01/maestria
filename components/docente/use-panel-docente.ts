@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast'
 import { exportQuizToMoodleGift } from '@/lib/moodle-export'
 import { parseCreatedFrom, parseNivel } from '@/lib/teacher-programs'
 import type { TeacherProgram, TeacherQuiz } from '@/lib/types'
+import { configDeTarea, tareaDesdeFila } from '@/lib/tarea-docente'
 
 type TeacherProgramApiShape = TeacherProgram & {
   user_id?: string
@@ -45,27 +46,6 @@ function normalizeTeacherProgram(program: TeacherProgramApiShape): TeacherProgra
     grado: program.grado ? String(program.grado) : null,
     jurisdiccion: program.jurisdiccion ? String(program.jurisdiccion) : null,
     createdFrom: parseCreatedFrom(program.createdFrom ?? program.created_from),
-  }
-}
-
-function normalizeTeacherQuiz(quiz: Record<string, unknown>): TeacherQuiz {
-  const rawMode = quiz.mode
-  const normalizedMode = rawMode === 'practico' ? 'practico' : rawMode === 'mixto' ? 'mixto' : 'teorico'
-
-  return {
-    id: Number(quiz.id),
-    userId: String(quiz.user_id || ''),
-    teacherProgramId: Number(quiz.teacher_program_id || 0),
-    title: String(quiz.title || 'Cuestionario docente'),
-    subjectName: String(quiz.subject_name || ''),
-    mode: normalizedMode,
-    status: quiz.status === 'pending_share' ? 'pending_share' : 'saved',
-    selectedTopics: Array.isArray(quiz.selected_topics) ? (quiz.selected_topics as { id: string; name: string }[]) : [],
-    questionCount: Number(quiz.question_count || 0),
-    questions: Array.isArray(quiz.questions) ? (quiz.questions as TeacherQuiz['questions']) : [],
-    pedagogyContext: quiz.pedagogy_context ? String(quiz.pedagogy_context) : undefined,
-    createdAt: String(quiz.created_at || new Date().toISOString()),
-    updatedAt: String(quiz.updated_at || new Date().toISOString()),
   }
 }
 
@@ -322,7 +302,7 @@ export function usePanelDocente() {
         if (!isMounted) return
 
         if (savedRes.ok) {
-          const normalizedQuizzes = (Array.isArray(savedData.quizzes) ? savedData.quizzes : []).map((quiz: any) => normalizeTeacherQuiz(quiz as Record<string, unknown>))
+          const normalizedQuizzes = (Array.isArray(savedData.quizzes) ? savedData.quizzes : []).map((quiz: any) => tareaDesdeFila(quiz as Record<string, unknown>))
           setTeacherQuizzes(normalizedQuizzes)
         } else {
           setTeacherQuizzes([])
@@ -401,32 +381,13 @@ export function usePanelDocente() {
     }
   }
 
+  // L1: la misma configuración que usan la ficha y el diálogo del diagnóstico.
   const handleRunQuiz = (quiz: TeacherQuiz) => {
-    startQuiz(
-      {
-        subject: `teacher-${quiz.teacherProgramId}`,
-        subjectName: quiz.subjectName,
-        topics: quiz.selectedTopics,
-        mode: quiz.mode,
-        questionCount: quiz.questionCount,
-        pedagogyContext: quiz.pedagogyContext,
-      },
-      quiz.questions
-    )
+    startQuiz(configDeTarea(quiz), quiz.questions)
   }
 
   const handlePreviewQuiz = (quiz: TeacherQuiz) => {
-    startQuizPreview(
-      {
-        subject: `teacher-${quiz.teacherProgramId}`,
-        subjectName: quiz.subjectName,
-        topics: quiz.selectedTopics,
-        mode: quiz.mode,
-        questionCount: quiz.questionCount,
-        pedagogyContext: quiz.pedagogyContext,
-      },
-      quiz.questions
-    )
+    startQuizPreview(configDeTarea(quiz), quiz.questions)
   }
 
   const handleExportQuiz = (quiz: TeacherQuiz) => {

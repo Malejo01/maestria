@@ -501,7 +501,10 @@ export const DIAGNOSTICO = {
     generar: 'Generar y asignar',
     cancelar: 'Cancelar',
     generando: (n: number, total: number) => `Generando ${n} de ${total}…`,
-    listo: 'Listo. Quedó asignado sólo a este alumno, con un intento por cuestionario.',
+    /** L1: ya quedó guardado; no hace falta un botón de guardar. Sin nombre, es del grupo. */
+    listo: (nombre: string | null) =>
+      nombre ? `Listo. Quedaron guardados en la ficha y asignados a ${nombre}.` : 'Listo. Quedaron guardados y asignados al grupo.',
+    listoDetalle: 'Un intento por cuestionario. Antes de que lo rinda, podés revisar y editar cada uno.',
     fallaron: (n: number) => (n === 1 ? 'Un cuestionario no se pudo generar.' : `${n} cuestionarios no se pudieron generar.`),
     reintentar: 'Reintentar los que fallaron',
     cerrar: 'Cerrar',
@@ -664,6 +667,36 @@ export const MIS_TAREAS = {
   confirmarBorrado: 'Sí, borrarla',
   noBorrar: 'No borrar',
   nota: (nota: string) => `Nota ${nota}`,
+  /** L1: los cuestionarios del diagnóstico, marcados y filtrables. */
+  diagnostico: 'Diagnóstico',
+  tipos: { etiqueta: 'Qué mostrar', todas: 'Todas', tarea: 'Tareas', diagnostico: 'Diagnósticos' },
+  sinDelTipo: 'No hay ninguna de este tipo con este filtro.',
+} as const
+
+/** L1: las acciones de un cuestionario del diagnóstico, en la ficha y al terminar de armarlo. */
+export const ACCIONES_DE_CUESTIONARIO = {
+  nombre: {
+    revisar: 'Revisar y editar',
+    verComoAlumno: 'Ver como alumno',
+    hacerlo: 'Hacerlo yo',
+    imprimir: 'Imprimir',
+    cargar: 'Cargar resultados del impreso',
+  },
+  aria: {
+    revisar: (titulo: string) => `Revisar y editar ${titulo}`,
+    verComoAlumno: (titulo: string) => `Ver ${titulo} como alumno`,
+    hacerlo: (titulo: string) => `Hacer ${titulo} vos`,
+    imprimir: (titulo: string) => `Imprimir ${titulo}`,
+    cargar: (titulo: string) => `Cargar los resultados de ${titulo} desde el papel`,
+  },
+  menu: (titulo: string) => `Qué hacer con ${titulo}`,
+  noSeAbrio: 'No se pudo abrir el cuestionario',
+} as const
+
+/** L1: la ruta que monta la revisión de una tarea fuera de Mis tareas. */
+export const REVISAR_TAREA = {
+  cargando: 'Buscando la tarea…',
+  queCargamos: 'la tarea',
 } as const
 
 /** L5: cuántas preguntas y cuánto tiempo lleva una tarea. Los minutos salen de minutosEstimados (lib/diagnostico.ts). */

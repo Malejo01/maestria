@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { SeccionDiagnostico } from './seccion-diagnostico'
 
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn() }) }))
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
@@ -55,5 +57,17 @@ describe('SeccionDiagnostico · la válvula de la 028 (L0)', () => {
     render(<SeccionDiagnostico destino={{ alumno: 'u9' }} />)
     const boton = await screen.findByRole('button', { name: /Armar otro diagnóstico/ })
     expect(boton).toHaveProperty('disabled', false)
+  })
+})
+
+describe('SeccionDiagnostico · las acciones de cada cuestionario (L1)', () => {
+  it('suma revisar y editar y ver como alumno a imprimir y cargar', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ ...estado, individualDisponible: true }), { status: 200 })))
+    render(<SeccionDiagnostico destino={{ alumno: 'u9' }} />)
+    const titulo = 'Diagnóstico integral · Matemática'
+    expect(await screen.findByRole('button', { name: `Revisar y editar ${titulo}` })).toBeTruthy()
+    expect(screen.getByRole('button', { name: `Ver ${titulo} como alumno` })).toBeTruthy()
+    expect(screen.getByRole('link', { name: `Imprimir ${titulo}` }).getAttribute('href')).toBe('/teacher/diagnosticos/imprimir/26?alumno=u9')
+    expect(screen.getByRole('link', { name: `Cargar los resultados de ${titulo} desde el papel` })).toBeTruthy()
   })
 })
