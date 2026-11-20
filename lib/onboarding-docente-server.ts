@@ -43,6 +43,9 @@ export async function leerOnboardingDocente(teacherId: string): Promise<Onboardi
       SELECT c.id, c.name, c.join_code, c.teacher_program_id,
              (SELECT COUNT(*)::int FROM classroom_members m
                WHERE m.classroom_id = c.id AND m.status = 'active' AND m.user_id <> ${teacherId}) AS alumnos,
+             -- L0: cuentan también las individuales (un diagnóstico armado para
+             -- un alumno): para el hito "mandaste tu primera tarea" da lo mismo
+             -- a quién fue. Ningún alumno ve nada desde acá.
              (SELECT COUNT(*)::int FROM classroom_assignments a WHERE a.classroom_id = c.id) AS tareas_mandadas,
              (SELECT MIN(a.created_at) FROM classroom_assignments a WHERE a.classroom_id = c.id) AS primera_tarea
       FROM classrooms c

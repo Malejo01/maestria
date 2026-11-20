@@ -32,8 +32,10 @@ export async function GET() {
              p.color_name,
              (SELECT COUNT(*)::int FROM classroom_members m
                WHERE m.classroom_id = c.id AND m.status = 'active') AS member_count,
+             -- L0: las tareas del grupo; lo armado para un solo alumno no cuenta.
              (SELECT COUNT(*)::int FROM classroom_assignments a
-               WHERE a.classroom_id = c.id) AS assignment_count
+               WHERE a.classroom_id = c.id
+                 AND COALESCE(to_jsonb(a) ->> 'solo_user_id', to_jsonb(a) ->> 'solo_invitacion_id') IS NULL) AS assignment_count
       FROM classrooms c
       JOIN teacher_programs p ON p.id = c.teacher_program_id
       WHERE c.teacher_id = ${teacher.id}

@@ -3,6 +3,7 @@ import { sql } from '@/lib/db'
 import { getViewer } from '@/lib/auth-session'
 import { ASSIGNMENT_STATE_LABEL, assignmentState, canStartAssignment } from '@/lib/classrooms'
 import { captureRouteFailure } from '@/lib/observability'
+import { destinatarioDeFila, visibleParaAlumno } from '@/lib/destinatario'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,7 +43,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
              q.questions,
              q.selected_topics,
              q.pedagogy_context,
-             q.subject_name
+             q.subject_name,
+             to_jsonb(a) ->> 'solo_user_id'       AS solo_user_id,
+             to_jsonb(a) ->> 'solo_invitacion_id' AS solo_invitacion_id
       FROM classroom_assignments a
       JOIN classrooms c ON c.id = a.classroom_id
       JOIN teacher_quizzes q ON q.id = a.teacher_quiz_id
@@ -56,6 +59,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     }
 
     const row = rows[0]
+
+    // L0: una asignación individual de otra persona no se abre, aunque el
+    // alumno sea del mismo grupo y tenga el id.
+    if (!visibleParaAlumno(destinatarioDeFila(row), viewer.id)) {
+      return NextResponse.json({ error: 'Este cuestionario es para otro alumno.' }, { status: 403 })
+    }
 
     const attemptRows = (await sql`
       SELECT COUNT(*)::int AS attempts_used

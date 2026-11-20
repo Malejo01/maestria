@@ -72,6 +72,10 @@ export async function getClassroomMembers(classroomId: number) {
   `) as Record<string, any>[]
 }
 
+/**
+ * Las asignaciones de un grupo, para el docente: todas, también las que son
+ * sólo para un alumno (L0), que vienen marcadas con su destinatario.
+ */
 export async function getClassroomAssignments(classroomId: number) {
   return (await sql`
     SELECT a.id,
@@ -83,6 +87,8 @@ export async function getClassroomAssignments(classroomId: number) {
            q.title,
            q.mode,
            q.question_count,
+           to_jsonb(a) ->> 'solo_user_id'       AS solo_user_id,
+           to_jsonb(a) ->> 'solo_invitacion_id' AS solo_invitacion_id,
            COUNT(DISTINCT att.user_id)::int AS students_started,
            COUNT(att.id)::int              AS attempt_count
     FROM classroom_assignments a

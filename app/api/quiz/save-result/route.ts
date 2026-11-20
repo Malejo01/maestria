@@ -4,6 +4,7 @@ import { debugLog } from '@/lib/utils'
 import { getViewer } from '@/lib/auth-session'
 import { ASSIGNMENT_STATE_LABEL, assignmentState, canStartAssignment } from '@/lib/classrooms'
 import { captureRouteFailure } from '@/lib/observability'
+import { destinatarioDeFila, visibleParaAlumno } from '@/lib/destinatario'
 
 /**
  * Validates that this student may submit an attempt for an assigned quiz, and
@@ -18,11 +19,15 @@ interface AssignmentContextRow {
   due_at: Date | null
   max_attempts: number | null
   classroom_status: 'open' | 'closed'
+  /** L0 (028): leídas con to_jsonb, NULL sin la migración. */
+  solo_user_id: string | null
+  solo_invitacion_id: string | null
 }
 
 async function resolveAssignmentContext(userId: string, assignmentId: number) {
   const rows = (await sql`
-    SELECT a.id, a.classroom_id, a.opens_at, a.due_at, a.max_attempts, c.status AS classroom_status
+    SELECT a.id, a.classroom_id, a.opens_at, a.due_at, a.max_attempts, c.status AS classroom_status,
+           to_jsonb(a) ->> 'solo_user_id' AS solo_user_id, to_jsonb(a) ->> 'solo_invitacion_id' AS solo_invitacion_id
     FROM classroom_assignments a
     JOIN classrooms c ON c.id = a.classroom_id
     JOIN classroom_members m ON m.classroom_id = c.id AND m.user_id = ${userId} AND m.status = 'active'
@@ -33,6 +38,10 @@ async function resolveAssignmentContext(userId: string, assignmentId: number) {
   if (rows.length === 0) return { error: 'No encontramos ese cuestionario en tus aulas.', status: 404 as const }
 
   const row = rows[0]
+  // L0: un intento sobre la asignación individual de otra persona se rechaza.
+  if (!visibleParaAlumno(destinatarioDeFila(row as unknown as Record<string, unknown>), userId)) {
+    return { error: 'Este cuestionario es para otro alumno.', status: 403 as const }
+  }
   const attemptRows = (await sql`
     SELECT COUNT(*)::int AS used FROM quiz_attempts
     WHERE assignment_id = ${assignmentId} AND user_id = ${userId}

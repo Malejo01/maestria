@@ -1,6 +1,7 @@
 import { sql } from '@/lib/db'
 import { normalizarNombre } from '@/lib/alumnos-docente'
 import { faltaLa027 } from '@/lib/fichas-server'
+import { consultasDeTraspaso, destinatarioDisponible } from '@/lib/destinatario-server'
 
 /**
  * K5: el alumno que el docente agregó por nombre entra al grupo COMO esa
@@ -14,7 +15,11 @@ import { faltaLa027 } from '@/lib/fichas-server'
  * distinto, quedaban dos personas.
  *
  * Válvula de la 027: si falta `fichas_alumno`, no se toca nada (ni se borra la
- * invitación) y la fusión al leer sigue como hasta ahora.
+ * invitación) y la fusión al leer sigue como hasta ahora. Todo va en una
+ * transacción: o se usa la invitación entera, o nada.
+ *
+ * L0: las asignaciones y los diagnósticos individuales de la invitación pasan
+ * al alumno en esa misma transacción (sin la 028, no hay qué pasar).
  */
 
 export interface InvitacionPendiente {
@@ -73,31 +78,39 @@ export async function usarInvitacion({
   if (!invitacion) return false
   const teacherId = String(invitacion.teacher_id)
 
+  // L0: lo individual de la invitación (asignaciones y diagnósticos) pasa al
+  // alumno en la misma transacción que la ficha, y antes de borrar la
+  // invitación, que se lo llevaría en cascada. Sin la 028 no hay qué pasar.
+  const traspaso = (await destinatarioDisponible()) ? consultasDeTraspaso(invitacionId, userId) : []
+
   try {
-    // La ficha armada antes de que entrara pasa a ser suya (si no tiene una propia).
-    await sql`
-      UPDATE fichas_alumno SET user_id = ${userId}, invitation_id = NULL, updated_at = NOW()
-      WHERE teacher_id = ${teacherId} AND invitation_id = ${invitacionId}
-        AND NOT EXISTS (SELECT 1 FROM fichas_alumno f WHERE f.teacher_id = ${teacherId} AND f.user_id = ${userId})
-    `
-    await sql`
-      UPDATE diagnostico_resultados_impresos SET user_id = ${userId}, invitation_id = NULL
-      WHERE invitation_id = ${invitacionId}
-    `
+    await sql.transaction([
+      // La ficha armada antes de que entrara pasa a ser suya (si no tiene una propia).
+      sql`
+        UPDATE fichas_alumno SET user_id = ${userId}, invitation_id = NULL, updated_at = NOW()
+        WHERE teacher_id = ${teacherId} AND invitation_id = ${invitacionId}
+          AND NOT EXISTS (SELECT 1 FROM fichas_alumno f WHERE f.teacher_id = ${teacherId} AND f.user_id = ${userId})
+      `,
+      sql`
+        UPDATE diagnostico_resultados_impresos SET user_id = ${userId}, invitation_id = NULL
+        WHERE invitation_id = ${invitacionId}
+      `,
+      ...traspaso,
+      // El nombre que le puso el docente, y el contexto de la invitación si el
+      // miembro no tenía uno (lo de antes de la ficha, migración 025).
+      sql`
+        UPDATE classroom_members
+        SET display_name = ${String(invitacion.nombre)},
+            contexto = COALESCE(contexto, ${invitacion.contexto === null ? null : String(invitacion.contexto)}),
+            updated_at = NOW()
+        WHERE classroom_id = ${classroomId} AND user_id = ${userId}
+      `,
+      sql`DELETE FROM classroom_invitations WHERE id = ${invitacionId} AND classroom_id = ${classroomId}`,
+    ])
   } catch (error) {
+    // Sin la 027 falla la primera y la transacción no deja nada a medias.
     if (faltaLa027(error)) return false
     throw error
   }
-
-  // El nombre que le puso el docente, y el contexto de la invitación si el
-  // miembro no tenía uno (lo de antes de la ficha, migración 025).
-  await sql`
-    UPDATE classroom_members
-    SET display_name = ${String(invitacion.nombre)},
-        contexto = COALESCE(contexto, ${invitacion.contexto === null ? null : String(invitacion.contexto)}),
-        updated_at = NOW()
-    WHERE classroom_id = ${classroomId} AND user_id = ${userId}
-  `
-  await sql`DELETE FROM classroom_invitations WHERE id = ${invitacionId} AND classroom_id = ${classroomId}`
   return true
 }

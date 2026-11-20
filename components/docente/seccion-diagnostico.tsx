@@ -20,6 +20,8 @@ const R = T.resultado
 
 export interface EstadoDiagnostico {
   disponible: boolean
+  /** L0: false sin la migración 028; armar uno individual lo asignaría al grupo entero. */
+  individualDisponible?: boolean
   grupo?: { classroomId: number; materiaId: number; materia: string; unidades: ProgramUnit[] }
   temasDificiles?: string[]
   diagnosticos?: DiagnosticoConResultado[]
@@ -62,6 +64,8 @@ export function SeccionDiagnostico({
 
   if (!estado?.disponible || !estado.grupo) return null
   const diagnosticos = estado.diagnosticos ?? []
+  // Una respuesta de antes de la 028 no trae el campo: se trata como que falta.
+  const puedeArmar = estado.individualDisponible === true
 
   return (
     <section className="rounded-lg border border-borde bg-superficie-tarjeta p-4 sm:p-6" aria-labelledby="ficha-diagnostico">
@@ -72,10 +76,22 @@ export function SeccionDiagnostico({
           </h2>
           <p className="nota mt-1 max-w-prose text-texto-suave">{T.detalle}</p>
         </div>
-        <Boton variante={diagnosticos.length > 0 ? 'secundario' : 'principal'} className="shrink-0" onClick={() => setArmando(true)}>
-          <ClipboardCheck aria-hidden="true" strokeWidth={TRAZO_ICONO} />
-          {diagnosticos.length > 0 ? T.armarOtro : T.armar}
-        </Boton>
+        <div className="flex shrink-0 flex-col gap-1 sm:items-end">
+          <Boton
+            variante={diagnosticos.length > 0 ? 'secundario' : 'principal'}
+            disabled={!puedeArmar}
+            aria-describedby={puedeArmar ? undefined : 'diagnostico-falta-028'}
+            onClick={() => setArmando(true)}
+          >
+            <ClipboardCheck aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+            {diagnosticos.length > 0 ? T.armarOtro : T.armar}
+          </Boton>
+          {!puedeArmar && (
+            <p id="diagnostico-falta-028" className="nota max-w-xs text-texto-suave">
+              {T.faltaActualizacion}
+            </p>
+          )}
+        </div>
       </div>
 
       {diagnosticos.length === 0 ? (

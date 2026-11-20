@@ -13,9 +13,15 @@ import type { PedagogyProfile, ProgramUnit, QuestionType } from '@/lib/types'
  * El diagnóstico inicial en el servidor (J4): de qué grupo, crearlo, y armar
  * cada cuestionario. El reparto de preguntas es lib/diagnostico.ts.
  *
- * Un diagnóstico es de un GRUPO (un alumno particular, o hasta 3 del mismo
- * curso): una fila de `diagnosticos` y N `teacher_quizzes` con
- * tipo = 'diagnostico', cada uno asignado al grupo con un intento.
+ * Un diagnóstico vive en un GRUPO: una fila de `diagnosticos` y N
+ * `teacher_quizzes` con tipo = 'diagnostico', cada uno asignado con un intento.
+ *
+ * L0: el que se arma desde la ficha de un alumno (o de una invitación) es SÓLO
+ * para esa persona: `diagnosticos.user_id`/`invitation_id` y, en cada
+ * asignación, `solo_user_id`/`solo_invitacion_id`. El grupo entero de un
+ * profesorado no ve el diagnóstico de un alumno particular que comparte la
+ * materia. Con destinatario null es del grupo (L4). Sin la 028 no se puede
+ * guardar un destinatario: el individual responde 409 (lo decide la ruta).
  *
  * LA VÁLVULA: sin las tablas de la 027, `estadoDelDiagnostico` dice
  * `disponible: false` y la ficha no ofrece "Armar diagnóstico".
@@ -93,18 +99,34 @@ export async function diagnosticoDisponible(): Promise<boolean> {
   }
 }
 
-/** Crea la fila del diagnóstico de un grupo. */
+/** A quién va un diagnóstico: un alumno, una invitación, o (null) el grupo entero. */
+export type DestinatarioDiagnostico = Destino | null
+
+/**
+ * Crea la fila del diagnóstico. Con destinatario, necesita la 028: la ruta
+ * mira antes `destinatarioDisponible()` y responde 409 si falta.
+ */
 export async function crearDiagnostico(params: {
   teacherId: string
   classroomId: number
   materiaId: number
   modo: ModoDiagnostico
+  destinatario: DestinatarioDiagnostico
 }): Promise<number> {
-  const filas = (await sql`
-    INSERT INTO diagnosticos (teacher_id, classroom_id, teacher_program_id, modo)
-    VALUES (${params.teacherId}, ${params.classroomId}, ${params.materiaId}, ${params.modo})
-    RETURNING id
-  `) as Fila[]
+  const { teacherId, classroomId, materiaId, modo, destinatario } = params
+  const filas = (destinatario === null
+    ? await sql`
+        INSERT INTO diagnosticos (teacher_id, classroom_id, teacher_program_id, modo)
+        VALUES (${teacherId}, ${classroomId}, ${materiaId}, ${modo})
+        RETURNING id
+      `
+    : await sql`
+        INSERT INTO diagnosticos (teacher_id, classroom_id, teacher_program_id, modo, user_id, invitation_id)
+        VALUES (${teacherId}, ${classroomId}, ${materiaId}, ${modo},
+                ${'userId' in destinatario ? destinatario.userId : null},
+                ${'invitacionId' in destinatario ? destinatario.invitacionId : null})
+        RETURNING id
+      `) as Fila[]
   return Number(filas[0].id)
 }
 
@@ -113,12 +135,25 @@ export interface DiagnosticoGuardado {
   classroomId: number
   materiaId: number
   modo: ModoDiagnostico
+  /** L0: null si es del grupo (o si falta la 028, que es lo mismo que hasta ahora). */
+  destinatario: DestinatarioDiagnostico
+}
+
+/** El destinatario de una fila de `diagnosticos` leída con to_jsonb (sin la 028, las claves no están). */
+export function destinatarioDeDiagnostico(fila: Fila): DestinatarioDiagnostico {
+  if (typeof fila.user_id === 'string' && fila.user_id !== '') return { userId: fila.user_id }
+  if (fila.invitation_id !== null && fila.invitation_id !== undefined && fila.invitation_id !== '') {
+    return { invitacionId: Number(fila.invitation_id) }
+  }
+  return null
 }
 
 /** La fila del diagnóstico, si es de ese docente. */
 export async function leerDiagnostico(teacherId: string, diagnosticoId: number): Promise<DiagnosticoGuardado | null> {
   const filas = (await sql`
-    SELECT id, classroom_id, teacher_program_id, modo FROM diagnosticos
+    SELECT id, classroom_id, teacher_program_id, modo,
+           to_jsonb(d) ->> 'user_id' AS user_id, to_jsonb(d) ->> 'invitation_id' AS invitation_id
+    FROM diagnosticos d
     WHERE id = ${diagnosticoId} AND teacher_id = ${teacherId} LIMIT 1
   `) as Fila[]
   const fila = filas[0]
@@ -128,6 +163,7 @@ export async function leerDiagnostico(teacherId: string, diagnosticoId: number):
     classroomId: Number(fila.classroom_id),
     materiaId: Number(fila.teacher_program_id),
     modo: fila.modo === 'integral' ? 'integral' : 'por_unidad',
+    destinatario: destinatarioDeDiagnostico(fila),
   }
 }
 
@@ -181,7 +217,8 @@ export function tituloDeCuestionario(materia: string, cuestionario: Cuestionario
 
 /**
  * Guarda el cuestionario generado como `teacher_quizzes` tipo diagnóstico y lo
- * asigna al grupo con un intento. Devuelve el id del cuestionario.
+ * asigna con un intento: al grupo, o sólo al destinatario del diagnóstico (L0).
+ * Devuelve el id del cuestionario.
  */
 export async function guardarYAsignar(params: {
   teacherId: string
@@ -206,10 +243,21 @@ export async function guardarYAsignar(params: {
     RETURNING id
   `) as Fila[]
   const quizId = Number(filas[0].id)
-  await sql`
-    INSERT INTO classroom_assignments (classroom_id, teacher_quiz_id, opens_at, due_at, max_attempts, created_at, updated_at)
-    VALUES (${diagnostico.classroomId}, ${quizId}, NULL, NULL, 1, NOW(), NOW())
-  `
+  const destinatario = diagnostico.destinatario
+  if (destinatario === null) {
+    await sql`
+      INSERT INTO classroom_assignments (classroom_id, teacher_quiz_id, opens_at, due_at, max_attempts, created_at, updated_at)
+      VALUES (${diagnostico.classroomId}, ${quizId}, NULL, NULL, 1, NOW(), NOW())
+    `
+  } else {
+    await sql`
+      INSERT INTO classroom_assignments (classroom_id, teacher_quiz_id, opens_at, due_at, max_attempts,
+                                         solo_user_id, solo_invitacion_id, created_at, updated_at)
+      VALUES (${diagnostico.classroomId}, ${quizId}, NULL, NULL, 1,
+              ${'userId' in destinatario ? destinatario.userId : null},
+              ${'invitacionId' in destinatario ? destinatario.invitacionId : null}, NOW(), NOW())
+    `
+  }
   return quizId
 }
 
@@ -225,39 +273,6 @@ export interface DiagnosticoListado {
   modo: ModoDiagnostico
   creadoEl: string
   cuestionarios: CuestionarioDeDiagnostico[]
-}
-
-/** Los diagnósticos del grupo, del más nuevo al más viejo, con sus cuestionarios. */
-export async function listarDiagnosticos(teacherId: string, classroomId: number): Promise<DiagnosticoListado[]> {
-  const filas = (await sql`
-    SELECT d.id, d.modo, d.created_at, q.id AS quiz_id, q.title, q.unidad_id, q.question_count
-    FROM diagnosticos d
-    LEFT JOIN teacher_quizzes q ON q.diagnostico_id = d.id
-    WHERE d.teacher_id = ${teacherId} AND d.classroom_id = ${classroomId}
-    ORDER BY d.created_at DESC, d.id DESC, q.id ASC
-  `) as Fila[]
-  const porId = new Map<number, DiagnosticoListado>()
-  for (const fila of filas) {
-    const id = Number(fila.id)
-    if (!porId.has(id)) {
-      porId.set(id, {
-        id,
-        modo: fila.modo === 'integral' ? 'integral' : 'por_unidad',
-        creadoEl: new Date(fila.created_at as string).toISOString(),
-        cuestionarios: [],
-      })
-    }
-    if (fila.quiz_id !== null && fila.quiz_id !== undefined) {
-      porId.get(id)!.cuestionarios.push({
-        id: Number(fila.quiz_id),
-        titulo: String(fila.title),
-        unidadId: typeof fila.unidad_id === 'string' ? fila.unidad_id : null,
-        preguntas: Number(fila.question_count),
-      })
-    }
-  }
-  // Un diagnóstico sin cuestionarios es uno cuya generación falló entera: no se muestra.
-  return [...porId.values()].filter((d) => d.cuestionarios.length > 0)
 }
 
 /** El grupo (con su materia) de un diagnóstico ya creado. */

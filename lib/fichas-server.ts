@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { consultasDeTraspaso, destinatarioDisponible } from '@/lib/destinatario-server'
 import { etiquetaDeMateria } from '@/lib/etiqueta-materia'
 import { captureRouteFailure } from '@/lib/observability'
 import { invitacionDe } from '@/lib/alumnos-docente'
@@ -230,6 +231,9 @@ export async function guardarFicha(teacherId: string, destino: Destino, nombre: 
       UPDATE diagnostico_resultados_impresos SET user_id = ${userId}, invitation_id = NULL
       WHERE invitation_id = ${quien.invitacionId}
     `
+    // L0: lo individual de la invitación (asignaciones y diagnósticos) pasa al
+    // alumno ANTES de borrarla, que se lo llevaría en cascada.
+    if (await destinatarioDisponible()) await sql.transaction(consultasDeTraspaso(quien.invitacionId, userId))
     // La invitación ya se usó: se borra, para que corregirle el nombre no la
     // haga reaparecer como pendiente.
     await sql`

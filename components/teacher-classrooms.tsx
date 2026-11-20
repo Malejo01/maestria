@@ -46,6 +46,7 @@ import { ClassroomStudentDialog } from '@/components/classroom-student-dialog'
 import { AccuracyBar, formatDateTime, formatPercent, formatScore } from '@/components/classroom-report-parts'
 import type { SubjectColorName, SubjectIconName, TeacherProgram } from '@/lib/types'
 import { etiquetaDeMateria, materiaDePrograma, nombreRepetido } from '@/lib/etiqueta-materia'
+import { ASIGNACIONES_INDIVIDUALES } from '@/lib/textos'
 
 interface ClassroomRow {
   id: number
@@ -102,6 +103,9 @@ interface ReportAssignment {
   pendingCount: number
   attemptCount: number
   averageScore: number | null
+  /** L0: sólo para un alumno (un diagnóstico individual). No cuenta para el grupo. */
+  individual?: boolean
+  destinatario?: string | null
 }
 
 interface ReportSummary {
@@ -654,7 +658,7 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
               )}
 
               <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(280px,1fr))]">
-                {assignments.map((assignment) => (
+                {assignments.filter((assignment) => !assignment.individual).map((assignment) => (
                   <Card key={assignment.id} className="p-3 space-y-2 border self-start">
                     <div>
                       <p className="font-semibold text-sm break-words">{assignment.title}</p>
@@ -684,6 +688,31 @@ export function TeacherClassrooms({ programs }: TeacherClassroomsProps) {
                   </Card>
                 ))}
               </div>
+
+              {/* L0: lo armado para un solo alumno va aparte y no cuenta para el grupo. */}
+              {assignments.some((assignment) => assignment.individual) && (
+                <div className="space-y-2 pt-2">
+                  <h4 className="text-sm font-semibold">{ASIGNACIONES_INDIVIDUALES.titulo}</h4>
+                  <p className="text-xs text-muted-foreground">{ASIGNACIONES_INDIVIDUALES.detalle}</p>
+                  <ul className="divide-y divide-border rounded-md border">
+                    {assignments
+                      .filter((assignment) => assignment.individual)
+                      .map((assignment) => (
+                        <li key={assignment.id} className="flex flex-wrap items-baseline justify-between gap-2 p-3 text-sm">
+                          <span className="min-w-0 break-words">
+                            {assignment.title}
+                            <span className="block text-xs text-muted-foreground">
+                              {ASIGNACIONES_INDIVIDUALES.para(assignment.destinatario ?? ASIGNACIONES_INDIVIDUALES.sinNombre)}
+                            </span>
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {assignment.submittedCount > 0 ? ASIGNACIONES_INDIVIDUALES.entregado : ASIGNACIONES_INDIVIDUALES.pendiente}
+                          </span>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
             </Card>
           </TabsContent>
         </Tabs>

@@ -12,7 +12,9 @@ import {
   type ResultadoDeTema,
   type ResultadoDeUnidad,
 } from '@/lib/diagnostico-resultados'
-import type { DiagnosticoListado, GrupoDelDiagnostico } from '@/lib/diagnostico-server'
+import { destinatarioDeDiagnostico, type DiagnosticoListado, type GrupoDelDiagnostico } from '@/lib/diagnostico-server'
+import { destinatarioDisponible } from '@/lib/destinatario-server'
+import { diagnosticoEsDe } from '@/lib/destinatario'
 import type { Destino } from '@/lib/fichas-server'
 import type { ModoDiagnostico } from '@/lib/diagnostico'
 
@@ -58,11 +60,22 @@ export async function leerResultados(
   grupo: Pick<GrupoDelDiagnostico, 'classroomId' | 'materia' | 'unidades'>,
   destino: Destino,
 ): Promise<DiagnosticoConResultado[]> {
-  const diagnosticos = (await sql`
-    SELECT id, modo, created_at FROM diagnosticos
+  const { userId, invitacionId } = await identidades(teacherId, destino)
+
+  // L0: en la ficha, sólo los diagnósticos de ESTE alumno (o de la invitación
+  // con la que entró). Los del grupo se ven en el grupo. Sin la 028 no hay
+  // destinatario guardado y se listan los del grupo, como hasta ahora.
+  const conDestinatario = await destinatarioDisponible()
+  const delGrupo = (await sql`
+    SELECT id, modo, created_at,
+           to_jsonb(d) ->> 'user_id' AS user_id, to_jsonb(d) ->> 'invitation_id' AS invitation_id
+    FROM diagnosticos d
     WHERE teacher_id = ${teacherId} AND classroom_id = ${grupo.classroomId}
     ORDER BY created_at DESC, id DESC
   `) as Fila[]
+  const diagnosticos = conDestinatario
+    ? delGrupo.filter((d) => diagnosticoEsDe(destinatarioDeDiagnostico(d), { userId, invitacionId }))
+    : delGrupo
   if (diagnosticos.length === 0) return []
   const ids = diagnosticos.map((d) => Number(d.id))
 
@@ -75,8 +88,6 @@ export async function leerResultados(
   `) as Fila[]
   const quizIds = cuestionarios.map((q) => Number(q.id))
   const asignaciones = cuestionarios.map((q) => q.assignment_id).filter((a) => a !== null).map(Number)
-
-  const { userId, invitacionId } = await identidades(teacherId, destino)
 
   const [intentos, impresos, errores] = await Promise.all([
     userId && asignaciones.length > 0

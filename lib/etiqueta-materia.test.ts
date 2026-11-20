@@ -112,7 +112,7 @@ describe('K6 · el selector de "Qué rinde" ya no repite "Matemática"', () => {
 describe('K6 · la etiqueta en el texto de "Armar diagnóstico"', () => {
   it('no duplica el punto de "Sec."', async () => {
     const { DIAGNOSTICO } = await import('./textos')
-    expect(DIAGNOSTICO.dialogo.detalle('Matemática · 3.º Sec.')).toBe('Sobre el programa de Matemática · 3.º Sec. Se asigna al grupo con un intento por cuestionario.')
+    expect(DIAGNOSTICO.dialogo.detalle('Matemática · 3.º Sec.')).toBe('Sobre el programa de Matemática · 3.º Sec. Lo ve sólo este alumno, con un intento por cuestionario.')
     expect(DIAGNOSTICO.dialogo.detalle('Lengua')).toMatch(/^Sobre el programa de Lengua\. /)
   })
 })
