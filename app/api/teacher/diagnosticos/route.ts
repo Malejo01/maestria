@@ -5,6 +5,7 @@ import { captureRouteFailure } from '@/lib/observability'
 import { bloqueoParaGenerar } from '@/lib/planes-server'
 import { crearDiagnostico, diagnosticoDisponible, grupoDe, temasDificilesDe } from '@/lib/diagnostico-server'
 import { leerResultados } from '@/lib/diagnostico-resultados-server'
+import { grupoPropio } from '@/lib/diagnostico-grupo-server'
 import { destinatarioDisponible } from '@/lib/destinatario-server'
 import type { Destino } from '@/lib/fichas-server'
 import { DIAGNOSTICO } from '@/lib/textos'
@@ -59,6 +60,8 @@ export async function GET(req: Request) {
 const crearSchema = z.object({
   alumno: z.string().min(1).optional(),
   invitacion: z.number().int().positive().optional(),
+  // L4: el diagnóstico o la práctica de un grupo entero (destinatario NULL).
+  grupo: z.number().int().positive().optional(),
   modo: z.enum(['por_unidad', 'integral']),
 })
 
@@ -75,7 +78,8 @@ export async function POST(req: Request) {
   if (!teacher) return NextResponse.json({ error: 'Solo docentes' }, { status: 403 })
   const datos = crearSchema.safeParse(await req.json().catch(() => null))
   const destino = datos.success ? destinoDe(datos.data) : null
-  if (!datos.success || !destino) return NextResponse.json({ error: 'Pedido inválido' }, { status: 400 })
+  const grupoId = datos.success ? datos.data.grupo : undefined
+  if (!datos.success || (!destino && !grupoId)) return NextResponse.json({ error: 'Pedido inválido' }, { status: 400 })
 
   try {
     // Si ya no puede generar (plan vencido o tope), que se entere antes de crear nada.
@@ -83,6 +87,19 @@ export async function POST(req: Request) {
     if (bloqueo) return bloqueo
     if (!(await diagnosticoDisponible())) {
       return NextResponse.json({ error: 'El diagnóstico todavía no está disponible.' }, { status: 409 })
+    }
+    // L4: el del grupo no necesita la 028: es como fueron siempre las asignaciones.
+    if (!destino) {
+      const grupo = await grupoPropio(teacher.id, grupoId!)
+      if (!grupo) return NextResponse.json({ error: 'Ese grupo no es tuyo' }, { status: 404 })
+      const diagnosticoId = await crearDiagnostico({
+        teacherId: teacher.id,
+        classroomId: grupo.classroomId,
+        materiaId: grupo.materiaId,
+        modo: datos.data.modo,
+        destinatario: null,
+      })
+      return NextResponse.json({ diagnosticoId })
     }
     if (!(await destinatarioDisponible())) {
       return NextResponse.json({ error: DIAGNOSTICO.faltaActualizacion }, { status: 409 })

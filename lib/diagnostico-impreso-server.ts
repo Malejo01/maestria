@@ -74,6 +74,25 @@ export async function leerParaImprimir(teacherId: string, quizId: number, destin
 }
 
 /**
+ * L4: la hoja para todo un grupo (un diagnóstico o una práctica del grupo):
+ * sin nombre, con la línea en blanco para que cada alumno escriba el suyo, y
+ * sin carga previa (la carga a mano es por alumno).
+ */
+export async function leerParaImprimirGrupo(teacherId: string, quizId: number, classroomId: number): Promise<CuestionarioParaImprimir | null> {
+  const q = await cuestionario(teacherId, quizId)
+  if (!q || Number(q.classroom_id) !== classroomId) return null
+  const crudas = Array.isArray(q.questions) ? (q.questions as unknown[]) : []
+  return {
+    quizId,
+    titulo: String(q.title),
+    materia: await etiquetaDeMateriaDe(teacherId, Number(q.teacher_program_id), String(q.subject_name)),
+    alumno: '',
+    preguntas: crudas.map(preguntaImpresa),
+    cargaPrevia: null,
+  }
+}
+
+/**
  * Guarda una carga a mano. Cada carga es una fila nueva (el resultado muestra
  * la más reciente): corregir es volver a cargar. No toca `topic_mastery` ni
  * `student_misconceptions`. Devuelve false si el cuestionario o el alumno no

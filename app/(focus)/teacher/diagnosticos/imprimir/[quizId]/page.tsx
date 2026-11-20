@@ -6,10 +6,15 @@ export default async function Pagina({
   searchParams,
 }: {
   params: Promise<{ quizId: string }>
-  searchParams: Promise<{ alumno?: string; invitacion?: string }>
+  searchParams: Promise<{ alumno?: string; invitacion?: string; grupo?: string }>
 }) {
   const { quizId } = await params
-  const { alumno, invitacion } = await searchParams
-  const consulta = alumno ? `alumno=${encodeURIComponent(alumno)}` : `invitacion=${Number(invitacion)}`
+  const { alumno, invitacion, grupo } = await searchParams
+  // L4: `grupo=…` imprime la hoja para todo el grupo, sin nombre.
+  const consulta = alumno
+    ? `alumno=${encodeURIComponent(alumno)}`
+    : grupo
+      ? `grupo=${Number(grupo)}`
+      : `invitacion=${Number(invitacion)}`
   return <ImprimirDiagnostico quizId={Number(quizId)} consulta={consulta} />
 }

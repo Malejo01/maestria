@@ -137,21 +137,42 @@ export function planIntegral(unidades: ProgramUnit[], dificiles: Set<string> = n
 
 /**
  * El plan entero. `unidadesExcluidas` son las que el docente destildó porque
- * el alumno todavía no las vio.
+ * el alumno todavía no las vio; L4: `temasExcluidos`, los temas sueltos
+ * destildados dentro de una unidad (destildar todos excluye la unidad).
  */
 export function planDiagnostico(
   unidades: ProgramUnit[],
   modo: ModoDiagnostico,
-  { temasDificiles = [], unidadesExcluidas = [] }: { temasDificiles?: string[]; unidadesExcluidas?: string[] } = {},
+  {
+    temasDificiles = [],
+    unidadesExcluidas = [],
+    temasExcluidos = [],
+  }: { temasDificiles?: string[]; unidadesExcluidas?: string[]; temasExcluidos?: string[] } = {},
 ): CuestionarioPlaneado[] {
   const dificiles = new Set(temasDificiles)
   const fuera = new Set(unidadesExcluidas)
-  const incluidas = unidades.filter((u) => !fuera.has(u.id) && u.topics.length > 0)
+  const temasFuera = new Set(temasExcluidos)
+  const incluidas = unidades
+    .filter((u) => !fuera.has(u.id))
+    .map((u) => (temasFuera.size === 0 ? u : { ...u, topics: u.topics.filter((t) => !temasFuera.has(t.id)) }))
+    .filter((u) => u.topics.length > 0)
   if (modo === 'integral') {
     const plan = planIntegral(incluidas, dificiles)
     return plan ? [plan] : []
   }
   return incluidas.map((u) => planDeUnidad(u, dificiles)).filter((p): p is CuestionarioPlaneado => p !== null)
+}
+
+/**
+ * L4, el atajo "Hasta este tema": "vimos hasta suma y resta de fracciones".
+ * Tilda todo lo anterior en el orden del programa (ese tema incluido) y
+ * destilda todo lo posterior. Devuelve los temas excluidos.
+ */
+export function hastaEsteTema(unidades: ProgramUnit[], temaId: string): string[] {
+  const todos = unidades.flatMap((u) => u.topics.map((t) => t.id))
+  const hasta = todos.indexOf(temaId)
+  if (hasta < 0) return []
+  return todos.slice(hasta + 1)
 }
 
 export interface ResumenPlan {

@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { Boton } from '@/components/sistema/boton'
 import { HitosOnboarding } from '@/components/docente/hitos-onboarding'
 import { MisAlumnos } from '@/components/docente/mis-alumnos'
-import { MIS_ALUMNOS } from '@/lib/textos'
+import { MIS_GRUPOS } from '@/lib/textos'
+import { MisGrupos } from '@/components/docente/mis-grupos'
+import { cn } from '@/lib/utils'
 import { ChevronRight } from 'lucide-react'
 import { TeacherClassrooms } from '@/components/teacher-classrooms'
 import { MisMaterias } from '@/components/docente/mis-materias'
@@ -38,6 +40,7 @@ export default function TeacherPage() {
     setAgregarAlumno,
     gruposAbiertos,
     setGruposAbiertos,
+    vista,
     setShowOnboardingModal,
     userProfile,
     teacherPrograms,
@@ -81,61 +84,82 @@ export default function TeacherPage() {
 
         {teacherSection === 'aulas' && (
           <div className="space-y-4">
-            <MisAlumnos
-              agregarAbierto={agregarAlumno}
-              onAgregarCambia={(abierto) => {
-                setAgregarAlumno(abierto)
-                // Saca ?agregar=1 de la URL: si no, recargar reabre el diálogo.
-                if (!abierto && agregarDesdeLaUrl) router.replace('/teacher')
-              }}
-              onArmarTarea={(materiaId) =>
-                router.push(`/teacher?seccion=tareas&armar=1${materiaId ? `&materia=${materiaId}` : ''}`)
-              }
-              refrescarCon={teacherPrograms.length}
-              // K4: el contador del plan y los hitos se releen con `version`.
-              alCambiarAlumnos={() => panel.setVersion((v) => v + 1)}
-            />
-
-            {/* La gestión por grupo de la versión anterior (códigos, tareas
-                mandadas, seguimiento por grupo) sigue acá, plegada, hasta que
-                el bloque 5 del rediseño rehaga el envío de tareas. El docente
-                ya no necesita abrirla para sumar alumnos. */}
-            <section className="rounded-lg border border-borde bg-superficie-tarjeta p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="cuerpo text-texto">{MIS_ALUMNOS.grupos.titulo}</h2>
-                  <p className="nota text-texto-suave">{MIS_ALUMNOS.grupos.detalle}</p>
-                </div>
-                <Boton
-                  variante="secundario"
-                  aria-expanded={gruposAbiertos}
-                  onClick={() => setGruposAbiertos((abierto) => !abierto)}
+            {/* L4: Mis alumnos | Mis grupos, al mismo nivel. La pestaña va en la URL. */}
+            <nav aria-label={MIS_GRUPOS.pestanas.etiqueta} className="flex gap-1 border-b border-borde">
+              {(['alumnos', 'grupos'] as const).map((pestana) => (
+                <Link
+                  key={pestana}
+                  href={pestana === 'grupos' ? '/teacher?vista=grupos' : '/teacher'}
+                  aria-current={vista === pestana ? 'page' : undefined}
+                  className={cn(
+                    'cuerpo-s -mb-px flex min-h-11 items-center border-b-2 px-4 font-bold',
+                    vista === pestana ? 'border-accion text-texto' : 'border-transparent text-texto-suave hover:text-texto',
+                  )}
                 >
-                  {gruposAbiertos ? MIS_ALUMNOS.grupos.ocultar : MIS_ALUMNOS.grupos.mostrar}
-                </Boton>
-              </div>
+                  {MIS_GRUPOS.pestanas[pestana]}
+                </Link>
+              ))}
+            </nav>
 
-              {gruposAbiertos && (
-                <div className="mt-4 space-y-4">
-                  {/* El diagnóstico del 10/08 no se tomó dentro de un aula, así que
-                      no aparece en el seguimiento de ninguna. */}
-                  <Link
-                    href="/teacher/diagnostico"
-                    className="flex items-center justify-between gap-3 rounded-lg border border-borde p-4 hover:border-borde-fuerte"
-                  >
-                    <span className="min-w-0">
-                      <span className="cuerpo-s block font-bold text-texto">Diagnóstico del 10 de agosto</span>
-                      <span className="nota block text-texto-suave">
-                        Qué nivelar antes de avanzar, por unidad y con los pisos de azar a la vista
-                      </span>
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-texto-suave shrink-0" aria-hidden="true" />
-                  </Link>
+            {vista === 'alumnos' ? (
+              <MisAlumnos
+                agregarAbierto={agregarAlumno}
+                onAgregarCambia={(abierto) => {
+                  setAgregarAlumno(abierto)
+                  // Saca ?agregar=1 de la URL: si no, recargar reabre el diálogo.
+                  if (!abierto && agregarDesdeLaUrl) router.replace('/teacher')
+                }}
+                onArmarTarea={(materiaId) =>
+                  router.push(`/teacher?seccion=tareas&armar=1${materiaId ? `&materia=${materiaId}` : ''}`)
+                }
+                refrescarCon={teacherPrograms.length}
+                // K4: el contador del plan y los hitos se releen con `version`.
+                alCambiarAlumnos={() => panel.setVersion((v) => v + 1)}
+              />
+            ) : (
+              <>
+                <MisGrupos materias={teacherPrograms} alCambiar={() => panel.setVersion((v) => v + 1)} />
 
-                  <TeacherClassrooms programs={teacherPrograms} />
-                </div>
-              )}
-            </section>
+                {/* La gestión por grupo de la versión anterior (notas por alumno,
+                    regenerar el código, exportar) sigue acá, plegada. */}
+                <section className="rounded-lg border border-borde bg-superficie-tarjeta p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h2 className="cuerpo text-texto">{MIS_GRUPOS.gestion.titulo}</h2>
+                      <p className="nota text-texto-suave">{MIS_GRUPOS.gestion.detalle}</p>
+                    </div>
+                    <Boton
+                      variante="secundario"
+                      aria-expanded={gruposAbiertos}
+                      onClick={() => setGruposAbiertos((abierto) => !abierto)}
+                    >
+                      {gruposAbiertos ? MIS_GRUPOS.gestion.ocultar : MIS_GRUPOS.gestion.mostrar}
+                    </Boton>
+                  </div>
+
+                  {gruposAbiertos && (
+                    <div className="mt-4 space-y-4">
+                      {/* El diagnóstico del 10/08 no se tomó dentro de un aula, así que
+                          no aparece en el seguimiento de ninguna. */}
+                      <Link
+                        href="/teacher/diagnostico"
+                        className="flex items-center justify-between gap-3 rounded-lg border border-borde p-4 hover:border-borde-fuerte"
+                      >
+                        <span className="min-w-0">
+                          <span className="cuerpo-s block font-bold text-texto">Diagnóstico del 10 de agosto</span>
+                          <span className="nota block text-texto-suave">
+                            Qué nivelar antes de avanzar, por unidad y con los pisos de azar a la vista
+                          </span>
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-texto-suave shrink-0" aria-hidden="true" />
+                      </Link>
+
+                      <TeacherClassrooms programs={teacherPrograms} />
+                    </div>
+                  )}
+                </section>
+              </>
+            )}
           </div>
         )}
     </div>

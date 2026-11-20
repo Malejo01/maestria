@@ -124,6 +124,8 @@ export function usePanelDocente() {
   const materiaDesdeLaUrl = Number(parametros.get('materia')) || null
   const [agregarAlumno, setAgregarAlumno] = useState(false)
   const [gruposAbiertos, setGruposAbiertos] = useState(false)
+  // L4: Mis alumnos | Mis grupos, en la URL (`?vista=grupos`).
+  const vista: 'alumnos' | 'grupos' = parametros.get('vista') === 'grupos' ? 'grupos' : 'alumnos'
   useEffect(() => {
     if (agregarDesdeLaUrl) setAgregarAlumno(true)
   }, [agregarDesdeLaUrl])
@@ -431,6 +433,7 @@ export function usePanelDocente() {
     agregarAlumno,
     setAgregarAlumno,
     gruposAbiertos,
+    vista,
     setGruposAbiertos,
     activeSubject,
     setActiveSubject,

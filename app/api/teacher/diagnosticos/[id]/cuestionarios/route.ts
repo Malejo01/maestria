@@ -7,6 +7,7 @@ import { captureRouteFailure } from '@/lib/observability'
 import { bloqueoParaGenerar } from '@/lib/planes-server'
 import { generateQuiz } from '@/lib/quiz-generation'
 import { validarCuestionario } from '@/lib/diagnostico'
+import { separarPorTemasPedidos } from '@/lib/diagnostico-resultados'
 import { grupoDelDiagnostico, guardarYAsignar, leerDiagnostico, parametrosDeGeneracion } from '@/lib/diagnostico-server'
 
 export const dynamic = 'force-dynamic'
@@ -14,6 +15,8 @@ export const maxDuration = 120
 
 const pedidoSchema = z.object({
   unidadId: z.string().nullable(),
+  // L4: el docente puede cambiar el título antes de generar ("Práctica parcial").
+  titulo: z.string().trim().max(80).optional(),
   temas: z.array(z.object({ id: z.string().min(1), preguntas: z.number().int().min(1) })).min(1).max(60),
 })
 
@@ -65,15 +68,27 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       )
     }
 
+    // L4: ninguna pregunta de un tema que no se pidió (uno destildado, que
+    // "todavía no vimos"). Se valida acá, contra los temas pedidos: el prompt
+    // sólo lo pide.
+    const { dentro: preguntas, fuera } = separarPorTemasPedidos(resultado.questions, cuestionario.temas)
+    if (fuera.length > 0) {
+      console.warn(`[diagnostico] Se descartaron ${fuera.length} preguntas de temas que no se pidieron`)
+    }
+    if (preguntas.length === 0) {
+      return NextResponse.json({ error: 'La IA no devolvió preguntas de los temas pedidos.' }, { status: 409 })
+    }
+
     const quizId = await guardarYAsignar({
       teacherId: teacher.id,
       diagnostico,
       materia: grupo.materia,
       etiqueta: grupo.etiqueta,
       cuestionario,
-      preguntas: resultado.questions,
+      preguntas,
+      titulo: pedido.data.titulo || undefined,
     })
-    return NextResponse.json({ quizId, preguntas: resultado.questions.length })
+    return NextResponse.json({ quizId, preguntas: preguntas.length, descartadas: fuera.length })
   } catch (error) {
     if (marcarFalla) await marcarFalla()
     captureRouteFailure(error, { endpoint: '/api/teacher/diagnosticos/[id]/cuestionarios', operation: 'POST' })
