@@ -1,6 +1,9 @@
 'use client'
 
+import { useState, type KeyboardEvent } from 'react'
 import { Check, X } from 'lucide-react'
+import { ATRIBUTO_DE_OPCION } from '@/components/quiz-atajos'
+import { ATAJOS } from '@/lib/textos'
 import { cn } from '@/lib/utils'
 import type { TrueFalseQuestion } from '@/lib/types'
 
@@ -18,9 +21,21 @@ export function TrueFalseInput({ question, selected, submitted, onSelect, disabl
     { value: false, label: 'Falso' },
   ]
 
+  // L2: radiogroup con roving tabindex, como la opción múltiple.
+  const [enfocada, setEnfocada] = useState<number | null>(null)
+  const activa = enfocada ?? (selected === null ? 0 : selected ? 0 : 1)
+
+  function alPresionar(evento: KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (!['ArrowDown', 'ArrowUp'].includes(evento.key)) return
+    evento.preventDefault()
+    evento.stopPropagation()
+    const grupo = evento.currentTarget.parentElement
+    grupo?.querySelectorAll<HTMLElement>(`[${ATRIBUTO_DE_OPCION}]`)[1 - index]?.focus()
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {options.map(({ value, label }) => {
+    <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={ATAJOS.opciones}>
+      {options.map(({ value, label }, index) => {
         const isSelected = selected === value
         const isCorrectAnswer = question.correctAnswer === value
         const showCorrect = submitted && isCorrectAnswer
@@ -29,6 +44,13 @@ export function TrueFalseInput({ question, selected, submitted, onSelect, disabl
         return (
           <button
             key={label}
+            type="button"
+            role="radio"
+            aria-checked={isSelected}
+            tabIndex={index === activa ? 0 : -1}
+            {...{ [ATRIBUTO_DE_OPCION]: index }}
+            onFocus={() => setEnfocada(index)}
+            onKeyDown={(evento) => alPresionar(evento, index)}
             onClick={() => onSelect(value)}
             disabled={submitted || disabled}
             className={cn(

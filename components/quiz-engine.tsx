@@ -11,7 +11,10 @@ import { useAppStore } from '@/lib/store'
 import { LaTeXRenderer } from './latex-renderer'
 import { MathBackground } from './math-background'
 import { ExplanationModal } from './explanation-modal'
-import { DIAGNOSTICO } from '@/lib/textos'
+import { ATAJOS, DIAGNOSTICO } from '@/lib/textos'
+import { AyudaDeAtajos, PistaDeAtajos, useAtajosDeCuestionario, useEsEscritorio } from './quiz-atajos'
+import { Boton } from '@/components/sistema/boton'
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { AnswerInput, emptySelectionFor, type AnswerSelection } from './quiz-answer-inputs'
 import { AnswerRecap, answerRecapLine } from './answer-recap'
 import { isCorrectMultipleChoice, isCorrectNumeric, isCorrectTrueFalse } from '@/lib/answer-grading'
@@ -98,6 +101,10 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
   const [correctAnswerDraft, setCorrectAnswerDraft] = useState(0)
   const [explanationDraft, setExplanationDraft] = useState('')
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false)
+  /** L2: la confirmación de salir, con el Dialog del sistema. */
+  const [confirmandoSalida, setConfirmandoSalida] = useState(false)
+  /** L2: la ayuda de atajos que abre `?`. */
+  const [ayudaAbierta, setAyudaAbierta] = useState(false)
   const [pendingAction, setPendingAction] = useState<'exit' | 'next' | 'prev' | 'cancel-edit' | null>(null)
 
   const isPreviewMode = Boolean(config?.previewOnly)
@@ -508,10 +515,39 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       return
     }
 
-    if (confirm('¿Seguro que querés salir? Perderás tu progreso actual.')) {
-      setActiveView('dashboard')
-    }
-  }, [isPreviewMode, requestOrRunAction, setActiveView])
+    // L2: el Dialog del sistema, no el confirm() nativo.
+    setConfirmandoSalida(true)
+  }, [isPreviewMode, requestOrRunAction])
+
+  // L2: atajos de teclado, sólo en escritorio (puntero fino, 768 px o más).
+  const esEscritorio = useEsEscritorio()
+  useAtajosDeCuestionario({
+    activo: esEscritorio,
+    estado: {
+      tipoDePregunta: currentQuestion.type,
+      cantidadDeOpciones: currentQuestion.type === 'multiple_choice' ? currentQuestion.options.length : 2,
+      hayRespuesta: isAnswerReady && !isGradingShortAnswer,
+      enviada: answerState.submitted,
+      // Editar la pregunta (vista previa) o cualquier diálogo: sin atajos.
+      dialogoAbierto: confirmandoSalida || showUnsavedDialog || showExplanationModal || isEditingQuestion,
+      puedeIrAtras: isPreviewMode && !isFirstQuestion,
+      puedeIrAdelante: true,
+    },
+    acciones: {
+      elegir: (accion) => {
+        if (accion.tipo === 'elegir') handleAnswerChange({ type: 'multiple_choice', value: accion.indice })
+      },
+      verdaderoFalso: (accion) => {
+        if (accion.tipo === 'verdaderoFalso') handleAnswerChange({ type: 'true_false', value: accion.valor })
+      },
+      // J5: con `al_final`, confirmar guarda y pasa sin mostrar si estuvo bien.
+      confirmar: () => void handleSubmit(),
+      siguiente: () => handleNext(),
+      anterior: () => handlePrevious(),
+      ayuda: () => setAyudaAbierta((abierta) => !abierta),
+      salir: () => handleExit(),
+    },
+  })
 
   // J5: con la respuesta ya enviada no se dibuja la pregunta corregida (ni
   // colores, ni explicación) mientras se pasa a la siguiente.
@@ -650,6 +686,11 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
               })
             }}
           />
+
+          {/* L2: la pista de atajos (ocultable) y la ayuda que abre `?`, sólo en escritorio. */}
+          {esEscritorio && !answerState.submitted && !isEditingQuestion &&
+            (currentQuestion.type === 'multiple_choice' || currentQuestion.type === 'true_false') && <PistaDeAtajos />}
+          {esEscritorio && ayudaAbierta && <AyudaDeAtajos alCerrar={() => setAyudaAbierta(false)} />}
 
           {isGradingShortAnswer && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
@@ -922,6 +963,27 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
           )}
         </div>
       </div>
+
+      {/* L2: salir del cuestionario. Antes era un confirm() nativo; Esc lo abre. */}
+      <Dialog open={confirmandoSalida} onOpenChange={setConfirmandoSalida}>
+        <DialogContent className="rounded-lg border-borde sm:max-w-[420px]">
+          <DialogTitle className="titulo-m text-texto">{ATAJOS.salir.titulo}</DialogTitle>
+          <DialogDescription className="cuerpo-s text-texto-suave">{ATAJOS.salir.detalle}</DialogDescription>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Boton variante="secundario" onClick={() => setConfirmandoSalida(false)}>
+              {ATAJOS.salir.quedarme}
+            </Boton>
+            <Boton
+              onClick={() => {
+                setConfirmandoSalida(false)
+                setActiveView('dashboard')
+              }}
+            >
+              {ATAJOS.salir.confirmar}
+            </Boton>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
         <AlertDialogContent>

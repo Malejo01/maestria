@@ -730,6 +730,31 @@ export const TECLADO_MATEMATICO = {
   },
 } as const
 
+/** L2: los atajos de teclado del cuestionario, en escritorio. */
+export const ATAJOS = {
+  pista: '↑↓ elegir · Espacio marcar · Enter siguiente · ? atajos',
+  ocultar: 'Ocultar',
+  ayudaTitulo: 'Atajos de teclado',
+  cerrarAyuda: 'Cerrar',
+  opciones: 'Opciones',
+  lista: [
+    ['↑ ↓', 'Moverte entre las opciones'],
+    ['Espacio', 'Elegir la opción en la que estás'],
+    ['1 a 9, A a D', 'Elegir esa opción'],
+    ['V, F', 'Verdadero o falso'],
+    ['Enter', 'Confirmar, o pasar a la siguiente'],
+    ['← →', 'Pregunta anterior o siguiente, cuando se puede'],
+    ['?', 'Mostrar u ocultar esta ayuda'],
+    ['Esc', 'Salir del cuestionario'],
+  ] as const,
+  salir: {
+    titulo: '¿Salís del cuestionario?',
+    detalle: 'Se pierde lo que respondiste hasta ahora.',
+    confirmar: 'Salir',
+    quedarme: 'Seguir respondiendo',
+  },
+} as const
+
 export const MIS_TAREAS_ALUMNO = {
   titulo: 'Mis tareas',
   cargando: 'Buscando tus tareas…',

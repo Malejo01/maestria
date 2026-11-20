@@ -70,8 +70,9 @@ function startQuizWith(questions: Question[]) {
 /** Answers the current multiple_choice question and confirms it. */
 function answerMultipleChoice(optionIndex: number) {
   act(() => {
-    screen.getAllByRole('button')
-      .filter((button) => button.textContent?.includes(multipleChoice.options[optionIndex]))[0]
+    // L2: las opciones son un radiogroup.
+    screen.getAllByRole('radio')
+      .filter((opcion) => opcion.textContent?.includes(multipleChoice.options[optionIndex]))[0]
       .click()
   })
   act(() => {
@@ -123,7 +124,7 @@ describe('QuizEngine — advancing between questions of different types', () => 
     // AnswerInput returns null on a question/selection mismatch, so a stale
     // selection that does NOT throw would still leave the student with no
     // way to answer. Both failure modes have to be covered.
-    const labels = screen.getAllByRole('button').map((button) => button.textContent ?? '')
+    const labels = screen.getAllByRole('radio').map((opcion) => opcion.textContent ?? '')
     expect(labels.some((label) => /Verdadero/i.test(label))).toBe(true)
     expect(labels.some((label) => /Falso/i.test(label))).toBe(true)
   })
@@ -169,7 +170,7 @@ describe('QuizEngine — J5, devolución al final (diagnóstico)', () => {
 
   function elegirYSeguir(texto: string, boton: string) {
     act(() => {
-      screen.getAllByRole('button').filter((b) => b.textContent?.includes(texto))[0].click()
+      screen.getAllByRole('radio').filter((b) => b.textContent?.includes(texto))[0].click()
     })
     act(() => {
       screen.getByRole('button', { name: boton }).click()
