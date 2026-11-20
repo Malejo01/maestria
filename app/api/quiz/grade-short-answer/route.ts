@@ -7,6 +7,7 @@ import { captureAiSchemaFailure } from '@/lib/observability'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { gradeShortAnswerLocally } from '@/lib/short-answer-autograde'
 import { AI_MODEL } from '@/lib/ai-model'
+import { NOTACION_DEL_ALUMNO } from '@/lib/notacion-matematica'
 
 const gradeSchema = z.object({
   isCorrect: z.boolean(),
@@ -125,6 +126,8 @@ export async function POST(req: Request) {
 Tu tarea es corregir la respuesta de un estudiante a una pregunta de respuesta corta.
 Se flexible con errores de tipeo, orden de palabras o sinónimos — evalúa el CONTENIDO conceptual, no la redacción exacta (excepto si la rúbrica lo penaliza estrictamente).
 ${eduCtx.registroLinguistico}
+
+${NOTACION_DEL_ALUMNO}
 
 ${eduCtx.rubricaRespuestaCorta}`,
       prompt: `PREGUNTA: ${question}

@@ -1,5 +1,6 @@
 import type { Question, TeacherQuiz } from '@/lib/types'
 import { sanitizeSubjectSegment as sanitizePathSegment, slugifySubject as toSlug } from '@/lib/subject-slug'
+import { esFactorizacion, factorizar } from '@/lib/factorizacion'
 
 const MAX_CATEGORY_TOPICS = 5
 
@@ -95,6 +96,16 @@ function buildQuestionBlock(question: Question, index: number): string {
       // K2: GIFT no tiene fracciones. Una que no da decimal exacto (11/12) se
       // exporta redondeada a cuatro decimales con ese margen, para que en
       // Moodle se pueda acertar escribiendo el decimal.
+      // L3: GIFT no corrige factorizaciones. Va como respuesta corta con las
+      // formas más comunes del producto de primos ordenado (2^2*3*5, 2^2·3·5,
+      // 2*2*3*5, 2x2x3x5); con el número a secas en Moodle se acertaría sin factorizar.
+      if (esFactorizacion(question)) {
+        const factores = factorizar(Number(question.correctAnswer))
+        const potencias = (sep: string) => factores.map((p) => (p.exponente === 1 ? `${p.base}` : `${p.base}^${p.exponente}`)).join(sep)
+        const sueltos = (sep: string) => factores.flatMap((p) => Array(p.exponente).fill(String(p.base))).join(sep)
+        const formas = [...new Set([potencias('*'), potencias('·'), sueltos('*'), sueltos('x')])]
+        return `::${questionTitle}::${questionText} {${formas.map((f) => `=${escapeGiftText(f)}`).join('')}}${buildFeedback(question)}`
+      }
       const valor = Number(question.correctAnswer)
       const periodica = Boolean(question.fraccion) && !question.tolerance && Math.abs(valor * 1e4 - Math.round(valor * 1e4)) > 1e-6
       const numero = periodica ? Number(valor.toFixed(4)) : question.correctAnswer

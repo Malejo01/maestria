@@ -1,12 +1,27 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Card } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { corregirNumerica, leerRespuesta, textoDelMotivo } from '@/lib/fraccion'
 import { LaTeXRenderer } from '@/components/latex-renderer'
 import { formatearNumero, respuestaNumerica } from '@/lib/numeros'
+import { esFactorizacion, factorizacionEnLatex, leerProducto, textoDeFactorizacion, type MotivoDeFactorizacion } from '@/lib/factorizacion'
+import { llevaBarra } from '@/lib/notacion-matematica'
+import { TECLADO_MATEMATICO } from '@/lib/textos'
+import { BarraMatematica } from './barra-matematica'
 import type { NumericQuestion } from '@/lib/types'
+
+const MOTIVOS_DE_FACTORIZACION: string[] = ['no_primo', 'producto_distinto', 'sin_factorizar', 'ilegible']
+
+/**
+ * Lo que vale lo escrito. L3: en una factorización, el producto (`2x2x3x5` →
+ * 60), que no es un número para `leerRespuesta`; la corrección mira el texto.
+ */
+function leer(texto: string, question: NumericQuestion, factoriza: boolean): number | null {
+  if (factoriza) return leerProducto(texto)?.valor ?? null
+  return leerRespuesta(texto, { admiteMixto: question.admiteMixto })?.valor ?? null
+}
 
 interface NumericInputProps {
   question: NumericQuestion
@@ -49,8 +64,14 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
 
   // K2: lee también el número mixto (`1 1/2`) si la pregunta lo admite, y
   // conserva la fracción tal como la escribió.
-  const lectura = useMemo(() => leerRespuesta(raw, { admiteMixto: question.admiteMixto }), [raw, question.admiteMixto])
-  const parsed = lectura?.valor ?? null
+  const factoriza = esFactorizacion(question)
+  const conBarra = llevaBarra({ ...question, esFactorizacion: factoriza })
+  const campo = useRef<HTMLInputElement>(null)
+  const lectura = useMemo(
+    () => (factoriza ? null : leerRespuesta(raw, { admiteMixto: question.admiteMixto })),
+    [raw, question.admiteMixto, factoriza],
+  )
+  const parsed = factoriza ? leer(raw, question, true) : (lectura?.valor ?? null)
   const esFraccion = Boolean(question.fraccion)
   const hasText = raw.trim().length > 0
   // K2: si el valor era el correcto pero la forma no (`6/8` por la irreducible), se le dice por qué.
@@ -58,25 +79,33 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
   const noSeEntiende = hasText && parsed === null
   // K1: `1.500` se lee mil quinientos. Se le dice siempre, aunque el número
   // mostrado coincida con lo que escribió: quien quiso decir 1,5 tiene que verlo.
-  const usaPuntoDeMiles = parsed !== null && /^\s*[+-]?[1-9]\d{0,2}(?:\.\d{3})+(?:,\d+)?\s*$/.test(raw)
+  const usaPuntoDeMiles = !factoriza && parsed !== null && /^\s*[+-]?[1-9]\d{0,2}(?:\.\d{3})+(?:,\d+)?\s*$/.test(raw)
 
   return (
     <div className="space-y-3">
       <input
+        ref={campo}
         // `text`, no `number`: es el arreglo. `inputMode="decimal"` sigue
         // pidiéndole al celular el teclado numérico, que es lo único que
-        // valía la pena de `type="number"`.
+        // valía la pena de `type="number"`. L3: con la barra, el teclado de
+        // texto: el numérico no tiene `^` ni `x`.
         type="text"
-        inputMode="decimal"
+        inputMode={conBarra ? 'text' : 'decimal'}
         autoComplete="off"
         value={raw}
         onChange={(event) => {
           const next = event.target.value
           setRaw(next)
-          onChange(leerRespuesta(next, { admiteMixto: question.admiteMixto })?.valor ?? null, next)
+          onChange(leer(next, question, factoriza), next)
         }}
         disabled={submitted || disabled}
-        placeholder={esFraccion ? 'Tu respuesta (una fracción, como 3/4)' : 'Tu respuesta (coma o fracción)'}
+        placeholder={
+          factoriza
+            ? TECLADO_MATEMATICO.factorizacion.placeholder
+            : esFraccion
+              ? 'Tu respuesta (una fracción, como 3/4)'
+              : 'Tu respuesta (coma o fracción)'
+        }
         aria-invalid={noSeEntiende}
         aria-describedby={noSeEntiende ? 'numeric-input-error' : !hasText && !submitted ? 'numeric-input-ayuda' : undefined}
         className={cn(
@@ -89,10 +118,22 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
         )}
       />
 
+      {conBarra && (
+        <BarraMatematica
+          campo={campo}
+          valor={raw}
+          deshabilitada={submitted || disabled}
+          alCambiar={(next) => {
+            setRaw(next)
+            onChange(leer(next, question, factoriza), next)
+          }}
+        />
+      )}
+
       {/* Qué entendimos. Sólo cuando aporta algo: si el alumno escribió "3,5"
           y leímos 3,5, repetírselo es ruido; el valor está en confirmar las
           formas que se transforman — fracciones, LaTeX, porcentajes. */}
-      {!submitted && parsed !== null && !(esFraccion && lectura?.fraccion) && (usaPuntoDeMiles || formatearNumero(parsed) !== raw.trim()) && (
+      {!submitted && !factoriza && parsed !== null && !(esFraccion && lectura?.fraccion) && (usaPuntoDeMiles || formatearNumero(parsed) !== raw.trim()) && (
         <p className="text-center text-sm text-muted-foreground">
           Leímos: <strong className="text-foreground">{formatearNumero(parsed)}</strong>
           {usaPuntoDeMiles ? ' (el punto separa los miles)' : ''}
@@ -101,7 +142,9 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
 
       {!submitted && !hasText && (
         <p id="numeric-input-ayuda" className="text-center text-xs text-muted-foreground">
-          {esFraccion ? (
+          {factoriza ? (
+            TECLADO_MATEMATICO.factorizacion.ayuda
+          ) : esFraccion ? (
             <>
               Escribí la fracción con la barra: <code>3/4</code>
               {question.admiteMixto ? <>, o el número mixto con un espacio: <code>1 1/2</code></> : null}.
@@ -117,7 +160,13 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
 
       {/* El aviso llega ANTES de enviar, que es todo el punto: con el input
           viejo el alumno se quedaba mirando un botón deshabilitado y sin causa. */}
-      {!submitted && noSeEntiende && (
+      {!submitted && noSeEntiende && factoriza && (
+        <p id="numeric-input-error" className="text-center text-sm text-flojo">
+          {textoDeFactorizacion('ilegible', question.correctAnswer)}
+        </p>
+      )}
+
+      {!submitted && noSeEntiende && !factoriza && (
         <p id="numeric-input-error" className="text-center text-sm text-flojo">
           No entendimos ese número. Podés escribirlo con coma (<code>3,5</code>), con punto
           (<code>3.5</code>) o como fracción (<code>7/2</code>)
@@ -129,11 +178,22 @@ export function NumericInput({ question, value, submitted, onChange, isCorrect, 
         <Card className="p-3 rounded-xl border border-logrado/30 bg-logrado-fondo text-center">
           <span className="text-sm font-semibold text-logrado">
             Respuesta correcta:{' '}
-            <LaTeXRenderer content={respuestaNumerica(question.correctAnswer, question.tolerance, question.fraccion)} />
+            <LaTeXRenderer
+              content={
+                factoriza
+                  ? factorizacionEnLatex(question.correctAnswer)
+                  : respuestaNumerica(question.correctAnswer, question.tolerance, question.fraccion)
+              }
+            />
           </span>
-          {motivo && question.fraccion && (
+          {motivo && MOTIVOS_DE_FACTORIZACION.includes(motivo) && (
             <p className="mt-1 text-sm text-foreground">
-              <LaTeXRenderer content={textoDelMotivo(motivo, question.fraccion)} />
+              {textoDeFactorizacion(motivo as MotivoDeFactorizacion, question.correctAnswer)}
+            </p>
+          )}
+          {motivo && !MOTIVOS_DE_FACTORIZACION.includes(motivo) && question.fraccion && (
+            <p className="mt-1 text-sm text-foreground">
+              <LaTeXRenderer content={textoDelMotivo(motivo as 'sin_simplificar' | 'no_es_fraccion', question.fraccion)} />
             </p>
           )}
         </Card>

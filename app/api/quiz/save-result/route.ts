@@ -204,6 +204,7 @@ export async function POST(req: Request) {
           // la trae. Ausentes en las filas de antes: el historial cae al número.
           ...(typeof answer.selectedText === 'string' ? { selectedText: answer.selectedText.slice(0, 100) } : {}),
           ...(answer.fraccion ? { fraccion: answer.fraccion, exigeIrreducible: answer.exigeIrreducible === true } : {}),
+          ...(answer.forma === 'factorizacion' ? { forma: 'factorizacion' } : {}),
         })
       } else if (questionType === 'short_answer') {
         answerPayload = JSON.stringify({

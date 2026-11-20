@@ -1,5 +1,5 @@
 import type { MarcaDePregunta } from '@/lib/diagnostico-resultados'
-import { comaDecimal, respuestaNumerica } from '@/lib/numeros'
+import { comaDecimal, respuestaCorrectaNumerica } from '@/lib/numeros'
 import { fraccionValida } from '@/lib/fraccion'
 
 /**
@@ -36,7 +36,14 @@ export function preguntaImpresa(cruda: unknown, indice: number): PreguntaImpresa
     correcta = q.correctAnswer === true ? 'Verdadero' : 'Falso'
   } else if (tipo === 'numeric') {
     // K2: si la respuesta es una fracción, va como fracción.
-    correcta = respuestaNumerica(Number(q.correctAnswer), Number(q.tolerance), fraccionValida(q.fraccion) ? q.fraccion : null)
+    // L3: una factorización, como producto de potencias.
+    correcta = respuestaCorrectaNumerica({
+      correctAnswer: Number(q.correctAnswer),
+      tolerance: Number(q.tolerance),
+      fraccion: fraccionValida(q.fraccion) ? q.fraccion : null,
+      forma: q.forma,
+      question: q.question,
+    })
     if (fraccionValida(q.fraccion) && q.exigeIrreducible === true) correcta += ' (irreducible)'
   } else {
     correcta = Array.isArray(q.acceptedAnswers) ? comaDecimal(q.acceptedAnswers.map(String).join(' / ')) : ''

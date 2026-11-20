@@ -703,6 +703,33 @@ export const REVISAR_TAREA = {
 export const TAMANO_DE_TAREA = (preguntas: number, minutos: number) =>
   `${preguntas === 1 ? '1 pregunta' : `${preguntas} preguntas`} · unos ${minutos} min`
 
+/** L3: la barra de símbolos debajo de una respuesta escrita. */
+export const TECLADO_MATEMATICO = {
+  etiqueta: 'Símbolos matemáticos',
+  vistaPrevia: 'Se ve así:',
+  nombres: {
+    producto: 'Por (producto)',
+    potencia: 'Potencia: escribí después el exponente',
+    raiz: 'Raíz: escribí adentro el radicando',
+    fraccion: 'Fracción',
+    parentesis: 'Paréntesis',
+    pi: 'Pi',
+    menos: 'Menos',
+    menorIgual: 'Menor o igual',
+    mayorIgual: 'Mayor o igual',
+    distinto: 'Distinto',
+  },
+  /** Para una factorización. */
+  factorizacion: {
+    placeholder: 'Tu respuesta (como 2^2·3·5)',
+    ayuda: 'Escribí el producto de primos: · o x entre los factores y ^ para las potencias, por ejemplo 2^2·3·5.',
+    leimos: 'Leímos:',
+  },
+  editor: {
+    factorizacion: 'Se responde como producto de primos (por ejemplo 2^2·3·5), no con el número',
+  },
+} as const
+
 export const MIS_TAREAS_ALUMNO = {
   titulo: 'Mis tareas',
   cargando: 'Buscando tus tareas…',

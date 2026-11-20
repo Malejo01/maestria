@@ -1,4 +1,5 @@
 import { isNumericallyEquivalent, parseNumericAnswer } from '@/lib/numeric-answer'
+import { CONSIGNA_DE_FACTORIZACION, corregirFactorizacion, esFactorizacion, type MotivoDeFactorizacion } from '@/lib/factorizacion'
 
 /**
  * K2: las fracciones se responden como fracciones.
@@ -22,6 +23,10 @@ export interface PreguntaNumerica {
   fraccion?: Fraccion
   exigeIrreducible?: boolean
   admiteMixto?: boolean
+  /** L3: 'factorizacion' pide el producto de primos (`2^2·3·5`); `correctAnswer` es el número. */
+  forma?: 'factorizacion'
+  /** L3: el enunciado, para reconocer las factorizaciones guardadas sin `forma`. */
+  question?: string
 }
 
 export function mcd(a: number, b: number): number {
@@ -102,7 +107,7 @@ export function leerRespuesta(texto: string, opciones: { admiteMixto?: boolean }
   return valor === null ? null : { valor, fraccion: null, mixto: false }
 }
 
-export type MotivoNumerico = 'sin_simplificar' | 'no_es_fraccion'
+export type MotivoNumerico = 'sin_simplificar' | 'no_es_fraccion' | MotivoDeFactorizacion
 
 export interface Correccion {
   correcta: boolean
@@ -122,6 +127,8 @@ export interface Correccion {
  *   entero (`8/4`), el entero es su forma irreducible.
  */
 export function corregirNumerica(pregunta: PreguntaNumerica, valor: number, texto?: string): Correccion {
+  // L3: una factorización se corrige por lo que escribió, no por el número.
+  if (esFactorizacion(pregunta)) return corregirFactorizacion(texto ?? String(valor), Number(pregunta.correctAnswer))
   if (!fraccionValida(pregunta.fraccion)) {
     return { correcta: isNumericallyEquivalent(valor, pregunta.correctAnswer, pregunta.tolerance) }
   }
@@ -153,7 +160,7 @@ export function fraccionEnLatex(f: Fraccion): string {
 }
 
 /** Qué le decimos al alumno cuando el valor estaba bien pero la forma no. */
-export function textoDelMotivo(motivo: MotivoNumerico, esperada: Fraccion): string {
+export function textoDelMotivo(motivo: Exclude<MotivoNumerico, MotivoDeFactorizacion>, esperada: Fraccion): string {
   const latex = fraccionEnLatex(simplificar(esperada))
   return motivo === 'sin_simplificar'
     ? `Es equivalente, pero no la simplificaste del todo: la expresión irreducible es ${latex}.`
@@ -195,6 +202,15 @@ export function consignaPideIrreducible(enunciado: string): boolean {
  *   "simplificá").
  */
 export function normalizarFraccionGenerada<T extends PreguntaNumerica & { question: string; topicName?: string }>(pregunta: T): T {
+  // L3: si la consigna pide factorizar, la respuesta es el producto de primos.
+  // Nunca queda un `correctAnswer` = el número sin `forma`.
+  if (pregunta.forma === 'factorizacion' || CONSIGNA_DE_FACTORIZACION.test(pregunta.question)) {
+    const { fraccion: _f, exigeIrreducible: _e, admiteMixto: _m, ...resto } = pregunta
+    void _f
+    void _e
+    void _m
+    return { ...resto, forma: 'factorizacion', correctAnswer: Math.round(Number(pregunta.correctAnswer)) } as T
+  }
   let fraccion = fraccionValida(pregunta.fraccion) ? pregunta.fraccion : null
   const pide = consignaPideFraccion(pregunta.question) || consignaPideFraccion(pregunta.topicName ?? '')
   if (!fraccion && pide && !Number.isInteger(pregunta.correctAnswer)) {

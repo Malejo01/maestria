@@ -15,6 +15,7 @@ import { DIAGNOSTICO } from '@/lib/textos'
 import { AnswerInput, emptySelectionFor, type AnswerSelection } from './quiz-answer-inputs'
 import { AnswerRecap, answerRecapLine } from './answer-recap'
 import { isCorrectMultipleChoice, isCorrectNumeric, isCorrectTrueFalse } from '@/lib/answer-grading'
+import { esFactorizacion } from '@/lib/factorizacion'
 import { gradeShortAnswerLocally } from '@/lib/short-answer-autograde'
 import { cn } from '@/lib/utils'
 import type { Answer, Question, ShortAnswerQuestion } from '@/lib/types'
@@ -224,6 +225,8 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
         tolerance: question.tolerance,
         ...(selection.texto ? { selectedText: selection.texto } : {}),
         ...(question.fraccion ? { fraccion: question.fraccion, exigeIrreducible: question.exigeIrreducible === true } : {}),
+        // L3: para mostrar la correcta como producto de potencias.
+        ...(esFactorizacion(question) ? { forma: 'factorizacion' as const } : {}),
       }
     }
     if (question.type === 'short_answer' && selection.type === 'short_answer') {
