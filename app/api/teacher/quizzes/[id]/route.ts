@@ -19,6 +19,34 @@ async function requireTeacher(userId: string) {
   return rows.length > 0 && isTeacherRole(rows[0].role)
 }
 
+/**
+ * L1: la copia de un cuestionario de diagnóstico sigue siendo ESE cuestionario
+ * del diagnóstico (tipo, diagnóstico y unidad), y el original congelado deja
+ * de figurar en él: si no, la ficha mostraría la unidad dos veces, una sin
+ * asignación. Lo cargado a mano desde el impreso pasa con la asignación. Sin
+ * la 027 no hay nada que heredar. Devuelve el tipo de la copia.
+ */
+async function heredarDiagnostico(originalId: number, copiaId: number): Promise<string> {
+  try {
+    const filas = (await sql`
+      UPDATE teacher_quizzes c
+         SET tipo = o.tipo, diagnostico_id = o.diagnostico_id, unidad_id = o.unidad_id
+        FROM teacher_quizzes o
+       WHERE c.id = ${copiaId} AND o.id = ${originalId}
+      RETURNING c.tipo, c.diagnostico_id
+    `) as { tipo: string; diagnostico_id: number | null }[]
+    if (filas[0]?.diagnostico_id !== null && filas[0]?.diagnostico_id !== undefined) {
+      await sql`UPDATE teacher_quizzes SET diagnostico_id = NULL WHERE id = ${originalId}`
+      await sql`UPDATE diagnostico_resultados_impresos SET teacher_quiz_id = ${copiaId} WHERE teacher_quiz_id = ${originalId}`
+    }
+    return filas[0]?.tipo ?? 'tarea'
+  } catch (error) {
+    const code = (error as { code?: string })?.code
+    if (code === '42703' || code === '42P01') return 'tarea'
+    throw error
+  }
+}
+
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   const userId = session?.user?.id ?? null
@@ -40,8 +68,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     }
 
     const rows = await sql`
-      SELECT id, user_id, teacher_program_id, title, subject_name, mode, status, selected_topics, question_count, questions, pedagogy_context, created_at, updated_at
-      FROM teacher_quizzes
+      SELECT id, user_id, teacher_program_id, title, subject_name, mode, status, selected_topics, question_count, questions, pedagogy_context, created_at, updated_at,
+             to_jsonb(q) ->> 'tipo' AS tipo
+      FROM teacher_quizzes q
       WHERE id = ${quizId} AND user_id = ${userId}
       LIMIT 1
     `
@@ -156,8 +185,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           RETURNING id
         `
 
+        const tipo = await heredarDiagnostico(quizId, Number(copia.id))
+
         return NextResponse.json({
-          quiz: copia,
+          quiz: { ...copia, tipo },
           copiado: true,
           originalId: quizId,
           reasignadas: reasignadas.length,

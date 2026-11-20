@@ -27,6 +27,8 @@ interface TeacherQuizRow {
   pedagogy_context: string | null
   created_at: Date | null
   updated_at: Date | null
+  /** L1: 'tarea' | 'diagnostico' (027), leído con to_jsonb: NULL sin la migración. */
+  tipo: string | null
 }
 
 function isTeacherRole(role: unknown): boolean {
@@ -72,14 +74,16 @@ export async function GET(req: Request) {
 
     const rows = (hasProgramFilter
       ? await sql`
-          SELECT id, user_id, teacher_program_id, title, subject_name, mode, status, selected_topics, question_count, questions, pedagogy_context, created_at, updated_at
-          FROM teacher_quizzes
+          SELECT id, user_id, teacher_program_id, title, subject_name, mode, status, selected_topics, question_count, questions, pedagogy_context, created_at, updated_at,
+                 to_jsonb(q) ->> 'tipo' AS tipo
+          FROM teacher_quizzes q
           WHERE user_id = ${userId} AND teacher_program_id = ${programId}
           ORDER BY created_at DESC
         `
       : await sql`
-          SELECT id, user_id, teacher_program_id, title, subject_name, mode, status, selected_topics, question_count, questions, pedagogy_context, created_at, updated_at
-          FROM teacher_quizzes
+          SELECT id, user_id, teacher_program_id, title, subject_name, mode, status, selected_topics, question_count, questions, pedagogy_context, created_at, updated_at,
+                 to_jsonb(q) ->> 'tipo' AS tipo
+          FROM teacher_quizzes q
           WHERE user_id = ${userId}
           ORDER BY created_at DESC
         `) as TeacherQuizRow[]

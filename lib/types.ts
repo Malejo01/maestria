@@ -431,6 +431,8 @@ export interface TeacherQuiz {
   pedagogyContext?: string
   createdAt: string
   updatedAt: string
+  /** L1: 'diagnostico' para los cuestionarios de un diagnóstico (J4). Sin la 027, 'tarea'. */
+  tipo?: 'tarea' | 'diagnostico'
 }
 
 export interface TeacherProgramFilters {

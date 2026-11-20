@@ -87,6 +87,7 @@ export function FichaInvitacion({ invitacionId }: { invitacionId: number }) {
 
       <SeccionDiagnostico
         destino={{ invitacion: invitacionId }}
+        nombre={nombre || null}
         alMarcarTemas={() => {
           setVersion((v) => v + 1)
           void leer()

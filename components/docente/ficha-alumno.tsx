@@ -139,7 +139,7 @@ export function FichaAlumno({ userId }: { userId: string }) {
         </Boton>
       </header>
 
-      <SeccionDiagnostico destino={{ alumno: ficha.userId }} alMarcarTemas={() => setVersionFicha((v) => v + 1)} />
+      <SeccionDiagnostico destino={{ alumno: ficha.userId }} nombre={ficha.nombre} alMarcarTemas={() => setVersionFicha((v) => v + 1)} />
 
       {pedagogica?.disponible && (
         <FichaPedagogica

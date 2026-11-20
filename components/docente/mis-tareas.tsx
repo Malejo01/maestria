@@ -12,6 +12,7 @@ import type { PanelDocente } from '@/components/docente/use-panel-docente'
 import { EsqueletoListaDeTareas } from '@/components/docente/esqueletos'
 import { resumirTemas } from '@/lib/alumnos-docente'
 import { etiquetaDeMateria, materiaDePrograma } from '@/lib/etiqueta-materia'
+import { filtrarPorTipo, type FiltroDeTipo } from '@/lib/tarea-docente'
 
 /**
  * "Mis tareas": las tareas guardadas y las realizadas, con revisar, editar,
@@ -52,6 +53,11 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
 
   /** La tarea que está pidiendo confirmación para borrarse, o null. */
   const [borrando, setBorrando] = useState<number | null>(null)
+
+  // L1: los cuestionarios del diagnóstico salían mezclados con las tareas.
+  const [tipo, setTipo] = useState<FiltroDeTipo>('todas')
+  const hayDiagnosticos = teacherQuizzes.some((quiz) => quiz.tipo === 'diagnostico')
+  const visibles = filtrarPorTipo(teacherQuizzes, hayDiagnosticos ? tipo : 'todas')
 
   return (
     <>
@@ -106,6 +112,21 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                   ))}
                 </div>
               )}
+              {hayDiagnosticos && (
+                <div role="group" aria-label={T.tipos.etiqueta} className="flex flex-wrap gap-2">
+                  {(['todas', 'tarea', 'diagnostico'] as const).map((opcion) => (
+                    <Boton
+                      key={opcion}
+                      variante="secundario"
+                      aria-pressed={tipo === opcion}
+                      className="aria-pressed:border-texto"
+                      onClick={() => setTipo(opcion)}
+                    >
+                      {T.tipos[opcion]}
+                    </Boton>
+                  ))}
+                </div>
+              )}
             </div>
 
             {revisandoQuiz ? (
@@ -145,10 +166,18 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                     </Boton>
                   </div>
                 )}
+                {tareasLeidas && teacherQuizzes.length > 0 && visibles.length === 0 && (
+                  <p className="cuerpo-s text-texto-suave">{T.sinDelTipo}</p>
+                )}
                 <ul className="grid gap-3 lg:grid-cols-2">
-                  {teacherQuizzes.map((quiz) => (
+                  {visibles.map((quiz) => (
                     <li key={quiz.id} className="flex flex-col gap-3 rounded-lg border border-borde p-4">
                       <div>
+                        {quiz.tipo === 'diagnostico' && (
+                          <span className="etiqueta mb-1 inline-block rounded-sm border border-accion-tenue-borde bg-accion-tenue px-2 py-0.5 text-accion">
+                            {T.diagnostico}
+                          </span>
+                        )}
                         <h2 className="cuerpo text-texto">{quiz.title}</h2>
                         <p className="nota text-texto-suave">
                           {materiaDeTarea(quiz)} · {T.preguntas(quiz.questionCount)} · {T.modo[quiz.mode]}
