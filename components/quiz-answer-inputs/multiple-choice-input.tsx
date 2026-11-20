@@ -1,6 +1,10 @@
 'use client'
 
+import { useState, type KeyboardEvent } from 'react'
 import { Check, X } from 'lucide-react'
+import { ATRIBUTO_DE_OPCION } from '@/components/quiz-atajos'
+import { moverEnOpciones } from '@/lib/atajos-cuestionario'
+import { ATAJOS } from '@/lib/textos'
 import { LaTeXRenderer } from '@/components/latex-renderer'
 import { cn } from '@/lib/utils'
 import type { MultipleChoiceQuestion } from '@/lib/types'
@@ -31,8 +35,22 @@ export function MultipleChoiceInput({
   onEditCorrectAnswer,
   disabled = false,
 }: MultipleChoiceInputProps) {
+  // L2: radiogroup con roving tabindex (patrón WAI-ARIA): un solo Tab entra al
+  // grupo, ↑/↓ mueven el foco entre opciones y Espacio elige la enfocada.
+  const [enfocada, setEnfocada] = useState<number | null>(null)
+  const activa = enfocada ?? selected ?? 0
+
+  function alPresionar(evento: KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (evento.key !== 'ArrowDown' && evento.key !== 'ArrowUp') return
+    evento.preventDefault()
+    evento.stopPropagation()
+    const siguiente = moverEnOpciones(index, evento.key === 'ArrowDown' ? 1 : -1, question.options.length)
+    const grupo = evento.currentTarget.parentElement
+    grupo?.querySelectorAll<HTMLElement>(`[${ATRIBUTO_DE_OPCION}]`)[siguiente]?.focus()
+  }
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role={editing ? undefined : 'radiogroup'} aria-label={editing ? undefined : ATAJOS.opciones}>
       {question.options.map((option, index) => {
         const isSelected = selected === index
         const isCorrectAnswer = question.correctAnswer === index
@@ -108,6 +126,13 @@ export function MultipleChoiceInput({
         return (
           <button
             key={index}
+            type="button"
+            role="radio"
+            aria-checked={isSelected}
+            tabIndex={index === activa ? 0 : -1}
+            {...{ [ATRIBUTO_DE_OPCION]: index }}
+            onFocus={() => setEnfocada(index)}
+            onKeyDown={(evento) => alPresionar(evento, index)}
             onClick={() => onSelect(index)}
             disabled={submitted || disabled}
             className={containerClass}
