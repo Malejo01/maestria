@@ -1,6 +1,5 @@
 'use client'
 
-import { formatearNumero } from '@/lib/numeros'
 import { Cargando } from '@/components/sistema/cargando'
 
 
@@ -12,15 +11,11 @@ import { MIS_TAREAS_ALUMNO as T } from '@/lib/textos'
 import { SubjectContent } from '@/components/subject-content'
 import { useAppStore } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
-import { ASSIGNMENT_STATE_LABEL, isValidJoinCode, normalizeJoinCode } from '@/lib/classrooms'
+import { isValidJoinCode, normalizeJoinCode } from '@/lib/classrooms'
 import { CargaFallida } from '@/components/carga-fallida'
+import { TarjetaDeTarea } from '@/components/alumno/tarjeta-de-tarea'
 import { pedirJson } from '@/lib/pedir-json'
 import type { AssignmentState, StudentClassroom, Subject } from '@/lib/types'
-
-function formatDate(value: string | null): string {
-  if (!value) return ''
-  return new Date(value).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })
-}
 
 /** The aula's temario as a Subject, so SubjectContent can drive free practice. */
 function classroomToSubject(classroom: StudentClassroom): Subject {
@@ -251,49 +246,17 @@ export default function MisAulasPage() {
             </div>
           ) : (
             <ul className="flex flex-col gap-3">
-              {tareas.map(({ assignment, classroom }) => {
-                const disponible = assignment.state === 'disponible'
-                const abriendo = startingAssignmentId === assignment.id
-                return (
-                  <li
-                    key={assignment.id}
-                    className="flex flex-col gap-3 rounded-lg border border-borde bg-superficie-tarjeta p-4 sm:flex-row sm:items-center"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <h2 className="cuerpo text-texto">{assignment.title}</h2>
-                      <p className="nota text-texto-suave">
-                        {[
-                          classroom.subjectName,
-                          classroom.teacherName,
-                          assignment.dueAt ? T.hasta(formatDate(assignment.dueAt)) : null,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                      <p className="nota mt-1 text-texto-suave">
-                        {[
-                          disponible ? null : ASSIGNMENT_STATE_LABEL[assignment.state],
-                          assignment.opensAt && assignment.state === 'programada' ? T.desde(formatDate(assignment.opensAt)) : null,
-                          T.intentos(assignment.attemptsUsed, assignment.maxAttempts),
-                          assignment.bestScore !== null ? T.mejorNota(formatearNumero(Number(assignment.bestScore), { decimales: 1 })) : null,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </p>
-                    </div>
-                    {/* Un solo azul: la primera tarea para hacer es la principal. */}
-                    <Boton
-                      variante={assignment.id === primeraDisponible ? 'principal' : 'secundario'}
-                      className="shrink-0"
-                      disabled={!disponible || abriendo}
-                      onClick={() => handleStartAssignment(assignment.id, classroom)}
-                    >
-                      {abriendo && <Cargando />}
-                      {assignment.attemptsUsed > 0 ? T.volverAHacer : T.empezar}
-                    </Boton>
-                  </li>
-                )
-              })}
+              {tareas.map(({ assignment, classroom }) => (
+                <TarjetaDeTarea
+                  key={assignment.id}
+                  assignment={assignment}
+                  materia={classroom.subjectName}
+                  docente={classroom.teacherName}
+                  principal={assignment.id === primeraDisponible}
+                  abriendo={startingAssignmentId === assignment.id}
+                  alEmpezar={() => handleStartAssignment(assignment.id, classroom)}
+                />
+              ))}
             </ul>
           )}
         </section>
