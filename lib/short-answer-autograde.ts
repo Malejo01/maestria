@@ -10,6 +10,7 @@
  */
 import { matchesAcceptedAnswer } from './short-answer-grading'
 import { isNumericallyEquivalent, parseNumericAnswer } from './numeric-answer'
+import { mismaInecuacion } from './inecuacion'
 
 /**
  * Resultado de la corrección determinista.
@@ -20,7 +21,7 @@ import { isNumericallyEquivalent, parseNumericAnswer } from './numeric-answer'
  * bug que este trabajo viene a arreglar.
  */
 export type LocalGrade =
-  | { resolved: true; isCorrect: true; via: 'text' | 'numeric' }
+  | { resolved: true; isCorrect: true; via: 'text' | 'numeric' | 'inecuacion' }
   | { resolved: false }
 
 const UNRESOLVED: LocalGrade = { resolved: false }
@@ -45,6 +46,14 @@ export function gradeShortAnswerLocally(studentAnswer: string, acceptedAnswers: 
 
   if (matchesAcceptedAnswer(studentAnswer, acceptedAnswers)) {
     return { resolved: true, isCorrect: true, via: 'text' }
+  }
+
+  // M2: un conjunto solución escrito de otra forma (`x ≤ 2`, `2 >= x`,
+  // `(-∞; 2]`, "x menor o igual que 2") es el mismo conjunto. Sólo afirma: si
+  // no coincide, no dice que esté mal (decide la IA, que sabe que un número
+  // solo no es un conjunto).
+  if (mismaInecuacion(studentAnswer, acceptedAnswers) === true) {
+    return { resolved: true, isCorrect: true, via: 'inecuacion' }
   }
 
   const studentValue = parseNumericAnswer(studentAnswer)

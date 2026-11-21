@@ -141,4 +141,6 @@ export const NOTACION_DEL_ALUMNO = `CÓMO ESCRIBE EL ALUMNO (texto plano, no LaT
 - "x", "·", "*" y "." entre números enteros significan producto: "2x2x3x5", "2·2·3·5", "2*3" y "2.2.3.5" son productos.
 - "^" es potencia ("2^3" es 2 al cubo); también puede usar superíndices ("2³") o "**".
 - "√(…)" es raíz cuadrada, "/" es fracción o división, "π" es pi, "−" es menos, y "≤", "≥", "≠" son comparaciones.
+- Un conjunto solución se puede escribir de varias formas, todas equivalentes: "x <= 2", "x ≤ 2", "2 >= x", "(-∞; 2]", "(-∞, 2]" y "x menor o igual que 2" son el mismo conjunto.
+- Si la respuesta esperada es un conjunto solución (una inecuación), un número solo ("2") NO es correcto: es un valor, no el conjunto.
 Evaluá lo que quiso decir con esa notación, no la forma de tipearla.`

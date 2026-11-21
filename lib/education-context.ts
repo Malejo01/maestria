@@ -56,13 +56,28 @@ function parseNumeroGrado(gradoStr?: string): number {
   return match ? parseInt(match[0], 10) : 1
 }
 
+/**
+ * M2: que el tipo de pregunta coincida con la consigna. Vale para todas las
+ * materias (los reportes #2, #3, #4 y #6 son de Matemática y de Didáctica), y
+ * lo que se escapa lo agarra lib/validar-tipo-de-pregunta.ts después.
+ */
+export const COHERENCIA_DE_TIPOS = `COHERENCIA ENTRE TIPO Y CONSIGNA:
+- "true_false": la consigna es SIEMPRE una AFIRMACIÓN que se puede juzgar verdadera o falsa, sin "¿" y sin "?" al final ("El sentido de la desigualdad se invierte al multiplicar por un negativo."). Nunca una pregunta abierta ("¿qué sucede…?", "¿cómo…?", "¿por qué…?", "¿favorecen o dificultan…?"): ésas no se contestan con Verdadero o Falso.
+- "numeric": sólo cuando la respuesta es UN NÚMERO. Un concepto, un procedimiento, una propiedad o un nombre ("¿qué concepto se emplea?", "¿cómo se llama…?") van como "short_answer" o "multiple_choice".`
+
 function getSubjectStrategy(materia: string): string {
+  return `${estrategiaDeLaMateria(materia)}
+${COHERENCIA_DE_TIPOS}`
+}
+
+function estrategiaDeLaMateria(materia: string): string {
   const m = materia.toLowerCase()
   if (m.includes('matemát') || m.includes('matemat') || m.includes('álgebra') || m.includes('algebra') || m.includes('análisis') || m.includes('analisis') || m.includes('geometría') || m.includes('probabilidad')) {
     return `ESTRATEGIA MATEMÁTICA:
 - Prioriza ejemplos concretos, problemas contextualizados y representaciones claras.
 - Distractores diagnósticos: Errores de operación inversa, confusión de propiedades, fallas de conteo/signo o aplicación de fórmulas fuera de contexto.
-- Factorizar o descomponer en primos: si es "numeric", lleva "forma": "factorizacion" y correctAnswer es el número (60); el alumno responde el producto (2^2·3·5). Nunca una numérica que pide factorizar sin "forma".`
+- Factorizar o descomponer en primos: si es "numeric", lleva "forma": "factorizacion" y correctAnswer es el número (60); el alumno responde el producto (2^2·3·5). Nunca una numérica que pide factorizar sin "forma".
+- Inecuaciones: se pide "el conjunto solución", NUNCA "el valor de x" (la respuesta es un conjunto, no un número). En "short_answer", acceptedAnswers incluye las formas equivalentes: "x <= 2", "x ≤ 2", "2 >= x", "(-∞; 2]", "(-∞, 2]" y "x menor o igual que 2".`
   }
   if (m.includes('natural') || m.includes('biolog') || m.includes('física') || m.includes('química') || m.includes('quimica') || m.includes('fisica')) {
     return `ESTRATEGIA CIENCIAS NATURALES:

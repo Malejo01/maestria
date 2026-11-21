@@ -75,8 +75,12 @@ export function questionTypesForMode(types: QuestionType[], mode: string): Quest
 }
 
 const CONCEPTUAL_PROMPTS: RegExp[] = [
-  // Verbos que piden una respuesta en palabras.
-  /\b(expli[cq]\w*|describ\w*|justifi\w*|argument\w*|fundament\w*|defin[ae]\w*|reflexion\w*)\b/i,
+  // Verbos que piden una respuesta en palabras, en imperativo ("explicá",
+  // "explique"). No el infinitivo: "¿cuántas componentes son necesarias para
+  // describir un vector?" pide un número. M2: antes era cualquier forma
+  // (`defin[ae]\w*`, `fundament\w*`), y "una sucesión SE DEFINE por…" o "según
+  // el Teorema FUNDAMENTAL del Álgebra" descartaban numéricas que estaban bien.
+  /(?:^|[\s¿(])(expl[ií]c(a|á|ame)|explique(n)?|describ(í|a)|justific(a|á)|justifique(n)?|argument(á|e)|fundament(á|e)|defin(í|a)|reflexion(á|e))(?=[\s,.:;?!]|$)/i,
   // Preguntas cuya respuesta es un concepto, no un número.
   /¿\s*(por\s*qu[eé]|para\s+qu[eé]|c[oó]mo\s+(lo\s+|la\s+|se\s+)?(explic|justific|corrig|interpret|ense[nñ])|qu[eé]\s+(error|concepto|propiedad|significa|representa|estrategia|procedimiento|m[eé]todo|diferencia|relaci[oó]n|criterio|funci[oó]n))/i,
   // Sí/no o verdadero/falso codificado como número.
