@@ -1,0 +1,25 @@
+$CATEGORY: $course$/Matematica 1 Virtual - Analisis de Sistemas/Varios temas
+
+::Q1::Si multiplicamos ambos miembros de una inecuación por un número negativo, el sentido de la desigualdad se invierte. {TRUE####Por ejemplo, \(2 < 3\) pero \(-2 > -3\).}
+
+::Q2::¿Cuál es el conjunto solución de \(x^2 \= 16\)? {
+~\(\\\{4\\\}\)
+=\(\\\{-4, 4\\\}\)
+~\(\\\{16\\\}\)
+~\(\emptyset\)
+####Las dos raíces\: \(\\\{-4, 4\\\}\).
+}
+
+::Q3::¿Cuál es el dominio de \(f(x) \= \frac\{1\}\{x - 2\}\)? {=R - \{2\}=x ≠ 2####Se excluye el 2\: \(\mathbb\{R\} - \\\{2\\\}\).}
+
+::Q4::Calculá \(f(3)\) si \(f(x) \= x^2 - 5\). {#4####\(3^2 - 5 \= 4\).}
+
+::Q5::Descomponé 60 en factores primos. {=2^2*3*5=2^2·3·5=2*2*3*5=2x2x3x5####\(60 \= 2^2 \cdot 3 \cdot 5\).}
+
+::Q6::¿Cuál es la negación de \(p ∧ q\)? {
+=\(¬p ∨ ¬q\)
+~\(¬p ∧ ¬q\)
+~\(p ∨ q\)
+~\(¬(p ∨ q)\)
+####Por De Morgan\: si \(a \\neq b\), se niega cada una y se cambia el conectivo.
+}
