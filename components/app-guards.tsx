@@ -4,12 +4,23 @@ import { FeedbackButton } from './feedback-button'
 import { OnboardingGate } from './onboarding-gate'
 import { QuizOverlay } from './quiz-overlay'
 import { Toaster } from '@/components/ui/toaster'
+import { usePendientesDeGuardado } from '@/hooks/use-pendientes-de-guardado'
+
+/**
+ * M1: cualquier pantalla reintenta, al cargar, los resultados que quedaron sin
+ * llegar al servidor (un alumno que terminó sin conexión y cerró la pestaña).
+ */
+function ReintentoDePendientes() {
+  usePendientesDeGuardado()
+  return null
+}
 
 export function AppGuards({ children }: { children: React.ReactNode }) {
   return (
     <OnboardingGate>
       {children}
       <QuizOverlay />
+      <ReintentoDePendientes />
       {/*
         Acá y no en el Navbar: este componente envuelve los dos grupos de rutas
         ((app) y (focus)), así que un solo montaje cubre docente, alumno e

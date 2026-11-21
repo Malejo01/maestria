@@ -94,6 +94,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({
       assignment: {
         id: Number(row.id),
+        // M1/M6: el cuestionario del docente (clave del borrador, contexto del reporte).
+        quizId: Number(row.quiz_id),
         // J5: un diagnóstico se rinde sin devolución hasta el final.
         tipo,
         classroomId: Number(row.classroom_id),

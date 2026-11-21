@@ -23,6 +23,7 @@ import { gradeShortAnswerLocally } from '@/lib/short-answer-autograde'
 import { cn } from '@/lib/utils'
 import type { Answer, Question, ShortAnswerQuestion } from '@/lib/types'
 import { aiCutoffMessage } from '@/lib/ai-cutoff-message'
+import { RetomarCuestionario, useBorradorParaRetomar, useDescartarBorrador, useGuardarBorrador, useRetomar } from './quiz-borrador'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,9 +52,29 @@ export function QuizEngine() {
   const currentQuestion = questions[currentIndex]
   // J5: el aviso de "esto es un diagnóstico" va antes de la primera pregunta.
   const [empezo, setEmpezo] = useState(false)
+  // M1: el borrador local se escribe después de cada respuesta, y si al abrir
+  // hay uno que sirve, se ofrece seguir donde estaba.
+  useGuardarBorrador()
+  const borrador = useBorradorParaRetomar()
+  const retomar = useRetomar()
+  const descartar = useDescartarBorrador()
+  const [borradorDescartado, setBorradorDescartado] = useState<string | null>(null)
 
   if (!currentQuestion) {
     return null
+  }
+
+  if (borrador && borradorDescartado !== borrador.actualizadoEl) {
+    return (
+      <RetomarCuestionario
+        borrador={borrador}
+        onSeguir={() => retomar(borrador, questions)}
+        onEmpezarDeNuevo={() => {
+          descartar(borrador)
+          setBorradorDescartado(borrador.actualizadoEl)
+        }}
+      />
+    )
   }
 
   const alFinal = currentQuiz.config?.devolucion === 'al_final' && !currentQuiz.config?.previewOnly

@@ -43,6 +43,7 @@ export function configDeTarea(quiz: TeacherQuiz): QuizConfig {
     mode: quiz.mode,
     questionCount: quiz.questionCount,
     pedagogyContext: quiz.pedagogyContext,
+    teacherQuizId: quiz.id,
     ...(quiz.tipo === 'diagnostico' ? { devolucion: 'al_final' as const } : {}),
   }
 }
