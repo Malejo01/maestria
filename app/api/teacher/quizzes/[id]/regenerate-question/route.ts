@@ -79,7 +79,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   try {
     const body = await req.json().catch(() => ({}))
     const questionIndex = Number(body?.questionIndex)
-    const rejectionNote = typeof body?.rejectionNote === 'string' ? body.rejectionNote.trim() : ''
+    const notaDelDocente = typeof body?.rejectionNote === 'string' ? body.rejectionNote.trim() : ''
+    // M2: "Pasar a opción múltiple" desde el aviso de una consigna que no
+    // encaja con su tipo. Es la MISMA consigna con opciones, no otra pregunta.
+    const convertirA = body?.convertirA === 'multiple_choice' ? ('multiple_choice' as const) : null
 
     const quizRows = (await sql`
       SELECT id, teacher_program_id, subject_name, mode, questions, pedagogy_context
@@ -102,6 +105,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     const objetivo = questions[questionIndex]
+    const rejectionNote = convertirA
+      ? `La consigna «${objetivo.question}» no encaja con su tipo de pregunta. Hacé la MISMA consigna, sobre lo mismo, como opción múltiple: el mismo enunciado (ajustá sólo la redacción si hace falta para que sea una pregunta), 4 opciones y una sola correcta. No cambies de tema ni de caso.`
+      : notaDelDocente
 
     const programRows = (await sql`
       SELECT id, units, nivel, grado, pedagogy_profile
@@ -137,7 +143,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       grado: program.grado ?? undefined,
       carrera,
       difficulty: 'intermedio',
-      explicitQuestionTypes: [objetivo.type as QuestionType],
+      explicitQuestionTypes: [convertirA ?? (objetivo.type as QuestionType)],
       rejectionNote: rejectionNote || undefined,
       // J3: la pregunta nueva también se parece al examen real del alumno.
       perfilAlumnos: await perfilSinRomper(teacher.id, Number(quiz.teacher_program_id)),
@@ -170,7 +176,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       ...result.questions[0],
       id: objetivo.id,
       origin: 'ai_regenerada' as const,
-      ...(rejectionNote ? { rejectionNote } : {}),
+      ...(notaDelDocente ? { rejectionNote: notaDelDocente } : {}),
     }
 
     // NO se guarda acá. El docente tiene que poder mirar la pregunta nueva y

@@ -260,3 +260,69 @@ describe('TeacherQuizReview · regenerar una pregunta', () => {
     expect(screen.getByText('Todo guardado')).toBeTruthy()
   })
 })
+
+describe('TeacherQuizReview · consigna que no encaja con su tipo (M2)', () => {
+  const clarita = {
+    id: 'q3',
+    topic: 't1',
+    topicName: 'Inecuaciones',
+    type: 'true_false' as const,
+    question:
+      'Si al resolver una inecuación lineal multiplicamos ambos miembros por un número negativo, ¿qué sucede con el sentido de la desigualdad?',
+    correctAnswer: true,
+    explanation: 'Se invierte.',
+  }
+
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            question: {
+              ...pregunta({ id: 'q3', question: '¿Qué sucede con el sentido de la desigualdad?', options: ['Se invierte', 'Se mantiene', 'Desaparece', 'Depende'] }),
+              origin: 'ai_regenerada',
+            },
+          }),
+          { status: 200 },
+        ),
+      ),
+    )
+  })
+
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+  })
+
+  it('muestra el aviso y "Pasar a opción múltiple" pide la misma consigna con opciones', async () => {
+    render(<TeacherQuizReview quiz={{ ...quiz, questions: [clarita] }} onClose={() => {}} onSaved={() => {}} />)
+
+    expect(screen.getByText('Esta consigna no encaja con su tipo')).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Pasar a opción múltiple' }))
+
+    const [url, init] = vi.mocked(fetch).mock.calls[0]
+    expect(url).toBe('/api/teacher/quizzes/42/regenerate-question')
+    expect(JSON.parse((init as RequestInit).body as string)).toMatchObject({ questionIndex: 0, convertirA: 'multiple_choice' })
+    // La propuesta se compara antes de aplicarse, como cualquier regeneración.
+    expect(await screen.findByText('Usar la nueva')).toBeTruthy()
+  })
+
+  it('"Editar" abre el editor de esa pregunta', async () => {
+    render(<TeacherQuizReview quiz={{ ...quiz, questions: [clarita] }} onClose={() => {}} onSaved={() => {}} />)
+    await userEvent.click(screen.getByRole('button', { name: 'Editar' }))
+    expect(screen.queryByText('Esta consigna no encaja con su tipo')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Terminar edición' })).toBeTruthy()
+  })
+
+  it('una afirmación bien escrita no muestra nada', () => {
+    render(
+      <TeacherQuizReview
+        quiz={{ ...quiz, questions: [{ ...clarita, question: 'El sentido de la desigualdad se invierte al multiplicar por un negativo.' }] }}
+        onClose={() => {}}
+        onSaved={() => {}}
+      />,
+    )
+    expect(screen.queryByText('Esta consigna no encaja con su tipo')).toBeNull()
+  })
+})

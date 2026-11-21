@@ -23,6 +23,7 @@ import type { AiSdkUsage } from '@/lib/ai-usage'
 import { normalizeQuestionText, numericSignature } from '@/lib/question-dedup'
 import { normalizarFraccionGenerada } from '@/lib/fraccion'
 import { pideMasDeUnValor } from '@/lib/consigna-multiple'
+import { corregirTipoDePregunta, MOTIVO_DE_PROBLEMA } from '@/lib/validar-tipo-de-pregunta'
 import {
   buildQuestionMixInstruction,
   mergeQuestionTypeMixes,
@@ -65,6 +66,9 @@ const shortAnswerQuestionSchema = z.object({
 
 const trueFalseQuestionSchema = z.object({
   ...baseQuestionFields,
+  // M2: lo ve el modelo en el esquema. No se valida acá (un refine tiraría la
+  // tanda entera): lo que se escape lo arregla `corregirTipoDePregunta`.
+  question: z.string().describe('Una AFIRMACIÓN que se pueda juzgar verdadera o falsa. Sin "¿" y sin "?" al final.'),
   type: z.literal('true_false'),
   correctAnswer: z.boolean(),
 })
@@ -127,7 +131,8 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - UNA CONSIGNA, UNA RESPUESTA: la pregunta pide exactamente un resultado. Si el tema tiene dos cálculos (por ejemplo media y mediana), hacé dos preguntas separadas.`,
   true_false: `TIPO "true_false":
 - type: "true_false"
-- correctAnswer: boolean (true o false)`,
+- correctAnswer: boolean (true o false)
+- question: una AFIRMACIÓN que se pueda juzgar, sin "¿" y sin "?" al final. Nunca una pregunta ("¿qué sucede…?", "¿cómo…?", "¿por qué…?"): no se contesta con Verdadero o Falso.`,
   numeric: `TIPO "numeric":
 - type: "numeric"
 - correctAnswer: number
@@ -1055,7 +1060,26 @@ situaciones diferentes.${rejectionBlock}`
   const runSignatures = new Set<string>()
 
   /** Returns true when the question is a duplicate, or a numeric one that asks for words, and should be dropped. */
-  const shouldDrop = (question: { question: string; topic?: string; topicName?: string; type?: string }): boolean => {
+  const shouldDrop = (question: { question: string; topic?: string; topicName?: string; type?: string; acceptedAnswers?: unknown }): boolean => {
+    // M2: el tipo tiene que encajar con la consigna. Lo que se arregla sin IA
+    // (un sí/no en orden sujeto-verbo, "el valor" de una inecuación) se
+    // reescribe acá mismo; lo demás se descarta y el bucle pide otra pregunta
+    // en la tanda siguiente (hasta tres tandas). Cada corrección deja su línea
+    // en el log para medir cuántas caen.
+    const correccion = corregirTipoDePregunta(question)
+    if (correccion.accion === 'regenerar') {
+      console.log(`[generate-quiz] Dropped (tipo incoherente: ${MOTIVO_DE_PROBLEMA[correccion.problema]}):`, question.question)
+      return true
+    }
+    if (correccion.accion === 'reescrita') {
+      if (correccion.problema === 'inecuacion-formas') {
+        console.log('[generate-quiz] Added the equivalent forms of a solution set:', question.question)
+      } else {
+        console.log(`[generate-quiz] Rewrote (tipo incoherente: ${MOTIVO_DE_PROBLEMA[correccion.problema]}):`, question.question, '→', correccion.cambios.question)
+      }
+      question.question = correccion.cambios.question
+      if (correccion.cambios.acceptedAnswers) question.acceptedAnswers = correccion.cambios.acceptedAnswers
+    }
     if (isConceptualNumericQuestion(question)) {
       console.log('[generate-quiz] Dropped a numeric question that asks for words:', question.question)
       return true

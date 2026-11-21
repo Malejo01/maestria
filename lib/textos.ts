@@ -707,6 +707,21 @@ export const REVISAR_TAREA = {
 } as const
 
 /** L5: cuántas preguntas y cuánto tiempo lleva una tarea. Los minutos salen de minutosEstimados (lib/diagnostico.ts). */
+/** M2: en *Revisar y editar*, una consigna que no encaja con su tipo. */
+export const TIPO_INCOHERENTE = {
+  aviso: 'Esta consigna no encaja con su tipo',
+  detalle: {
+    'vf-pregunta-si-no': 'Es verdadero o falso, pero está escrita como pregunta. Conviene una afirmación que se pueda juzgar.',
+    'vf-pregunta-abierta': 'Es verdadero o falso, pero pregunta algo que no se contesta con Verdadero o Falso.',
+    'numerica-conceptual': 'Es numérica, pero la respuesta es un concepto o un nombre, no un número.',
+    'inecuacion-como-valor': 'Pide "el valor" y la respuesta es un conjunto: conviene pedir el conjunto solución.',
+    'inecuacion-formas': '',
+  },
+  pasarAOpcionMultiple: 'Pasar a opción múltiple',
+  editar: 'Editar',
+  convirtiendo: 'Armando las opciones…',
+} as const
+
 export const TAMANO_DE_TAREA = (preguntas: number, minutos: number) =>
   `${preguntas === 1 ? '1 pregunta' : `${preguntas} preguntas`} · unos ${minutos} min`
 

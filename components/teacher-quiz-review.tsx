@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   Check,
+  ListChecks,
   Pencil,
   RefreshCw,
   Save,
@@ -37,7 +38,8 @@ import { leerRespuesta, type Fraccion } from '@/lib/fraccion'
 import type { Question, TeacherQuiz } from '@/lib/types'
 import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
 import { DialogoDeLimite } from '@/components/docente/pantalla-de-limite'
-import { TECLADO_MATEMATICO } from '@/lib/textos'
+import { TECLADO_MATEMATICO, TIPO_INCOHERENTE } from '@/lib/textos'
+import { problemaDeTipo } from '@/lib/validar-tipo-de-pregunta'
 
 /**
  * Revisión y edición de un cuestionario guardado, pregunta por pregunta.
@@ -182,14 +184,15 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
   // ─── Regeneración ──────────────────────────────────────────────────────────
 
   const pedirRegeneracion = useCallback(
-    async (index: number, nota: string) => {
+    async (index: number, nota: string, convertirA?: 'multiple_choice') => {
       setPidiendoMotivo(null)
       setRegenerando(index)
       try {
         const res = await fetch(`/api/teacher/quizzes/${quiz.id}/regenerate-question`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questionIndex: index, rejectionNote: nota.trim() || undefined }),
+          // M2: `convertirA` arma la MISMA consigna como opción múltiple.
+          body: JSON.stringify({ questionIndex: index, rejectionNote: nota.trim() || undefined, convertirA }),
         })
         const data = await res.json().catch(() => ({}))
 
@@ -354,6 +357,8 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
         {questions.map((q, index) => {
           const origen = origenDe(q)
           const enEdicion = editando === index
+          // M2: la consigna no encaja con su tipo (lib/validar-tipo-de-pregunta.ts).
+          const problema = problemaDeTipo(q)
 
           return (
             <li key={`${q.id}-${index}`}>
@@ -432,6 +437,38 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
                     </Button>
                   </div>
                 </div>
+
+                {problema && !enEdicion && (
+                  <div
+                    role="note"
+                    className="flex flex-col gap-2 rounded-md border border-flojo/40 bg-flojo-fondo p-3 sm:flex-row sm:items-center"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="flex items-center gap-1.5 text-sm font-semibold text-texto">
+                        <AlertTriangle className="h-4 w-4 shrink-0 text-flojo" aria-hidden="true" />
+                        {TIPO_INCOHERENTE.aviso}
+                      </p>
+                      <p className="text-xs text-texto-suave">{TIPO_INCOHERENTE.detalle[problema]}</p>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap gap-1">
+                      {q.type !== 'multiple_choice' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={regenerando !== null}
+                          onClick={() => pedirRegeneracion(index, '', 'multiple_choice')}
+                        >
+                          {regenerando === index ? <Cargando className="mr-1 h-4 w-4" /> : <ListChecks className="mr-1 h-4 w-4" />}
+                          {regenerando === index ? TIPO_INCOHERENTE.convirtiendo : TIPO_INCOHERENTE.pasarAOpcionMultiple}
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" onClick={() => setEditando(index)}>
+                        <Pencil className="mr-1 h-4 w-4" />
+                        {TIPO_INCOHERENTE.editar}
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {enEdicion ? (
                   <EditorDePregunta question={q} onChange={(cambios) => actualizar(index, cambios)} />

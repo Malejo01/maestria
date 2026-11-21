@@ -85,6 +85,10 @@ describe('isConceptualNumericQuestion', () => {
     '¿Cuántos divisores tiene el 36?',
     '¿Qué número es el menor múltiplo común de 4 y 6?',
     'Se reparten 45 caramelos y 30 chocolates en bolsas iguales. ¿Cuántas bolsas como máximo?',
+    // M2: falsos positivos que encontró scripts/qa/tipos-incoherentes.ts en staging.
+    'Si una sucesión se define por el término general $a_n = 3n - 2$, ¿cuál es el valor del tercer término, $a_3$?',
+    'En una parábola con ecuación $x^2 = 12y$, ¿cuál es el valor del parámetro $p$ que define la distancia del vértice al foco?',
+    'Según el Teorema Fundamental del Álgebra, ¿cuántas raíces complejas puede tener como máximo un polinomio de grado 3?',
   ])('deja pasar un cálculo: %s', (question) => {
     expect(isConceptualNumericQuestion(numeric(question))).toBe(false)
   })
