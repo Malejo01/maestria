@@ -5,6 +5,9 @@ import { QuizEngine } from './quiz-engine'
 import { useAppStore } from '@/lib/store'
 import type { QuizConfig, ShortAnswerQuestion } from '@/lib/types'
 
+// M1: el borrador local pide quién mira; acá sólo importa la corrección.
+vi.mock('@/hooks/use-viewer-id', () => ({ useViewerId: () => null }))
+
 /**
  * El fail-open de la corrección de respuestas cortas.
  *

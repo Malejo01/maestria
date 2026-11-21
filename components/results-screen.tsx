@@ -23,6 +23,10 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import { aiCutoffMessage } from '@/lib/ai-cutoff-message'
+import { usePendientesDeGuardado } from '@/hooks/use-pendientes-de-guardado'
+import { nuevoClientAttemptId } from '@/lib/guardado-pendiente'
+import { almacenDelNavegador, descartarBorrador, idDeBorrador } from '@/lib/borrador-cuestionario'
+import { EstadoDelGuardado } from './estado-del-guardado'
 
 /**
  * Los colores del papel picado, leídos de los tokens del modo activo. El
@@ -46,6 +50,7 @@ export function ResultsScreen() {
   const { data: session, status } = useSession()
   const isSignedIn = status === 'authenticated'
   const isAlumno = session?.user?.role === 'ALUMNO'
+  /** Se marca recién con el 200 del servidor (M1). */
   const hasSavedRef = useRef(false)
   /** El guardado del intento en curso, para esperarlo al salir (K4). */
   const guardadoRef = useRef<Promise<void> | null>(null)
@@ -79,49 +84,77 @@ export function ResultsScreen() {
     }
   }, [answers, questions])
 
-  // Save quiz result to database
+  // M1 · Guardar el resultado sin perderlo. Antes se marcaba como guardado
+  // ANTES de mandar, y un fetch fallido terminaba en console.error: el alumno
+  // veía su nota y el docente nunca veía el intento. Ahora el resultado va a
+  // una cola (lib/guardado-pendiente.ts) que lo deja en localStorage hasta el
+  // 200, reintenta con espera creciente y al volver la conexión, y manda
+  // siempre el mismo `clientAttemptId` para que reintentar no cree dos intentos.
+  const { cola, viewerId } = usePendientesDeGuardado()
+  // Se genera una sola vez, antes del primer envío, y viaja en cada reintento.
+  const [clientAttemptId] = useState(() => nuevoClientAttemptId())
+  const encoladoRef = useRef(false)
+  const estadoDeGuardado = cola ? cola.estado(clientAttemptId) : undefined
+
   useEffect(() => {
     // Guests have no NextAuth session but do carry a signed aula cookie, so a
     // quiz run inside an aula still saves — the API validates the identity.
     const isAulaQuiz = Boolean(config?.classroomId || config?.assignmentId)
     // A teacher trying out their own quiz is not an attempt worth recording.
     if (config?.previewOnly) return
-    if ((!isSignedIn && !isAulaQuiz) || hasSavedRef.current || !config || answers.length === 0) return
+    if ((!isSignedIn && !isAulaQuiz) || encoladoRef.current || !config || answers.length === 0) return
+    if (!cola || !viewerId) return
+    encoladoRef.current = true
 
-    hasSavedRef.current = true
+    const quedoEscrito = cola.encolar(clientAttemptId, {
+      subject: config.subjectName,
+      mode: config.mode,
+      topics: config.topics,
+      totalQuestions: questions.length,
+      correctAnswers: results.correct,
+      // El server necesita las tres cifras por separado: con sólo
+      // `total - correct` volvería a contar las sin calificar como
+      // errores, que es el bug que estamos sacando.
+      ungradedAnswers: results.ungradedAnswers.length,
+      score: results.score,
+      classroomId: config.classroomId ?? null,
+      assignmentId: config.assignmentId ?? null,
+      answers: answers.map(a => ({
+        ...a,
+        explanation: a.explanation || '',
+        topicName: a.topicName || ''
+      }))
+    })
 
-    const saveResult = async () => {
-      try {
-        await fetch('/api/quiz/save-result', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            subject: config.subjectName,
-            mode: config.mode,
-            topics: config.topics,
-            totalQuestions: questions.length,
-            correctAnswers: results.correct,
-            // El server necesita las tres cifras por separado: con sólo
-            // `total - correct` volvería a contar las sin calificar como
-            // errores, que es el bug que estamos sacando.
-            ungradedAnswers: results.ungradedAnswers.length,
-            score: results.score,
-            classroomId: config.classroomId ?? null,
-            assignmentId: config.assignmentId ?? null,
-            answers: answers.map(a => ({
-              ...a,
-              explanation: a.explanation || '',
-              topicName: a.topicName || ''
-            }))
-          })
-        })
-      } catch (error) {
-        console.error('Error saving quiz result:', error)
+    // El borrador ya no hace falta: el trabajo quedó en el pendiente, que se
+    // reintenta solo. Borrarlo evita que al volver a abrir la tarea se ofrezca
+    // "seguir" un cuestionario terminado y salga un segundo intento. Si el
+    // pendiente no se pudo escribir (almacén lleno o bloqueado), el borrador se
+    // queda hasta el 200 (ver abajo).
+    const idBorrador = idDeBorrador(config)
+    if (quedoEscrito && idBorrador) descartarBorrador(almacenDelNavegador(), viewerId, idBorrador)
+
+    // K4: "Continuar" y "Ver historial" esperan (hasta 5 s) el primer desenlace.
+    guardadoRef.current = new Promise<void>((resolve) => {
+      const revisar = () => {
+        const estado = cola.estado(clientAttemptId)
+        if (estado && estado.tipo !== 'guardando') {
+          desuscribir()
+          resolve()
+        }
       }
-    }
-    
-    guardadoRef.current = saveResult()
-  }, [isSignedIn, config, answers, questions.length, results.correct, results.score])
+      const desuscribir = cola.suscribir(revisar)
+      revisar()
+    })
+  }, [isSignedIn, config, answers, questions.length, results.correct, results.score, results.ungradedAnswers.length, cola, viewerId, clientAttemptId])
+
+  // Con el 200, también se va el borrador (el caso en que no se pudo escribir el pendiente).
+  useEffect(() => {
+    if (estadoDeGuardado?.tipo !== 'guardado' || !viewerId) return
+    hasSavedRef.current = true
+    const idBorrador = idDeBorrador(config)
+    if (idBorrador) descartarBorrador(almacenDelNavegador(), viewerId, idBorrador)
+  }, [estadoDeGuardado?.tipo, viewerId, config])
 
   // El papel picado al aprobar: la única animación decorativa de la app y la
   // única que no es de Framer Motion, así que no puede usar useReducedMotion().
@@ -349,6 +382,8 @@ export function ResultsScreen() {
       {/* Main Content */}
       {/* Con ancho máximo: a 1280 px las tarjetas medían la ventana entera. */}
       <main className="relative z-10 mx-auto w-full max-w-2xl space-y-5 px-4 pb-[calc(9rem+env(safe-area-inset-bottom))]">
+        <EstadoDelGuardado estado={estadoDeGuardado} onReintentar={() => cola?.reintentarTodos()} />
+
         {/* Score Card */}
         <Card className={cn(
           'p-6 text-center border-2 overflow-hidden relative rounded-3xl',

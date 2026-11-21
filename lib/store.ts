@@ -47,6 +47,8 @@ interface AppState {
   clearSelectedTopics: () => void
   startQuiz: (config: QuizConfig, questions: Question[]) => void
   startQuizPreview: (config: QuizConfig, questions: Question[]) => void
+  /** M1: vuelve a abrir un cuestionario donde quedó (borrador local). */
+  retomarQuiz: (quiz: { config: QuizConfig; questions: Question[]; answers: Answer[]; currentIndex: number; startedAt: string | null }) => void
   answerQuestion: (answer: Answer) => void
   nextQuestion: () => void
   previousQuestion: () => void
@@ -145,6 +147,17 @@ export const useAppStore = create<AppState>()(
           currentIndex: 0,
           answers: [],
           startedAt: new Date().toISOString()
+        },
+        activeView: 'quiz'
+      }),
+
+      retomarQuiz: ({ config, questions, answers, currentIndex, startedAt }) => set({
+        currentQuiz: {
+          config,
+          questions: normalizeQuestions(questions),
+          currentIndex,
+          answers,
+          startedAt: startedAt ?? new Date().toISOString()
         },
         activeView: 'quiz'
       }),

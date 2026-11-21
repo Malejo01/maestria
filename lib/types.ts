@@ -136,6 +136,14 @@ export interface QuizConfig {
   /** Set only for an assigned cuestionario; enforces the deadline and attempt cap. */
   assignmentId?: number
   /**
+   * M1/M6: el cuestionario guardado del docente del que salen las preguntas,
+   * si sale de uno. Lo usan la clave del borrador local y el contexto del
+   * botón de reportar. Ausente en la práctica libre (preguntas generadas).
+   */
+  teacherQuizId?: number
+  /** M1: cuándo vence la tarea, para descartar un borrador de una tarea vencida. */
+  dueAt?: string | null
+  /**
    * J5: cuándo ve el alumno si acertó. `inmediata` (lo de siempre): después de
    * cada respuesta, con la explicación. `al_final`: de corrido, sin devolución,
    * y todo junto en la pantalla de resultados. El diagnóstico usa `al_final`:

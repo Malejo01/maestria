@@ -5,6 +5,20 @@ import { getViewer } from '@/lib/auth-session'
 import { ASSIGNMENT_STATE_LABEL, assignmentState, canStartAssignment } from '@/lib/classrooms'
 import { captureRouteFailure } from '@/lib/observability'
 import { destinatarioDeFila, visibleParaAlumno } from '@/lib/destinatario'
+import { buscarIntentoPrevio, esDuplicado, limpiarClientAttemptId, type IntentoPrevio } from '@/lib/intento-idempotente-server'
+
+/** M1: la respuesta de un intento que ya estaba guardado (reintento del mismo resultado). */
+function respuestaDeIntentoPrevio(intento: IntentoPrevio) {
+  return NextResponse.json({
+    success: true,
+    quizAttemptId: intento.quizAttemptId,
+    classroomId: intento.classroomId,
+    assignmentId: intento.assignmentId,
+    attemptNumber: intento.attemptNumber,
+    duplicado: true,
+    message: 'Resultado ya guardado',
+  })
+}
 
 /**
  * Validates that this student may submit an attempt for an assigned quiz, and
@@ -94,6 +108,19 @@ export async function POST(req: Request) {
 
     const cleanSubject = subject || 'Matemática'
 
+    // M1: un reintento del mismo resultado (mismo `clientAttemptId`) devuelve
+    // el intento que ya estaba, sin insertar otro. Va ANTES de revisar la
+    // ventana y el cupo: el primer envío pudo haber gastado el último intento,
+    // y el reintento tiene que recibir 200, no "sin intentos". Sin la 029
+    // (`sin-columna`), el id se ignora y se guarda como siempre.
+    const clientAttemptId = limpiarClientAttemptId(body?.clientAttemptId)
+    let guardarClientAttemptId = false
+    if (clientAttemptId) {
+      const previo = await buscarIntentoPrevio(userId, clientAttemptId)
+      if (previo.tipo === 'existe') return respuestaDeIntentoPrevio(previo.intento)
+      guardarClientAttemptId = previo.tipo === 'nuevo'
+    }
+
     // Attempts made inside an aula carry the link; free practice doesn't.
     const rawAssignmentId = Number(body?.assignmentId)
     const hasAssignment = Number.isFinite(rawAssignmentId) && rawAssignmentId > 0
@@ -159,27 +186,50 @@ export async function POST(req: Request) {
       ? topics.map((t) => (typeof t === 'string' ? t : String(t?.name || t?.id || '')))
       : [typeof topics === 'string' ? topics : String(topics?.name || topics?.id || '')]
 
-    // 3. Crear el quiz_attempt
+    // 3 y 4. El intento y sus respuestas, juntos o nada (M1). Antes eran
+    // consultas sueltas: si la conexión se cortaba a mitad, quedaba un intento
+    // con la mitad de las respuestas, y con el reintento idempotente ese
+    // intento a medias pasaría por bueno. El id se reserva primero porque las
+    // consultas de una transacción del driver HTTP no se pasan resultados.
     debugLog('[v0] Creating quiz attempt...')
-    const quizAttempt = await sql`
-      INSERT INTO quiz_attempts (
-        user_id, subject, mode, topics, total_questions,
-        correct_answers, incorrect_answers, ungraded_answers, score, passed,
-        classroom_id, assignment_id, attempt_number,
-        started_at, completed_at
-      )
-      VALUES (
-        ${userId}, ${cleanSubject}, ${mode}, ${topicsStrings}, ${totalQuestions},
-        ${correctAnswers}, ${incorrectAnswers}, ${ungradedAnswers}, ${score}, ${passed},
-        ${classroomId}, ${assignmentId}, ${attemptNumber},
-        NOW(), NOW()
-      )
-      RETURNING id
-    `
-    const quizAttemptId = quizAttempt[0].id
-    debugLog('[v0] Quiz attempt created with ID:', quizAttemptId)
+    const reservado = (await sql`
+      SELECT nextval(pg_get_serial_sequence('quiz_attempts', 'id'))::int AS id
+    `) as { id: number }[]
+    const quizAttemptId = Number(reservado[0].id)
 
-    // 4. Guardar cada respuesta. multiple_choice sigue escribiendo las columnas
+    const consultas = [
+      guardarClientAttemptId
+        ? sql`
+            INSERT INTO quiz_attempts (
+              id, user_id, subject, mode, topics, total_questions,
+              correct_answers, incorrect_answers, ungraded_answers, score, passed,
+              classroom_id, assignment_id, attempt_number,
+              started_at, completed_at, client_attempt_id
+            )
+            VALUES (
+              ${quizAttemptId}, ${userId}, ${cleanSubject}, ${mode}, ${topicsStrings}, ${totalQuestions},
+              ${correctAnswers}, ${incorrectAnswers}, ${ungradedAnswers}, ${score}, ${passed},
+              ${classroomId}, ${assignmentId}, ${attemptNumber},
+              NOW(), NOW(), ${clientAttemptId}
+            )
+          `
+        : sql`
+            INSERT INTO quiz_attempts (
+              id, user_id, subject, mode, topics, total_questions,
+              correct_answers, incorrect_answers, ungraded_answers, score, passed,
+              classroom_id, assignment_id, attempt_number,
+              started_at, completed_at
+            )
+            VALUES (
+              ${quizAttemptId}, ${userId}, ${cleanSubject}, ${mode}, ${topicsStrings}, ${totalQuestions},
+              ${correctAnswers}, ${incorrectAnswers}, ${ungradedAnswers}, ${score}, ${passed},
+              ${classroomId}, ${assignmentId}, ${attemptNumber},
+              NOW(), NOW()
+            )
+          `,
+    ]
+
+    // Cada respuesta. multiple_choice sigue escribiendo las columnas
     // legacy (options/selected_answer/correct_answer) para no romper lectores
     // existentes; el resto usa answer_payload (ver migracion 013).
     debugLog('[v0] Saving', answers.length, 'answers...')
@@ -223,7 +273,7 @@ export async function POST(req: Request) {
       // errores — ver el porqué en scripts/021-ungraded-answers.sql.
       const isCorrectColumn = answer.gradingStatus === 'ungraded' ? null : answer.isCorrect
 
-      await sql`
+      consultas.push(sql`
         INSERT INTO quiz_answers (
           quiz_attempt_id,
           question_index,
@@ -253,8 +303,22 @@ export async function POST(req: Request) {
           ${answer.topicName || ''},
           NOW()
         )
-      `
+      `)
     }
+
+    try {
+      await sql.transaction(consultas)
+    } catch (error) {
+      // Dos envíos del mismo resultado al mismo tiempo: el índice único de la
+      // 029 frena al segundo, que devuelve el que ganó.
+      if (clientAttemptId && guardarClientAttemptId && esDuplicado(error)) {
+        const ganador = await buscarIntentoPrevio(userId, clientAttemptId)
+        if (ganador.tipo === 'existe') return respuestaDeIntentoPrevio(ganador.intento)
+        return NextResponse.json({ error: 'Ese resultado ya se guardó desde otra cuenta.' }, { status: 409 })
+      }
+      throw error
+    }
+    debugLog('[v0] Quiz attempt created with ID:', quizAttemptId)
     debugLog('[v0] All answers saved')
 
     // 5. Actualizar topic_mastery si la nota es >= 6

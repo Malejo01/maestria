@@ -188,6 +188,8 @@ export default function MisAulasPage() {
           pedagogyContext: assignment.pedagogyContext,
           classroomId: classroom.id,
           assignmentId: assignment.id,
+          teacherQuizId: assignment.quizId,
+          dueAt: assignment.dueAt ?? null,
           // J5: el diagnóstico se rinde de corrido; la devolución, al final.
           devolucion: assignment.tipo === 'diagnostico' ? 'al_final' : 'inmediata',
         },

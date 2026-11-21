@@ -10,6 +10,7 @@ import { TeacherQuizGenerated } from '@/components/teacher-quiz-generated'
 import { LoadingScreen } from '@/components/loading-screen'
 import { useToast } from '@/hooks/use-toast'
 import type { Question } from '@/lib/types'
+import { BorradorDePractica } from '@/components/quiz-borrador'
 
 export default function PracticarPage() {
   const { startQuiz, setTeacherSection } = useAppStore()
@@ -135,11 +136,15 @@ export default function PracticarPage() {
   }
 
   return (
-    <CurriculumSelector
-      onStartQuiz={handleStartQuiz}
-      onCancel={() => router.push('/')}
-      initialNivel={!isDocente ? (session?.user?.nivel as Nivel | null) : null}
-      initialGrado={!isDocente ? session?.user?.grado : null}
-    />
+    <>
+      <CurriculumSelector
+        onStartQuiz={handleStartQuiz}
+        onCancel={() => router.push('/')}
+        initialNivel={!isDocente ? (session?.user?.nivel as Nivel | null) : null}
+        initialGrado={!isDocente ? session?.user?.grado : null}
+      />
+      {/* M1: la práctica a medio hacer se ofrece antes de generar otra. */}
+      <BorradorDePractica />
+    </>
   )
 }

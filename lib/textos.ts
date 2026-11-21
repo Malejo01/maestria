@@ -1038,3 +1038,29 @@ export const PRECIOS = {
     'Precios en pesos argentinos.',
   ],
 } as const
+
+/** M1: el cuestionario a medio hacer y el guardado del resultado. */
+export const CUESTIONARIO_EMPEZADO = {
+  titulo: 'Tenés un cuestionario empezado',
+  progreso: (respondidas: number, total: number) =>
+    `${respondidas} de ${total} ${total === 1 ? 'respondida' : 'respondidas'}`,
+  detalle: 'Quedó guardado en este dispositivo. Podés seguir desde la pregunta donde estabas.',
+  seguir: 'Seguir donde estaba',
+  empezarDeNuevo: 'Empezar de nuevo',
+  confirmar: {
+    titulo: '¿Empezás de nuevo?',
+    detalle: 'Se borra lo que respondiste y arrancás desde la primera pregunta. No se puede deshacer.',
+    si: 'Sí, empezar de nuevo',
+    no: 'Volver',
+  },
+  /** /practicar: la práctica libre a medio hacer. */
+  practica: (materia: string) => `Práctica de ${materia}`,
+} as const
+
+export const GUARDADO_DEL_RESULTADO = {
+  guardando: 'Guardando…',
+  guardado: 'Guardado',
+  sinConexion: 'Sin conexión: lo guardamos apenas vuelva internet',
+  error: (mensaje: string) => `No se pudo guardar: ${mensaje}`,
+  reintentar: 'Reintentar ahora',
+} as const
