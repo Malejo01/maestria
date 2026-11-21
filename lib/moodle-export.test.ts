@@ -123,7 +123,7 @@ describe('moodle export GIFT', () => {
     expect(gift).toContain('::Q1::¿Qué vale 2\\:1? Usa \\{a,b\\} \\~ \\= \\# y \\(x^2\\) y \\[\\frac\\{1\\}\\{2\\}\\]. {')
     expect(gift).toContain('=Correcta con \\= y \\{texto\\}')
     expect(gift).toContain('~Incorrecta con \\~ y \\#')
-    expect(gift).toContain('#### La respuesta correcta usa la razón \\(x^2\\) y la fracción \\[\\frac\\{1\\}\\{2\\}\\].')
+    expect(gift).toContain('####La respuesta correcta usa la razón \\(x^2\\) y la fracción \\[\\frac\\{1\\}\\{2\\}\\].')
   })
 
   it('limits the exported category to five selected topics and builds a safe file name', () => {
@@ -193,9 +193,12 @@ describe('moodle export GIFT', () => {
       })
     )
 
-    expect(gift).toContain('{FALSE}')
-    expect(gift).toContain('{#6:0.5}')
-    expect(gift).toContain('{=célula=la célula}')
+    // M5: la retroalimentación va ADENTRO de las llaves; antes iba después de
+    // `}` y Moodle la mostraba como parte del enunciado.
+    expect(gift).toContain('{FALSE####No todos los límites existen.}')
+    expect(gift).toContain('{#6:0.5####La derivada es \\(2x\\), evaluada en 3 da 6.}')
+    expect(gift).toContain('{=célula=la célula####La célula es la unidad básica de la vida.}')
+    expect(gift).not.toMatch(/\}\n####/)
     expect((gift.match(/::Q\d+::/g) ?? []).length).toBe(3)
   })
 
@@ -292,9 +295,9 @@ describe('moodle export GIFT', () => {
     expect(gift).toContain('\\end\\{cases\\}')
     expect(gift).toContain('=2')
     expect(gift).toContain('~0')
-    expect(gift).toContain('#### Factorizando se obtiene')
-    expect(gift).toContain('#### Aplicando la regla de la potencia')
-    expect(gift).toContain('#### Una primitiva de')
+    expect(gift).toContain('####Factorizando se obtiene')
+    expect(gift).toContain('####Aplicando la regla de la potencia')
+    expect(gift).toContain('####Una primitiva de')
     expect(gift).not.toContain('$$')
   })
 
@@ -333,11 +336,15 @@ describe('moodle export GIFT', () => {
 
     expect((gift.match(/::Q\d+::/g) ?? []).length).toBe(2)
     expect(gift).toContain('\\frac\\{\\sqrt\\{x+2\\}\\}\\{\\ln(x-3)\\}')
-    expect(gift).toContain('#### Para el logaritmo, necesitamos \\(x-3 > 0\\).')
+    expect(gift).toContain('####Para el logaritmo, necesitamos \\(x-3 > 0\\).')
     expect(gift).toContain('}\n\n::Q2::Encuentre la ecuación de la recta')
   })
 
-  it('does not double-escape pre-escaped LaTeX set notation in answers', () => {
+  // M5: este test fijaba el defecto. `\{3, …\}` con UN escape llega a Moodle
+  // como `{3, …}`, que LaTeX lee como agrupación: el alumno veía "3, -5/3" sin
+  // llaves. Las llaves de conjunto adentro de LaTeX van con `\\\{` (llega `\{`);
+  // las de agrupación (`\frac{5}{3}`) siguen con uno.
+  it('escapes LaTeX set braces so they reach Moodle as \\{ … \\}', () => {
     const gift = convertQuizToGift(
       makeQuiz({
         questions: [
@@ -361,8 +368,7 @@ describe('moodle export GIFT', () => {
       })
     )
 
-    expect(gift).toContain('=\\(\\{3, -\\frac\\{5\\}\\{3\\}\\}\\)')
-    expect(gift).not.toContain('=\\(\\\\{3, -\\frac')
-    expect(gift).not.toContain('~\\(\\\\{ \\frac')
+    expect(gift).toContain('=\\(\\\\\\{3, -\\frac\\{5\\}\\{3\\}\\\\\\}\\)')
+    expect(gift).toContain('~\\(\\\\\\{ \\frac\\{5\\}\\{3\\}, 7\\\\\\}\\)')
   })
 })

@@ -25,10 +25,74 @@ function normalizeLogicalNotation(text: string): string {
     .replace(/(^|[\s(])eg(?=[a-zA-Z(])/gi, '$1¬')
 }
 
+/** Los caracteres que GIFT lee como estructura (y que `\` vuelve literales). */
+const GIFT_ESPECIALES = '~=#{}:'
+
+/**
+ * M5 · Lo que va DENTRO de `\( … \)` o `\[ … \]`.
+ *
+ * El lector de Moodle resuelve primero `\\` (→ `\`) y después `\{`, `\}`,
+ * `\:`, `\#`, `\=`, `\~` y `\n` (→ el carácter, o un salto de línea). En
+ * LaTeX eso rompe tres cosas que el escape de antes no veía:
+ *
+ *  - `\{1, 2\}` (las llaves de un conjunto) llegaba como `{1, 2}`: LaTeX las
+ *    toma como agrupación y el alumno veía "1, 2" sin llaves. Ahora sale
+ *    `\\\{` (el `\\` deja una barra, el `\{` deja la llave): llega `\{`.
+ *  - un comando que empieza con `n` (`\neq`, `\notin`, `\nabla`) llegaba como
+ *    salto de línea + "eq". Ahora sale `\\neq`: llega `\neq`.
+ *  - `\\` (salto de línea de LaTeX) llegaba como una sola barra.
+ *
+ * Las llaves de agrupación (`\frac{a}{b}`, `\mathbb{N}`) siguen con un solo
+ * escape, como siempre: `\frac\{a\}\{b\}` llega `\frac{a}{b}`.
+ */
+function escapeLatexForGift(expr: string): string {
+  let out = ''
+  for (let i = 0; i < expr.length; i += 1) {
+    const c = expr[i]
+    if (c === '\\') {
+      const next = expr[i + 1]
+      if (next !== undefined && GIFT_ESPECIALES.includes(next)) {
+        out += `\\\\\\${next}`
+        i += 1
+      } else if (next === '\\') {
+        out += '\\\\\\\\'
+        i += 1
+      } else if (next === 'n') {
+        out += '\\\\n'
+        i += 1
+      } else {
+        out += c
+      }
+    } else if (GIFT_ESPECIALES.includes(c)) {
+      out += `\\${c}`
+    } else {
+      out += c
+    }
+  }
+  return out
+}
+
+/** Texto común (fuera de LaTeX): se escapa lo que GIFT lee como estructura. */
+function escapePlainForGift(text: string): string {
+  return text.replace(/(?<!\\)([~=#{}:])/g, '\\$1')
+}
+
+const SEGMENTO_LATEX = /(\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\])/
+
 function escapeGiftText(text: string): string {
-  return normalizeMathJaxDelimiters(normalizeLogicalNotation(text))
+  const normalizado = normalizeMathJaxDelimiters(normalizeLogicalNotation(text))
     .replace(/\r\n/g, '\n')
-    .replace(/(?<!\\)([~=#{}:])/g, '\\$1')
+    // Una línea en blanco termina la pregunta en GIFT: se juntan.
+    .replace(/\n\s*\n+/g, '\n')
+  return normalizado
+    .split(SEGMENTO_LATEX)
+    .map((parte, i) => {
+      if (i % 2 === 0) return escapePlainForGift(parte)
+      const abre = parte.slice(0, 2)
+      const cierra = parte.slice(-2)
+      return `${abre}${escapeLatexForGift(parte.slice(2, -2))}${cierra}`
+    })
+    .join('')
     .trim()
 }
 
@@ -48,21 +112,44 @@ function extractTopicNames(quiz: TeacherQuiz): string[] {
   return Array.from(new Set(fromQuestions)).slice(0, MAX_CATEGORY_TOPICS)
 }
 
+/** Moodle admite 255 por tramo; se deja margen para lo que agrega al importar. */
+export const MAX_TRAMO_DE_CATEGORIA = 120
+
+/** Corta en palabra, sin pasarse del máximo. */
+function recortarEnPalabra(texto: string, maximo = MAX_TRAMO_DE_CATEGORIA): string {
+  if (texto.length <= maximo) return texto
+  const corte = texto.slice(0, maximo + 1)
+  const espacio = Math.max(corte.lastIndexOf(' '), corte.lastIndexOf('-'))
+  return (espacio > maximo / 2 ? corte.slice(0, espacio) : texto.slice(0, maximo)).replace(/[\s-]+$/, '')
+}
+
+/**
+ * M5: cada tramo, hasta 120 caracteres. El 20/11 un cuestionario de
+ * Matemática 1 con cinco temas largos dio un tramo de 300 y Moodle (que admite
+ * 255) lo rechazó. Si los temas no entran, el tramo es "Varios temas".
+ */
 function buildCategoryPath(quiz: TeacherQuiz): string {
-  const subject = sanitizePathSegment(quiz.subjectName) || 'Materia'
+  const subject = recortarEnPalabra(sanitizePathSegment(quiz.subjectName) || 'Materia')
   const topicNames = extractTopicNames(quiz)
 
   if (topicNames.length === 0) {
     return `$course$/${subject}`
   }
 
-  return `$course$/${subject}/${topicNames.join('-')}`
+  const temas = topicNames.join('-')
+  const tramo = temas.length <= MAX_TRAMO_DE_CATEGORIA ? temas : topicNames.length === 1 ? recortarEnPalabra(temas) : 'Varios temas'
+  return `$course$/${subject}/${tramo}`
 }
 
+/**
+ * La retroalimentación general, `####texto`, va ADENTRO de las llaves, al
+ * final de las respuestas: `{TRUE####texto}`, `{#4####texto}`,
+ * `{=a=b####texto}`. M5: en verdadero o falso, numéricas, respuesta corta y
+ * factorización iba DESPUÉS de `}`, y Moodle toma lo que sigue a la llave como
+ * enunciado: el alumno veía "#### …" y no había retroalimentación.
+ */
 function buildFeedback(question: Question): string {
-  return question.explanation.trim().length > 0
-    ? `\n#### ${escapeGiftText(question.explanation)}`
-    : ''
+  return question.explanation.trim().length > 0 ? `####${escapeGiftText(question.explanation)}` : ''
 }
 
 function buildMultipleChoiceBlock(questionTitle: string, questionText: string, question: Extract<Question, { type: 'multiple_choice' }>, index: number): string {
@@ -77,7 +164,8 @@ function buildMultipleChoiceBlock(questionTitle: string, questionText: string, q
     return `${prefix}${escapeGiftText(option)}`
   })
 
-  return `::${questionTitle}::${questionText} {\n${options.join('\n')}${buildFeedback(question)}\n}`
+  const feedback = buildFeedback(question)
+  return `::${questionTitle}::${questionText} {\n${options.join('\n')}${feedback ? `\n${feedback}` : ''}\n}`
 }
 
 function buildQuestionBlock(question: Question, index: number): string {
@@ -88,7 +176,7 @@ function buildQuestionBlock(question: Question, index: number): string {
     case 'multiple_choice':
       return buildMultipleChoiceBlock(questionTitle, questionText, question, index)
     case 'true_false':
-      return `::${questionTitle}::${questionText} {${question.correctAnswer ? 'TRUE' : 'FALSE'}}${buildFeedback(question)}`
+      return `::${questionTitle}::${questionText} {${question.correctAnswer ? 'TRUE' : 'FALSE'}${buildFeedback(question)}}`
     case 'numeric': {
       // K1: acá NO va `formatearNumero`. GIFT exige punto decimal en la
       // respuesta numérica (`{#0.75:0.01}`); Moodle muestra el número en el
@@ -104,21 +192,21 @@ function buildQuestionBlock(question: Question, index: number): string {
         const potencias = (sep: string) => factores.map((p) => (p.exponente === 1 ? `${p.base}` : `${p.base}^${p.exponente}`)).join(sep)
         const sueltos = (sep: string) => factores.flatMap((p) => Array(p.exponente).fill(String(p.base))).join(sep)
         const formas = [...new Set([potencias('*'), potencias('·'), sueltos('*'), sueltos('x')])]
-        return `::${questionTitle}::${questionText} {${formas.map((f) => `=${escapeGiftText(f)}`).join('')}}${buildFeedback(question)}`
+        return `::${questionTitle}::${questionText} {${formas.map((f) => `=${escapeGiftText(f)}`).join('')}${buildFeedback(question)}}`
       }
       const valor = Number(question.correctAnswer)
       const periodica = Boolean(question.fraccion) && !question.tolerance && Math.abs(valor * 1e4 - Math.round(valor * 1e4)) > 1e-6
       const numero = periodica ? Number(valor.toFixed(4)) : question.correctAnswer
       const margen = question.tolerance || (periodica ? 0.0001 : 0)
       const tolerance = margen ? `:${margen}` : ''
-      return `::${questionTitle}::${questionText} {#${numero}${tolerance}}${buildFeedback(question)}`
+      return `::${questionTitle}::${questionText} {#${numero}${tolerance}${buildFeedback(question)}}`
     }
     case 'short_answer': {
       if (question.acceptedAnswers.length === 0) {
         throw new Error(`La pregunta ${index + 1} no tiene respuestas aceptadas validas.`)
       }
       const alternates = question.acceptedAnswers.map((answer) => `=${escapeGiftText(answer)}`).join('')
-      return `::${questionTitle}::${questionText} {${alternates}}${buildFeedback(question)}`
+      return `::${questionTitle}::${questionText} {${alternates}${buildFeedback(question)}}`
     }
   }
 }
