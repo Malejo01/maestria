@@ -604,8 +604,8 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
           )}
 
           <p className="text-sm text-muted-foreground">
-            Guardar como copia deja el original intacto con los intentos ya rendidos, y hace que las
-            aulas pasen a usar la versión corregida de acá en adelante. Las notas ya puestas no se
+            Guardar como copia deja el original intacto con los intentos ya rendidos, y hace que los
+            grupos pasen a usar la versión corregida de acá en adelante. Las notas ya puestas no se
             mueven.
           </p>
 

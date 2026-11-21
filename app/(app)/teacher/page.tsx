@@ -1,14 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { Boton } from '@/components/sistema/boton'
 import { HitosOnboarding } from '@/components/docente/hitos-onboarding'
 import { MisAlumnos } from '@/components/docente/mis-alumnos'
 import { MIS_GRUPOS } from '@/lib/textos'
 import { MisGrupos } from '@/components/docente/mis-grupos'
 import { cn } from '@/lib/utils'
-import { ChevronRight } from 'lucide-react'
-import { TeacherClassrooms } from '@/components/teacher-classrooms'
 import { MisMaterias } from '@/components/docente/mis-materias'
 import { MisTareas } from '@/components/docente/mis-tareas'
 import { usePanelDocente } from '@/components/docente/use-panel-docente'
@@ -38,8 +35,6 @@ export default function TeacherPage() {
     agregarDesdeLaUrl,
     agregarAlumno,
     setAgregarAlumno,
-    gruposAbiertos,
-    setGruposAbiertos,
     vista,
     setShowOnboardingModal,
     userProfile,
@@ -117,48 +112,7 @@ export default function TeacherPage() {
                 alCambiarAlumnos={() => panel.setVersion((v) => v + 1)}
               />
             ) : (
-              <>
-                <MisGrupos materias={teacherPrograms} alCambiar={() => panel.setVersion((v) => v + 1)} />
-
-                {/* La gestión por grupo de la versión anterior (notas por alumno,
-                    regenerar el código, exportar) sigue acá, plegada. */}
-                <section className="rounded-lg border border-borde bg-superficie-tarjeta p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h2 className="cuerpo text-texto">{MIS_GRUPOS.gestion.titulo}</h2>
-                      <p className="nota text-texto-suave">{MIS_GRUPOS.gestion.detalle}</p>
-                    </div>
-                    <Boton
-                      variante="secundario"
-                      aria-expanded={gruposAbiertos}
-                      onClick={() => setGruposAbiertos((abierto) => !abierto)}
-                    >
-                      {gruposAbiertos ? MIS_GRUPOS.gestion.ocultar : MIS_GRUPOS.gestion.mostrar}
-                    </Boton>
-                  </div>
-
-                  {gruposAbiertos && (
-                    <div className="mt-4 space-y-4">
-                      {/* El diagnóstico del 10/08 no se tomó dentro de un aula, así que
-                          no aparece en el seguimiento de ninguna. */}
-                      <Link
-                        href="/teacher/diagnostico"
-                        className="flex items-center justify-between gap-3 rounded-lg border border-borde p-4 hover:border-borde-fuerte"
-                      >
-                        <span className="min-w-0">
-                          <span className="cuerpo-s block font-bold text-texto">Diagnóstico del 10 de agosto</span>
-                          <span className="nota block text-texto-suave">
-                            Qué nivelar antes de avanzar, por unidad y con los pisos de azar a la vista
-                          </span>
-                        </span>
-                        <ChevronRight className="w-4 h-4 text-texto-suave shrink-0" aria-hidden="true" />
-                      </Link>
-
-                      <TeacherClassrooms programs={teacherPrograms} />
-                    </div>
-                  )}
-                </section>
-              </>
+              <MisGrupos materias={teacherPrograms} alCambiar={() => panel.setVersion((v) => v + 1)} />
             )}
           </div>
         )}

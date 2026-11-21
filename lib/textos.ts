@@ -816,12 +816,121 @@ export const MIS_GRUPOS = {
     tema: (nombre: string, acertaron: number, rindieron: number) => `${nombre}: ${acertaron} de ${rindieron} la acertaron`,
     sinRespuestas: 'Cuando lo hagan, acá vas a ver tema por tema cuántos lo acertaron.',
   },
-  gestion: {
-    titulo: 'Seguimiento detallado y gestión',
-    detalle: 'Notas por alumno, regenerar el código, sumar alumnos de otro grupo y exportar.',
-    mostrar: 'Ver',
-    ocultar: 'Ocultar',
+  /** M3: abrir la página del grupo tocando la tarjeta. */
+  abrir: (grupo: string) => `Abrir el grupo ${grupo}`,
+  diagnosticoAgosto: {
+    titulo: 'Diagnóstico del 10 de agosto',
+    detalle: 'Qué nivelar antes de avanzar, por unidad y con los pisos de azar a la vista',
   },
+} as const
+
+/** M3: la página de un grupo (`/teacher/grupos/[id]`). */
+export const PAGINA_DEL_GRUPO = {
+  volver: 'Mis grupos',
+  cargando: 'Buscando el seguimiento del grupo…',
+  queCargamos: 'el seguimiento del grupo',
+  cerrado: 'Grupo cerrado: sus alumnos ya no ven las tareas.',
+  alumnos: (n: number) => (n === 1 ? '1 alumno' : `${n} alumnos`),
+  codigo: (codigo: string) => `Código ${codigo}`,
+  mandarTarea: 'Mandar tarea',
+  reabrir: 'Reabrir grupo',
+  regenerarCodigo: 'Regenerar código',
+  regenerarDialogo: {
+    titulo: '¿Cambiás el código del grupo?',
+    detalle: 'El código y el link de ahora dejan de servir. Los alumnos que ya entraron siguen en el grupo.',
+    cancelar: 'No cambiar',
+    confirmar: 'Sí, cambiar el código',
+  },
+  codigoNuevo: 'Listo: el código cambió.',
+  nuevo: 'Grupo creado. Copiá el link y mandáselo a tus alumnos.',
+  pestanas: {
+    etiqueta: 'Secciones del grupo',
+    alumnos: (n: number) => `Alumnos (${n})`,
+    tareas: (n: number) => `Tareas (${n})`,
+    temas: (n: number) => `Temas (${n})`,
+    diagnosticos: (n: number) => `Diagnósticos (${n})`,
+  },
+  resumen: {
+    alumnos: 'alumnos',
+    promedio: 'promedio del grupo',
+    resueltos: 'cuestionarios resueltos',
+    sinActividad: 'sin actividad',
+  },
+  planilla: {
+    titulo: 'Seguimiento por alumno',
+    vacio: (codigo: string) => `Todavía no entró nadie. Compartí el link o el código ${codigo}.`,
+    alumno: 'Alumno',
+    resueltos: 'Resueltos',
+    promedio: 'Promedio',
+    mejor: 'Mejor',
+    temasFlojos: 'Temas flojos',
+    ultimaActividad: 'Última actividad',
+    sinVerificar: 'sin verificar',
+    verificada: 'Cuenta verificada',
+    quitar: (nombre: string) => `Quitar a ${nombre}`,
+    descargar: 'Descargar notas',
+    descargadas: 'Notas descargadas: el archivo se abre en Excel o Google Sheets.',
+    copiarDe: 'Sumar alumnos de otro grupo',
+    copiarBoton: 'Sumar',
+    copiados: (n: number) => (n === 1 ? '1 alumno ahora también está en este grupo.' : `${n} alumnos ahora también están en este grupo.`),
+    pie: 'Tocá el nombre para ver todo lo que hizo. Los "sin verificar" entraron con su nombre, sin cuenta.',
+    columnas: ['Alumno', 'Verificado', 'Resueltos', 'Promedio', 'Mejor nota', 'Aprobados', 'Última actividad', 'Temas flojos'],
+    si: 'Sí',
+    no: 'No',
+  },
+  tareas: {
+    titulo: 'Lo que le mandaste al grupo',
+    vacio: 'Todavía no le mandaste ninguna tarea. Usá "Mandar tarea".',
+    entregaron: (n: number) => (n === 1 ? '1 la hizo' : `${n} la hicieron`),
+    pendientes: (n: number) => (n === 1 ? '1 pendiente' : `${n} pendientes`),
+    promedio: (nota: string) => `Promedio (mejor intento): ${nota}`,
+    desde: (fecha: string) => `Desde: ${fecha}`,
+    hasta: (fecha: string) => `Hasta: ${fecha}`,
+    intentos: (maximo: number | null, hechos: number) =>
+      `Intentos: ${maximo ?? 'sin límite'} · ${hechos} ${hechos === 1 ? 'hecho' : 'hechos'}`,
+    quitar: 'Quitar del grupo',
+  },
+  temas: {
+    titulo: 'Cómo le fue al grupo por tema',
+    vacio: 'Todavía no hay respuestas suficientes. Aparecen acá los temas con al menos 3 respuestas del grupo.',
+    detalle: (bien: number, total: number, alumnos: number) =>
+      `${bien} de ${total} · ${alumnos === 1 ? '1 alumno' : `${alumnos} alumnos`}`,
+    pie: 'De peor a mejor. Por debajo del 60 % conviene volver sobre el tema en clase.',
+  },
+  diagnosticos: {
+    vacio: 'Todavía no le armaste un diagnóstico ni una práctica a este grupo.',
+  },
+  invitados: {
+    lleno: (tope: number) => `Tu grupo llegó al tope de ${tope} ingresos sin cuenta en 24 h.`,
+    cerca: (nuevos: number, tope: number) => `Tu grupo lleva ${nuevos} de ${tope} ingresos sin cuenta permitidos en 24 h.`,
+    llenoDetalle: 'Los que intenten entrar sin cuenta ahora ven un aviso y no pueden sumarse; con cuenta de Google entran igual. ',
+    cercaDetalle: 'Al llegar al tope, los próximos sin cuenta no van a poder entrar. ',
+    queHacer:
+      'Si son tus alumnos, pediles que entren con Google. Si no reconocés a los que entraron, el código puede haberse filtrado: regeneralo. Regenerar corta la filtración, pero el cupo se va liberando a medida que pasan las 24 h de cada ingreso.',
+  },
+  elegirTarea: {
+    titulo: 'Mandar una tarea al grupo',
+    detalle: 'Elegí una de las tareas que armaste para esta materia.',
+    cargando: 'Buscando tus tareas…',
+    vacio: 'Todavía no armaste tareas para esta materia.',
+    armar: 'Armar una tarea',
+  },
+} as const
+
+/** M3: crear un grupo nuevo (antes "Crear aula", escondido en la gestión). */
+export const CREAR_GRUPO = {
+  boton: 'Crear grupo',
+  titulo: 'Crear un grupo',
+  detalle: 'Cada grupo trabaja con una materia. Al crearlo te damos el link para tus alumnos.',
+  materia: 'Materia',
+  sinMaterias: 'Primero creá una materia en "Mis materias".',
+  nombre: 'Nombre del grupo',
+  ejemplo: 'Por ejemplo: 3° A turno mañana',
+  crear: 'Crear grupo',
+  cancelar: 'Cancelar',
+  faltaMateria: 'Elegí la materia del grupo.',
+  faltaNombre: 'Ponele un nombre al grupo.',
+  fallo: 'No se pudo crear el grupo.',
 } as const
 
 export const MIS_TAREAS_ALUMNO = {
