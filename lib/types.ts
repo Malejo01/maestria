@@ -143,6 +143,8 @@ export interface QuizConfig {
   teacherQuizId?: number
   /** M1: cuándo vence la tarea, para descartar un borrador de una tarea vencida. */
   dueAt?: string | null
+  /** M6: el título del cuestionario, para "Sobre la pregunta 3 de «…»" al reportar. */
+  quizTitle?: string
   /**
    * J5: cuándo ve el alumno si acertó. `inmediata` (lo de siempre): después de
    * cada respuesta, con la explicación. `al_final`: de corrido, sin devolución,

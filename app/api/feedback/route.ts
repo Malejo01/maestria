@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getViewer } from '@/lib/auth-session'
 import type { QuestionType } from '@/lib/types'
+import { contextoDesdeElCuerpo } from '@/lib/reportes'
+import { guardarReporte } from '@/lib/reportes-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,7 +30,8 @@ function trimTo(value: unknown, max: number): string | null {
 }
 
 /**
- * POST /api/feedback — { description, pathname?, questionId?, questionType? }
+ * POST /api/feedback — { description, pathname?, questionId?, questionType?,
+ *   teacherQuizId?, assignmentId?, classroomId?, questionIndex? }
  *
  * El cuerpo trae SÓLO lo que el servidor no puede saber: qué escribió la
  * persona y qué estaba mirando. La identidad (user_id / guest_id y rol) sale de
@@ -76,23 +79,21 @@ export async function POST(req: Request) {
     const rawType = trimTo(body?.questionType, 32)
     const questionType = QUESTION_TYPES.includes(rawType as QuestionType) ? rawType : null
 
-    const rows = (await sql`
-      INSERT INTO feedback_reports (
-        user_id, is_guest, role, description, pathname, question_id, question_type, user_agent
-      ) VALUES (
-        ${viewer.id},
-        ${viewer.isGuest},
-        ${viewer.role},
-        ${description},
-        ${trimTo(body?.pathname, MAX_PATHNAME)},
-        ${trimTo(body?.questionId, MAX_QUESTION_ID)},
-        ${questionType},
-        ${trimTo(req.headers.get('user-agent'), MAX_USER_AGENT)}
-      )
-      RETURNING id
-    `) as { id: number }[]
+    // M6: de qué cuestionario, asignación y grupo es, y qué pregunta. Sin la
+    // 029 se guarda como antes (guardarReporte cae a las columnas de la 019).
+    const id = await guardarReporte({
+      userId: viewer.id,
+      isGuest: viewer.isGuest,
+      role: viewer.role,
+      description,
+      pathname: trimTo(body?.pathname, MAX_PATHNAME),
+      questionId: trimTo(body?.questionId, MAX_QUESTION_ID),
+      questionType,
+      userAgent: trimTo(req.headers.get('user-agent'), MAX_USER_AGENT),
+      contexto: contextoDesdeElCuerpo(body),
+    })
 
-    return NextResponse.json({ id: rows[0]?.id })
+    return NextResponse.json({ id })
   } catch (error) {
     console.error('[POST /api/feedback] Error:', error)
     return NextResponse.json(

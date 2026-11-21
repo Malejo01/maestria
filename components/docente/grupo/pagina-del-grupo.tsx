@@ -19,6 +19,7 @@ import { AvisoDeInvitados } from './aviso-de-invitados'
 import { DiagnosticosDelGrupo, useDiagnosticosDelGrupo } from './diagnosticos-del-grupo'
 import { MandarTareaAlGrupo } from './mandar-tarea-al-grupo'
 import { PlanillaDelGrupo, type OtroGrupo } from './planilla-del-grupo'
+import { ReportesDelGrupo } from './reportes-del-grupo'
 import { TareasDelGrupo } from './tareas-del-grupo'
 import { TemasDelGrupo } from './temas-del-grupo'
 import { useInformeDelGrupo } from './use-informe-del-grupo'
@@ -202,6 +203,9 @@ export function PaginaDelGrupo({
         )}
         {fila && <AvisoDeInvitados nuevos={fila.new_guests_today} tope={fila.guest_join_limit} />}
       </header>
+
+      {/* M6: lo que reportaron los alumnos en las tareas de este grupo. */}
+      <ReportesDelGrupo grupoId={grupo.id} />
 
       {informe?.summary && (
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">

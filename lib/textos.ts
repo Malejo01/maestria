@@ -824,6 +824,46 @@ export const MIS_GRUPOS = {
   },
 } as const
 
+/** M6: el botón de reportar y el buzón. */
+export const REPORTAR = {
+  sobreLaPregunta: (n: number, cuestionario?: string) =>
+    cuestionario ? `Sobre la pregunta ${n} de «${cuestionario}»` : `Sobre la pregunta ${n} de este cuestionario`,
+} as const
+
+export const BUZON = {
+  titulo: 'Reportes',
+  detalle: 'Lo que reportan docentes y alumnos desde el botón de reportar. Se leen a mano.',
+  volver: 'Volver al panel',
+  menu: 'Reportes',
+  menuNuevos: (n: number) => (n === 1 ? '1 nuevo' : `${n} nuevos`),
+  filtros: { etiqueta: 'Estado', todos: 'Todos', nuevo: 'Nuevos', visto: 'Vistos', resuelto: 'Resueltos' },
+  estado: { nuevo: 'Nuevo', visto: 'Visto', resuelto: 'Resuelto' },
+  marcarComo: { visto: 'Marcar como visto', resuelto: 'Marcar como resuelto', nuevo: 'Volver a nuevo' },
+  vacio: 'No hay reportes en este estado.',
+  cargando: 'Buscando reportes…',
+  queCargamos: 'los reportes',
+  invitado: 'invitado',
+  sinNombre: 'Sin nombre',
+  rol: { DOCENTE: 'docente', ALUMNO: 'alumno' } as Record<string, string>,
+  ruta: (ruta: string) => `En ${ruta}`,
+  grupo: (grupo: string) => `Grupo «${grupo}»`,
+  pregunta: (n: number, cuestionario: string) => `Pregunta ${n} de «${cuestionario}»`,
+  preguntaSinCuestionario: (id: string) => `Pregunta ${id} (sin contexto: el reporte es de antes)`,
+  laPregunta: 'La pregunta, como está guardada',
+  respuestaCorrecta: 'Respuesta correcta',
+  revisar: 'Revisar y editar el cuestionario',
+  abrir: 'Ver la pregunta',
+  cerrar: 'Ocultar la pregunta',
+} as const
+
+/** M6: en la página del grupo, lo que reportaron sus alumnos. */
+export const REPORTES_DEL_GRUPO = {
+  titulo: (n: number) =>
+    n === 1 ? 'Tus alumnos reportaron 1 problema en las tareas de este grupo' : `Tus alumnos reportaron ${n} problemas en las tareas de este grupo`,
+  pregunta: (n: number, cuestionario: string) => `Pregunta ${n} de «${cuestionario}»`,
+  revisar: 'Revisar y editar',
+} as const
+
 /** M3: la página de un grupo (`/teacher/grupos/[id]`). */
 export const PAGINA_DEL_GRUPO = {
   volver: 'Mis grupos',

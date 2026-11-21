@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import type { QuestionType } from '@/lib/types'
+import { REPORTAR } from '@/lib/textos'
 
 /**
  * Lo que se adjunta al reporte, congelado en el momento de abrir el panel.
@@ -21,6 +22,16 @@ interface ReportContext {
   pathname: string
   questionId?: string
   questionType?: QuestionType
+  /**
+   * M6: de qué cuestionario, asignación y grupo es la pregunta, y su número
+   * (base 0). Antes el reporte guardaba sólo "q3" y para encontrar la pregunta
+   * de una alumna hubo que cruzar sus intentos a mano.
+   */
+  teacherQuizId?: number
+  assignmentId?: number
+  classroomId?: number
+  questionIndex?: number
+  quizTitle?: string
 }
 
 /**
@@ -150,7 +161,21 @@ export function FeedbackButton() {
     // pantalla de "gracias" que quedó de la vez anterior.
     setStatus('idle')
     setErrorMessage(null)
-    setContext({ pathname, questionId: question?.id, questionType: question?.type })
+    const config = question ? currentQuiz.config : null
+    setContext({
+      pathname,
+      questionId: question?.id,
+      questionType: question?.type,
+      ...(question && config
+        ? {
+            teacherQuizId: config.teacherQuizId,
+            assignmentId: config.assignmentId,
+            classroomId: config.classroomId,
+            questionIndex: currentQuiz.currentIndex,
+            quizTitle: config.quizTitle,
+          }
+        : {}),
+    })
   }
 
   // Escape cierra el panel. Se registra sólo mientras está abierto para no
@@ -196,6 +221,10 @@ export function FeedbackButton() {
           pathname: context.pathname,
           questionId: context.questionId,
           questionType: context.questionType,
+          teacherQuizId: context.teacherQuizId,
+          assignmentId: context.assignmentId,
+          classroomId: context.classroomId,
+          questionIndex: context.questionIndex,
         }),
       })
 
@@ -288,6 +317,12 @@ export function FeedbackButton() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="min-h-0 space-y-3 overflow-y-auto px-5 pb-5 pt-3">
+                {/* M6: de qué pregunta es, para que nadie tenga que pegar el enunciado. */}
+                {context?.questionIndex !== undefined && (
+                  <p className="cuerpo-s font-semibold text-texto">
+                    {REPORTAR.sobreLaPregunta(context.questionIndex + 1, context.quizTitle)}
+                  </p>
+                )}
                 <Textarea
                   ref={textareaRef}
                   value={description}

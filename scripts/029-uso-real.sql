@@ -31,6 +31,7 @@
 --   client_attempt_id → app/api/quiz/save-result (M1).
 --   teacher_quiz_id, assignment_id, classroom_id, question_index →
 --                       app/api/feedback (M6), desde el botón de reportar.
+--   status 'visto' / 'resuelto' → app/api/admin/reportes/[id] (M6).
 --
 -- Uso:
 --   npx tsx scripts/run-migration-029.ts --env=staging
@@ -50,3 +51,17 @@ ALTER TABLE feedback_reports
 
 CREATE INDEX IF NOT EXISTS idx_feedback_reports_classroom
   ON feedback_reports(classroom_id) WHERE classroom_id IS NOT NULL;
+
+-- M6: los estados del buzón son nuevo → visto → resuelto. La 019 había
+-- previsto 'revisado' y 'descartado', que nadie escribió nunca (los 9 reportes
+-- de producción están en 'nuevo'). El CHECK se amplía —no se achica— para que
+-- cualquier fila que alguien haya marcado a mano siga siendo válida; la app
+-- lee 'revisado' como visto y 'descartado' como resuelto. Se borra y se vuelve
+-- a crear (Postgres no tiene ADD CONSTRAINT IF NOT EXISTS): idempotente.
+ALTER TABLE feedback_reports DROP CONSTRAINT IF EXISTS feedback_reports_status_check;
+
+ALTER TABLE feedback_reports
+  ADD CONSTRAINT feedback_reports_status_check
+  CHECK (status IN ('nuevo', 'visto', 'resuelto', 'revisado', 'descartado')) NOT VALID;
+
+ALTER TABLE feedback_reports VALIDATE CONSTRAINT feedback_reports_status_check;

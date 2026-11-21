@@ -3,11 +3,11 @@
 import { Cargando } from '@/components/sistema/cargando'
 
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { useRefrescarSesion } from '@/hooks/use-refrescar-sesion'
-import { ArrowLeftRight, CreditCard, ExternalLink, Gauge, LogOut, Undo2 } from 'lucide-react'
+import { ArrowLeftRight, CreditCard, ExternalLink, Gauge, LogOut, Undo2, Inbox } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -27,7 +27,7 @@ import {
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { inicioDe } from '@/lib/navegacion'
-import { CUENTA } from '@/lib/textos'
+import { BUZON, CUENTA } from '@/lib/textos'
 import type { UserRole } from '@/lib/types'
 
 const ITEM = 'min-h-11 cursor-pointer gap-3 rounded-sm px-3 cuerpo-s text-texto focus:bg-superficie-suave focus:text-texto'
@@ -67,6 +67,7 @@ export function MenuUsuario({
   esAdmin?: boolean
 }) {
   const actualizarSesion = useRefrescarSesion()
+  const nuevos = useReportesNuevos(esAdmin)
   const [confirmando, setConfirmando] = useState(false)
   const [cambiando, setCambiando] = useState(false)
   const [fallo, setFallo] = useState(false)
@@ -102,9 +103,15 @@ export function MenuUsuario({
           <button
             type="button"
             aria-label={CUENTA.abrirMenu}
-            className="flex size-11 shrink-0 items-center justify-center rounded-md border border-borde bg-superficie-suave font-titulo text-[15px] font-extrabold text-accion hover:border-borde-fuerte"
+            className="relative flex size-11 shrink-0 items-center justify-center rounded-md border border-borde bg-superficie-suave font-titulo text-[15px] font-extrabold text-accion hover:border-borde-fuerte"
           >
             <span aria-hidden="true">{inicial}</span>
+            {nuevos > 0 && (
+              <span className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-accion px-1 text-[11px] font-bold leading-5 text-texto-sobre-accion">
+                {nuevos}
+                <span className="sr-only">{BUZON.menuNuevos(nuevos)}</span>
+              </span>
+            )}
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-72 rounded-lg border-borde-fuerte p-2">
@@ -144,6 +151,17 @@ export function MenuUsuario({
                 <Link href="/admin/planes">
                   <CreditCard aria-hidden="true" strokeWidth={TRAZO_ICONO} />
                   {CUENTA.admin.planes}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className={ITEM}>
+                <Link href="/admin/reportes">
+                  <Inbox aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                  <span className="flex flex-1 items-center justify-between gap-2">
+                    {BUZON.menu}
+                    {nuevos > 0 && (
+                      <span className="nota rounded-full bg-accion px-2 font-bold text-texto-sobre-accion">{BUZON.menuNuevos(nuevos)}</span>
+                    )}
+                  </span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className={ITEM}>
@@ -192,4 +210,35 @@ export function MenuUsuario({
       </AlertDialog>
     </>
   )
+}
+
+/**
+ * M6: cuántos reportes hay en 'nuevo', para la marca del menú del admin. Se
+ * pide al montar y cuando el buzón cambia un estado. Para otra cuenta, 0 y
+ * ningún pedido.
+ */
+function useReportesNuevos(esAdmin: boolean): number {
+  const [nuevos, setNuevos] = useState(0)
+  const [vuelta, setVuelta] = useState(0)
+  useEffect(() => {
+    if (!esAdmin) return
+    const alCambiar = () => setVuelta((n) => n + 1)
+    window.addEventListener('maestria:reportes-cambiaron', alCambiar)
+    return () => window.removeEventListener('maestria:reportes-cambiaron', alCambiar)
+  }, [esAdmin])
+  useEffect(() => {
+    if (!esAdmin) return
+    let vigente = true
+    Promise.resolve()
+      .then(() => fetch('/api/admin/reportes?resumen=1'))
+      .then((r) => (r?.ok ? r.json() : null))
+      .then((datos: { nuevos?: number } | null) => {
+        if (vigente) setNuevos(Number(datos?.nuevos ?? 0))
+      })
+      .catch(() => {})
+    return () => {
+      vigente = false
+    }
+  }, [esAdmin, vuelta])
+  return esAdmin ? nuevos : 0
 }
