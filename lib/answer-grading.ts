@@ -105,6 +105,19 @@ export function tallyAnswers(answers: Answer[]): GradedTally {
 }
 
 /**
+ * La nota con que se aprueba, sobre 10. Hasta la tanda M el 6 estaba escrito
+ * a mano en cada lugar que lo usaba (guardar el intento, el resultado, el
+ * historial, la racha); el filtro "Debajo de 6" de la planilla del grupo (M4)
+ * no podía ser un séptimo.
+ */
+export const NOTA_DE_APROBACION = 6
+
+/** ¿Esta nota aprueba? */
+export function aprueba(nota: number): boolean {
+  return nota >= NOTA_DE_APROBACION
+}
+
+/**
  * Nota de 0 a 10 sobre lo efectivamente corregido.
  *
  * `null` cuando no quedó nada que corregir. No es 0: un 0 dice "no acertó

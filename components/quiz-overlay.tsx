@@ -5,6 +5,7 @@ import { useAppStore } from '@/lib/store'
 import { LoadingScreen } from './loading-screen'
 import { QuizEngine } from './quiz-engine'
 import { ResultsScreen } from './results-screen'
+import { aprueba } from '@/lib/answer-grading'
 
 /**
  * Global full-screen overlay for the quiz-taking flow (loading/quiz/results).
@@ -35,7 +36,7 @@ export function QuizOverlay() {
         const total = questions.length
         const score = Number(((correct / total) * 10).toFixed(2))
 
-        const passed = score >= 6
+        const passed = aprueba(score)
         updateStreak(passed)
         updateSubjectAverage(config.subject, score)
 

@@ -6,6 +6,7 @@ import { ASSIGNMENT_STATE_LABEL, assignmentState, canStartAssignment } from '@/l
 import { captureRouteFailure } from '@/lib/observability'
 import { destinatarioDeFila, visibleParaAlumno } from '@/lib/destinatario'
 import { buscarIntentoPrevio, esDuplicado, limpiarClientAttemptId, type IntentoPrevio } from '@/lib/intento-idempotente-server'
+import { aprueba } from '@/lib/answer-grading'
 
 /** M1: la respuesta de un intento que ya estaba guardado (reintento del mismo resultado). */
 function respuestaDeIntentoPrevio(intento: IntentoPrevio) {
@@ -179,7 +180,7 @@ export async function POST(req: Request) {
       ? Math.max(Number(rawUngradedAnswers), ungradedFromAnswers)
       : ungradedFromAnswers
     const incorrectAnswers = totalQuestions - correctAnswers - ungradedAnswers
-    const passed = score >= 6
+    const passed = aprueba(score)
 
     // Map topics to a clean array of strings (names) for the quiz_attempts table
     const topicsStrings: string[] = Array.isArray(topics)
@@ -321,8 +322,8 @@ export async function POST(req: Request) {
     debugLog('[v0] Quiz attempt created with ID:', quizAttemptId)
     debugLog('[v0] All answers saved')
 
-    // 5. Actualizar topic_mastery si la nota es >= 6
-    if (score >= 6) {
+    // 5. Actualizar topic_mastery si la nota aprueba
+    if (aprueba(score)) {
       const topicsArray = Array.isArray(topics) ? topics : [topics]
       
       for (const topic of topicsArray) {

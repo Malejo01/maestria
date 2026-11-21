@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Trash2, Users } from 'lucide-react'
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { formatDateTime, formatScore } from '@/components/classroom-report-parts'
@@ -9,10 +10,15 @@ import { tamanoDeTarea } from '@/lib/diagnostico'
 import { pedirJson } from '@/lib/pedir-json'
 import { ASIGNACIONES_INDIVIDUALES, PAGINA_DEL_GRUPO } from '@/lib/textos'
 import type { TareaDelInforme } from './use-informe-del-grupo'
+import { PlanillaDeTarea } from './planilla-de-tarea'
 
 const T = PAGINA_DEL_GRUPO.tareas
 
-/** M3: la pestaña Tareas. Lo mandado al grupo, con su estado y cuántos lo hicieron. */
+/**
+ * M3: la pestaña Tareas. Lo mandado al grupo, con su estado y cuántos lo
+ * hicieron. M4: cada tarea abre su planilla (quién la hizo), con `?tarea=ID`
+ * en la URL.
+ */
 export function TareasDelGrupo({
   grupoId,
   tareas,
@@ -25,6 +31,25 @@ export function TareasDelGrupo({
   const [error, setError] = useState<string | null>(null)
   const [ocupada, setOcupada] = useState<number | null>(null)
   const delGrupo = tareas.filter((t) => !t.individual)
+  const router = useRouter()
+  const ruta = usePathname()
+  const consulta = useSearchParams()
+  const abierta = Number(consulta?.get('tarea') ?? 0)
+  const tareaAbierta = delGrupo.find((t) => t.id === abierta) ?? null
+  const planillaRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (tareaAbierta) planillaRef.current?.scrollIntoView({ block: 'nearest' })
+  }, [tareaAbierta])
+
+  function verQuienes(id: number | null) {
+    const params = new URLSearchParams(consulta?.toString() ?? '')
+    if (id) params.set('tarea', String(id))
+    else params.delete('tarea')
+    for (const clave of [...params.keys()]) if (clave.startsWith('t-')) params.delete(clave)
+    const texto = params.toString()
+    router.replace(`${ruta}${texto ? `?${texto}` : ''}`, { scroll: false })
+  }
   const individuales = tareas.filter((t) => t.individual)
 
   async function quitar(tarea: TareaDelInforme) {
@@ -66,13 +91,29 @@ export function TareasDelGrupo({
               <li>{T.hasta(formatDateTime(tarea.dueAt))}</li>
               <li>{T.intentos(tarea.maxAttempts, tarea.attemptCount)}</li>
             </ul>
-            <Boton variante="secundario" disabled={ocupada === tarea.id} onClick={() => void quitar(tarea)}>
-              <Trash2 aria-hidden="true" strokeWidth={TRAZO_ICONO} />
-              {T.quitar}
-            </Boton>
+            <div className="flex flex-wrap gap-2">
+              <Boton
+                variante={tareaAbierta?.id === tarea.id ? 'principal' : 'secundario'}
+                aria-expanded={tareaAbierta?.id === tarea.id}
+                onClick={() => verQuienes(tareaAbierta?.id === tarea.id ? null : tarea.id)}
+              >
+                <Users aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                {tareaAbierta?.id === tarea.id ? T.ocultarQuienes : T.verQuienes}
+              </Boton>
+              <Boton variante="secundario" disabled={ocupada === tarea.id} onClick={() => void quitar(tarea)}>
+                <Trash2 aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                {T.quitar}
+              </Boton>
+            </div>
           </li>
         ))}
       </ul>
+
+      {tareaAbierta && (
+        <div ref={planillaRef} className="border-t border-borde pt-4">
+          <PlanillaDeTarea key={tareaAbierta.id} grupoId={grupoId} tareaId={tareaAbierta.id} titulo={tareaAbierta.title} />
+        </div>
+      )}
 
       {/* L0: lo armado para un solo alumno va aparte y no cuenta para el grupo. */}
       {individuales.length > 0 && (

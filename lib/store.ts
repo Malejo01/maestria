@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { normalizeQuestions } from './normalize-questions'
-import { countsAsCorrect, countsAsIncorrect, isGraded, scoreOutOfTen, tallyAnswers } from './answer-grading'
+import { aprueba, countsAsCorrect, countsAsIncorrect, isGraded, scoreOutOfTen, tallyAnswers } from './answer-grading'
 import type {
   UserProgress,
   QuizConfig,
@@ -222,7 +222,7 @@ export const useAppStore = create<AppState>()(
         const incorrectTopics = [...new Set(incorrectAnswers.map(a => a.topic))]
 
         // Update streak
-        const passed = score >= 6
+        const passed = aprueba(score)
         get().updateStreak(passed)
 
         // Add weak points for incorrect answers
