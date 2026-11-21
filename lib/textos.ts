@@ -875,6 +875,19 @@ export const PAGINA_DEL_GRUPO = {
     copiados: (n: number) => (n === 1 ? '1 alumno ahora también está en este grupo.' : `${n} alumnos ahora también están en este grupo.`),
     pie: 'Tocá el nombre para ver todo lo que hizo. Los "sin verificar" entraron con su nombre, sin cuenta.',
     columnas: ['Alumno', 'Verificado', 'Resueltos', 'Promedio', 'Mejor nota', 'Aprobados', 'Última actividad', 'Temas flojos'],
+    // M4: ordenar, buscar y filtrar.
+    buscar: 'Buscar por nombre',
+    filtros: {
+      etiqueta: 'Mostrar',
+      todos: (n: number) => `Todos (${n})`,
+      nada: (n: number) => `No respondieron nada (${n})`,
+      debajo: (nota: number, n: number) => `Debajo de ${nota} (${n})`,
+      flojos: (n: number) => `Con temas flojos (${n})`,
+    },
+    ordenarPor: (columna: string) => `Ordenar por ${columna}`,
+    acciones: 'Acciones',
+    ningunoCoincide: 'Nadie coincide con la búsqueda o el filtro.',
+    mostrando: (n: number, total: number) => (n === total ? '' : `Mostrando ${n} de ${total}.`),
     si: 'Sí',
     no: 'No',
   },
@@ -889,6 +902,26 @@ export const PAGINA_DEL_GRUPO = {
     intentos: (maximo: number | null, hechos: number) =>
       `Intentos: ${maximo ?? 'sin límite'} · ${hechos} ${hechos === 1 ? 'hecho' : 'hechos'}`,
     quitar: 'Quitar del grupo',
+    // M4: la planilla de una tarea puntual.
+    verQuienes: 'Ver quién la hizo',
+    ocultarQuienes: 'Ocultar',
+    planilla: {
+      titulo: (tarea: string) => `Quién hizo «${tarea}»`,
+      cargando: 'Buscando quién la hizo…',
+      queCargamos: 'quién hizo la tarea',
+      vacio: 'Todavía no hay alumnos en el grupo.',
+      alumno: 'Alumno',
+      intentos: 'Intentos',
+      nota: 'Mejor nota',
+      ultima: 'Última vez',
+      descargar: 'Descargar',
+      filtros: {
+        todos: (n: number) => `Todos (${n})`,
+        nada: (n: number) => `No la hicieron (${n})`,
+        debajo: (nota: number, n: number) => `Debajo de ${nota} (${n})`,
+      },
+      columnas: ['Alumno', 'Intentos', 'Mejor nota', 'Promedio', 'Última vez'],
+    },
   },
   temas: {
     titulo: 'Cómo le fue al grupo por tema',

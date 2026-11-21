@@ -56,6 +56,7 @@ import type {
   SubjectModeTotals,
   ReinforceTopic,
 } from '@/lib/types'
+import { aprueba } from '@/lib/answer-grading'
 
 type ModeFilter = 'all' | 'teorico' | 'practico' | 'mixto'
 
@@ -544,7 +545,7 @@ function HistoryPageContent() {
                   <div className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">
                     {filteredAttempts.map((attempt) => {
                       const { Icon: SubIcon, classes } = getSubjectAppearance(attempt.subject)
-                      const passed = Number(attempt.score) >= 6
+                      const passed = aprueba(Number(attempt.score))
                       const isExpanded = expandedAttempt === attempt.id
 
                       return (

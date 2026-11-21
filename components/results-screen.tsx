@@ -15,7 +15,7 @@ import { Home, RotateCcw, TrendingUp, TrendingDown, Sparkles, XCircle, CheckCirc
 import { cn } from '@/lib/utils'
 import confetti from 'canvas-confetti'
 import type { Answer } from '@/lib/types'
-import { countsAsCorrect, countsAsIncorrect, isGraded, scoreOutOfTen, tallyAnswers } from '@/lib/answer-grading'
+import { aprueba, countsAsCorrect, countsAsIncorrect, isGraded, scoreOutOfTen, tallyAnswers } from '@/lib/answer-grading'
 import { QuizModeDialog } from './quiz-mode-dialog'
 import { ExplanationModal } from './explanation-modal'
 import { answerRecapLine } from './answer-recap'
@@ -68,7 +68,7 @@ export function ResultsScreen() {
     const total = questions.length
     const score = scoreOutOfTen(tally) ?? 0
     const percentage = tally.graded === 0 ? 0 : (correct / tally.graded) * 100
-    const passed = tally.graded > 0 && score >= 6
+    const passed = tally.graded > 0 && aprueba(score)
 
     return {
       correct,
@@ -333,7 +333,7 @@ export function ResultsScreen() {
 
   // Header emotional feedback helper
   const getEmotionalHeader = () => {
-    if (results.score < 6) {
+    if (!aprueba(results.score)) {
       return {
         badgeText: 'A seguir practicando',
         title: isPrimario ? 'A no desanimarse' : 'Seguí practicando',
