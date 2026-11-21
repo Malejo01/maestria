@@ -32,6 +32,8 @@ interface ShareQuizDialogProps {
   isExporting?: boolean
   /** La tarea que se manda. */
   quiz?: TeacherQuiz | null
+  /** M3: desde la página de un grupo, ése es el grupo elegido (si es de la materia). */
+  grupoInicial?: number | null
 }
 
 const CAMPO =
@@ -68,6 +70,7 @@ export function ShareQuizDialog({
   onExportMoodle,
   isExporting = false,
   quiz = null,
+  grupoInicial = null,
 }: ShareQuizDialogProps) {
   const id = useId()
   const [grupos, setGrupos] = useState<Grupo[] | null>(null)
@@ -126,7 +129,8 @@ export function ShareQuizDialog({
 
       if (!vigente) return
       setGrupos(deLaMateria)
-      setGrupoId(deLaMateria[0]?.id ?? null)
+      const elegido = deLaMateria.find((g) => g.id === grupoInicial) ?? deLaMateria[0]
+      setGrupoId(elegido?.id ?? null)
       setAlumnos(deEstaMateria.map((alumno) => ({ nombre: alumno.nombre })))
     }
 
@@ -140,7 +144,7 @@ export function ShareQuizDialog({
     return () => {
       vigente = false
     }
-  }, [open, materiaId])
+  }, [open, materiaId, grupoInicial])
 
   const grupo = useMemo(() => grupos?.find((g) => g.id === grupoId) ?? null, [grupos, grupoId])
   const link = grupo ? `${window.location.origin}/aula/${grupo.join_code}` : ''

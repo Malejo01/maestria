@@ -99,7 +99,7 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
               </Badge>
             )}
           </DialogTitle>
-          <DialogDescription>Actividad de este alumno dentro del aula.</DialogDescription>
+          <DialogDescription>Actividad de este alumno dentro del grupo.</DialogDescription>
         </DialogHeader>
 
         {isLoading && (
@@ -120,7 +120,7 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
 
               {topics.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Todavía no respondió preguntas en esta aula.
+                  Todavía no respondió preguntas en este grupo.
                 </p>
               ) : (
                 <ul className="space-y-2">

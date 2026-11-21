@@ -123,7 +123,6 @@ export function usePanelDocente() {
   // `&materia=<id>` deja elegida la materia al armar una tarea para un alumno.
   const materiaDesdeLaUrl = Number(parametros.get('materia')) || null
   const [agregarAlumno, setAgregarAlumno] = useState(false)
-  const [gruposAbiertos, setGruposAbiertos] = useState(false)
   // L4: Mis alumnos | Mis grupos, en la URL (`?vista=grupos`).
   const vista: 'alumnos' | 'grupos' = parametros.get('vista') === 'grupos' ? 'grupos' : 'alumnos'
   useEffect(() => {
@@ -432,9 +431,7 @@ export function usePanelDocente() {
     handleExportQuiz,
     agregarAlumno,
     setAgregarAlumno,
-    gruposAbiertos,
     vista,
-    setGruposAbiertos,
     activeSubject,
     setActiveSubject,
     showCreateWizard,
