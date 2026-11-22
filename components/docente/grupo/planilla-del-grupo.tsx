@@ -10,6 +10,7 @@ import { pedirJson } from '@/lib/pedir-json'
 import { NOTA_DE_APROBACION } from '@/lib/answer-grading'
 import { cuantasPorFiltro, filasVisibles, type FilaDePlanilla } from '@/lib/planilla-grupo'
 import { PAGINA_DEL_GRUPO } from '@/lib/textos'
+import { TraerAlumnos } from '@/components/docente/grupo/traer-alumnos'
 import { cn } from '@/lib/utils'
 import { BarraDePlanilla, CLASES_DE_TABLA as C, EncabezadoOrdenable, useEstadoDePlanilla } from './controles-de-planilla'
 import type { AlumnoDelInforme } from './use-informe-del-grupo'
@@ -100,33 +101,19 @@ export function PlanillaDelGrupo({
   alCambiar: () => void
 }) {
   const [abierto, setAbierto] = useState<AlumnoDelInforme | null>(null)
-  const [origen, setOrigen] = useState('')
   const [aviso, setAviso] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
   const { estado, cambiar } = useEstadoDePlanilla()
   const todas = useMemo(() => filasDelGrupo(alumnos), [alumnos])
   const visibles = useMemo(() => filasVisibles(todas, estado), [todas, estado])
   const cuantas = useMemo(() => cuantasPorFiltro(todas), [todas])
+  const yaEstan = useMemo(() => new Set(alumnos.map((a) => a.userId)), [alumnos])
 
   async function quitar(alumno: AlumnoDelInforme) {
     setOcupado(true)
     const respuesta = await pedirJson(`/api/teacher/classrooms/${grupoId}/members/${alumno.memberId}`, { method: 'DELETE' })
     setOcupado(false)
     setAviso('error' in respuesta ? respuesta.error : null)
-    alCambiar()
-  }
-
-  async function sumarDeOtroGrupo() {
-    if (!origen) return
-    setOcupado(true)
-    const respuesta = await pedirJson<{ copied: number }>(`/api/teacher/classrooms/${grupoId}/members`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sourceClassroomId: Number(origen) }),
-    })
-    setOcupado(false)
-    setAviso('error' in respuesta ? respuesta.error : T.copiados(Number(respuesta.data.copied ?? 0)))
-    setOrigen('')
     alCambiar()
   }
 
@@ -142,26 +129,17 @@ export function PlanillaDelGrupo({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="cuerpo font-bold text-texto">{T.titulo}</h2>
         <div className="flex flex-wrap items-center gap-2">
-          {otrosGrupos.length > 0 && (
-            <>
-              <select
-                className="min-h-11 rounded-md border border-borde-fuerte bg-superficie-tarjeta px-2 text-sm text-texto"
-                value={origen}
-                onChange={(evento) => setOrigen(evento.target.value)}
-                aria-label={T.copiarDe}
-              >
-                <option value="">{T.copiarDe}</option>
-                {otrosGrupos.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.name} ({g.member_count})
-                  </option>
-                ))}
-              </select>
-              <Boton variante="secundario" disabled={!origen || ocupado} onClick={() => void sumarDeOtroGrupo()}>
-                {T.copiarBoton}
-              </Boton>
-            </>
-          )}
+          {/* O7: elegir a quiénes traer, con casillas y confirmación. */}
+          <TraerAlumnos
+            grupoId={grupoId}
+            nombreDelGrupo={nombreDelGrupo}
+            otrosGrupos={otrosGrupos}
+            yaEstan={yaEstan}
+            alTraer={(r) => {
+              setAviso('error' in r ? r.error : T.copiados(r.copiados))
+              alCambiar()
+            }}
+          />
           <Boton variante="secundario" disabled={visibles.length === 0} onClick={descargar}>
             <Download aria-hidden="true" strokeWidth={TRAZO_ICONO} />
             {T.descargar}
