@@ -1274,6 +1274,8 @@ export const RACHA = {
 
 /** O4: lo que quedaba suelto en la pantalla de resultados. */
 export const RESULTADOS = {
+  /** P8: la barra de abajo de los resultados, como región con nombre. */
+  acciones: 'Qué hacer ahora',
   explicarError: 'Explicame el error',
   cargando: 'Cargando…',
 } as const

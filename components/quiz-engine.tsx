@@ -627,7 +627,8 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
               className="h-3 bg-muted [&>div]:bg-[var(--algebra)]"
             />
           </div>
-          <div className="shrink-0 bg-[var(--algebra-light)] text-[var(--algebra)] px-3 py-1 rounded-full text-sm font-bold">
+          {/* P8: en oscuro, el azul sobre su tinte no llegaba a 4,5:1 (axe). Texto del sistema. */}
+          <div className="shrink-0 rounded-full border border-borde bg-superficie-suave px-3 py-1 text-sm font-bold text-texto">
             {currentIndex + 1}/{questions.length}
           </div>
         </div>
@@ -963,7 +964,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
               disabled={!isAnswerReady || isGradingShortAnswer}
               className={cn(
                 'flex-1 h-14 text-base font-bold rounded-2xl transition-all',
-                ' bg-[var(--algebra)]',
+                // P8: el hover de shadcn baja el fondo al 90 % y el texto blanco
+                // queda debajo de 4,5:1 (axe, color-contrast). El hover es la escala.
+                ' bg-[var(--algebra)] hover:bg-[var(--algebra)]',
                 ' hover:scale-[1.02] active:scale-[0.98]',
                 'disabled:opacity-50 disabled:shadow-none disabled:scale-100'
               )}
@@ -982,9 +985,10 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
               className={cn(
                 'flex-1 h-14 text-xs sm:text-sm font-bold gap-1.5 rounded-2xl transition-all',
                 ' hover:scale-[1.02] active:scale-[0.98]',
-                answerState.isCorrect 
-                  ?' bg-logrado' 
-                  :' bg-[var(--algebra)] '
+                // P8: mismo fondo en hover (el /90 de shadcn no llegaba a 4,5:1 con texto blanco).
+                answerState.isCorrect
+                  ? ' bg-logrado hover:bg-logrado'
+                  : ' bg-[var(--algebra)] hover:bg-[var(--algebra)]'
               )}
             >
               <span className="truncate">{isLastQuestion ? 'Ver resultados' : 'Siguiente'}</span>

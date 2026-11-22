@@ -237,7 +237,8 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Mis materias</h2>
+                {/* P8: el título de la sección es el h1 de la página (axe, page-has-heading-one). */}
+                <h1 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Mis materias</h1>
                 <Button variant="ghost" size="sm" onClick={() => setShowOnboardingModal(true)} className="text-xs h-7 text-primary hover:text-primary hover:bg-primary/10">
                   <Sparkles className="w-3.5 h-3.5 mr-1" />
                   Ayuda para crear
