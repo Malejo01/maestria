@@ -1617,3 +1617,7 @@ export const PRACTICA_EXTRA = {
     `Prácticas extra: ${cantidad}${promedio === null ? '' : ` · promedio ${promedio.toLocaleString('es-AR')}`}`,
 } as const
 
+/** P7: "A reforzar" en la ficha del alumno (lo mismo que ve el alumno en Mi progreso). */
+export const FICHA_A_REFORZAR = {
+  titulo: (n: number) => `A reforzar (${n})`,
+} as const

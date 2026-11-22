@@ -24,6 +24,7 @@ export async function GET() {
         created_at AS "createdAt"
       FROM student_misconceptions
       WHERE user_id = ${userId}
+        AND tip <> ''
       ORDER BY created_at DESC
     `
 
