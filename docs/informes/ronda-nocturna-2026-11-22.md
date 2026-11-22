@@ -16,6 +16,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O6 · Reporte de diagnóstico parametrizado por programa | hecho | [#81](https://github.com/Malejo01/maestria/pull/81) | Test de caracterización del 10/08 escrito antes de cambiar nada (sigue igual); vínculo por temas con tests; en staging, el 10/08 leído contra "Matemática · 3er Año" de Irina | US$0 |
 | O7 · Traer alumnos de otro grupo | hecho | [#82](https://github.com/Malejo01/maestria/pull/82) | Tests del diálogo y de la API (sólo los elegidos, origen propio, plan vencido); en staging Irina trajo a Sofía de Lengua a "Prueba M3"; `npm run e2e` en verde | US$0 |
 | O8 · Pulgar arriba / abajo del docente (migración 033) | hecho | [#83](https://github.com/Malejo01/maestria/pull/83) | Tests de la regla de recorte, la API (propio, válvula), y que la generación recibe "Evitá esto" (lo del cuerpo se ignora); en staging Irina valoró dos preguntas del cuestionario 39; contador en `/admin/ai-usage` | US$0 |
+| O9 · Informe del grupo para imprimir | hecho | (este PR) | Tests de la parte pura; en staging el informe de Lengua ordenado por promedio, en modo impresión | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -107,6 +108,10 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - **"Evitá esto"**: los últimos 10 pulgares abajo de ese docente en esa materia entran al prompt (generar, regenerar una pregunta, armar diagnóstico, y la práctica de sus alumnos en el grupo), cargados en el servidor. Regla de recorte (`seccionEvitar`, con test): los más nuevos, hasta 10; cada consigna hasta 220 caracteres; el total hasta 1.800, y el renglón que no entra entero no entra.
 - `/admin/ai-usage` suma el contador de pulgares abajo por motivo (y el total de arriba).
 - Sin la 033: no se ven guardados, guardar responde 503 con el motivo, y la generación sigue sin la sección.
+
+### O9 · Informe para imprimir
+
+- En la página del grupo, **"Imprimir informe"** abre `/teacher/grupos/[id]/imprimir` (en `(focus)`, sin la barra de la app) con el **orden y el filtro de la planilla** que había (se pasan por la URL, M4). Tres partes: la planilla (las mismas columnas que el CSV, con una línea que dice cómo está ordenada y filtrada), los temas flojos del grupo (del más flojo al menos) y las tareas con "18 de 25" (las individuales no van). CSS de impresión como la hoja del diagnóstico; **nada de PDF en el servidor**: el navegador imprime o guarda como PDF.
 
 ## Pasos manuales de Mauro, en orden
 
