@@ -896,7 +896,6 @@ export const BUZON = {
   tuMensaje: 'Tu mensaje',
 } as const
 
-<<<<<<< Updated upstream
 /** O8: pulgar arriba / abajo del docente en cada pregunta. */
 export const VALORACIONES = {
   arriba: 'Está bien',
@@ -918,7 +917,8 @@ export const VALORACIONES = {
   detalle: 'Pulgares abajo por motivo, en toda la app. Entran al prompt de la materia como "Evitá esto".',
   arribaTotal: (n: number) => (n === 1 ? '1 pulgar arriba' : `${n} pulgares arriba`),
   sinDatos: 'Todavía no hay valoraciones.',
-=======
+} as const
+
 /** O9: el informe del grupo para imprimir. */
 export const INFORME_IMPRESO = {
   boton: 'Imprimir informe',
@@ -953,7 +953,6 @@ export const INFORME_IMPRESO = {
   } as Record<string, string>,
   filtro: { todos: '', nada: 'Sólo los que no respondieron nada', debajo: 'Sólo los que están debajo de 6', flojos: 'Sólo los que tienen temas flojos' } as Record<string, string>,
   busqueda: (texto: string) => `Buscando «${texto}»`,
->>>>>>> Stashed changes
 } as const
 
 /** O6: el reporte del diagnóstico del 10/08, leído contra un programa. */
