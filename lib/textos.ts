@@ -722,6 +722,35 @@ export const TIPO_INCOHERENTE = {
   convirtiendo: 'Armando las opciones…',
 } as const
 
+/** N2: corregir en lote las preguntas cuyo tipo no encaja con la consigna. */
+export const CORREGIR_TIPOS = {
+  boton: (n: number) => (n === 1 ? 'Corregir 1 pregunta' : `Corregir ${n} preguntas`),
+  resumen: (n: number) =>
+    n === 1 ? 'Hay 1 pregunta cuyo tipo no encaja con la consigna.' : `Hay ${n} preguntas cuyo tipo no encaja con la consigna.`,
+  titulo: 'Corregir las preguntas marcadas',
+  detalle:
+    'Son las preguntas cuyo tipo no encaja con la consigna. Mirá cada cambio y destildá lo que no quieras. Nada se guarda hasta que toques Aplicar.',
+  buscando: 'Armando las correcciones…',
+  pregunta: (n: number) => `Pregunta ${n}`,
+  antes: 'Antes',
+  despues: 'Después',
+  porRegla: 'corregida sin IA',
+  porIa: 'reescrita con IA',
+  noSePudo: 'Queda como está',
+  aplicar: (n: number) => (n === 1 ? 'Aplicar 1 cambio' : `Aplicar ${n} cambios`),
+  aplicando: 'Guardando…',
+  cancelar: 'Cancelar',
+  sinCambios: 'No hay nada para corregir.',
+  queCargamos: 'las correcciones',
+  correcta: 'Correcta',
+  verdadero: 'Verdadero',
+  falso: 'Falso',
+  aplicado: (n: number) => (n === 1 ? 'Se corrigió 1 pregunta' : `Se corrigieron ${n} preguntas`),
+  aplicadoCopia: 'Ya tenía intentos: se guardó como copia y las asignaciones pasaron a la versión corregida. Las respuestas que ya estaban no cambian.',
+  aplicadoSinGuardar: 'Quedaron en la pantalla sin guardar: tocá Guardar para que las vean tus alumnos.',
+  noSeGuardo: 'No se pudo guardar',
+} as const
+
 export const TAMANO_DE_TAREA = (preguntas: number, minutos: number) =>
   `${preguntas === 1 ? '1 pregunta' : `${preguntas} preguntas`} · unos ${minutos} min`
 
