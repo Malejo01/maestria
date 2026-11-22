@@ -216,3 +216,25 @@ describe('temas granulares (I2)', () => {
     expect(captureAiSchemaFailure).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ finishReason: 'length' }))
   })
 })
+
+describe('/api/teacher/programs/extract — O11: título y temas en la misma línea', () => {
+  it('"Unidad 2: Funciones. Dominio, imagen, …" queda como unidad con título y sus temas', async () => {
+    generateObject.mockResolvedValue({
+      object: {
+        units: [
+          { name: 'Unidad 1: Números reales', topics: [{ name: 'Intervalos' }] },
+          { name: 'Unidad 2: Funciones. Dominio, imagen, ceros', topics: [{ name: 'Función lineal' }] },
+          { name: 'Unidad 3', topics: [{ name: 'Límites. Límites laterales, continuidad' }] },
+        ],
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    })
+    const cuerpo = await (await POST(pedido('foto.jpg', 'image/jpeg', PNG))).json()
+    const unidades = cuerpo.units.map((u: { name: string; topics: { name: string }[] }) => [u.name, u.topics.map((t) => t.name)])
+    expect(unidades).toEqual([
+      ['Unidad 1: Números reales', ['Intervalos']],
+      ['Unidad 2: Funciones', ['Dominio', 'Imagen', 'Ceros', 'Función lineal']],
+      ['Unidad 3: Límites', ['Límites laterales', 'Continuidad']],
+    ])
+  })
+})

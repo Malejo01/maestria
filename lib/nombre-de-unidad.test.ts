@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizarNombreDeUnidad } from './nombre-de-unidad'
+import { normalizarNombreDeUnidad, separarTituloDeUnidad } from './nombre-de-unidad'
 import { textoDeHtmlDeWord } from './html-de-word'
 
 describe('normalizarNombreDeUnidad (I3)', () => {
@@ -72,5 +72,44 @@ describe('textoDeHtmlDeWord (I3)', () => {
 
   it('una fila vacía no deja una línea de barras', () => {
     expect(textoDeHtmlDeWord('<table><tr><td></td><td> </td></tr><tr><td>A</td><td>B</td></tr></table>')).toBe('A | B')
+  })
+})
+
+describe('O11 · el título de la unidad y los temas en la misma línea', () => {
+  it('el caso de la tanda I: "Unidad 2: Funciones. Dominio, imagen, …"', () => {
+    expect(separarTituloDeUnidad('Unidad 2: Funciones. Dominio, imagen, ceros y signo…', [])).toEqual({
+      nombre: 'Unidad 2: Funciones',
+      temas: ['Dominio', 'Imagen', 'Ceros y signo'],
+    })
+  })
+
+  it('los temas de la línea van adelante de los que ya tenía', () => {
+    expect(separarTituloDeUnidad('UNIDAD III. Números racionales. Fracciones; decimales', ['Porcentaje'])).toEqual({
+      nombre: 'UNIDAD III: Números racionales',
+      temas: ['Fracciones', 'Decimales', 'Porcentaje'],
+    })
+  })
+
+  it('nombre pelado y el título pegado al primer tema (lo que devolvía la IA)', () => {
+    expect(separarTituloDeUnidad('Unidad 2', ['Funciones. Dominio, imagen', 'Función lineal'])).toEqual({
+      nombre: 'Unidad 2: Funciones',
+      temas: ['Dominio', 'Imagen', 'Función lineal'],
+    })
+  })
+
+  it('lo que no se toca', () => {
+    expect(separarTituloDeUnidad('Unidad 1: Álgebra', ['Ecuaciones'])).toEqual({ nombre: 'Unidad 1: Álgebra', temas: ['Ecuaciones'] })
+    expect(separarTituloDeUnidad('Unidad 3 — Álgebra y Ecuaciones para Sistemas de Información', [])).toEqual({
+      nombre: 'Unidad 3 — Álgebra y Ecuaciones para Sistemas de Información',
+      temas: [],
+    })
+    // Un tema con punto en una unidad que ya tiene título.
+    expect(separarTituloDeUnidad('Unidad 1: Números', ['Números reales. Propiedades'])).toEqual({ nombre: 'Unidad 1: Números', temas: ['Números reales. Propiedades'] })
+    // Un primer tema largo con punto no es un título.
+    const largo = 'El conjunto de los números reales y sus propiedades principales. Ejemplos'
+    expect(separarTituloDeUnidad('Unidad 1', [largo]).temas).toEqual([largo])
+    // Un decimal o "Nº." no cortan.
+    expect(separarTituloDeUnidad('Unidad Nº. 4: Estadística 1.5', []).nombre).toBe('Unidad Nº. 4: Estadística 1.5')
+    expect(separarTituloDeUnidad('Introducción. Repaso', []).nombre).toBe('Introducción. Repaso')
   })
 })

@@ -70,3 +70,60 @@ export function normalizarNombreDeUnidad(nombre: string): string {
     )
     .join('')
 }
+
+/**
+ * O11 · El título de la unidad y sus temas en la misma línea.
+ *
+ * "Unidad 2: Funciones. Dominio, imagen, ceros" se leía como una unidad
+ * llamada así entera (sin temas, y la lectura heurística la descartaba), o la
+ * IA devolvía "Unidad 2" y perdía "Funciones". Acá se separa:
+ *   - nombre "Unidad 2: Funciones. Dominio, imagen" → "Unidad 2: Funciones" y
+ *     los temas "Dominio", "Imagen" (adelante de los que ya tuviera);
+ *   - nombre pelado "Unidad 2" con un primer tema "Funciones. Dominio, imagen"
+ *     → "Unidad 2: Funciones" y ese tema se parte en los suyos (sólo si lo de
+ *     antes del punto es corto: hasta 6 palabras y sin comas).
+ * Lo demás no se toca: un título solo ("Unidad 1: Álgebra"), un guion largo
+ * ("Unidad 3 — Álgebra y Ecuaciones"), o un tema con punto en una unidad que
+ * ya tiene título.
+ */
+const ENCABEZADO_DE_UNIDAD = /^((?:unidad|m[oó]dulo|eje|bloque)\s*(?:n[º°o]\.?\s*)?(?:\d{1,2}|[IVXivx]{1,5})\b)\s*(?:[:.\-–—]\s*)?(.*)$/i
+
+/** El punto que separa el título de los temas: seguido de espacio (no un decimal ni "Nº."). */
+const FIN_DEL_TITULO = /\.\s+(?=\S)/
+
+function temasDeUnaLinea(texto: string): string[] {
+  return texto
+    .split(/[,;]\s*/)
+    .map((t) => t.replace(/[.…\s]+$/u, '').trim())
+    .filter((t) => t.length > 0)
+    .map(conMayusculaInicial)
+}
+
+const corto = (texto: string) => texto.trim().split(/\s+/).length <= 6 && !texto.includes(',')
+
+export function separarTituloDeUnidad(nombre: string, temas: readonly string[]): { nombre: string; temas: string[] } {
+  const limpio = nombre.replace(/\s+/g, ' ').trim()
+  const m = limpio.match(ENCABEZADO_DE_UNIDAD)
+  if (!m) return { nombre: limpio, temas: [...temas] }
+  const encabezado = m[1].trim()
+  const resto = m[2].trim()
+
+  if (resto) {
+    const corte = resto.search(FIN_DEL_TITULO)
+    if (corte <= 0) return { nombre: limpio, temas: [...temas] }
+    const titulo = resto.slice(0, corte).trim()
+    const delNombre = temasDeUnaLinea(resto.slice(corte + 1))
+    if (!titulo || delNombre.length === 0) return { nombre: limpio, temas: [...temas] }
+    return { nombre: `${encabezado}: ${titulo}`, temas: [...delNombre, ...temas] }
+  }
+
+  // Nombre pelado: el título puede haber quedado pegado al primer tema.
+  const [primero, ...demas] = temas
+  if (!primero) return { nombre: limpio, temas: [] }
+  const corte = primero.search(FIN_DEL_TITULO)
+  if (corte <= 0) return { nombre: limpio, temas: [...temas] }
+  const titulo = primero.slice(0, corte).trim()
+  const delTema = temasDeUnaLinea(primero.slice(corte + 1))
+  if (!corto(titulo) || delTema.length === 0) return { nombre: limpio, temas: [...temas] }
+  return { nombre: `${encabezado}: ${titulo}`, temas: [...delTema, ...demas] }
+}

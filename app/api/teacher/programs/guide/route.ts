@@ -23,7 +23,7 @@ import {
   parteDelArchivo,
 } from '@/lib/lectura-programa-server'
 import { REGLAS_DE_TEMAS, granularizarUnidades } from '@/lib/temas-granulares'
-import { normalizarNombreDeUnidad } from '@/lib/nombre-de-unidad'
+import { normalizarNombreDeUnidad, separarTituloDeUnidad } from '@/lib/nombre-de-unidad'
 
 export const runtime = 'nodejs'
 // Como /extract: una imagen o un escaneo van enteros al modelo, con 60 s (I1).
@@ -184,9 +184,12 @@ function parseHeuristicProgram(rawText: string): ParsedProgram {
 
   for (const line of lines) {
     if (isLikelyUnitLine(line)) {
+      // O11: si la línea trae los temas después del título, se separan (si no,
+      // la unidad quedaba sin temas y se descartaba).
+      const separada = separarTituloDeUnidad(line.replace(/[:\-\s]+$/, '').trim(), [])
       currentUnit = {
-        name: line.replace(/[:\-\s]+$/, '').trim(),
-        topics: [],
+        name: separada.nombre,
+        topics: separada.temas.map((name) => ({ name })),
       }
       units.push(currentUnit)
       continue
@@ -227,15 +230,19 @@ function parseHeuristicProgram(rawText: string): ParsedProgram {
 }
 
 function normalizeUnits(parsed: ParsedProgram) {
-  return parsed.units.map((unit, unitIndex) => ({
-    id: `gp-u-${unitIndex + 1}`,
-    // I3: "1" → "Unidad 1"; "UNIDAD I: LÓGICA" → "Unidad I: Lógica". El resto, tal cual.
-    name: normalizarNombreDeUnidad(unit.name),
-    topics: unit.topics.map((topic, topicIndex) => ({
-      id: `gp-u-${unitIndex + 1}-t-${topicIndex + 1}`,
-      name: topic.name,
-    })),
-  }))
+  return parsed.units.map((unit, unitIndex) => {
+    // O11: "Unidad 2: Funciones. Dominio, imagen" → título "Funciones" y sus temas.
+    const separada = separarTituloDeUnidad(unit.name, unit.topics.map((topic) => topic.name))
+    return {
+      id: `gp-u-${unitIndex + 1}`,
+      // I3: "1" → "Unidad 1"; "UNIDAD I: LÓGICA" → "Unidad I: Lógica". El resto, tal cual.
+      name: normalizarNombreDeUnidad(separada.nombre),
+      topics: separada.temas.map((name, topicIndex) => ({
+        id: `gp-u-${unitIndex + 1}-t-${topicIndex + 1}`,
+        name,
+      })),
+    }
+  })
 }
 
 function sanitizeContinuation(parsed: ParsedProgram, seedUnitName: string): ParsedProgram {

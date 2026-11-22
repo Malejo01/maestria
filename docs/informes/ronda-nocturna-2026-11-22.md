@@ -18,6 +18,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O8 · Pulgar arriba / abajo del docente (migración 033) | hecho | [#83](https://github.com/Malejo01/maestria/pull/83) | Tests de la regla de recorte, la API (propio, válvula), y que la generación recibe "Evitá esto" (lo del cuerpo se ignora); en staging Irina valoró dos preguntas del cuestionario 39; contador en `/admin/ai-usage` | US$0 |
 | O9 · Informe del grupo para imprimir | hecho | [#84](https://github.com/Malejo01/maestria/pull/84) | Tests de la parte pura; en staging el informe de Lengua ordenado por promedio, en modo impresión | US$0 |
 | O10 · Avisos al docente dentro de la app (migración 034) | hecho | [#85](https://github.com/Malejo01/maestria/pull/85) | Tests de los textos, el orden, los no leídos y la válvula; en staging la campanita de Irina con avisos reales | US$0 |
+| O11 · Títulos de unidad en la misma línea que los temas | hecho | [#86](https://github.com/Malejo01/maestria/pull/86) | Tests con el caso de la tanda I y casos que no se tocan; test de la ruta `extract` | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -121,6 +122,11 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - "Una alumna reportó…" del pedido quedó "Reportaron un problema": el reporte no guarda el género, y al docente no se le dice quién reportó (M6).
 - A 390 la barra no entraba con la campanita (el botón de la cuenta quedaba cortado): en celular la campanita mide 40 px y los botones van más juntos; medido, sin desborde.
 - Lección de la noche: al traer `main` con `stash pop`, dos ítems que suman textos en el mismo lugar de `lib/textos.ts` chocan. En O9 se commiteó con las marcas (resuelto en el mismo PR); desde O10 se verifica antes de commitear.
+
+### O11 · Títulos de unidad
+
+- `separarTituloDeUnidad` ([lib/nombre-de-unidad.ts](../../lib/nombre-de-unidad.ts)): "Unidad 2: Funciones. Dominio, imagen, ceros" → unidad "Unidad 2: Funciones" con los temas "Dominio", "Imagen", "Ceros" (adelante de los que tuviera); y "Unidad 2" pelado con un primer tema "Funciones. Dominio, imagen" → "Unidad 2: Funciones" (sólo si lo de antes del punto es corto). No se tocan un título solo, un guion largo, un decimal, "Nº." ni un tema con punto en una unidad con título. Aplicado en la normalización de `extract` y `guide`, y en la lectura heurística (donde la unidad quedaba sin temas y se descartaba).
+- No encontré programas de la tanda I en `docs/` ni fixtures en el repo: el caso del pedido quedó como test (de la función y de la ruta `extract` con la IA simulada).
 
 ## Pasos manuales de Mauro, en orden
 
