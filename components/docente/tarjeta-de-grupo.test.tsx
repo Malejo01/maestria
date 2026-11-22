@@ -47,7 +47,7 @@ describe('tarjeta de grupo', () => {
 
   it('Copiar link copia y no navega', async () => {
     dibujar()
-    await userEvent.click(screen.getByRole('button', { name: 'Copiar el link del grupo Matemática 1 Virtual' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Copiar link del grupo Matemática 1 Virtual' }))
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining('/aula/XYZ789'))
     expect(push).not.toHaveBeenCalled()
     expect(await screen.findByText('Copiado')).toBeTruthy()

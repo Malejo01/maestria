@@ -11,7 +11,7 @@ import { useAppStore } from '@/lib/store'
 import { LaTeXRenderer } from './latex-renderer'
 import { MathBackground } from './math-background'
 import { ExplanationModal } from './explanation-modal'
-import { ATAJOS, DIAGNOSTICO } from '@/lib/textos'
+import { ATAJOS, CUESTIONARIO_ACCESIBLE, DIAGNOSTICO } from '@/lib/textos'
 import { AyudaDeAtajos, PistaDeAtajos, useAtajosDeCuestionario, useEsEscritorio } from './quiz-atajos'
 import { Boton } from '@/components/sistema/boton'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
@@ -610,12 +610,18 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
             variant="ghost"
             size="icon"
             onClick={handleExit}
+            aria-label={CUESTIONARIO_ACCESIBLE.salir}
             className="shrink-0 rounded-xl hover:bg-destructive/10 hover:text-destructive"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </Button>
           <div className="flex-1">
-            <Progress value={progress} className="h-3 bg-muted [&>div]:bg-[var(--algebra)]" />
+            {/* O17: la barra de avance y el botón de salir no tenían nombre accesible. */}
+            <Progress
+              value={progress}
+              aria-label={CUESTIONARIO_ACCESIBLE.avance}
+              className="h-3 bg-muted [&>div]:bg-[var(--algebra)]"
+            />
           </div>
           <div className="shrink-0 bg-[var(--algebra-light)] text-[var(--algebra)] px-3 py-1 rounded-full text-sm font-bold">
             {currentIndex + 1}/{questions.length}

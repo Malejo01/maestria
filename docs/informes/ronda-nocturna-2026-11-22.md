@@ -25,6 +25,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O19 · Limpieza: placeholders de v0 | hecho | [#90](https://github.com/Malejo01/maestria/pull/90) | `grep` sin referencias (sólo el roadmap); build en verde | US$0 |
 | O15 · Esquema que usa el código contra staging | hecho | [#91](https://github.com/Malejo01/maestria/pull/91) | Test manual contra `information_schema` de staging: en verde; en el CI se salta | US$0 |
 | O16 · La barra en 360, 390 y 768 px | hecho | [#92](https://github.com/Malejo01/maestria/pull/92) | `e2e/anchos.spec.ts` en visitante, alumno y docente: antes, la barra del docente desbordaba 21 px a 360; ahora en verde | US$0 |
+| O17 · Accesibilidad con axe-core | hecho | (este PR) | `e2e/accesibilidad.spec.ts`: 7 problemas graves en panel docente, grupo, pregunta y resultados; corregidos, en verde | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,19 (US$0,0285 en `ai_usage_log` de staging — 18 llamadas desde la app —, más US$0,157 de los scripts de O14 y US$0,0005 del dry-run de N2, que llaman al modelo directo y no pasan por el registro; los scripts imprimen su gasto estimado con la misma tarifa) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -162,6 +163,17 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - Lo que sí había: **a 360 px la barra del docente se salía 21 px** (modo, campanita de O10, "+ Alumno" y el menú de la cuenta no entraban) y la página tenía scroll horizontal. Ahora la separación y el margen de la barra son más chicos sólo en el celular, y "+ Alumno" tiene menos relleno debajo de 640 px.
 - Nuevo `e2e/anchos.spec.ts`: a 360, 390 y 768 px, en visitante (`/`), alumno (`/aulas`, `/practicar`, `/history`) y docente (las tres secciones del panel y la página del grupo), nada de la barra queda fuera de la pantalla y la página no tiene scroll horizontal. Ignora lo que está dentro de un carril con scroll propio (las pestañas del grupo, a propósito). Capturas en `docs/capturas/o16-anchos/`.
 - De paso: quedaba un invitado "E2E" activo en el grupo de Irina de una corrida de las 02:57 cuya limpieza falló; lo pasé a `removed` (dato de prueba de esta ronda).
+
+### O17 · Accesibilidad
+
+- `@axe-core/playwright` 4.14.0 (devDependency, ~1 paquete más: `axe-core`, que ya es el estándar para esto; no entra al bundle). Nuevo `e2e/accesibilidad.spec.ts`: WCAG 2.1 A y AA en el panel docente (sus tres secciones), la página del grupo, una pregunta del cuestionario y la pantalla de resultados. **Falla con `serious` o `critical`**; lo `moderate`/`minor` queda anotado en el reporte de Playwright.
+- Encontrado y corregido:
+  1. *Mis alumnos*: la fila entera era un enlace con `aria-label="Ver la ficha de X"` que no incluía lo que se ve (nombre, contexto, fecha) — WCAG 2.5.3. Ahora el texto "Ver la ficha de" va oculto delante del contenido.
+  2. *Grupo*: "Copiar link" tenía como nombre "Copiar **el** link del grupo X": ahora empieza por lo que dice el botón.
+  3. *Grupo*: "Sin actividad" en gris suave sobre el fondo de "flojo": contraste insuficiente.
+  4. *Pregunta*: el botón de salir (la X) **no tenía nombre** (critical) y la barra de avance tampoco.
+  5. *Resultados*: la etiqueta "A seguir practicando" (rojizo sobre su tinte) y "20 % de aciertos" (gris sobre el fondo de "flojo"): contraste insuficiente.
+- La prueba de la alumna hace la tarea "Lengua · 4to Año" (sin tope de intentos) con Sofía en staging: le suma intentos de prueba (ver datos de prueba).
 
 ## Pasos manuales de Mauro, en orden
 

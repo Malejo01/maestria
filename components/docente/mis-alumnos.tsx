@@ -265,9 +265,10 @@ function Fila({
         {alumno.pendiente ? (
           <Link
             href={`/teacher/alumnos/invitacion/${alumno.pendiente.invitacionId}`}
-            aria-label={T.verFicha(alumno.nombre)}
             className="min-w-0 flex-1 basis-40 rounded-sm after:absolute after:inset-0 after:rounded-lg after:content-['']"
           >
+            {/* O17: el nombre accesible empieza por lo que se lee en pantalla (WCAG 2.5.3). */}
+            <span className="sr-only">{T.verFichaDe} </span>
             {quien}
           </Link>
         ) : (
@@ -304,9 +305,10 @@ function Fila({
       <Inicial nombre={alumno.nombre} />
       <Link
         href={`/teacher/alumnos/${encodeURIComponent(userId)}`}
-        aria-label={T.verFicha(alumno.nombre)}
         className="min-w-0 flex-1 basis-0 rounded-sm after:absolute after:inset-0 after:rounded-lg after:content-['']"
       >
+        {/* O17: sin aria-label, el nombre accesible incluye lo que se ve (WCAG 2.5.3). */}
+        <span className="sr-only">{T.verFichaDe} </span>
         <span className="cuerpo block truncate text-texto">{alumno.nombre}</span>
         <span className="nota block truncate text-texto-suave">{alumno.contexto}</span>
         {aviso}

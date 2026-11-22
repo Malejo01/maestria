@@ -295,7 +295,8 @@ export const MIS_ALUMNOS = {
   verLink: 'Ver su link',
   quitar: (nombre: string) => `Quitar a ${nombre} del listado`,
   ultimaVez: 'Última práctica',
-  verFicha: (nombre: string) => `Ver la ficha de ${nombre}`,
+  /** O17: va como texto oculto delante del nombre, para que lo que se lee esté en el nombre accesible. */
+  verFichaDe: 'Ver la ficha de',
   sugerencia: {
     inactivo: (nombre: string, dias: number) => `${nombre} no practica hace ${dias} días`,
     conTema: (tema: string) => `Le sigue costando el tema ${tema}. ¿Le mandamos una tarea corta?`,
@@ -821,7 +822,8 @@ export const MIS_GRUPOS = {
   cerrar: 'Cerrar grupo',
   copiar: 'Copiar link',
   copiado: 'Copiado',
-  copiarLink: (grupo: string) => `Copiar el link del grupo ${grupo}`,
+  /** O17: empieza por lo que dice el botón ("Copiar link"), para que coincida con el nombre accesible. */
+  copiarLink: (grupo: string) => `Copiar link del grupo ${grupo}`,
   reabrir: 'Reabrir',
   borrar: 'Borrar',
   cerrados: {
@@ -1472,4 +1474,10 @@ export const EMBUDO = {
 /** O13: Mis materias. */
 export const MIS_MATERIAS = {
   elegir: (materia: string) => `Elegir ${materia}`,
+} as const
+
+/** O17 · Nombres accesibles del cuestionario (lo que lee un lector de pantalla). */
+export const CUESTIONARIO_ACCESIBLE = {
+  salir: 'Salir del cuestionario',
+  avance: 'Avance del cuestionario',
 } as const

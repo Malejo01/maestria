@@ -238,7 +238,10 @@ export function PaginaDelGrupo({
               )}
             >
               <dd className="titulo-m tabular-nums text-texto">{valor}</dd>
-              <dt className="nota text-texto-suave">{etiqueta}</dt>
+              {/* O17: sobre el fondo de "flojo" el gris suave no llega al contraste AA. */}
+              <dt className={cn('nota', i === 3 && informe.summary!.inactiveCount > 0 ? 'text-texto' : 'text-texto-suave')}>
+                {etiqueta}
+              </dt>
             </div>
           ))}
         </dl>
