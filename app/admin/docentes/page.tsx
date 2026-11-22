@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { DISTINTIVO_DEL_PLAN } from '@/lib/textos'
 import { notFound } from 'next/navigation'
 import { getAdminViewer } from '@/lib/auth-session'
 import { listarDocentes } from '@/lib/admin/docentes-server'
@@ -37,7 +38,14 @@ export default async function DocentesAdminPage() {
               <Link href={`/admin/docentes/${encodeURIComponent(d.id)}`} className="block px-4 py-3 hover:bg-superficie-suave">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                   <div className="min-w-0">
-                    <p className="cuerpo-s font-semibold text-texto">{d.nombre || T.sinNombre}</p>
+                    <p className="cuerpo-s font-semibold text-texto">
+                      {d.fundadora && (
+                        <span className="mr-1 text-accion" aria-label={DISTINTIVO_DEL_PLAN.fundadora} title={DISTINTIVO_DEL_PLAN.fundadora}>
+                          ★
+                        </span>
+                      )}
+                      {d.nombre || T.sinNombre}
+                    </p>
                     {d.email && <p className="nota break-all text-texto-suave">{d.email}</p>}
                   </div>
                   <p className={cn('nota shrink-0 font-semibold', CLASE_DEL_PLAN[d.plan])}>{T.estado[d.plan]}</p>

@@ -460,6 +460,39 @@ export async function acreditarPlan(params: {
   return filas.length > 0
 }
 
+/**
+ * B2 · Marca (o saca) la docente fundadora. Sólo desde /admin/planes. Deja
+ * una línea en `plan_notas`. 'sin_migracion' si falta la 037.
+ */
+export async function marcarFundadora(params: {
+  docenteId: string
+  fundadora: boolean
+  marcadoPor: string
+  ahora?: Date
+}): Promise<boolean | 'sin_migracion'> {
+  const ahora = params.ahora ?? new Date()
+  const fecha = ahora.toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })
+  const linea = `${fecha} · ${params.marcadoPor} ${params.fundadora ? 'la marcó como docente fundadora' : 'le sacó la marca de fundadora'}`
+  try {
+    const filas = (await sql`
+      UPDATE users
+      SET fundadora_desde = ${params.fundadora ? ahora.toISOString() : null},
+          plan_notas = CASE WHEN COALESCE(plan_notas, '') = '' THEN ${linea} ELSE plan_notas || E'\n' || ${linea} END,
+          updated_at = NOW()
+      WHERE id = ${params.docenteId} AND role = 'DOCENTE'
+        AND ((${params.fundadora} AND fundadora_desde IS NULL) OR (NOT ${params.fundadora} AND fundadora_desde IS NOT NULL))
+      RETURNING id
+    `) as Fila[]
+    if (filas.length > 0) return true
+    // Ya estaba así: si el docente existe, no hay nada que cambiar.
+    const existe = (await sql`SELECT 1 FROM users WHERE id = ${params.docenteId} AND role = 'DOCENTE'`) as Fila[]
+    return existe.length > 0
+  } catch (error) {
+    if ((error as { code?: string })?.code === '42703') return 'sin_migracion'
+    throw error
+  }
+}
+
 export function lineaDeAcreditacion(params: {
   nivel: NivelPlan
   venceEl: Date

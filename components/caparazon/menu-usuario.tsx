@@ -27,7 +27,10 @@ import {
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { inicioDe } from '@/lib/navegacion'
-import { ADMIN, BUZON, CUENTA } from '@/lib/textos'
+import { ADMIN, BUZON, CUENTA, DISTINTIVO_DEL_PLAN } from '@/lib/textos'
+import { DistintivoPlan } from '@/components/sistema/distintivo-plan'
+import { estadoEnElAvatar, etiquetaDelAvatar, huellaDelPlan, seAcreditoUnPlan } from '@/lib/distintivo-del-plan'
+import type { ResumenDelPlan } from '@/lib/planes'
 import type { UserRole } from '@/lib/types'
 
 const ITEM = 'min-h-11 cursor-pointer gap-3 rounded-sm px-3 cuerpo-s text-texto focus:bg-superficie-suave focus:text-texto'
@@ -68,6 +71,9 @@ export function MenuUsuario({
 }) {
   const actualizarSesion = useRefrescarSesion()
   const nuevos = useReportesNuevos(esAdmin)
+  // B2: el estado del plan del docente, en el avatar y en el menú (no para el admin).
+  const { plan, caer } = usePlanEnElAvatar(rol === 'DOCENTE' && !esAdmin && !vistaPrevia)
+  const enElAvatar = estadoEnElAvatar(plan)
   const [confirmando, setConfirmando] = useState(false)
   const [cambiando, setCambiando] = useState(false)
   const [fallo, setFallo] = useState(false)
@@ -102,10 +108,12 @@ export function MenuUsuario({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={CUENTA.abrirMenu}
+            aria-label={enElAvatar.estado || enElAvatar.fundadora ? etiquetaDelAvatar(nombre, enElAvatar, CUENTA.abrirMenu) : CUENTA.abrirMenu}
+            data-plan={plan?.estado}
             className="relative flex size-11 shrink-0 items-center justify-center rounded-md border border-borde bg-superficie-suave font-titulo text-[15px] font-extrabold text-accion hover:border-borde-fuerte"
           >
             <span aria-hidden="true">{inicial}</span>
+            <DistintivoPlan distintivo={enElAvatar.distintivo} punto={enElAvatar.punto} caer={caer} />
             {nuevos > 0 && (
               <span className="absolute -right-1 -top-1 flex min-w-5 items-center justify-center rounded-full bg-accion px-1 text-[11px] font-bold leading-5 text-texto-sobre-accion">
                 {nuevos}
@@ -120,6 +128,7 @@ export function MenuUsuario({
             {email && <span className="nota block truncate text-texto-suave">{email}</span>}
             <span className="nota mt-1 block text-texto-suave">{CUENTA.estasComo[rol]}</span>
           </DropdownMenuLabel>
+          {enElAvatar.titulo && <PlanEnElMenu estado={enElAvatar} />}
           <DropdownMenuSeparator className="bg-borde" />
 
           {rol === 'DOCENTE' && !vistaPrevia && (
@@ -198,6 +207,75 @@ export function MenuUsuario({
       </AlertDialog>
     </>
   )
+}
+
+/** B2 · El bloque del plan en el menú: fundadora, el plan, la barra de cupo y qué hacer. */
+function PlanEnElMenu({ estado }: { estado: ReturnType<typeof estadoEnElAvatar> }) {
+  const porcentaje = estado.cupo && estado.cupo.total > 0 ? Math.min(100, Math.round((estado.cupo.usados / estado.cupo.total) * 100)) : 0
+  return (
+    <div className="space-y-1.5 px-3 pb-3" data-plan-en-el-menu="">
+      {estado.fundadora && <p className="etiqueta text-accion">{DISTINTIVO_DEL_PLAN.fundadora}</p>}
+      <p className="cuerpo-s font-semibold text-texto">{estado.titulo}</p>
+      {estado.cupo && (
+        <div className="space-y-1">
+          <div
+            role="progressbar"
+            aria-label={DISTINTIVO_DEL_PLAN.cupoEtiqueta}
+            aria-valuemin={0}
+            aria-valuemax={estado.cupo.total}
+            aria-valuenow={estado.cupo.usados}
+            aria-valuetext={estado.cupo.texto}
+            className="h-1.5 overflow-hidden rounded-full bg-superficie-suave"
+          >
+            <div className={`h-full rounded-full ${porcentaje >= 100 ? 'bg-flojo' : 'bg-accion'}`} style={{ width: `${porcentaje}%` }} />
+          </div>
+          <p className="nota text-texto-suave">{estado.cupo.texto}</p>
+        </div>
+      )}
+      {estado.detalle && <p className={`nota ${estado.punto ? 'text-flojo' : 'text-texto-suave'}`}>{estado.detalle}</p>}
+      {estado.accion && (
+        <Link href={estado.accion.href} className="nota inline-flex min-h-11 items-center font-semibold text-accion underline-offset-2 hover:underline">
+          {estado.accion.texto}
+        </Link>
+      )}
+    </div>
+  )
+}
+
+/**
+ * B2 · El plan del docente para el avatar (GET /api/teacher/plan). `caer`: el
+ * birrete cae una sola vez cuando se acredita un plan (la huella de lo visto
+ * queda en el navegador). Si la lectura falla, sin distintivo: nada se rompe.
+ */
+const HUELLA = 'maestria:plan-visto'
+
+function usePlanEnElAvatar(activo: boolean): { plan: ResumenDelPlan | null; caer: boolean } {
+  const [plan, setPlan] = useState<ResumenDelPlan | null>(null)
+  const [caer, setCaer] = useState(false)
+  useEffect(() => {
+    if (!activo) return
+    let vigente = true
+    Promise.resolve()
+      .then(() => fetch('/api/teacher/plan'))
+      .then((r) => (r?.ok ? r.json() : null))
+      .then((datos: { plan?: ResumenDelPlan } | null) => {
+        if (!vigente || !datos?.plan) return
+        setPlan(datos.plan)
+        const actual = huellaDelPlan(datos.plan)
+        try {
+          const anterior = window.localStorage.getItem(HUELLA)
+          if (seAcreditoUnPlan(anterior, actual)) setCaer(true)
+          if (actual) window.localStorage.setItem(HUELLA, actual)
+        } catch {
+          // Sin almacenamiento, sin animación: el distintivo igual se ve.
+        }
+      })
+      .catch(() => {})
+    return () => {
+      vigente = false
+    }
+  }, [activo])
+  return { plan: activo ? plan : null, caer }
 }
 
 /**

@@ -1655,3 +1655,31 @@ export const AREA_DE_LA_MATERIA = {
   modoPractico: (practicas: string) => `Aplicar lo aprendido: ${practicas}.`,
   modoMixto: 'Las dos cosas en el mismo cuestionario.',
 } as const
+
+/** Ronda T · B2: el estado del plan en el avatar y en el menú de la cuenta. */
+export const DISTINTIVO_DEL_PLAN = {
+  planParticular: 'Plan Particular',
+  planAula: 'Plan Aula',
+  tope: 'tope',
+  bloques: (n: number) => (n === 1 ? '1 bloque' : `${n} bloques`),
+  cursos: (n: number) => (n === 1 ? '1 curso' : `${n} cursos`),
+  deAlumnos: (usados: number, total: number) => `${usados} de ${total} alumnos`,
+  deCuestionarios: (usados: number, total: number) => `${usados} de ${total} cuestionarios`,
+  venceEl: (fecha: string) => `vence el ${fecha}`,
+  venceEnDias: (dias: number) => (dias <= 0 ? 'Vence hoy' : dias === 1 ? 'Vence mañana' : `Vence en ${dias} días`),
+  estadoPago: (plan: string) => plan.toLowerCase().replace('plan ', 'plan '),
+  prueba: 'Prueba',
+  pruebaQuedan: (dias: number) => (dias === 1 ? 'Prueba · queda 1 día' : `Prueba · quedan ${dias} días`),
+  estadoPrueba: (dias: number) => (dias === 1 ? 'en prueba, queda 1 día' : `en prueba, quedan ${dias} días`),
+  gratis: 'plan gratis',
+  gratisTitulo: 'Plan gratis',
+  teQuedan: (quedan: number, total: number) => `Te quedan ${quedan} de ${total} cuestionarios este mes`,
+  estadoVencido: 'el plan venció',
+  vencioTitulo: 'Tu plan venció',
+  vencioDetalle: 'Tus alumnos sólo pueden ver',
+  fundadora: 'Docente fundadora',
+  elegirUnPlan: 'Elegir un plan',
+  renovar: 'Renovar',
+  pasateAUnPlan: 'Pasate a un plan',
+  cupoEtiqueta: 'Cupo del plan',
+} as const
