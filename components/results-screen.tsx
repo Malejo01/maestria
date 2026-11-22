@@ -340,7 +340,8 @@ export function ResultsScreen() {
         badgeText: 'A seguir practicando',
         title: isPrimario ? 'A no desanimarse' : 'Seguí practicando',
         subtitle: isPrimario ? 'Cada error es una oportunidad para aprender. Mirá tus recomendaciones abajo.' : 'Repasá los temas fallados para mejorar tu rendimiento.',
-        badgeClass: 'bg-flojo/10 text-flojo dark:text-flojo border border-flojo/30',
+        // O17: el rojizo sobre su propio tinte no llegaba al contraste AA: el texto va en el color de texto.
+        badgeClass: 'bg-flojo-fondo text-texto border border-flojo',
       }
     }
     if (results.score < 9) {
@@ -441,7 +442,8 @@ export function ResultsScreen() {
             <p className="text-xl font-bold text-foreground">
               {results.correct} de {results.total} correctas
             </p>
-            <p className="text-sm text-muted-foreground font-medium">
+            {/* O17: sobre el fondo de "flojo" el gris apagado no llegaba al contraste AA. */}
+            <p className="text-sm text-texto font-medium">
               {Math.round(results.percentage)}% de aciertos
             </p>
           </div>

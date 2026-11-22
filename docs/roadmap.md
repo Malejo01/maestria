@@ -428,6 +428,7 @@ Trabajo en loop sin supervisión (encargo del 22/11, 00:40). Informe de la maña
 - [x] **O19 · Limpieza: placeholders de v0** (PR [#90](https://github.com/Malejo01/maestria/pull/90), rama `ronda-o/o19-placeholders`). Borrados `public/placeholder.svg`, `.jpg` y `placeholder-user.jpg`; `grep` sin referencias.
 - [x] **O15 · El esquema que usa el código, contra staging** (PR #91). Los `Db*` ya no existían; [tests/esquema-real.test.ts](../tests/esquema-real.test.ts) compara contra `information_schema` de staging las tablas y columnas de las migraciones y las columnas que nombran las consultas (`COLUMNAS_QUE_USA_EL_CODIGO`, a mantener con cada migración). Manual, fuera del CI. En verde.
 - [x] **O16 · La barra en 360, 390 y 768 px** (PR #92). El `xs:` ya no se usaba; a 360 px la barra del docente se salía 21 px: separación y relleno más chicos en el celular. [e2e/anchos.spec.ts](../e2e/anchos.spec.ts) lo cubre en visitante, alumno y docente.
+- [x] **O17 · Accesibilidad con axe-core** (PR #93). [e2e/accesibilidad.spec.ts](../e2e/accesibilidad.spec.ts) (WCAG 2.1 AA, falla con serious/critical) en el panel docente, el grupo, la pregunta y los resultados. Corregidos 7: nombres accesibles que no incluían lo visible (fila de Mis alumnos, "Copiar link"), botón de salir y barra de avance del cuestionario sin nombre, y tres contrastes sobre el fondo de "flojo".
 
 ## 🏫 Tanda M — lo que salió del uso real con alumnos (21/11/2026)
 
