@@ -10,7 +10,7 @@ import { Cargando } from '@/components/sistema/cargando'
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { useAppStore } from '@/lib/store'
-import { exportQuizToMoodleGift } from '@/lib/moodle-export'
+import { exportarParaMoodle } from '@/lib/moodle-xml'
 import { MathBackground } from '@/components/math-background'
 import { LaTeXRenderer } from '@/components/latex-renderer'
 import {
@@ -150,14 +150,9 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }
-    const gift = exportQuizToMoodleGift(quizForExport)
-    const blob = new Blob([gift], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${selection.materia.replace(/\s+/g, '_')}_moodle.gift.txt`
-    a.click()
-    URL.revokeObjectURL(url)
+    // F1: Moodle XML (lleva todos los tipos). Antes bajaba el GIFT y, además,
+    // un segundo archivo cuyo contenido era el nombre del primero.
+    exportarParaMoodle(quizForExport, 'xml')
     setShowMoodleModal(true)
   }
 

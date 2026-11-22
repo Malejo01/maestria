@@ -1,11 +1,13 @@
 'use client'
 
+import { ExportarMoodle } from '@/components/docente/exportar-moodle'
+import type { FormatoMoodle } from '@/lib/moodle-xml'
 import { EVENTO_TAREA_MANDADA } from '@/lib/eventos'
 import { Cargando } from '@/components/sistema/cargando'
 
 
 import { useEffect, useId, useMemo, useState } from 'react'
-import { Check, Copy, Download, MessageCircle } from 'lucide-react'
+import { Check, Copy, MessageCircle } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Aparecer } from '@/components/sistema/aparecer'
 import { Boton } from '@/components/sistema/boton'
@@ -28,7 +30,7 @@ interface Grupo {
 interface ShareQuizDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onExportMoodle: () => void
+  onExportMoodle: (formato: FormatoMoodle) => void
   isExporting?: boolean
   /** La tarea que se manda. */
   quiz?: TeacherQuiz | null
@@ -400,15 +402,7 @@ export function ShareQuizDialog({
             )}
 
             <div className="border-t border-borde pt-2">
-              <button
-                type="button"
-                onClick={onExportMoodle}
-                disabled={isExporting}
-                className="cuerpo-s inline-flex min-h-11 items-center gap-2 rounded-sm text-texto-suave hover:text-texto disabled:opacity-60"
-              >
-                {isExporting ? <Cargando /> : <Download aria-hidden="true" className="size-4" strokeWidth={TRAZO_ICONO} />}
-                {isExporting ? T.mandar.exportando : T.mandar.moodle}
-              </button>
+              <ExportarMoodle como="enlace" onExportar={onExportMoodle} exportando={isExporting} />
             </div>
           </div>
         )}

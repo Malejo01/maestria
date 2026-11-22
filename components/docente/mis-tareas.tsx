@@ -1,5 +1,6 @@
 'use client'
 
+import { ExportarMoodle } from '@/components/docente/exportar-moodle'
 import { useState } from 'react'
 import { MIS_TAREAS as T } from '@/lib/textos'
 
@@ -219,13 +220,7 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                         <Boton variante="secundario" onClick={() => handleRunQuiz(quiz)}>
                           {T.probar}
                         </Boton>
-                        <Boton
-                          variante="secundario"
-                          disabled={exportingQuizId === quiz.id}
-                          onClick={() => handleExportQuiz(quiz)}
-                        >
-                          {exportingQuizId === quiz.id ? T.exportando : T.moodle}
-                        </Boton>
+                        <ExportarMoodle exportando={exportingQuizId === quiz.id} onExportar={(formato) => handleExportQuiz(quiz, formato)} />
                         {/* Borrar no se deshace: pide confirmación en el lugar. */}
                         {borrando === quiz.id ? (
                           <>
@@ -316,7 +311,7 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
           setVersion((actual) => actual + 1)
         }}
         quiz={sharingQuiz}
-        onExportMoodle={() => sharingQuiz && handleExportQuiz(sharingQuiz)}
+        onExportMoodle={(formato) => sharingQuiz && handleExportQuiz(sharingQuiz, formato)}
         isExporting={exportingQuizId === sharingQuiz?.id}
       />
     </>
