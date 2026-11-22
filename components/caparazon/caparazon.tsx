@@ -7,6 +7,7 @@ import { signIn } from 'next-auth/react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { EnlacesLegales } from '@/components/legal-notice'
 import { PageContainer } from '@/components/layout/page-container'
+import { AvisoDeReporte } from '@/components/caparazon/aviso-de-reporte'
 import { MenuUsuario } from '@/components/caparazon/menu-usuario'
 import { SesionAlDia } from '@/components/caparazon/sesion-al-dia'
 import { Boton } from '@/components/sistema/boton'
@@ -116,6 +117,8 @@ function Marco({
 
       {contexto === 'invitado' && <AvisoInvitado />}
       {vistaPrevia && <AvisoVistaPrevia />}
+      {/* N1: a quien reportó algo que ya se corrigió (cuenta o invitado). */}
+      {quien && <AvisoDeReporte quien={quien.email ?? `invitado:${quien.nombre}`} />}
 
       <main className={cn('flex-1', tieneBarraInferior && 'pb-16 md:pb-0')}>
         <PageContainer>

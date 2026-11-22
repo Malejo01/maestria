@@ -854,6 +854,32 @@ export const BUZON = {
   revisar: 'Revisar y editar el cuestionario',
   abrir: 'Ver la pregunta',
   cerrar: 'Ocultar la pregunta',
+  // N1: al resolver, un mensaje opcional para quien reportó.
+  mensajeEtiqueta: 'Mensaje para quien lo reportó',
+  mensajeAyuda: 'Opcional. Si lo dejás vacío, el aviso dice que ya está corregido.',
+  confirmarResuelto: 'Marcar como resuelto',
+  cancelar: 'Cancelar',
+  avisoVisto: (fecha: string) => `Lo vio el ${fecha}`,
+  avisoPendiente: 'Aviso pendiente: lo va a ver la próxima vez que entre',
+  avisoDelAdmin: 'Sin aviso: lo reportó un admin',
+  avisoSinQuien: 'Sin aviso: la cuenta de quien lo reportó ya no existe',
+  avisoSinLa030: 'Sin aviso: falta la migración 030',
+  tuMensaje: 'Tu mensaje',
+} as const
+
+/** N1: el aviso a quien reportó, cuando su reporte se resolvió. */
+export const AVISO_DE_REPORTE = {
+  etiqueta: 'Tu reporte',
+  uno: (fecha: string, cuestionario: string | null) =>
+    cuestionario
+      ? `Gracias por avisarnos. Lo que reportaste el ${fecha} sobre una pregunta de «${cuestionario}» ya está corregido.`
+      : `Gracias por avisarnos. Lo que reportaste el ${fecha} ya está corregido.`,
+  varios: (n: number) => `Gracias por avisarnos. Ya corregimos los ${n} problemas que reportaste:`,
+  renglon: (fecha: string, cuestionario: string | null) =>
+    cuestionario ? `El del ${fecha}, sobre una pregunta de «${cuestionario}».` : `El del ${fecha}.`,
+  mensaje: (quien: string | null, texto: string) =>
+    quien ? `${quien} te dejó un mensaje: ${texto}` : `Te dejamos un mensaje: ${texto}`,
+  entendido: 'Entendido',
 } as const
 
 /** M6: en la página del grupo, lo que reportaron sus alumnos. */

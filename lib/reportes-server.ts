@@ -1,4 +1,6 @@
 import { sql } from '@/lib/db'
+import { isAdminEmail } from '@/lib/ai-rate-limit'
+import type { AvisoPendiente } from '@/lib/avisos-de-reporte'
 import { getOwnedClassroom } from '@/lib/classrooms-server'
 import {
   ESTADO_SIN_LA_029,
@@ -96,7 +98,17 @@ interface FilaDeReporte {
   grupo: string | null
   cuestionario: string | null
   preguntas: Question[] | null
+  email?: string | null
+  resuelto_el?: string | null
+  aviso_visto_el?: string | null
+  respuesta?: string | null
 }
+
+/**
+ * N1: qué pasa con el aviso a quien reportó. Sólo tiene sentido en un reporte
+ * resuelto; en los demás es `null`.
+ */
+export type EstadoDelAviso = 'visto' | 'pendiente' | 'delAdmin' | 'sinQuien' | 'sinMigracion'
 
 export interface ReporteParaLeer {
   id: number
@@ -117,6 +129,19 @@ export interface ReporteParaLeer {
   }
   /** La pregunta tal como está guardada (si se sabe cuál es). */
   pregunta: Question | null
+  /** N1: el aviso a quien reportó (sólo en resueltos). */
+  aviso: { estado: EstadoDelAviso; vistoEl: string | null; respuesta: string | null } | null
+}
+
+function avisoDe(f: FilaDeReporte): ReporteParaLeer['aviso'] {
+  if (estadoDeReporte(f.status) !== 'resuelto') return null
+  const respuesta = f.respuesta ?? null
+  if (!f.user_id) return { estado: 'sinQuien', vistoEl: null, respuesta }
+  if (!f.is_guest && isAdminEmail(f.email)) return { estado: 'delAdmin', vistoEl: null, respuesta }
+  if (f.aviso_visto_el) return { estado: 'visto', vistoEl: f.aviso_visto_el, respuesta }
+  // Con la 030, todo resuelto tiene `resuelto_el` (el backfill y el PATCH lo ponen).
+  if (!f.resuelto_el) return { estado: 'sinMigracion', vistoEl: null, respuesta }
+  return { estado: 'pendiente', vistoEl: null, respuesta }
 }
 
 const entero = (valor: string | number | null) => (valor === null || valor === undefined ? null : Number(valor))
@@ -146,6 +171,7 @@ function aReporte(f: FilaDeReporte): ReporteParaLeer {
       preguntaTipo: f.question_type,
     },
     pregunta,
+    aviso: avisoDe(f),
   }
 }
 
@@ -158,12 +184,17 @@ export async function listarReportes(estado: EstadoDeReporte | null): Promise<Re
              (to_jsonb(f) ->> 'teacher_quiz_id') AS tq,
              (to_jsonb(f) ->> 'assignment_id') AS asig,
              (to_jsonb(f) ->> 'classroom_id') AS cl,
-             (to_jsonb(f) ->> 'question_index') AS qi
+             (to_jsonb(f) ->> 'question_index') AS qi,
+             -- N1 (030). Con otro nombre: con la 030 corrida, f.* ya trae estas columnas.
+             (to_jsonb(f) ->> 'resuelto_el') AS n1_resuelto_el,
+             (to_jsonb(f) ->> 'aviso_visto_el') AS n1_aviso_visto_el,
+             (to_jsonb(f) ->> 'respuesta') AS n1_respuesta
       FROM feedback_reports f
       WHERE ${valores}::text[] IS NULL OR f.status = ANY(${valores}::text[])
     )
     SELECT r.id, r.created_at, r.status, r.description, r.pathname, r.question_id, r.question_type,
-           r.is_guest, r.role, r.user_id, u.name AS nombre,
+           r.is_guest, r.role, r.user_id, u.name AS nombre, u.email AS email,
+           r.n1_resuelto_el AS resuelto_el, r.n1_aviso_visto_el AS aviso_visto_el, r.n1_respuesta AS respuesta,
            r.tq AS teacher_quiz_id, r.asig AS assignment_id, r.cl AS classroom_id, r.qi AS question_index,
            c.name AS grupo, q.title AS cuestionario, q.questions AS preguntas
     FROM r
@@ -182,8 +213,47 @@ export async function contarNuevos(): Promise<number> {
   return Number(filas[0]?.n ?? 0)
 }
 
-/** Cambia el estado. Sin la 029, con el nombre que admite el CHECK de la 019. */
-export async function cambiarEstadoDeReporte(id: number, estado: EstadoDeReporte): Promise<boolean> {
+export interface OpcionesDeResolucion {
+  /** N1: lo que el admin le contesta a quien reportó (null = texto por defecto). */
+  mensaje?: string | null
+  /** N1: el nombre de pila del admin ("Mauro te dejó un mensaje"). */
+  respondidoPor?: string | null
+}
+
+/**
+ * Cambia el estado. Con la 030 (N1), pasar a 'resuelto' guarda cuándo y el
+ * mensaje para quien reportó, y deja el aviso pendiente; volver a 'nuevo' o
+ * 'visto' limpia `resuelto_el` y `aviso_visto_el` (si se vuelve a resolver,
+ * el aviso sale otra vez). Sin la 030, como en M6; sin la 029, con el nombre
+ * que admite el CHECK de la 019.
+ */
+export async function cambiarEstadoDeReporte(
+  id: number,
+  estado: EstadoDeReporte,
+  opciones: OpcionesDeResolucion = {},
+): Promise<boolean> {
+  try {
+    const filas = (
+      estado === 'resuelto'
+        ? await sql`
+            UPDATE feedback_reports
+            SET status = ${estado}, resuelto_el = NOW(), aviso_visto_el = NULL,
+                respuesta = ${opciones.mensaje ?? null}, respondido_por = ${opciones.respondidoPor ?? null}
+            WHERE id = ${id}
+            RETURNING id
+          `
+        : await sql`
+            UPDATE feedback_reports
+            SET status = ${estado}, resuelto_el = NULL, aviso_visto_el = NULL
+            WHERE id = ${id}
+            RETURNING id
+          `
+    ) as { id: number }[]
+    return filas.length > 0
+  } catch (error) {
+    // Sin la 030 no están las columnas del aviso: el cambio de estado de M6.
+    if (!faltaLaMigracion(error) && !violaElCheck(error)) throw error
+  }
   try {
     const filas = (await sql`UPDATE feedback_reports SET status = ${estado} WHERE id = ${id} RETURNING id`) as { id: number }[]
     return filas.length > 0
@@ -193,6 +263,60 @@ export async function cambiarEstadoDeReporte(id: number, estado: EstadoDeReporte
       UPDATE feedback_reports SET status = ${ESTADO_SIN_LA_029[estado]} WHERE id = ${id} RETURNING id
     `) as { id: number }[]
     return filas.length > 0
+  }
+}
+
+/**
+ * N1: los reportes resueltos de ESTE usuario cuyo aviso todavía no vio. La
+ * consulta filtra por `user_id` del viewer (nunca de algo que mande el
+ * cliente). Sin la 030, vacío: no hay aviso y nada da 500.
+ */
+export async function avisosPendientes(userId: string): Promise<AvisoPendiente[]> {
+  try {
+    const filas = (await sql`
+      SELECT f.id, f.created_at, f.respuesta, f.respondido_por, q.title AS cuestionario
+      FROM feedback_reports f
+      LEFT JOIN teacher_quizzes q ON q.id = (to_jsonb(f) ->> 'teacher_quiz_id')::int
+      WHERE f.user_id = ${userId}
+        AND f.status = 'resuelto'
+        AND f.resuelto_el IS NOT NULL
+        AND f.aviso_visto_el IS NULL
+      ORDER BY f.created_at
+      LIMIT 20
+    `) as { id: number; created_at: string | Date; respuesta: string | null; respondido_por: string | null; cuestionario: string | null }[]
+    return filas.map((f) => ({
+      id: Number(f.id),
+      reportadoEl: f.created_at instanceof Date ? f.created_at.toISOString() : String(f.created_at),
+      cuestionario: f.cuestionario ?? null,
+      respuesta: f.respuesta ?? null,
+      respondidoPor: f.respondido_por ?? null,
+    }))
+  } catch (error) {
+    if (faltaLaMigracion(error)) return []
+    throw error
+  }
+}
+
+/**
+ * N1: "Entendido". Sólo marca reportes del propio usuario, resueltos y con el
+ * aviso pendiente: un id ajeno no se toca. Devuelve cuántos marcó.
+ */
+export async function marcarAvisosVistos(userId: string, ids: number[]): Promise<number> {
+  if (ids.length === 0) return 0
+  try {
+    const filas = (await sql`
+      UPDATE feedback_reports
+      SET aviso_visto_el = NOW()
+      WHERE id = ANY(${ids}::int[])
+        AND user_id = ${userId}
+        AND status = 'resuelto'
+        AND aviso_visto_el IS NULL
+      RETURNING id
+    `) as { id: number }[]
+    return filas.length
+  } catch (error) {
+    if (faltaLaMigracion(error)) return 0
+    throw error
   }
 }
 

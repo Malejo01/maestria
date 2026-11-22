@@ -8,6 +8,7 @@ import { LaTeXRenderer } from '@/components/latex-renderer'
 import { Boton } from '@/components/sistema/boton'
 import { Cargando } from '@/components/sistema/cargando'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
+import { fechaCorta } from '@/lib/avisos-de-reporte'
 import { pedirJson } from '@/lib/pedir-json'
 import { ESTADOS_DE_REPORTE, numeroDePregunta, siguienteEstado, type EstadoDeReporte } from '@/lib/reportes'
 import type { ReporteParaLeer } from '@/lib/reportes-server'
@@ -44,6 +45,9 @@ export function BuzonDeReportes() {
   const [abierto, setAbierto] = useState<number | null>(null)
   const [ocupado, setOcupado] = useState<number | null>(null)
   const [vuelta, setVuelta] = useState(0)
+  // N1: al resolver, un campo opcional con el mensaje para quien reportó.
+  const [resolviendo, setResolviendo] = useState<number | null>(null)
+  const [mensaje, setMensaje] = useState('')
 
   useEffect(() => {
     let vigente = true
@@ -63,14 +67,16 @@ export function BuzonDeReportes() {
 
   const releer = useCallback(() => setVuelta((n) => n + 1), [])
 
-  async function cambiar(id: number, estado: EstadoDeReporte) {
+  async function cambiar(id: number, estado: EstadoDeReporte, conMensaje?: string) {
     setOcupado(id)
     const respuesta = await pedirJson(`/api/admin/reportes/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ estado }),
+      body: JSON.stringify(conMensaje !== undefined ? { estado, mensaje: conMensaje } : { estado }),
     })
     setOcupado(null)
+    setResolviendo(null)
+    setMensaje('')
     if ('error' in respuesta) setError(respuesta.error)
     releer()
     // La marca del menú se relee sola al volver a abrirlo.
@@ -166,8 +172,16 @@ export function BuzonDeReportes() {
                       </Link>
                     </Boton>
                   )}
-                  {r.estado !== 'resuelto' && (
-                    <Boton disabled={ocupado === r.id} onClick={() => void cambiar(r.id, siguiente)}>
+                  {r.estado !== 'resuelto' && resolviendo !== r.id && (
+                    <Boton
+                      disabled={ocupado === r.id}
+                      onClick={() => {
+                        if (siguiente === 'resuelto') {
+                          setResolviendo(r.id)
+                          setMensaje('')
+                        } else void cambiar(r.id, siguiente)
+                      }}
+                    >
                       {T.marcarComo[siguiente]}
                     </Boton>
                   )}
@@ -177,6 +191,61 @@ export function BuzonDeReportes() {
                     </Boton>
                   )}
                 </div>
+
+                {resolviendo === r.id && (
+                  <form
+                    className="flex flex-col gap-2 rounded-md border border-borde bg-superficie-base p-3"
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      void cambiar(r.id, 'resuelto', mensaje)
+                    }}
+                  >
+                    <label htmlFor={`mensaje-${r.id}`} className="nota font-semibold text-texto">
+                      {T.mensajeEtiqueta}
+                    </label>
+                    <textarea
+                      id={`mensaje-${r.id}`}
+                      value={mensaje}
+                      onChange={(e) => setMensaje(e.target.value)}
+                      maxLength={1000}
+                      rows={3}
+                      aria-describedby={`mensaje-ayuda-${r.id}`}
+                      className="cuerpo-s rounded-md border border-borde-fuerte bg-superficie-tarjeta p-2 text-texto"
+                    />
+                    <p id={`mensaje-ayuda-${r.id}`} className="nota text-texto-suave">
+                      {T.mensajeAyuda}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Boton type="submit" disabled={ocupado === r.id}>
+                        {T.confirmarResuelto}
+                      </Boton>
+                      <Boton type="button" variante="secundario" onClick={() => setResolviendo(null)}>
+                        {T.cancelar}
+                      </Boton>
+                    </div>
+                  </form>
+                )}
+
+                {r.aviso && (
+                  <div className="nota flex flex-col gap-0.5 text-texto-suave">
+                    <p className={cn(r.aviso.estado === 'visto' && 'text-logrado')}>
+                      {r.aviso.estado === 'visto' && r.aviso.vistoEl
+                        ? T.avisoVisto(fechaCorta(r.aviso.vistoEl))
+                        : r.aviso.estado === 'pendiente'
+                          ? T.avisoPendiente
+                          : r.aviso.estado === 'delAdmin'
+                            ? T.avisoDelAdmin
+                            : r.aviso.estado === 'sinQuien'
+                              ? T.avisoSinQuien
+                              : T.avisoSinLa030}
+                    </p>
+                    {r.aviso.respuesta && (
+                      <p className="whitespace-pre-wrap break-words">
+                        {T.tuMensaje}: {r.aviso.respuesta}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 {abierto === r.id && r.pregunta && (
                   <div className="flex flex-col gap-2 rounded-md border border-borde bg-superficie-base p-3">
