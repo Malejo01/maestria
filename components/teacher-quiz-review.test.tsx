@@ -224,7 +224,7 @@ describe('TeacherQuizReview · regenerar una pregunta', () => {
     // La comparación lado a lado, sin aplicar todavía.
     await waitFor(() => expect(screen.getByText('Pregunta nueva')).toBeTruthy())
 
-    const [url, init] = vi.mocked(fetch).mock.calls[0]
+    const [url, init] = vi.mocked(fetch).mock.calls.find(([u]) => !String(u).endsWith('/valoraciones'))!
     expect(String(url)).toBe('/api/teacher/quizzes/42/regenerate-question')
     const body = JSON.parse(String((init as RequestInit).body))
     expect(body).toEqual({ questionIndex: 0, rejectionNote: 'Muy parecida a la anterior' })
@@ -235,7 +235,7 @@ describe('TeacherQuizReview · regenerar una pregunta', () => {
     // pendiente: regenerar NO escribe, eso es del PATCH.
     expect(screen.getByText(/grado de su derivada/)).toBeTruthy()
     expect(screen.getByText('Cambios sin guardar')).toBeTruthy()
-    expect(vi.mocked(fetch).mock.calls).toHaveLength(1)
+    expect(vi.mocked(fetch).mock.calls.filter(([u]) => !String(u).endsWith('/valoraciones'))).toHaveLength(1)
   })
 
   it('el 502 real ({question: null, error}) no abre la comparación ni toca la pregunta', async () => {
@@ -254,7 +254,7 @@ describe('TeacherQuizReview · regenerar una pregunta', () => {
     await user.click(screen.getByRole('button', { name: 'Regenerar pregunta' }))
     await user.click(screen.getByRole('button', { name: 'Regenerar' }))
 
-    await waitFor(() => expect(vi.mocked(fetch).mock.calls).toHaveLength(1))
+    await waitFor(() => expect(vi.mocked(fetch).mock.calls.filter(([u]) => !String(u).endsWith('/valoraciones'))).toHaveLength(1))
     expect(screen.queryByText('Pregunta nueva')).toBeNull()
     expect(screen.getByText('El grado de p(x) es:')).toBeTruthy()
     expect(screen.getByText('Todo guardado')).toBeTruthy()
@@ -276,7 +276,9 @@ describe('TeacherQuizReview · consigna que no encaja con su tipo (M2)', () => {
   beforeEach(() => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(
+      // Una Response nueva por llamada: el cuerpo se lee una sola vez, y al
+      // abrir también se piden las valoraciones (O8).
+      vi.fn().mockImplementation(async () =>
         new Response(
           JSON.stringify({
             question: {
@@ -301,7 +303,7 @@ describe('TeacherQuizReview · consigna que no encaja con su tipo (M2)', () => {
     expect(screen.getByText('Esta consigna no encaja con su tipo')).toBeTruthy()
     await userEvent.click(screen.getByRole('button', { name: 'Pasar a opción múltiple' }))
 
-    const [url, init] = vi.mocked(fetch).mock.calls[0]
+    const [url, init] = vi.mocked(fetch).mock.calls.find(([u]) => !String(u).endsWith('/valoraciones'))!
     expect(url).toBe('/api/teacher/quizzes/42/regenerate-question')
     expect(JSON.parse((init as RequestInit).body as string)).toMatchObject({ questionIndex: 0, convertirA: 'multiple_choice' })
     // La propuesta se compara antes de aplicarse, como cualquier regeneración.

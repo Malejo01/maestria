@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { preguntasAEvitar } from '@/lib/valoraciones-server'
 import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { guardAiCall } from '@/lib/ai-guard'
@@ -147,6 +148,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       rejectionNote: rejectionNote || undefined,
       // J3: la pregunta nueva también se parece al examen real del alumno.
       perfilAlumnos: await perfilSinRomper(teacher.id, Number(quiz.teacher_program_id)),
+      // O8: "Evitá esto", con los pulgares abajo de esta materia.
+      evitar: await preguntasAEvitar(Number(quiz.teacher_program_id)),
     }
 
     const guard = await guardAiCall({

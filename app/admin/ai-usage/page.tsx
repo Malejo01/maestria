@@ -3,6 +3,9 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { getAdminViewer } from '@/lib/auth-session'
 import { readAiUsageReport, type GroupedSpendRow } from '@/lib/ai-usage'
+import { resumenDeValoraciones } from '@/lib/valoraciones-server'
+import { MOTIVOS } from '@/lib/valoraciones'
+import { VALORACIONES } from '@/lib/textos'
 
 /**
  * Vista interna de costo de IA, previa al lanzamiento.
@@ -110,7 +113,7 @@ export default async function AiUsagePage() {
   const admin = await getAdminViewer()
   if (!admin) notFound()
 
-  const report = await readAiUsageReport()
+  const [report, valoraciones] = await Promise.all([readAiUsageReport(), resumenDeValoraciones().catch(() => null)])
 
   const budgetPct = report.budgetUsd > 0 ? (report.spendTodayUsd / report.budgetUsd) * 100 : 0
   const budgetTone = budgetPct >= 100 ? 'danger' : budgetPct >= 70 ? 'warn' : 'normal'
@@ -161,6 +164,23 @@ export default async function AiUsagePage() {
           ventana de 24 h se libere. Para levantarlo, subí <code className="font-mono">AI_DAILY_BUDGET_USD</code>.
         </p>
       ) : null}
+
+      {/* O8: pulgares de los docentes, por motivo. Sin la 033 no se muestra. */}
+      {valoraciones && (
+        <section className="mt-6 rounded-xl border bg-card">
+          <h2 className="border-b px-4 py-3 text-sm font-semibold">{VALORACIONES.titulo}</h2>
+          <p className="px-4 pt-3 text-xs text-muted-foreground">{VALORACIONES.detalle}</p>
+          <ul className="divide-y">
+            {MOTIVOS.map((m) => (
+              <li key={m} className="flex items-center justify-between px-4 py-2 text-sm">
+                <span>{VALORACIONES.motivos[m]}</span>
+                <span className="font-medium tabular-nums">{compact(valoraciones.porMotivo[m])}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="border-t px-4 py-2 text-xs text-muted-foreground">{VALORACIONES.arribaTotal(valoraciones.arriba)}</p>
+        </section>
+      )}
 
       <section className="mt-6 rounded-xl border bg-card">
         <h2 className="border-b px-4 py-3 text-sm font-semibold">Por día</h2>
