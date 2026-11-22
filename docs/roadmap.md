@@ -405,6 +405,12 @@ Después de leer 16 programas reales de seis institutos (en `C:\Programacion\Mat
 
 ---
 
+## 🧭 Ronda T — áreas de conocimiento, planes, pagos, autodidacta y tipos de Moodle (22/11/2026, desde las 16:10)
+
+Una sola ronda larga que une los encargos Q, R y S más el **perfil de área de cada materia** (bloques A a G, en orden). Mismas reglas que la ronda O: una rama `ronda-t/<id>-<slug>` por ítem desde `main`, merge en verde, migraciones desde la **037** sólo en staging (la 035 y la 036 ya están en staging; en producción las corre Mauro), IA hasta US$10, nunca credenciales reales de Mercado Pago. Informe: [docs/informes/ronda-t-2026-11-22.md](informes/ronda-t-2026-11-22.md).
+
+- [x] **A1 · Perfiles de área** (rama `ronda-t/a1-perfiles-de-area`). [lib/areas.ts](../lib/areas.ts), puro: 17 áreas (Matemática … Otra) con `caracter`, `rolEspecialista`, qué significan teórico / práctico / mixto (etiqueta para la interfaz, descripción para la IA y ejemplos sin citas de autores reales), `mezclaPorModo`, `notacion` (`latex` / `codigo` / `formulas` / `ninguna`, más `soloNumeros` en contabilidad y economía), `estrategiaDistractores` y `validadores`. Las conceptuales con la mezcla del encargo (teórico 40/25/35, práctico 50/35/15, sin numérica). Reglas: `limitarMezcla` (con más de un tipo, ninguno pasa del 50 %; lo que sobra se reparte en proporción), `tiposPermitidos` (`numeric` sólo con una unidad cuantitativa o tildada a mano), `caracterEfectivo` (a mano > unidad > área > mixto), `mezclaPonderada` (varias unidades, por cantidad de temas), `bloquesDeNotacion` y `validadoresDe`. Las estrategias de distractores que `education-context` elegía por palabra clave ahora viven en `areas.ts` y las dos usan las mismas (sin cambio de comportamiento). Todavía no lo usa la generación: eso es A4.
+
 ## 🔔 Tanda P — avisos con diseño, campanita del alumno, panel de admin y las decisiones de la ronda O (22/11/2026)
 
 > **Cierre (22/11/2026):** los 8 ítems hechos y mergeados (#96–#103), ninguno bloqueado. Faltan en producción las migraciones **035 y 036** (en orden; comando en el informe). Gasto de IA: US$0,004. Decisiones abiertas (la Revancha dentro de una tarea, tipos de pregunta del generador, la regla de "racha en riesgo") en [docs/informes/tanda-p-2026-11-22.md](informes/tanda-p-2026-11-22.md).
