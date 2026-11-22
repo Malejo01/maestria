@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, render } from '@testing-library/react'
+import { cleanup, render, waitFor } from '@testing-library/react'
 import { ExplicacionMarkdown } from './explicacion-markdown'
 
 afterEach(cleanup)
@@ -21,14 +21,15 @@ describe('ExplicacionMarkdown', () => {
     'La cuenta es $\\frac{6}{2} = 3$ y usás `Math.sqrt`.',
   ].join('\n')
 
-  it('encabezado, negrita, lista, código y fórmula llegan formateados', () => {
+  it('encabezado, negrita, lista, código y fórmula llegan formateados', async () => {
     const { container } = render(<ExplicacionMarkdown content={explicacion} />)
 
     expect(container.querySelector('h3')?.textContent).toBe('1. ¿Por qué elegiste esta opción?')
     expect(container.querySelector('strong')?.textContent).toBe('muy común')
     expect(container.querySelectorAll('ul > li')).toHaveLength(2)
     expect(container.querySelector('code')?.textContent).toBe('Math.sqrt')
-    expect(container.querySelector('.katex')).not.toBeNull()
+    // O18: KaTeX se carga cuando hace falta, así que la fórmula aparece un instante después.
+    await waitFor(() => expect(container.querySelector('.katex')).not.toBeNull())
   })
 
   it('no queda ningún ## ni ** a la vista', () => {
