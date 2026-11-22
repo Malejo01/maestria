@@ -1,5 +1,8 @@
 'use client'
 
+import { puedeExportarAMoodle } from '@/lib/puede-exportar'
+import { MENSAJE_CON_UN_PLAN } from '@/lib/planes'
+import { PLANES_GRATIS as PLAN_TEXTOS } from '@/lib/textos'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
@@ -413,7 +416,12 @@ export function usePanelDocente() {
     startQuizPreview(configDeTarea(quiz), quiz.questions)
   }
 
-  const handleExportQuiz = (quiz: TeacherQuiz) => {
+  const handleExportQuiz = async (quiz: TeacherQuiz) => {
+    // B1: en el plan gratis, la exportación a Moodle viene con un plan pago.
+    if (!(await puedeExportarAMoodle())) {
+      toast({ title: MENSAJE_CON_UN_PLAN, description: PLAN_TEXTOS.verPlanes })
+      return
+    }
     try {
       setExportingQuizId(quiz.id)
       const fileName = exportQuizToMoodleGift(quiz)

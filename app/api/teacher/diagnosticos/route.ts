@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { captureRouteFailure } from '@/lib/observability'
-import { bloqueoParaGenerar } from '@/lib/planes-server'
+import { bloqueoIndividual, bloqueoParaGenerar } from '@/lib/planes-server'
 import { crearDiagnostico, diagnosticoDisponible, grupoDe, temasDificilesDe } from '@/lib/diagnostico-server'
 import { leerResultados } from '@/lib/diagnostico-resultados-server'
 import { grupoPropio } from '@/lib/diagnostico-grupo-server'
@@ -104,6 +104,9 @@ export async function POST(req: Request) {
     if (!(await destinatarioDisponible())) {
       return NextResponse.json({ error: DIAGNOSTICO.faltaActualizacion }, { status: 409 })
     }
+    // B1: el diagnóstico de un alumno es una función individual (plan Particular).
+    const soloParticular = await bloqueoIndividual(teacher.id, teacher.email)
+    if (soloParticular) return soloParticular
     const dificiles = await temasDificilesDe(teacher.id, destino)
     const grupo = await grupoDe(teacher.id, destino, dificiles.materiaId)
     if (!grupo) return NextResponse.json({ error: 'Ese alumno no está en tus grupos' }, { status: 404 })

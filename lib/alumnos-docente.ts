@@ -279,6 +279,42 @@ export function contarLugares(
   return porPersona.size + invitaciones.filter((invitacion) => !usadas.has(invitacion.id)).length
 }
 
+/**
+ * Ronda T · B1 · Los lugares por tipo, para el plan gratis ("2 particulares +
+ * 1 curso de hasta 35") y el Aula. **Particular**: quien tiene una invitación
+ * con su nombre (lo sumó el docente) o una invitación todavía sin usar.
+ * **Curso**: quien entró a un grupo con el código, sin invitación; se cuenta
+ * en cada grupo en el que está así.
+ */
+export function lugaresPorTipo(
+  miembros: Pick<MiembroCrudo, 'userId' | 'nombre' | 'grupoId'>[],
+  invitaciones: Pick<InvitacionCruda, 'id' | 'nombre' | 'grupoId'>[],
+  quitados: Pick<MiembroCrudo, 'nombre' | 'grupoId'>[] = [],
+): { particulares: number; cursos: number[]; porGrupo: Map<number, number> } {
+  const porPersona = new Map<string, Pick<MiembroCrudo, 'nombre' | 'grupoId'>[]>()
+  for (const miembro of miembros) {
+    porPersona.set(miembro.userId, [...(porPersona.get(miembro.userId) ?? []), miembro])
+  }
+  const usadas = invitacionesDeQuitados(invitaciones, quitados)
+  let particulares = 0
+  const porGrupo = new Map<number, number>()
+  for (const membresias of porPersona.values()) {
+    const suya = invitaciones.find((invitacion) =>
+      membresias.some(
+        (m) => m.grupoId === invitacion.grupoId && normalizarNombre(m.nombre) === normalizarNombre(invitacion.nombre),
+      ),
+    )
+    if (suya) {
+      usadas.add(suya.id)
+      particulares++
+      continue
+    }
+    for (const grupoId of new Set(membresias.map((m) => m.grupoId))) porGrupo.set(grupoId, (porGrupo.get(grupoId) ?? 0) + 1)
+  }
+  particulares += invitaciones.filter((invitacion) => !usadas.has(invitacion.id)).length
+  return { particulares, cursos: [...porGrupo.values()], porGrupo }
+}
+
 /** La invitación que le corresponde a un miembro: mismo grupo, mismo nombre. */
 export function invitacionDe<I extends Pick<InvitacionCruda, 'nombre' | 'grupoId'>>(
   membresias: Pick<MiembroCrudo, 'nombre' | 'grupoId'>[],

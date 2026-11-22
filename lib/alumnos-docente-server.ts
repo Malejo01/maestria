@@ -5,6 +5,7 @@ import {
   armarQuitados,
   armarTemas,
   contarLugares,
+  lugaresPorTipo,
   elegirSugerencia,
   resumir,
   type ActividadCruda,
@@ -166,6 +167,19 @@ export async function contarAlumnosDelDocente(teacherId: string): Promise<number
     leerQuitadosCrudos(teacherId),
   ])
   return contarLugares(miembros, invitaciones, quitados)
+}
+
+/** Ronda T · B1: el total de siempre y los lugares por tipo (particulares y cursos). */
+export async function lugaresDelDocente(
+  teacherId: string,
+): Promise<{ total: number; porTipo: { particulares: number; cursos: number[] }; porGrupo: Map<number, number> }> {
+  const [miembros, invitaciones, quitados] = await Promise.all([
+    leerMiembros(teacherId),
+    leerInvitaciones(teacherId),
+    leerQuitadosCrudos(teacherId),
+  ])
+  const { particulares, cursos, porGrupo } = lugaresPorTipo(miembros, invitaciones, quitados)
+  return { total: contarLugares(miembros, invitaciones, quitados), porTipo: { particulares, cursos }, porGrupo }
 }
 
 export interface MisAlumnos {

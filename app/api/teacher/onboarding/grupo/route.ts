@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { captureRouteFailure } from '@/lib/observability'
 import { asegurarGrupoDe } from '@/lib/onboarding-docente-server'
-import { bloqueoParaGenerar } from '@/lib/planes-server'
+import { bloqueoParaCrearGrupo, bloqueoParaGenerar } from '@/lib/planes-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +23,9 @@ export async function POST(req: Request) {
   // Plan vencido: modo solo lectura (lib/planes.ts).
   const bloqueo = await bloqueoParaGenerar(teacher.id, teacher.email)
   if (bloqueo) return bloqueo
+  // B1: en el plan Aula, hasta los cursos pagos.
+  const sinCursos = await bloqueoParaCrearGrupo(teacher.id, teacher.email)
+  if (sinCursos) return sinCursos
 
   try {
     const body = (await req.json().catch(() => null)) as { teacherProgramId?: unknown } | null

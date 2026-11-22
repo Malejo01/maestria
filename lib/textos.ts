@@ -1611,6 +1611,8 @@ export const PRACTICA_EXTRA = {
   quedan: (n: number) => (n === 1 ? 'Te queda 1 por hoy' : `Te quedan ${n} por hoy`),
   armando: 'Armando preguntas nuevas…',
   tope: 'Por hoy ya hiciste 3 prácticas de esta tarea. Mañana podés seguir.',
+  // B1 (ronda T): el plan Aula tiene 10 prácticas extra por alumno por mes.
+  topeMes: 'Este mes ya hiciste las 10 prácticas extra de tu curso. Seguí con las tareas.',
   noDisponible: 'Esta práctica no está disponible.',
   fallo: 'No pudimos armar la práctica',
   falloDetalle: 'Probá de nuevo en un rato.',
@@ -1623,6 +1625,12 @@ export const PRACTICA_EXTRA = {
 /** P7: "A reforzar" en la ficha del alumno (lo mismo que ve el alumno en Mi progreso). */
 export const FICHA_A_REFORZAR = {
   titulo: (n: number) => `A reforzar (${n})`,
+} as const
+
+/** Ronda T · B1: lo que el plan gratis no tiene. */
+export const PLANES_GRATIS = {
+  verPlanes: 'Mirá los planes en Precios.',
+  irAPrecios: 'Ver los planes',
 } as const
 
 /** Ronda T · A3: el área de la materia y el carácter de cada unidad. */

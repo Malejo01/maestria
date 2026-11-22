@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { bloqueoIndividual } from '@/lib/planes-server'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { captureRouteFailure } from '@/lib/observability'
 import { fichaSchema, normalizarFicha } from '@/lib/fichas'
@@ -50,6 +51,9 @@ export async function PUT(req: Request) {
 
   const destino = destinoDe(req.url)
   if (!destino) return NextResponse.json({ error: 'Falta el alumno' }, { status: 400 })
+  // B1: la ficha es una función individual (plan Particular).
+  const soloParticular = await bloqueoIndividual(teacher.id, teacher.email)
+  if (soloParticular) return soloParticular
 
   const datos = fichaSchema.safeParse(await req.json().catch(() => null))
   if (!datos.success) {

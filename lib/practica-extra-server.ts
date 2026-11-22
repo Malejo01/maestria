@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { topeMensualDePracticasExtra } from '@/lib/planes-server'
 import { destinatarioDeFila, visibleParaAlumno } from '@/lib/destinatario'
 import { resumenDelPlan } from '@/lib/planes-server'
 import {
@@ -112,7 +113,31 @@ export async function leerEstadoDePracticaExtra(userId: string, asignacionId: nu
     esDiagnostico: tarea?.tipo === 'diagnostico',
     planVencido: tarea ? await planVencido(tarea.teacher_id, tarea.teacher_email) : false,
     hechasHoy: hechas,
+    delMes: tarea ? await practicasDelMes(userId, String(tarea.teacher_id)) : null,
   })
+}
+
+/**
+ * B1 · En el plan Aula, las prácticas extra del alumno con ese docente en los
+ * últimos 30 días, contra el tope del mes (10). null sin tope (o sin poder
+ * decidir: la válvula).
+ */
+async function practicasDelMes(userId: string, teacherId: string): Promise<{ hechas: number; tope: number } | null> {
+  const tope = await topeMensualDePracticasExtra(teacherId)
+  if (tope === null) return null
+  try {
+    const [fila] = (await sql`
+      SELECT COUNT(*)::int AS hechas
+      FROM practicas_extra pe
+      JOIN classroom_assignments a ON a.id = pe.assignment_id
+      JOIN classrooms c ON c.id = a.classroom_id
+      WHERE pe.user_id = ${userId} AND c.teacher_id = ${teacherId}
+        AND pe.creada_el > NOW() - INTERVAL '30 days'
+    `) as { hechas: number }[]
+    return { hechas: Number(fila?.hechas ?? 0), tope }
+  } catch {
+    return null
+  }
 }
 
 export type ReservaDePracticaExtra =
