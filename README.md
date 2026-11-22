@@ -74,7 +74,23 @@ npm run dev          # servidor de desarrollo
 npm run build         # build de producción
 npm run test           # tests con Vitest
 npm run lint            # ESLint
+npm run e2e             # pruebas de punta a punta (Playwright) contra staging
 ```
+
+### Pruebas de punta a punta (`npm run e2e`)
+
+Seis recorridos con Playwright, en `e2e/`, contra el servidor de desarrollo de **staging** (`npm run dev:staging`; si no está corriendo, Playwright lo levanta). Entran por `/sign-in/dev`, así que **no corren contra producción** ni en el CI (no hay base de staging en GitHub Actions): se corren a mano antes de un PR que toque estos recorridos.
+
+1. El docente crea una materia (del plan oficial), un grupo y una tarea, y la manda.
+2. Un invitado entra por el código del grupo y hace la tarea.
+3. Un alumno corta la conexión a mitad de una tarea, recarga y sigue donde estaba.
+4. El docente abre la página del grupo y ordena la planilla.
+5. El docente arma un diagnóstico para un grupo eligiendo temas.
+6. Un alumno no puede entrar a `/teacher`.
+
+La IA siempre está simulada (`simularGeneracion` en `e2e/ayudas.ts`; el diagnóstico simula sus dos rutas): correrlas no gasta. Usan a Irina (docente) y a Sofía (alumna) de staging. Los recorridos 1 y 2 dejan en staging una materia, un grupo y una tarea con el prefijo "E2E ·"; el invitado se quita del grupo al final para no llenar el tope del plan de Irina. El navegador es el Chromium que trae `@playwright/test` 1.63.0 ya instalado en la máquina; en otra máquina, `npx playwright install chromium` una vez. Para un solo archivo: `npx playwright test e2e/planilla.spec.ts`.
+
+El login real con Google no está cubierto (no se puede automatizar sin una cuenta de prueba): sigue siendo manual.
 
 Las migraciones se corren individualmente, ej: `npx tsx scripts/run-migration-015.ts`.
 
