@@ -1,9 +1,23 @@
 'use client'
 
 import 'katex/dist/katex.min.css'
-import { useMemo } from 'react'
-import katex from 'katex'
+import { useEffect, useMemo, useState } from 'react'
 import { comaDecimal } from '@/lib/numeros'
+
+/**
+ * O18: KaTeX (~75 KB gzip de JS) se carga recién cuando hay una fórmula que
+ * dibujar, no con la página: /aulas, el panel y casi todo el cuestionario no
+ * lo necesitan hasta que aparece un `$…$`. Se carga una sola vez y queda en
+ * memoria para el resto de la sesión. (El CSS sí va con la página: es chico y
+ * las fuentes de KaTeX se piden sólo cuando se usan.)
+ */
+type Katex = typeof import('katex').default
+let katexCargado: Katex | null = null
+let katexCargando: Promise<Katex> | null = null
+function cargarKatex(): Promise<Katex> {
+  katexCargando ??= import('katex').then((m) => (katexCargado = m.default))
+  return katexCargando
+}
 
 interface LaTeXRendererProps {
   content: string
@@ -33,11 +47,25 @@ function isLikelyTextNotMath(str: string): boolean {
 }
 
 export function LaTeXRenderer({ content: original, className = '' }: LaTeXRendererProps) {
+  const [katex, setKatex] = useState<Katex | null>(katexCargado)
+  // Hay fórmula si queda algún `$` (después de descartar los que no son matemática, abajo).
+  const tieneFormula = original.includes('$')
+  useEffect(() => {
+    if (!tieneFormula || katex) return
+    let vigente = true
+    void cargarKatex().then((k) => {
+      if (vigente) setKatex(() => k)
+    })
+    return () => {
+      vigente = false
+    }
+  }, [tieneFormula, katex])
+
   const renderedContent = useMemo(() => {
     // K1: coma decimal en todo lo que dibuja este componente (enunciados,
     // opciones, respuestas, fórmulas), también en lo ya generado con punto.
     const content = comaDecimal(original)
-    const parts: (string | { type: 'latex'; content: string; display: boolean })[] = []
+    const parts: (string | { type: 'latex'; content: string; display: boolean; fuente?: string })[] = []
     let lastIndex = 0
 
     // Match both $$...$$ (display) and $...$ (inline)
@@ -63,6 +91,13 @@ export function LaTeXRenderer({ content: original, className = '' }: LaTeXRender
         parts.push(content.slice(lastIndex, match.index))
       }
 
+      if (!katex) {
+        // Mientras llega KaTeX: el lugar de la fórmula, invisible (sin texto crudo a la vista).
+        parts.push({ type: 'latex', content: '', display: isDisplay, fuente: latexContent })
+        lastIndex = match.index + match[0].length
+        continue
+      }
+
       try {
         const rendered = katex.renderToString(latexContent, {
           throwOnError: false,
@@ -83,7 +118,7 @@ export function LaTeXRenderer({ content: original, className = '' }: LaTeXRender
     }
 
     return parts
-  }, [original])
+  }, [original, katex])
 
   return (
     <span className={`inline-block max-w-full min-w-0 break-words ${className}`}>
@@ -96,6 +131,13 @@ export function LaTeXRenderer({ content: original, className = '' }: LaTeXRender
         // arrow buttons at both ends, and sub-pixel rounding was enough to make
         // it appear under short fragments like $25$ or $7^2$. Display math is
         // wide on purpose, so there the scrollbar stays visible.
+        if (part.fuente !== undefined) {
+          return (
+            <span key={index} className="inline-block align-middle opacity-0" aria-busy="true">
+              {part.fuente}
+            </span>
+          )
+        }
         return (
           <span
             key={index}

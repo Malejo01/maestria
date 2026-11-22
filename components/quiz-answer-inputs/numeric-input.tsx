@@ -9,7 +9,17 @@ import { formatearNumero, respuestaNumerica } from '@/lib/numeros'
 import { esFactorizacion, factorizacionEnLatex, leerProducto, textoDeFactorizacion, type MotivoDeFactorizacion } from '@/lib/factorizacion'
 import { llevaBarra } from '@/lib/notacion-matematica'
 import { TECLADO_MATEMATICO } from '@/lib/textos'
-import { BarraMatematica } from './barra-matematica'
+import dynamic from 'next/dynamic'
+
+/**
+ * O18: el teclado matemático se baja recién cuando una pregunta lo muestra
+ * (no lo necesitan ni /aulas ni las preguntas de opción múltiple). Ocupa su
+ * lugar mientras llega, para que la pantalla no salte.
+ */
+const BarraMatematica = dynamic(() => import('./barra-matematica').then((m) => m.BarraMatematica), {
+  ssr: false,
+  loading: () => <div className="min-h-11" aria-hidden="true" />,
+})
 import type { NumericQuestion } from '@/lib/types'
 
 const MOTIVOS_DE_FACTORIZACION: string[] = ['no_primo', 'producto_distinto', 'sin_factorizar', 'ilegible']

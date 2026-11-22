@@ -19,25 +19,26 @@ const factorizacion: NumericQuestion = {
 const cuenta: NumericQuestion = { ...factorizacion, question: '¿Cuánto es 7 + 5?', topicName: 'Suma', correctAnswer: 12 }
 
 describe('L3 · el campo de una factorización', () => {
-  it('lee el producto, muestra la vista previa y trae la barra', () => {
+  it('lee el producto, muestra la vista previa y trae la barra', async () => {
     const onChange = vi.fn()
     render(<NumericInput question={factorizacion} value={null} submitted={false} onChange={onChange} />)
     const campo = screen.getByRole('textbox') as HTMLInputElement
     fireEvent.change(campo, { target: { value: '2^3·3·5' } })
     expect(onChange).toHaveBeenLastCalledWith(120, '2^3·3·5')
-    expect(screen.getByRole('toolbar', { name: 'Símbolos matemáticos' })).toBeTruthy()
+    // O18: la barra se carga cuando hace falta (next/dynamic): llega un instante después.
+    expect(await screen.findByRole('toolbar', { name: 'Símbolos matemáticos' })).toBeTruthy()
     expect(screen.getByText('Se ve así:')).toBeTruthy()
     // Un producto no es "un número que no entendimos".
     expect(screen.queryByText(/No entendimos ese número/)).toBeNull()
   })
 
-  it('el botón de potencia inserta ^ en el cursor', () => {
+  it('el botón de potencia inserta ^ en el cursor', async () => {
     const onChange = vi.fn()
     render(<NumericInput question={factorizacion} value={null} submitted={false} onChange={onChange} />)
     const campo = screen.getByRole('textbox') as HTMLInputElement
     fireEvent.change(campo, { target: { value: '2' } })
     campo.setSelectionRange(1, 1)
-    fireEvent.click(screen.getByRole('button', { name: /Potencia/ }))
+    fireEvent.click(await screen.findByRole('button', { name: /Potencia/ }))
     // `2^` todavía no es un producto: el valor queda vacío hasta que escriba el exponente.
     expect(onChange).toHaveBeenLastCalledWith(null, '2^')
   })

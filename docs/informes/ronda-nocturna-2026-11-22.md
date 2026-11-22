@@ -26,6 +26,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O15 · Esquema que usa el código contra staging | hecho | [#91](https://github.com/Malejo01/maestria/pull/91) | Test manual contra `information_schema` de staging: en verde; en el CI se salta | US$0 |
 | O16 · La barra en 360, 390 y 768 px | hecho | [#92](https://github.com/Malejo01/maestria/pull/92) | `e2e/anchos.spec.ts` en visitante, alumno y docente: antes, la barra del docente desbordaba 21 px a 360; ahora en verde | US$0 |
 | O17 · Accesibilidad con axe-core | hecho | [#93](https://github.com/Malejo01/maestria/pull/93) | `e2e/accesibilidad.spec.ts`: 7 problemas graves en panel docente, grupo, pregunta y resultados; corregidos, en verde | US$0 |
+| O18 · Peso de JS: KaTeX y teclado a demanda | hecho | (este PR) | `/aulas` 555 → 408 KB gzip (−26 %), `/teacher` 668 → 521; con 3G lento simulado, las 29 fórmulas de una tarea llegan | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,19 (US$0,0285 en `ai_usage_log` de staging — 18 llamadas desde la app —, más US$0,157 de los scripts de O14 y US$0,0005 del dry-run de N2, que llaman al modelo directo y no pasan por el registro; los scripts imprimen su gasto estimado con la misma tarifa) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -174,6 +175,20 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
   4. *Pregunta*: el botón de salir (la X) **no tenía nombre** (critical) y la barra de avance tampoco.
   5. *Resultados*: la etiqueta "A seguir practicando" (rojizo sobre su tinte) y "20 % de aciertos" (gris sobre el fondo de "flojo"): contraste insuficiente.
 - La prueba de la alumna hace la tarea "Lengua · 4to Año" (sin tope de intentos) con Sofía en staging: le suma intentos de prueba (ver datos de prueba).
+
+### O18 · Peso de las páginas
+
+- **KaTeX** (`components/latex-renderer.tsx`) se importa con `import()` recién cuando el texto tiene un `$`; queda en memoria para el resto de la sesión. Mientras llega, el lugar de la fórmula está reservado e invisible (no se ve el LaTeX crudo). El CSS de KaTeX sigue yendo con la página (es chico y sus fuentes se piden sólo si se usan).
+- **Teclado matemático** (`BarraMatematica`) con `next/dynamic`, sólo cuando una pregunta lo muestra, con un lugar reservado para que no salte la pantalla.
+- Medido con el build de producción y `scripts/qa/peso-de-pagina.mjs` (suma el JS de cliente que puede cargar cada página según su manifiesto):
+
+  | Página | Antes | Después |
+  |---|---|---|
+  | `/aulas` (donde corre el cuestionario del alumno) | 555 KB gzip | **408 KB gzip** (−26 %) |
+  | `/teacher` | 668 KB gzip | **521 KB gzip** (−22 %) |
+
+- Con 3G lento simulado (Playwright + CDP: 400 ms de latencia, ~62 KB/s) la revisión de una tarea con 29 fórmulas las dibuja todas; KaTeX llega como chunk aparte.
+- **Límite de la prueba:** la conexión lenta se probó contra el servidor de desarrollo de staging, no contra un build de producción: el ingreso de desarrollo sólo existe con `next dev`, y `next start` leería `.env.local` (producción). Los números de la tabla sí son del build de producción.
 
 ## Pasos manuales de Mauro, en orden
 
