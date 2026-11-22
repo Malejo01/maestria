@@ -475,7 +475,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
   }
 
   return (
-    <div className="space-y-5 pb-28 fade-in-50 slide-in-from-bottom-4 duration-300">
+    <div className="space-y-5 pb-44 md:pb-28 fade-in-50 slide-in-from-bottom-4 duration-300">
       {/* Subject Header Card */}
       <Card className={cn('overflow-hidden border-2', colors.borderLight)}>
         <div className={cn('p-4 text-texto-sobre-accion', colors.gradient)}>
@@ -678,8 +678,10 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
         })}
       </div>
 
-      {/* Floating Sticky Generar Cuestionario Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 border-t-2 border-border/80 z-30 transition-all">
+      {/* Floating Sticky Generar Cuestionario Bar. O13: en el celular va ENCIMA
+          de la barra inferior de navegación (que lo tapaba entero): se corre lo
+          que mide esa barra, la misma variable que usa el botón de reportar. */}
+      <div className="fixed bottom-[calc(var(--alto-barra-inferior,0px)+env(safe-area-inset-bottom))] left-0 right-0 p-4 bg-background/80 border-t-2 border-border/80 z-30 transition-all md:bottom-0">
         <div className="max-w-4xl mx-auto">
           <Button
             onClick={() => setShowModeDialog(true)}

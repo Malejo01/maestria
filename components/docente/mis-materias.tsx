@@ -13,7 +13,7 @@ import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import type { TeacherProgram } from '@/lib/types'
 import { ASSESSMENT_STYLE_LABELS, type PanelDocente } from '@/components/docente/use-panel-docente'
 import { EsqueletoTarjetasDeMateria } from '@/components/docente/esqueletos'
-import { contar } from '@/lib/textos'
+import { contar, MIS_MATERIAS } from '@/lib/textos'
 
 /**
  * "Mis materias": el listado de materias del docente, el armado de una tarea
@@ -83,13 +83,25 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
           setShowDetailDialog(true)
         }}
       >
+        {/* O13: elegir la materia es un botón de verdad (teclado y lector de
+            pantalla), que cubre la tarjeta; los botones de adentro van encima. */}
+        <button
+          type="button"
+          className="absolute inset-0 z-0 rounded-[inherit] focus-visible:outline focus-visible:outline-2 focus-visible:outline-accion"
+          aria-pressed={isSelected}
+          aria-label={MIS_MATERIAS.elegir(program.subjectName)}
+          onClick={(event) => {
+            event.stopPropagation()
+            handleSubjectChange(subjectId)
+          }}
+        />
         {/* El lápiz y la X van ADENTRO de la tarjeta, en sus esquinas. Estaban
             colgados afuera (-top-3 / -left-3) y pisaban el título de la sección
             y la tarjeta de arriba. Siguen midiendo 44 px, que es el mínimo
             táctil; el ícono de la materia va centrado y no los toca. */}
         <button
           type="button"
-          className="absolute left-1 top-1 flex size-11 items-center justify-center rounded-md border border-transparent text-texto-suave hover:border-borde-fuerte hover:text-texto"
+          className="absolute left-1 top-1 z-10 flex size-11 items-center justify-center rounded-md border border-transparent text-texto-suave hover:border-borde-fuerte hover:text-texto"
           onClick={(event) => {
             event.stopPropagation()
             handleSubjectChange(subjectId)
@@ -101,7 +113,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
         </button>
         <button
           type="button"
-          className="absolute right-1 top-1 flex size-11 items-center justify-center rounded-md border border-transparent text-texto-suave hover:border-borde-fuerte hover:text-texto"
+          className="absolute right-1 top-1 z-10 flex size-11 items-center justify-center rounded-md border border-transparent text-texto-suave hover:border-borde-fuerte hover:text-texto"
           onClick={(event) => {
             event.stopPropagation()
             handleSubjectChange(subjectId)
@@ -112,7 +124,7 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
           <X className="w-4 h-4" />
         </button>
 
-        <div className="flex flex-col items-center text-center gap-2 pt-1">
+        <div className="pointer-events-none relative flex flex-col items-center text-center gap-2 pt-1 [&_button]:pointer-events-auto [&_button]:relative [&_button]:z-10">
           <div className="w-11 h-11 rounded-md bg-superficie-suave text-accion flex items-center justify-center">
             <Icon className="w-5 h-5" />
           </div>
