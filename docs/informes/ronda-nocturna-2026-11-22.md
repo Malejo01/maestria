@@ -6,7 +6,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 
 | Ítem | Estado | PR | Qué se probó | Gasto de IA |
 |---|---|---|---|---|
-| N1 · Aviso al que reportó (migración 030) | hecho | (este PR) | Tests de permisos, del texto y del componente; en staging, de punta a punta con un invitado (ver abajo) | US$0 (no llama a la IA) |
+| N1 · Aviso al que reportó (migración 030) | hecho | [#74](https://github.com/Malejo01/maestria/pull/74) | Tests de permisos, del texto y del componente; en staging, de punta a punta con un invitado (ver abajo) | US$0 (no llama a la IA) |
 
 **Gasto de IA acumulado de la noche:** US$0,00 (tope: US$10; a los US$8 se pasa a modelos simulados).
 
