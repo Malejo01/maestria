@@ -8,6 +8,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { EnlacesLegales } from '@/components/legal-notice'
 import { PageContainer } from '@/components/layout/page-container'
 import { AvisoDeReporte } from '@/components/caparazon/aviso-de-reporte'
+import { BotonAdmin } from '@/components/caparazon/boton-admin'
 import { CampanitaDocente } from '@/components/caparazon/campanita-docente'
 import { MenuUsuario } from '@/components/caparazon/menu-usuario'
 import { SesionAlDia } from '@/components/caparazon/sesion-al-dia'
@@ -81,7 +82,7 @@ function Marco({
             celular la separación es más chica para que nada se salga de la pantalla. */}
         <div className="mx-auto flex min-h-[60px] w-full max-w-7xl items-center gap-3 px-3 min-[400px]:px-4 sm:px-6 md:min-h-[68px] md:gap-6 lg:px-8">
           <Link href="/" className="inline-flex min-h-11 items-center rounded-sm" aria-label="MaestrIA, ir al inicio">
-            <Logo variante="barra" />
+            <Logo variante="barra" soloIsotipoEnCelular={contexto === 'docente' && !!quien?.esAdmin} />
           </Link>
 
           {entradas.length > 0 && (
@@ -101,6 +102,8 @@ function Marco({
             )}
             {/* O10: los avisos del docente (sólo en su panel, no en la vista previa). */}
             {contexto === 'docente' && <CampanitaDocente />}
+            {/* P1: el panel de administrador, sólo para ADMIN_EMAILS. */}
+            {quien && <BotonAdmin esAdmin={quien.esAdmin} />}
             {/* La acción del panel docente, como en la referencia: siempre a mano. */}
             {contexto === 'docente' && (
               <Boton asChild className="px-3 sm:px-4">

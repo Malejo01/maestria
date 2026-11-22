@@ -1,6 +1,4 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
 import { getAdminViewer } from '@/lib/auth-session'
 import { conteoPorPaso, PASOS, type DocenteEnElEmbudo } from '@/lib/embudo'
 import { embudoDeDocentes } from '@/lib/embudo-server'
@@ -40,9 +38,6 @@ export default async function EmbudoAdminPage() {
 
   return (
     <main className="mx-auto max-w-4xl space-y-6 px-4 py-10">
-      <Link href="/" className="nota inline-flex items-center gap-1 text-texto-suave hover:text-texto">
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {T.volver}
-      </Link>
       <header className="space-y-1">
         <h1 className="titulo-l text-texto">{T.titulo}</h1>
         <p className="cuerpo-s text-texto-suave">{T.detalle}</p>

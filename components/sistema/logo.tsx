@@ -53,11 +53,16 @@ export function Isotipo({ size = 28, decorativo = false, className }: IsotipoPro
 interface LogoProps {
   /** `entrada`: el de la tarjeta de entrada (28 px). `barra`: el de la barra de la app (22 px). */
   variante?: 'entrada' | 'barra'
+  /**
+   * P1: sólo el isotipo en el celular (la palabra vuelve desde `sm`). Para la
+   * barra del admin docente, que suma el botón Admin y no entra en 360 px.
+   */
+  soloIsotipoEnCelular?: boolean
   className?: string
 }
 
 /** Isotipo + "MaestrIA" escrito, con las letras IA en `accion`. */
-export function Logo({ variante = 'entrada', className }: LogoProps) {
+export function Logo({ variante = 'entrada', soloIsotipoEnCelular = false, className }: LogoProps) {
   const enBarra = variante === 'barra'
   return (
     <span className={cn('inline-flex items-center gap-2', className)}>
@@ -66,6 +71,7 @@ export function Logo({ variante = 'entrada', className }: LogoProps) {
         className={cn(
           'font-titulo font-extrabold tracking-[-0.02em] text-texto',
           enBarra ? 'text-[17px] leading-none' : 'text-[20px] leading-none',
+          soloIsotipoEnCelular && 'hidden sm:inline',
         )}
       >
         Maestr<span className="text-accion">IA</span>

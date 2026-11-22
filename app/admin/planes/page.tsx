@@ -1,6 +1,4 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
 import { AcreditarPlan } from '@/components/admin/acreditar-plan'
 import { getAdminViewer } from '@/lib/auth-session'
 import { listarDocentesConPlan, type DocenteEnPlanes } from '@/lib/planes-server'
@@ -45,9 +43,6 @@ export default async function PlanesAdminPage() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 px-4 py-10">
-      <Link href="/teacher" className="nota inline-flex items-center gap-1 text-texto-suave hover:text-texto">
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Volver al panel
-      </Link>
       <header className="space-y-1">
         <h1 className="titulo-l text-texto">Planes</h1>
         <p className="cuerpo-s text-texto-suave">
