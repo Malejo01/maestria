@@ -131,3 +131,37 @@ describe('O2 · Ya lo dominás', () => {
     ])
   })
 })
+
+describe('O14 · anclar el tema de la pregunta generada', () => {
+  const pedidos = [
+    { id: 't1', name: 'Cuerpos geométricos: características y clasificación' },
+    { id: 't2', name: 'Fracciones equivalentes y simplificación hasta la expresión irreducible' },
+  ]
+  it('un nombre reformulado que se ubica con certeza queda con el id y el nombre del pedido', async () => {
+    const { anclarTema } = await import('./a-reforzar')
+    expect(anclarTema({ topic: 'cuerpos_geometricos', topicName: 'Cuerpos geométricos' }, pedidos)).toEqual({ topic: 't1', topicName: pedidos[0].name })
+  })
+  it('el id que se pasó también ancla; uno que no se ubica queda como vino', async () => {
+    const { anclarTema } = await import('./a-reforzar')
+    expect(anclarTema({ topic: 't2', topicName: 'Fracciones' }, pedidos).topicName).toBe(pedidos[1].name)
+    expect(anclarTema({ topic: 'x', topicName: 'Probabilidad' }, pedidos)).toEqual({ topic: 'x', topicName: 'Probabilidad' })
+  })
+  it('el nombre acortado por el modelo ("Cuerpos", "Semejanza", "Números Reales: Operaciones")', async () => {
+    const { anclarTema } = await import('./a-reforzar')
+    const reales = [
+      { id: 't1', name: 'Números Irracionales: Concepto. Representación de los números de la forma √n.' },
+      { id: 't2', name: 'Números Reales: concepto, representación. Operaciones.' },
+    ]
+    expect(anclarTema({ topic: 'x', topicName: 'Números Reales: Operaciones' }, reales).topic).toBe('t2')
+    expect(anclarTema({ topic: 'x', topicName: 'Números Irracionales: Representación de los números de la forma √n' }, reales).topic).toBe('t1')
+    const geo = [{ id: 't1', name: 'Distancia. Semejanza.' }, { id: 't2', name: 'Lugar geométrico: ecuación de la recta' }]
+    expect(anclarTema({ topic: 'x', topicName: 'Semejanza' }, geo).topic).toBe('t1')
+    // "Números" solo está en los dos: no se decide.
+    expect(anclarTema({ topic: 'x', topicName: 'Números' }, reales).topic).toBe('x')
+  })
+
+  it('con un solo tema pedido, ése', async () => {
+    const { anclarTema } = await import('./a-reforzar')
+    expect(anclarTema({ topic: 'x', topicName: 'Lo que sea' }, [pedidos[0]]).topic).toBe('t1')
+  })
+})
