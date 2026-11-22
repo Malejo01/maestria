@@ -1,4 +1,5 @@
 import { seccionPerfilAlumnos, type PerfilAlumnos } from '@/lib/perfil-alumnos'
+import { ESTRATEGIA_GENERAL, ESTRATEGIA_LENGUA, ESTRATEGIA_MATEMATICA, ESTRATEGIA_NATURALES, ESTRATEGIA_SOCIALES } from '@/lib/areas'
 
 export interface EducationContext {
   nivel: 'Primario' | 'Secundario' | 'Superior'
@@ -70,33 +71,26 @@ function getSubjectStrategy(materia: string): string {
 ${COHERENCIA_DE_TIPOS}`
 }
 
+/**
+ * La estrategia de distractores por palabra clave de la materia. Los textos
+ * viven en lib/areas.ts (ronda T, A1): cuando el área de la materia se conoce,
+ * `getSubjectStrategy` usa la del perfil; sin área, esta cadena de siempre.
+ */
 function estrategiaDeLaMateria(materia: string): string {
   const m = materia.toLowerCase()
   if (m.includes('matemát') || m.includes('matemat') || m.includes('álgebra') || m.includes('algebra') || m.includes('análisis') || m.includes('analisis') || m.includes('geometría') || m.includes('probabilidad')) {
-    return `ESTRATEGIA MATEMÁTICA:
-- Prioriza ejemplos concretos, problemas contextualizados y representaciones claras.
-- Distractores diagnósticos: Errores de operación inversa, confusión de propiedades, fallas de conteo/signo o aplicación de fórmulas fuera de contexto.
-- Factorizar o descomponer en primos: si es "numeric", lleva "forma": "factorizacion" y correctAnswer es el número (60); el alumno responde el producto (2^2·3·5). Nunca una numérica que pide factorizar sin "forma".
-- Inecuaciones: se pide "el conjunto solución", NUNCA "el valor de x" (la respuesta es un conjunto, no un número). En "short_answer", acceptedAnswers incluye las formas equivalentes: "x <= 2", "x ≤ 2", "2 >= x", "(-∞; 2]", "(-∞, 2]" y "x menor o igual que 2".`
+    return ESTRATEGIA_MATEMATICA
   }
   if (m.includes('natural') || m.includes('biolog') || m.includes('física') || m.includes('química') || m.includes('quimica') || m.includes('fisica')) {
-    return `ESTRATEGIA CIENCIAS NATURALES:
-- Basada en la observación directa de la naturaleza, seres vivos, cuerpo humano y fenómenos del entorno cotidiano.
-- Distractores diagnósticos: Confusiones frecuentes entre procesos biológicos/físicos paralelos (ej: fotosíntesis vs respiración, fusión vs evaporación, masa vs peso).`
+    return ESTRATEGIA_NATURALES
   }
   if (m.includes('social') || m.includes('histor') || m.includes('geograf') || m.includes('econ') || m.includes('formación') || m.includes('ética')) {
-    return `ESTRATEGIA CIENCIAS SOCIALES:
-- Enfocada en narrativas claras, procesos históricos de causa-efecto, comprensión del espacio geográfico y la vida en sociedad.
-- Distractores diagnósticos: Confusiones de causalidad (confundir causa con consecuencia), anacronismos o mezcla de actores sociales.`
+    return ESTRATEGIA_SOCIALES
   }
   if (m.includes('lengua') || m.includes('literat') || m.includes('español') || m.includes('idioma') || m.includes('english')) {
-    return `ESTRATEGIA LENGUA Y COMUNICACIÓN:
-- Enfocada en comprensión lectora, funciones de la palabra, tipos de texto y comunicación cotidiana.
-- Distractores diagnósticos: Interpretaciones literales de textos figurados, confusión de funciones gramaticales o de intención comunicativa.`
+    return ESTRATEGIA_LENGUA
   }
-  return `ESTRATEGIA GENERAL DISCIPLINAR:
-- Plantea preguntas claras con relación directa a los temas curriculares.
-- Distractores diagnósticos: Confusiones conceptuales típicas del tema.`
+  return ESTRATEGIA_GENERAL
 }
 
 /**
