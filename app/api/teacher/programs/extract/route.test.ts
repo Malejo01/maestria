@@ -268,3 +268,67 @@ describe('/api/teacher/programs/extract — A2: el área en la misma llamada', (
     expect(cuerpo.units.every((u: { caracter: string }) => u.caracter === 'cuantitativo')).toBe(true)
   })
 })
+
+describe('/api/teacher/programs/extract — D1: los temas largos de un .docx', () => {
+  /** Un .docx mínimo, armado en el test con texto de ejemplo (no el programa de Silvana). */
+  async function docx(parrafos: string[]): Promise<Buffer> {
+    const JSZip = (await import('jszip')).default
+    const zip = new JSZip()
+    zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>')
+    zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>')
+    const cuerpo = parrafos.map((p) => `<w:p><w:r><w:t xml:space="preserve">${p}</w:t></w:r></w:p>`).join('')
+    zip.file('word/document.xml', `<?xml version="1.0" encoding="UTF-8"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${cuerpo}</w:body></w:document>`)
+    return zip.generateAsync({ type: 'nodebuffer' })
+  }
+  const DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  const UNIDAD_1 =
+    'La antropología como disciplina científica y su objeto de estudio, el trabajo de campo y la observación participante, ' +
+    'el concepto de cultura en sus distintas definiciones, la diversidad cultural y sus formas de explicación, ' +
+    'etnocentrismo y relativismo cultural como posiciones frente al otro, la construcción social de la identidad y la alteridad, ' +
+    'el lugar de la antropología en la formación del psicólogo, cultura, salud y enfermedad en distintas sociedades'
+  const PROGRAMA = [
+    'Programa de Temas de Antropología Cultural (ejemplo)',
+    'Contenidos',
+    'Unidad 1: La perspectiva antropológica',
+    UNIDAD_1,
+    'Unidad 2: Parentesco y rituales',
+    'Familia y parentesco; ritos de paso; el cuerpo como construcción cultural.',
+  ]
+
+  it('la IA devuelve la Unidad 1 como un solo tema de ~500 caracteres: se parte (en comas, seguro)', async () => {
+    generateObject.mockResolvedValue({
+      object: { units: [{ name: 'Unidad 1: La perspectiva antropológica', topics: [{ name: UNIDAD_1 }] }] },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    })
+    const cuerpo = await (await POST(pedido('programa.docx', DOCX, await docx(PROGRAMA)))).json()
+    const temas = cuerpo.units[0].topics.map((t: { name: string }) => t.name)
+    expect(temas.length).toBeGreaterThanOrEqual(6)
+    expect(temas).toContain('etnocentrismo y relativismo cultural como posiciones frente al otro')
+    expect(generateObject).toHaveBeenCalledTimes(1)
+  })
+
+  it('si el modelo falla, el heurístico lee el .docx y también parte la unidad larga', async () => {
+    generateObject.mockRejectedValue(new Error('No object generated'))
+    const cuerpo = await (await POST(pedido('programa.docx', DOCX, await docx(PROGRAMA)))).json()
+    expect(cuerpo.extractionMethod).toBe('heuristic')
+    const todos = cuerpo.units.flatMap((u: { topics: { name: string }[] }) => u.topics.map((t) => t.name))
+    expect(todos.every((t: string) => t.length <= 120)).toBe(true)
+    expect(todos.some((t: string) => /etnocentrismo/i.test(t))).toBe(true)
+  })
+
+  it('un párrafo que no se puede partir con certeza: se le pide a la IA sólo esa división, y se verifica', async () => {
+    const parrafo = 'La relación entre la experiencia subjetiva del padecimiento y los modos en que cada sociedad organiza sus respuestas frente a la enfermedad y la muerte'
+    generateObject
+      .mockResolvedValueOnce({ object: { units: [{ name: 'Unidad 3: Salud', topics: [{ name: parrafo }] }] }, usage: { inputTokens: 10, outputTokens: 10 } })
+      .mockResolvedValueOnce({ object: { temas: ['La experiencia subjetiva del padecimiento', 'Las respuestas de cada sociedad frente a la enfermedad y la muerte'] }, usage: { inputTokens: 3, outputTokens: 3 } })
+    const cuerpo = await (await POST(pedido('programa.docx', DOCX, await docx(PROGRAMA)))).json()
+    expect(generateObject).toHaveBeenCalledTimes(2)
+    expect(String(generateObject.mock.calls[1][0].prompt)).toContain(parrafo)
+    expect(cuerpo.units[0].topics.map((t: { name: string }) => t.name)).toEqual([
+      'La experiencia subjetiva del padecimiento',
+      'Las respuestas de cada sociedad frente a la enfermedad y la muerte',
+    ])
+    // Las dos llamadas se cobran juntas, en la misma fila.
+    expect(guard.finish).toHaveBeenCalledWith(expect.objectContaining({ inputTokens: 13, outputTokens: 13 }))
+  })
+})

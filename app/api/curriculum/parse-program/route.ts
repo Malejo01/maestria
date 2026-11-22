@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server'
 import { generateObject } from 'ai'
 import { AREA_IDS, CARACTERES } from '@/lib/areas'
 import { completarAreaDelPrograma } from '@/lib/area-del-programa'
+import { granularizarUnidades } from '@/lib/temas-granulares'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 import { auth } from '@/auth'
@@ -198,7 +199,8 @@ ${text.slice(0, 20000)}`,
         method === 'ai' && parsed.area
           ? { area: parsed.area, areaConfianza: parsed.areaConfianza ?? 0.5, areaOrigen: 'ia' as const }
           : {},
-      unidades: parsed.units.map((unit, ui) => ({
+      // D1: los temas largos se parten también acá (determinista).
+      unidades: granularizarUnidades(parsed.units).map((unit, ui) => ({
         id: `u-${ui + 1}`,
         name: unit.name,
         ...(unit.caracter ? { caracter: unit.caracter } : {}),
