@@ -14,6 +14,7 @@
  * y las ramas tolerantes de abajo están tal como estaban.
  */
 import { generateObject, generateText, type RepairTextFunction } from 'ai'
+import { anclarTema } from '@/lib/a-reforzar'
 import { seccionEvitar, type PreguntaAEvitar } from '@/lib/valoraciones'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
@@ -1209,7 +1210,7 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     }
 
     const mixedQuestions = interleaveQuestions(teoricoCollected, practicoCollected, questionCount)
-    return { ok: true, questions: mixedQuestions.map((q, idx) => shuffleAndRenumber(q, `q${idx + 1}`)) }
+    return { ok: true, questions: mixedQuestions.map((q, idx) => shuffleAndRenumber(anclarTema(q, topics ?? []), `q${idx + 1}`)) }
   }
 
   for (let attempt = 0; attempt < 3 && collectedQuestions.length < questionCount; attempt++) {
@@ -1255,5 +1256,6 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     }
   }
 
-  return { ok: true, questions: collectedQuestions.map((q, idx) => shuffleAndRenumber(q, `q${idx + 1}`)) }
+  // O14: el tema de cada pregunta, anclado a los pedidos (ver anclarTema).
+  return { ok: true, questions: collectedQuestions.map((q, idx) => shuffleAndRenumber(anclarTema(q, topics ?? []), `q${idx + 1}`)) }
 }

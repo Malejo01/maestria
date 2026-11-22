@@ -21,9 +21,10 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O11 · Títulos de unidad en la misma línea que los temas | hecho | [#86](https://github.com/Malejo01/maestria/pull/86) | Tests con el caso de la tanda I y casos que no se tocan; test de la ruta `extract` | US$0 |
 | O12 · El embudo del docente | hecho | [#87](https://github.com/Malejo01/maestria/pull/87) | Tests de la ubicación, el orden y el conteo, y el 404 para no admins; en staging, con los 7 docentes | US$0 |
 | O13 · Primer uso de un docente nuevo sin ayuda | hecho | [#88](https://github.com/Malejo01/maestria/pull/88) | Recorrido con Playwright a 390 de punta a punta en staging (docente recién creado → alumno → tarea → resultado); 2 arreglos, 4 propuestas | US$0 (IA simulada) |
+| O14 · Medición de calidad de la generación | hecho | [#89](https://github.com/Malejo01/maestria/pull/89) | 22 cuestionarios con IA real en staging; "fuera de tema" 8 % → corregido en la generación → re-medido 0 % | US$0,16 |
 | O19 · Limpieza: placeholders de v0 | hecho | [#90](https://github.com/Malejo01/maestria/pull/90) | `grep` sin referencias (sólo el roadmap); build en verde | US$0 |
 
-**Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
+**Gasto de IA acumulado de la noche:** US$0,19 (US$0,0285 en `ai_usage_log` de staging — 18 llamadas desde la app —, más US$0,157 de los scripts de O14 y US$0,0005 del dry-run de N2, que llaman al modelo directo y no pasan por el registro; los scripts imprimen su gasto estimado con la misma tarifa) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
 ## Detalle
 
@@ -141,6 +142,12 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - Informe aparte con el camino paso por paso y las capturas: [o13-primer-uso-docente.md](o13-primer-uso-docente.md).
 - **Arreglado:** (1) a 390, el botón **"Generar cuestionario" quedaba tapado por la barra inferior** de navegación: un docente nuevo en el celular no podía generar su primera tarea (y lo mismo la práctica del alumno, que usa el mismo componente); (2) la tarjeta de la materia en "Elegí una materia" no era un botón (teclado y lector de pantalla no podían elegirla).
 - **Propuestas** (cambios de flujo, no tocados): elegir sola la única materia en "Armar la primera tarea"; no ofrecer "Quitar a los que nunca respondieron" con alumnos recién entrados; esconder "+ Alumno" hasta tener materia; cambiar el texto del aviso de la primera tarea cuando ya hay un intento.
+
+### O14 · Calidad de la generación
+
+- Script `scripts/qa/medir-calidad.ts --env=staging` (sólo staging; no escribe): genera con el núcleo de la app y mide con los validadores existentes. Grilla: Primario y Secundario de Matemática, y en Superior Matemática (Sistemas), Matemática y su Didáctica y Programación; teórico y práctico; 8 preguntas con los cuatro tipos. Salieron **22** cuestionarios (de 24 previstos: un par de unidades no tenía temas en staging).
+- Resultado completo en [docs/calidad/2026-11-22.md](../calidad/2026-11-22.md): **0 %** en tipo (M2), dos resultados (K3), factorización (L3) y repetidas, y **0 de 22** GIFT con errores (M5).
+- **"Fuera de tema" dio 8 %** (Secundario 25 %): eran preguntas del tema pedido con el nombre **acortado por el modelo** ("Cuerpos", "Semejanza", "Números Reales: Operaciones"). Se corrigió en la generación: `anclarTema` deja cada pregunta con el id y el nombre del tema pedido cuando se ubica con certeza. **Re-medido sólo ese caso: 0 %** ([re-medición](../calidad/2026-11-22-remedicion.md)). Efecto de paso: las respuestas nuevas quedan con el `topic_name` del programa, que es lo que necesita el puente de "A reforzar" (O2) y el reporte de temas.
 
 ## Pasos manuales de Mauro, en orden
 
