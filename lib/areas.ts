@@ -522,7 +522,7 @@ export const PERFILES: Record<AreaId, PerfilDeArea> = {
   educacion: {
     id: 'educacion',
     nombre: 'Educación y didácticas',
-    ejemplosDeMaterias: ['Didáctica General', 'Matemática y su Didáctica', 'Pedagogía', 'Práctica Docente', 'Psicología Educacional'],
+    ejemplosDeMaterias: ['Didáctica General', 'Matemática y su Didáctica', 'Pedagogía', 'Práctica Docente'],
     caracter: 'conceptual',
     rolEspecialista: 'Sos especialista en evaluación de educación y didácticas específicas.',
     modos: {

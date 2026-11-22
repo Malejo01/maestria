@@ -1,6 +1,7 @@
 ﻿import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
+import { completarAreaDelPrograma } from '@/lib/area-del-programa'
 import { upsertTeacherSubject } from '@/lib/subjects'
 import { resolveGradoForNivel } from '@/lib/grado-server'
 import { parseCreatedFrom, parseNivel, withDerivedPedagogyProfile } from '@/lib/teacher-programs'
@@ -33,6 +34,34 @@ async function getTeacherProgram(programId: number, userId: string) {
   return rows[0] || null
 }
 
+/**
+ * Ronda T · A2: un programa guardado antes de la ronda T no tiene área. Se
+ * infiere al abrirlo y se guarda esa primera vez (sólo si sigue sin área: no
+ * pisa lo que otra pestaña haya guardado). Si no se puede guardar, se
+ * devuelve igual con el área inferida.
+ */
+async function conAreaGuardada(program: Record<string, unknown>, userId: string) {
+  const perfil = (program.pedagogy_profile ?? {}) as PedagogyProfile
+  const conArea = completarAreaDelPrograma({
+    materia: String(program.subject_name ?? ''),
+    carrera: perfil?.degree,
+    perfil,
+    unidades: Array.isArray(program.units) ? (program.units as ProgramUnit[]) : [],
+  })
+  if (!conArea.cambio) return program
+  try {
+    await sql`
+      UPDATE teacher_programs
+      SET pedagogy_profile = ${JSON.stringify(conArea.perfil)}, units = ${JSON.stringify(conArea.unidades)}
+      WHERE id = ${Number(program.id)} AND user_id = ${userId}
+        AND (pedagogy_profile ->> 'area') IS NULL
+    `
+  } catch (error) {
+    console.error('No se pudo guardar el área inferida del programa', error)
+  }
+  return { ...program, pedagogy_profile: conArea.perfil, units: conArea.unidades }
+}
+
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   const userId = session?.user?.id ?? null
@@ -58,7 +87,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: 'Programa no encontrado' }, { status: 404 })
     }
 
-    return NextResponse.json({ program })
+    return NextResponse.json({ program: await conAreaGuardada(program, userId) })
   } catch (error) {
     return NextResponse.json(
       { error: 'No se pudo obtener el programa', details: error instanceof Error ? error.message : String(error) },
@@ -131,7 +160,21 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Falta al menos una unidad' }, { status: 400 })
     }
 
-    const resolvedProfile = withDerivedPedagogyProfile(pedagogyProfile, nivel, grado)
+    // Ronda T · A2: el área y el carácter de cada unidad, siempre completos.
+    // Lo inferido se vuelve a inferir (el nombre pudo cambiar); lo de la IA
+    // y lo elegido a mano, no.
+    const perfilBase = withDerivedPedagogyProfile(pedagogyProfile, nivel, grado)
+    const conArea = completarAreaDelPrograma({
+      materia: subjectName,
+      carrera: pedagogyProfile?.degree,
+      perfil:
+        perfilBase.areaOrigen === 'inferida'
+          ? { ...perfilBase, area: undefined, areaConfianza: undefined, areaOrigen: undefined }
+          : perfilBase,
+      unidades: units,
+    })
+    const resolvedProfile = conArea.perfil
+    const unitsConCaracter = conArea.unidades
 
     const requiredPedagogy = [
       resolvedProfile?.level,
@@ -153,7 +196,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         icon_name = ${iconName},
         color_name = ${colorName},
         pedagogy_profile = ${JSON.stringify(resolvedProfile)},
-        units = ${JSON.stringify(units)},
+        units = ${JSON.stringify(unitsConCaracter)},
         nivel = ${nivel},
         grado = ${grado},
         jurisdiccion = ${jurisdiccion},

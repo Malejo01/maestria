@@ -1,3 +1,4 @@
+import type { AreaId, Caracter } from './areas'
 // Types for MaestrIA Application
 
 export interface Subject {
@@ -374,6 +375,17 @@ export interface PedagogyProfile {
   complexity: string
   assessmentStyle: 'teorico' | 'practico' | 'mixto'
   methodology: string
+  /**
+   * Ronda T · A2: el área de conocimiento de la materia (lib/areas.ts). Se
+   * detecta al leer el programa (la IA, o `inferirArea` de respaldo) y se
+   * guarda acá, sin migración. Programas viejos: se completa la primera vez
+   * que el docente los abre o los edita (lib/area-del-programa.ts).
+   */
+  area?: AreaId
+  /** 0 a 1. Con menos de 0,6 la interfaz dice "Nos parece que es…". */
+  areaConfianza?: number
+  /** Quién la decidió: la IA al leer, la inferencia por palabras, o el docente. */
+  areaOrigen?: 'ia' | 'inferida' | 'manual'
 }
 
 /**
@@ -396,6 +408,10 @@ export interface ProgramUnit {
   id: string
   name: string
   topics: ProgramTopic[]
+  /** Ronda T · A2: el carácter detectado de la unidad (lib/areas.ts). */
+  caracter?: Caracter
+  /** Ronda T · A3: el que eligió el docente a mano. Manda sobre `caracter`. */
+  caracterManual?: Caracter
 }
 
 /** Which flow built the program. Drives copy and the "completá los datos" nudge. */

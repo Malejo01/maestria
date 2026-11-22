@@ -1,3 +1,4 @@
+import { esCaracter } from './areas'
 import { extractGradoNumber } from '@/lib/grado'
 import type {
   Nivel,
@@ -71,6 +72,9 @@ export function normalizeUnits(units: ProgramUnit[] | unknown): ProgramUnit[] {
     return {
       id: unit?.id || `tp-u-${unitIndex + 1}`,
       name: unit?.name || `Unidad ${unitIndex + 1}`,
+      // Ronda T: el carácter de la unidad viaja con ella (sólo si es válido).
+      ...(esCaracter(unit?.caracter) ? { caracter: unit.caracter } : {}),
+      ...(esCaracter(unit?.caracterManual) ? { caracterManual: unit.caracterManual } : {}),
       topics: safeTopics.flatMap((topic: LegacyProgramTopic, topicIndex: number) => {
         if (Array.isArray(topic?.subtopics) && topic.subtopics.length > 0) {
           return topic.subtopics
