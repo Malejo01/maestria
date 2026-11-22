@@ -68,6 +68,18 @@ describe('AvisoDeReporte', () => {
     expect(screen.queryByText(/ya está corregido/)).toBeNull()
   })
 
+  it('P3: se guarda como visto apenas se muestra, sin esperar "Entendido" (sólo la primera vez)', async () => {
+    useAppStore.setState({ activeView: 'quiz' })
+    render(<AvisoDeReporte quien="invitado:Clarita" />)
+    await waitFor(() => expect(pedidos).toHaveLength(1))
+    // En el cuestionario no se ve, así que todavía no cuenta como visto.
+    expect(pedidos.some((p) => p.url === '/api/feedback/avisos/visto')).toBe(false)
+    act(() => useAppStore.setState({ activeView: 'results' }))
+    await screen.findByText(/ya está corregido/)
+    await waitFor(() => expect(pedidos.filter((p) => p.url === '/api/feedback/avisos/visto')).toHaveLength(1))
+    expect(JSON.parse(String(pedidos.find((p) => p.url === '/api/feedback/avisos/visto')?.init?.body))).toEqual({ ids: [6] })
+  })
+
   it('sin avisos no dibuja nada', async () => {
     avisos = []
     const { container } = render(<AvisoDeReporte quien="ana@x" />)

@@ -9,6 +9,7 @@ import { EnlacesLegales } from '@/components/legal-notice'
 import { PageContainer } from '@/components/layout/page-container'
 import { AvisoDeReporte } from '@/components/caparazon/aviso-de-reporte'
 import { BotonAdmin } from '@/components/caparazon/boton-admin'
+import { CampanitaAlumno } from '@/components/caparazon/campanita-alumno'
 import { CampanitaDocente } from '@/components/caparazon/campanita-docente'
 import { MenuUsuario } from '@/components/caparazon/menu-usuario'
 import { SesionAlDia } from '@/components/caparazon/sesion-al-dia'
@@ -64,7 +65,7 @@ function Marco({
   children: ReactNode
 }) {
   const pathname = usePathname()
-  const { contexto, entradas, vistaPrevia } = resolverCaparazon(
+  const { contexto, entradas, vistaPrevia, campanita } = resolverCaparazon(
     quien ? { rol: quien.rol, esInvitado: quien.esInvitado } : null,
     pathname,
   )
@@ -100,8 +101,9 @@ function Marco({
                 <Link href="/">{NAVEGACION.ingresar}</Link>
               </Boton>
             )}
-            {/* O10: los avisos del docente (sólo en su panel, no en la vista previa). */}
-            {contexto === 'docente' && <CampanitaDocente />}
+            {/* O10/P3: la campanita de cada uno; cuál, lo decide lib/navegacion.ts. */}
+            {campanita === 'docente' && <CampanitaDocente />}
+            {campanita === 'alumno' && <CampanitaAlumno />}
             {/* P1: el panel de administrador, sólo para ADMIN_EMAILS. */}
             {quien && <BotonAdmin esAdmin={quien.esAdmin} />}
             {/* La acción del panel docente, como en la referencia: siempre a mano. */}

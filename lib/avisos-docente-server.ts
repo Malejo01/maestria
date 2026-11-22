@@ -1,6 +1,7 @@
 import { sql } from '@/lib/db'
 import { armarAvisos, type FilaDeAviso } from '@/lib/avisos-docente'
-import type { Lectura, RespuestaDeAvisos } from '@/lib/avisos/tipos'
+import { leerLectura, marcarTodoLeido } from '@/lib/avisos/lectura-server'
+import type { RespuestaDeAvisos } from '@/lib/avisos/tipos'
 
 /**
  * O10 · Los avisos del docente, de lo que ya está en la base, de las últimas
@@ -8,24 +9,15 @@ import type { Lectura, RespuestaDeAvisos } from '@/lib/avisos/tipos'
  * alumnos nuevos por grupo y por día, y reportes (M6) de sus grupos o sus
  * cuestionarios. Los días van en hora de Argentina.
  *
- * Válvula: sin la 034 no hay `avisos_docente_visto_el`: los avisos se listan
- * sin "no leídos" (P2: igual que el alumno sin la 035). Sin la 029 los
- * reportes no saben de qué grupo son: no se listan.
+ * Lo leído sale de `avisos_lectura` (035) y, sin ella, de la columna de la
+ * 034 (lib/avisos/lectura-server.ts); sin ninguna de las dos, los avisos se
+ * listan sin "no leídos". Sin la 029 los reportes no saben de qué grupo son:
+ * no se listan.
  */
 const DIAS = 14
 
 const iso = (v: string | Date | null | undefined) => (v ? new Date(v).toISOString() : '')
 const faltaColumna = (e: unknown) => ['42703', '42P01'].includes((e as { code?: string })?.code ?? '')
-
-async function lectura(docenteId: string): Promise<Lectura> {
-  try {
-    const filas = (await sql`SELECT avisos_docente_visto_el AS v FROM users WHERE id = ${docenteId}`) as { v: string | Date | null }[]
-    return { vistoEl: filas[0]?.v ? iso(filas[0].v) : null, puedeMarcar: true }
-  } catch (error) {
-    if (faltaColumna(error)) return { vistoEl: null, puedeMarcar: false }
-    throw error
-  }
-}
 
 async function reportes(docenteId: string): Promise<FilaDeAviso[]> {
   try {
@@ -56,7 +48,7 @@ async function reportes(docenteId: string): Promise<FilaDeAviso[]> {
 
 export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAvisos> {
   const [leida, tareas, nuevos, reportados] = await Promise.all([
-    lectura(docenteId),
+    leerLectura(docenteId, { esDocente: true }),
     sql`
       SELECT c.id AS grupo_id, c.name AS grupo, q.title AS tarea,
              to_char((att.completed_at AT TIME ZONE 'America/Argentina/Buenos_Aires')::date, 'YYYY-MM-DD') AS dia,
@@ -89,11 +81,7 @@ export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAv
   return { avisos: armarAvisos(filas, leida), vistoEl: leida.vistoEl, puedeMarcar: leida.puedeMarcar }
 }
 
-/** "Marcar todo como leído": desde ahora, lo anterior está visto. Sin la 034, no hace nada. */
+/** "Marcar todo como leído". Desde la 035, en `avisos_lectura`; sin ella, en la columna de la 034. */
 export async function marcarAvisosVistos(docenteId: string): Promise<void> {
-  try {
-    await sql`UPDATE users SET avisos_docente_visto_el = NOW() WHERE id = ${docenteId}`
-  } catch (error) {
-    if (!faltaColumna(error)) throw error
-  }
+  await marcarTodoLeido(docenteId, { esDocente: true })
 }

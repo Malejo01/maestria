@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Boton } from '@/components/sistema/boton'
 import { Aviso } from '@/components/sistema/aviso'
 import { armarAviso, type AvisoPendiente } from '@/lib/avisos-de-reporte'
@@ -11,8 +11,11 @@ import { AVISO_DE_REPORTE as T } from '@/lib/textos'
 /**
  * N1: "Gracias por avisarnos… ya está corregido." Arriba del contenido de
  * cualquier pantalla de la app, para quien reportó algo que el admin marcó
- * como resuelto (con cuenta o como invitado). "Entendido" lo cierra para
- * siempre.
+ * como resuelto (con cuenta o como invitado).
+ *
+ * P3: se muestra sólo la PRIMERA vez. Apenas se ve, se guarda como visto; en
+ * esta pestaña sigue arriba hasta "Entendido", pero no vuelve en la próxima
+ * visita: desde ahí vive en la campanita ("Tu reporte se resolvió").
  *
  * Se pide UNA vez por pestaña: el resultado queda en memoria (y en
  * sessionStorage, por si la pestaña recarga), así navegar no le pega a la base.
@@ -81,6 +84,21 @@ export function AvisoDeReporte({ quien }: { quien: string }) {
 
   const aviso = useMemo(() => armarAviso(avisos ?? []), [avisos])
   const enCuestionario = activeView === 'quiz' || activeView === 'loading'
+  const visible = Boolean(aviso) && !enCuestionario
+
+  // P3: visto en cuanto se muestra (una sola vez por reporte).
+  const marcados = useRef(new Set<number>())
+  useEffect(() => {
+    if (!visible || !aviso) return
+    const ids = aviso.ids.filter((id) => !marcados.current.has(id))
+    if (ids.length === 0) return
+    ids.forEach((id) => marcados.current.add(id))
+    void pedirJson('/api/feedback/avisos/visto', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    })
+  }, [visible, aviso])
 
   async function entendido() {
     if (!aviso) return
@@ -100,7 +118,7 @@ export function AvisoDeReporte({ quien }: { quien: string }) {
 
   return (
     <Aviso
-      visible={Boolean(aviso) && !enCuestionario}
+      visible={visible}
       etiqueta={T.etiqueta}
       accion={
         <Boton variante="secundario" disabled={cerrando} onClick={() => void entendido()}>

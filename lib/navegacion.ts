@@ -64,27 +64,36 @@ export function esSeccionDocente(valor: string | null | undefined): valor is Sec
   return valor === 'alumnos' || valor === 'materias' || valor === 'tareas'
 }
 
+/**
+ * P3: qué campanita va en la barra. El docente, la suya (sus grupos); el
+ * alumno y el invitado, la suya (sus tareas). Ninguna para el visitante ni en
+ * la vista previa: el docente no tiene avisos de alumno y mostrarle los de
+ * otro sería peor que nada.
+ */
+export type Campanita = 'docente' | 'alumno' | null
+
 export interface Caparazon {
   contexto: Contexto
   entradas: EntradaNav[]
   /** Un docente mirando las pantallas de alumno. Su rol sigue siendo DOCENTE. */
   vistaPrevia: boolean
+  campanita: Campanita
 }
 
 export function resolverCaparazon(quien: QuienMira | null, pathname: string): Caparazon {
-  if (!quien) return { contexto: 'visitante', entradas: [], vistaPrevia: false }
-  if (quien.esInvitado) return { contexto: 'invitado', entradas: [], vistaPrevia: false }
+  if (!quien) return { contexto: 'visitante', entradas: [], vistaPrevia: false, campanita: null }
+  if (quien.esInvitado) return { contexto: 'invitado', entradas: [], vistaPrevia: false, campanita: 'alumno' }
 
   if (quien.rol === 'DOCENTE') {
     if (esRutaDocente(pathname) || esRutaNeutral(pathname)) {
-      return { contexto: 'docente', entradas: NAV_DOCENTE, vistaPrevia: false }
+      return { contexto: 'docente', entradas: NAV_DOCENTE, vistaPrevia: false, campanita: 'docente' }
     }
-    return { contexto: 'alumno', entradas: NAV_ALUMNO, vistaPrevia: true }
+    return { contexto: 'alumno', entradas: NAV_ALUMNO, vistaPrevia: true, campanita: null }
   }
 
   // ALUMNO, o una cuenta que todavía no eligió rol: mientras no elija, la
   // pantalla de bienvenida tapa todo, así que esta barra no llega a verse.
-  return { contexto: 'alumno', entradas: NAV_ALUMNO, vistaPrevia: false }
+  return { contexto: 'alumno', entradas: NAV_ALUMNO, vistaPrevia: false, campanita: 'alumno' }
 }
 
 /** Qué entrada de la barra corresponde a la URL actual, o null si ninguna. */

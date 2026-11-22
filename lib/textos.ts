@@ -976,6 +976,37 @@ export const AVISOS = {
   },
 } as const
 
+/** P3: los avisos del alumno (con cuenta o invitado). */
+export const AVISOS_ALUMNO = {
+  vacio: 'No tenés avisos nuevos.',
+  vacioDetalle: 'Cuando tu docente te mande una tarea o se acerque una fecha, te avisamos acá.',
+  tareaNueva: 'Tarea nueva',
+  vencePronto: (horas: number) => (horas < 1 ? 'Vence en menos de 1 h' : `Vence en ${horas} h`),
+  detalleTarea: (grupo: string, tarea: string) => `${grupo} · ${tarea}`,
+  diagnosticoNuevo: 'Diagnóstico nuevo',
+  detalleDiagnostico: (grupo: string, n: number) => `${grupo} · ${n === 1 ? '1 cuestionario' : `${n} cuestionarios`}`,
+  reporteResuelto: 'Tu reporte se resolvió',
+  detalleReporte: (quien: string | null, conMensaje: boolean) =>
+    conMensaje ? `${quien ?? 'Tu docente'} te dejó un mensaje` : 'Ya está corregido. Gracias por avisar.',
+  temaSuperado: 'Tema superado',
+  detalleTema: (tema: string, porDocente: boolean) => (porDocente ? `${tema} · lo marcó tu docente` : `${tema} · pasó a "Ya lo dominás"`),
+  rachaEnRiesgo: (n: number) => `Tu racha de ${n} ${n === 1 ? 'aprobado' : 'aprobados'} está en riesgo`,
+  detalleRacha: 'Todavía no practicaste hoy',
+} as const
+
+/** P3: la página de un reporte propio, a la que lleva "Tu reporte se resolvió". */
+export const REPORTE_PROPIO = {
+  titulo: 'Tu reporte',
+  loQueReportaste: 'Lo que reportaste',
+  cuestionario: (titulo: string) => `En «${titulo}»`,
+  reportadoEl: (fecha: string) => `Lo mandaste el ${fecha}`,
+  resueltoEl: (fecha: string) => `Se resolvió el ${fecha}`,
+  pendiente: 'Todavía lo estamos revisando.',
+  mensajeDe: (quien: string | null) => `Mensaje de ${quien ?? 'tu docente'}`,
+  sinMensaje: 'Ya está corregido. Gracias por avisar: así la tarea queda mejor para todos.',
+  volver: 'Volver a mis tareas',
+} as const
+
 /** O10/P2: los avisos del docente. Título corto + una línea de detalle. */
 export const AVISOS_DOCENTE = {
   vacio: 'Nada nuevo en las últimas dos semanas.',
