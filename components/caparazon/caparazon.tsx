@@ -77,7 +77,9 @@ function Marco({
       {/* z-30: sobre el contenido, debajo del cuestionario a pantalla completa
           (z-40) y de toda capa de Radix (z-50). Ver components/quiz-overlay.tsx. */}
       <header className="sticky top-0 z-30 border-b border-borde bg-superficie-tarjeta">
-        <div className="mx-auto flex min-h-[60px] w-full max-w-7xl items-center gap-6 px-4 sm:px-6 md:min-h-[68px] lg:px-8">
+        {/* O16: a 360 px el docente tiene modo, campanita, "+ Alumno" y su menú: en el
+            celular la separación es más chica para que nada se salga de la pantalla. */}
+        <div className="mx-auto flex min-h-[60px] w-full max-w-7xl items-center gap-3 px-3 min-[400px]:px-4 sm:px-6 md:min-h-[68px] md:gap-6 lg:px-8">
           <Link href="/" className="inline-flex min-h-11 items-center rounded-sm" aria-label="MaestrIA, ir al inicio">
             <Logo variante="barra" />
           </Link>
@@ -101,7 +103,7 @@ function Marco({
             {contexto === 'docente' && <CampanitaDocente />}
             {/* La acción del panel docente, como en la referencia: siempre a mano. */}
             {contexto === 'docente' && (
-              <Boton asChild>
+              <Boton asChild className="px-3 sm:px-4">
                 <Link href="/teacher?agregar=1">{MIS_ALUMNOS.agregarCorto}</Link>
               </Boton>
             )}

@@ -24,6 +24,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O14 · Medición de calidad de la generación | hecho | [#89](https://github.com/Malejo01/maestria/pull/89) | 22 cuestionarios con IA real en staging; "fuera de tema" 8 % → corregido en la generación → re-medido 0 % | US$0,16 |
 | O19 · Limpieza: placeholders de v0 | hecho | [#90](https://github.com/Malejo01/maestria/pull/90) | `grep` sin referencias (sólo el roadmap); build en verde | US$0 |
 | O15 · Esquema que usa el código contra staging | hecho | [#91](https://github.com/Malejo01/maestria/pull/91) | Test manual contra `information_schema` de staging: en verde; en el CI se salta | US$0 |
+| O16 · La barra en 360, 390 y 768 px | hecho | [#92](https://github.com/Malejo01/maestria/pull/92) | `e2e/anchos.spec.ts` en visitante, alumno y docente: antes, la barra del docente desbordaba 21 px a 360; ahora en verde | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,19 (US$0,0285 en `ai_usage_log` de staging — 18 llamadas desde la app —, más US$0,157 de los scripts de O14 y US$0,0005 del dry-run de N2, que llaman al modelo directo y no pasan por el registro; los scripts imprimen su gasto estimado con la misma tarifa) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -154,6 +155,13 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 
 - Los tipos `Db*` de `lib/db.ts` **ya no existen**: se borraron el 25/08 (estaban desalineados y no los usaba nadie); la convención es una interfaz por consulta. Lo que sí se puede verificar es que lo que nombran las consultas exista: `tests/esquema-real.test.ts` compara contra `information_schema` de staging (1) las tablas y columnas que declaran las migraciones y (2) una lista, a mantener con cada migración nueva, de las columnas que nombra el código (incluidas las de esta noche). En verde. No entra al CI: se corre con `$env:ESQUEMA_REAL="1"; npx vitest run tests/esquema-real.test.ts`.
 - De paso, `check-schema-drift` mostró que la 031 y la 032 figuraban en staging "con el archivo cambiado" (retoqué comentarios después de correrlas): se volvieron a correr en staging (son idempotentes) y quedaron con el archivo final.
+
+### O16 · Anchos chicos
+
+- `xs:` ya no aparece en ninguna clase: la navbar que lo usaba (`components/navbar.tsx`) se borró con los cuatro contextos de navegación, y `/history` se arregló el 25/08. No hizo falta definir el breakpoint.
+- Lo que sí había: **a 360 px la barra del docente se salía 21 px** (modo, campanita de O10, "+ Alumno" y el menú de la cuenta no entraban) y la página tenía scroll horizontal. Ahora la separación y el margen de la barra son más chicos sólo en el celular, y "+ Alumno" tiene menos relleno debajo de 640 px.
+- Nuevo `e2e/anchos.spec.ts`: a 360, 390 y 768 px, en visitante (`/`), alumno (`/aulas`, `/practicar`, `/history`) y docente (las tres secciones del panel y la página del grupo), nada de la barra queda fuera de la pantalla y la página no tiene scroll horizontal. Ignora lo que está dentro de un carril con scroll propio (las pestañas del grupo, a propósito). Capturas en `docs/capturas/o16-anchos/`.
+- De paso: quedaba un invitado "E2E" activo en el grupo de Irina de una corrida de las 02:57 cuya limpieza falló; lo pasé a `removed` (dato de prueba de esta ronda).
 
 ## Pasos manuales de Mauro, en orden
 
