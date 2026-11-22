@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-/** O10. Los avisos del docente: texto, orden, no leídos, y el servidor con su válvula. */
+/** O10/P2. Los avisos del docente: título y detalle, orden, no leídos, y el servidor con su válvula. */
 const { consultas } = vi.hoisted(() => ({ consultas: [] as { texto: string; valores: unknown[] }[] }))
 let responder: (texto: string) => unknown = () => []
 
@@ -12,7 +12,8 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
-import { armarAvisos, noLeidos, type FilaDeAviso } from './avisos-docente'
+import { contarNoLeidos } from './avisos/armar'
+import { armarAvisos, type FilaDeAviso } from './avisos-docente'
 import { avisosDelDocente, marcarAvisosVistos } from './avisos-docente-server'
 
 const filas: FilaDeAviso[] = [
@@ -21,28 +22,53 @@ const filas: FilaDeAviso[] = [
   { tipo: 'reporte', grupoId: 4, grupo: 'Matemática 1 Virtual', dia: '2026-11-20', reportes: 1, ultimo: '2026-11-20T15:00:00.000Z' },
   { tipo: 'tarea', grupoId: 4, grupo: 'X', tarea: 'Y', dia: '2026-11-22', alumnos: 0, ultimo: '2026-11-22T03:00:00.000Z' },
 ]
+const SIN_LEER = { vistoEl: null, puedeMarcar: true }
 
 describe('armarAvisos', () => {
-  it('los textos del pedido, del más nuevo al más viejo, sin los vacíos', () => {
-    const a = armarAvisos(filas, null)
-    expect(a.map((x) => x.texto)).toEqual([
-      '3 alumnos nuevos entraron a 1er Año',
-      '8 alumnos de Matemática 1 Virtual terminaron «Práctica de funciones»',
-      'Reportaron un problema en Matemática 1 Virtual',
+  it('título y detalle por tipo, del más nuevo al más viejo, sin los vacíos', () => {
+    const a = armarAvisos(filas, SIN_LEER)
+    expect(a.map((x) => [x.tipo, x.titulo, x.detalle])).toEqual([
+      ['alumnosNuevos', '3 alumnos nuevos', 'Entraron a 1er Año'],
+      ['tareaTerminada', '8 terminaron la tarea', 'Matemática 1 Virtual · Práctica de funciones'],
+      ['reporte', 'Reportaron un problema', 'En Matemática 1 Virtual'],
     ])
     expect(a[1].href).toBe('/teacher/grupos/4?pestaña=tareas')
   })
 
-  it('no leído = pasó después de la última vez que abrió la campanita', () => {
-    const a = armarAvisos(filas, '2026-11-21T23:00:00.000Z')
-    expect(a.map((x) => x.noLeido)).toEqual([true, false, false])
-    expect(noLeidos(a)).toBe(1)
-    expect(noLeidos(armarAvisos(filas, null))).toBe(3)
+  it('cada tipo con su rol y su ícono', () => {
+    const a = armarAvisos(filas, SIN_LEER)
+    expect(a.map((x) => [x.rol, x.icono])).toEqual([
+      ['informacion', 'personaMas'],
+      ['exito', 'checkLista'],
+      ['atencion', 'bandera'],
+    ])
   })
 
-  it('el singular', () => {
-    const [a] = armarAvisos([{ tipo: 'tarea', grupoId: 1, grupo: 'G', tarea: 'T', dia: '2026-11-22', alumnos: 1, ultimo: '2026-11-22T00:00:00.000Z' }], null)
-    expect(a.texto).toBe('1 alumno de G terminó «T»')
+  it('no leído = pasó después de la última vez que marcó todo como leído', () => {
+    const a = armarAvisos(filas, { vistoEl: '2026-11-21T23:00:00.000Z', puedeMarcar: true })
+    expect(a.map((x) => x.noLeido)).toEqual([true, false, false])
+    expect(contarNoLeidos(a)).toBe(1)
+    expect(contarNoLeidos(armarAvisos(filas, SIN_LEER))).toBe(3)
+  })
+
+  it('con la válvula (no se puede marcar), nada es no leído', () => {
+    expect(contarNoLeidos(armarAvisos(filas, { vistoEl: null, puedeMarcar: false }))).toBe(0)
+  })
+
+  it('singular y plural', () => {
+    const uno = armarAvisos(
+      [
+        { tipo: 'tarea', grupoId: 1, grupo: 'G', tarea: 'T', dia: '2026-11-22', alumnos: 1, ultimo: '2026-11-22T00:00:00.000Z' },
+        { tipo: 'nuevos', grupoId: 1, grupo: 'G', dia: '2026-11-22', alumnos: 1, ultimo: '2026-11-22T00:00:01.000Z' },
+        { tipo: 'reporte', grupoId: null, grupo: null, dia: '2026-11-22', reportes: 2, ultimo: '2026-11-22T00:00:02.000Z' },
+      ],
+      SIN_LEER,
+    )
+    expect(uno.map((x) => [x.titulo, x.detalle])).toEqual([
+      ['Reportaron 2 problemas', 'En un cuestionario tuyo'],
+      ['1 alumno nuevo', 'Entró a G'],
+      ['1 alumno terminó la tarea', 'G · T'],
+    ])
   })
 })
 
@@ -58,7 +84,7 @@ describe('avisosDelDocente', () => {
     expect(deDatos.every((c) => c.valores.includes('irina'))).toBe(true)
   })
 
-  it('sin la 034 (o sin la 029), todo como no leído y sin error', async () => {
+  it('sin la 034 (o sin la 029): los avisos sin "no leídos", sin error', async () => {
     responder = (t) => {
       if (t.includes('avisos_docente_visto_el') || t.includes('feedback_reports')) throw Object.assign(new Error('x'), { code: '42703' })
       if (t.includes('quiz_attempts')) return [{ grupo_id: 4, grupo: 'G', tarea: 'T', dia: '2026-11-22', alumnos: 2, ultimo: '2026-11-22T01:00:00Z' }]
@@ -66,8 +92,9 @@ describe('avisosDelDocente', () => {
     }
     const r = await avisosDelDocente('irina')
     expect(r.vistoEl).toBeNull()
+    expect(r.puedeMarcar).toBe(false)
     expect(r.avisos).toHaveLength(1)
-    expect(r.avisos[0].noLeido).toBe(true)
+    expect(r.avisos[0].noLeido).toBe(false)
     await expect(marcarAvisosVistos('irina')).resolves.toBeUndefined()
   })
 })
