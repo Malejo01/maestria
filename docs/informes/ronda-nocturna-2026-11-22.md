@@ -13,6 +13,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O3 · La práctica del grupo usa la materia del grupo | hecho | [#78](https://github.com/Malejo01/maestria/pull/78) | Tests de los parámetros, los ejemplos por carrera y la persona de didáctica; 3 + 3 prácticas con IA real antes/después; `npm run e2e` en verde | US$0,025 |
 | O4 · Textos viejos del alumno y la racha en la base (migración 032) | hecho | [#79](https://github.com/Malejo01/maestria/pull/79) | Tests de la regla, el servidor (válvula) y la migración desde el navegador; en staging Sofía hizo una tarea: racha migrada y anotada; capturas a 390; `npm run e2e` en verde | US$0 |
 | O5 · Los cuestionarios viejos muestran fracciones | hecho | [#80](https://github.com/Malejo01/maestria/pull/80) | Tests de la fracción simple (exacta y periódica), cómo se muestra y la corrección con las dos formas; en staging, la revisión del cuestionario 26 muestra "5/12 (0,4167 ± 0,001)"; `npm run e2e` en verde | US$0 |
+| O6 · Reporte de diagnóstico parametrizado por programa | hecho | (este PR) | Test de caracterización del 10/08 escrito antes de cambiar nada (sigue igual); vínculo por temas con tests; en staging, el 10/08 leído contra "Matemática · 3er Año" de Irina | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -82,6 +83,13 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - La corrección ya aceptaba las dos formas (K2: `3/4`, `6/8` y `0,75` valen para 0,75; `11/12` para la periódica): quedó fijado con tests.
 - No encontré el cuestionario 34 de producción en staging (allá el 34 es otro); el caso equivalente es el 26 de Irina (5/12 con margen 0,001), que antes se mostraba "0,4167 (± 0,001)".
 - De paso: la prueba e2e del invitado se iba a `/aulas` antes de que el intento terminara de guardarse (falló una vez de cuatro); ahora espera el "Guardado".
+
+### O6 · Diagnóstico por programa
+
+- Primero un **test de caracterización** del reporte del 10/08 (`lib/diagnostic-report-server.test.ts`): unidades, orden, vínculos, textos y totales como salen hoy. Pasa igual después del cambio: `/teacher/diagnostico` sin elegir nada se ve como siempre.
+- `vinculoConPrograma` ([lib/diagnostic-report.ts](../../lib/diagnostic-report.ts), puro): cada unidad del diagnóstico se vincula con la unidad del programa que comparte más temas (comparados como en O2) o que se llama igual; si ninguna, "no aparece en el programa". El mapa a mano (`DIAGNOSTIC_UNIT_PROGRAM_MAP`) queda sólo como la lectura original del 10/08.
+- `/teacher/diagnostico` suma "Leer contra el programa de" con las materias del docente; la API acepta `?programa=<id>` (sólo materias propias; otra → 404). El renglón "Faltan 5 de las 7 unidades… lógica, conjuntos" (escrito para Sistemas) se oculta cuando se lee contra otra materia.
+- Lo que no cubre: la fecha sigue fija (10/08) y el currículum de origen también (Secundario 4.º); parametrizar eso es el paso siguiente si aparece otro diagnóstico de curso fuera de los grupos (los de L4 ya se leen por grupo).
 
 ## Pasos manuales de Mauro, en orden
 

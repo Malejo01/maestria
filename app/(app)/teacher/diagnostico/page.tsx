@@ -4,6 +4,7 @@ import { Cargando } from '@/components/sistema/cargando'
 
 
 import { useEffect, useState } from 'react'
+import { DIAGNOSTICO_DEL_CURSO } from '@/lib/textos'
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { ArrowLeft } from 'lucide-react'
@@ -23,9 +24,26 @@ export default function DiagnosticoPage() {
   const [report, setReport] = useState<CourseDiagnostic | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  // O6: contra qué programa se lee ('' = el mapa del 10/08, como siempre).
+  const [programa, setPrograma] = useState('')
+  const [programas, setProgramas] = useState<{ id: number; nombre: string }[]>([])
 
   useEffect(() => {
-    fetch('/api/teacher/diagnostic-report')
+    fetch('/api/teacher/programs')
+      .then((res) => (res.ok ? res.json() : { programs: [] }))
+      .then((data) =>
+        setProgramas(
+          (Array.isArray(data?.programs) ? data.programs : []).map((p: { id: number; subject_name?: string; grado?: string | null }) => ({
+            id: Number(p.id),
+            nombre: [p.subject_name, p.grado].filter(Boolean).join(' · '),
+          })),
+        ),
+      )
+      .catch(() => setProgramas([]))
+  }, [])
+
+  useEffect(() => {
+    fetch(`/api/teacher/diagnostic-report${programa ? `?programa=${programa}` : ''}`)
       .then(async (res) => ({ ok: res.ok, data: await res.json() }))
       .then(({ ok, data }) => {
         if (!ok) setError(data?.error ?? 'No se pudo cargar el reporte.')
@@ -33,7 +51,7 @@ export default function DiagnosticoPage() {
       })
       .catch(() => setError('No pudimos conectarnos. Probá de nuevo en un momento.'))
       .finally(() => setLoading(false))
-  }, [])
+  }, [programa])
 
   return (
     <div className="space-y-6">
@@ -59,6 +77,28 @@ export default function DiagnosticoPage() {
         <div className="flex items-center justify-center py-24">
           <Cargando className="w-8 h-8 text-primary" />
         </div>
+      )}
+
+      {programas.length > 0 && (
+        <label className="flex max-w-md flex-col gap-1">
+          <span className="nota font-semibold text-texto-suave">{DIAGNOSTICO_DEL_CURSO.leerContra}</span>
+          <select
+            value={programa}
+            onChange={(e) => {
+              setLoading(true)
+              setError(null)
+              setPrograma(e.target.value)
+            }}
+            className="cuerpo-s min-h-11 rounded-md border border-borde-fuerte bg-superficie-tarjeta px-3 text-texto"
+          >
+            <option value="">{DIAGNOSTICO_DEL_CURSO.mapaOriginal}</option>
+            {programas.map((p) => (
+              <option key={p.id} value={String(p.id)}>
+                {p.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
       )}
 
       {!loading && (error || !report) && (
