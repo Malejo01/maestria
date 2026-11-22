@@ -830,6 +830,20 @@ describe('POST — Ronda T · A4: el área de la materia guía la generación', 
     expect(prompt).toContain('MODO PRÁCTICO: Ejercicios de cálculo y resolución de problemas numéricos.')
   })
 
+  it('A5: en una unidad conceptual, una pregunta con LaTeX o una cuenta se descarta y se pide otra', async () => {
+    const [a, b, c] = deTipo('multiple_choice', 3, 10)
+    const conLatex = { ...a, question: 'Si la comunidad crece como $x^2$, ¿qué mirada predomina?' }
+    const conCuenta = { ...b, question: 'Calculá el porcentaje de la población que mantiene el ritual.' }
+    generateObject
+      .mockResolvedValueOnce({ object: { questions: [conLatex, conCuenta, c] }, usage: {} })
+      .mockResolvedValueOnce({ object: { questions: deTipo('multiple_choice', 2, 11) }, usage: {} })
+    const body = await (await POST(request({ ...ANTROPOLOGIA, questionTypes: ['multiple_choice'], questionCount: 3 }))).json()
+    const textos = body.questions.map((q: { question: string }) => q.question)
+    expect(textos).toHaveLength(3)
+    expect(textos).not.toContain(conLatex.question)
+    expect(textos).not.toContain(conCuenta.question)
+  })
+
   it('la metodología del docente sigue llegando como PREFERENCIAS PEDAGOGICAS DEL DOCENTE', async () => {
     generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
     await POST(request({ ...ANTROPOLOGIA, questionTypes: ['multiple_choice'], pedagogyContext: 'Trabajo con casos de la vida cotidiana' }))
