@@ -20,6 +20,8 @@ export type TipoDeAviso =
   | 'tareaTerminada'
   | 'alumnosNuevos'
   | 'reporte'
+  // Docente (ronda T · C2): el pago desde la app se acreditó
+  | 'pagoAcreditado'
   // Alumno (P3)
   | 'tareaNueva'
   | 'vencePronto'
@@ -32,6 +34,7 @@ export const ESTILO_DEL_AVISO: Record<TipoDeAviso, { rol: RolDeAviso; icono: Ico
   tareaTerminada: { rol: 'exito', icono: 'checkLista' },
   alumnosNuevos: { rol: 'informacion', icono: 'personaMas' },
   reporte: { rol: 'atencion', icono: 'bandera' },
+  pagoAcreditado: { rol: 'exito', icono: 'resuelto' },
   tareaNueva: { rol: 'informacion', icono: 'tareaNueva' },
   vencePronto: { rol: 'atencion', icono: 'reloj' },
   diagnosticoNuevo: { rol: 'informacion', icono: 'diagnostico' },

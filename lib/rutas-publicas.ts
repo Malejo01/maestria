@@ -26,6 +26,7 @@ export const RUTAS_PUBLICAS = [
   '/api/avisos',          // P3: la campanita del alumno (el invitado también la tiene)
   '/reportes',            // P3: "Tu reporte se resolvió" (también para el invitado)
   '/monitoring',          // Túnel de Sentry (tunnelRoute en next.config.mjs)
+  '/api/pagos/mercadopago', // C2: el webhook de Mercado Pago (valida la firma él mismo)
 ] as const
 
 export function esRutaPublica(pathname: string): boolean {
