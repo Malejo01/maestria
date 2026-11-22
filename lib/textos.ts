@@ -968,7 +968,8 @@ export const INFORME_IMPRESO = {
 /** O10: la campanita de avisos del docente. */
 /** P2: lo común de las dos campanitas (docente y alumno). */
 export const AVISOS = {
-  boton: (n: number) => (n === 0 ? 'Avisos' : n === 1 ? 'Avisos: 1 sin leer' : `Avisos: ${n} sin leer`),
+  // Con más de 9 el globo dice "9+": el nombre lo contiene (axe, label-in-name). El número exacto lo dice `contador`.
+  boton: (n: number) => (n === 0 ? 'Avisos' : n === 1 ? 'Avisos: 1 sin leer' : n > 9 ? 'Avisos: 9+ sin leer' : `Avisos: ${n} sin leer`),
   contador: (n: number) => (n === 0 ? 'No tenés avisos sin leer' : n === 1 ? '1 aviso sin leer' : `${n} avisos sin leer`),
   titulo: 'Avisos',
   cargando: 'Buscando avisos…',
@@ -1622,4 +1623,23 @@ export const PRACTICA_EXTRA = {
 /** P7: "A reforzar" en la ficha del alumno (lo mismo que ve el alumno en Mi progreso). */
 export const FICHA_A_REFORZAR = {
   titulo: (n: number) => `A reforzar (${n})`,
+} as const
+
+/** Ronda T · A3: el área de la materia y el carácter de cada unidad. */
+export const AREA_DE_LA_MATERIA = {
+  renglon: (area: string, practicas: string) => `Área: ${area} · las preguntas prácticas van a ser ${practicas}`,
+  nosParece: (area: string, practicas: string) => `Nos parece que es ${area} · las preguntas prácticas van a ser ${practicas}`,
+  cambiar: 'Cambiar',
+  cambiarArea: 'Cambiar el área de la materia',
+  elegirArea: 'Área de la materia',
+  caracter: { cuantitativo: 'Con cálculos', conceptual: 'Conceptual', mixto: 'Mixta' },
+  caracterAyuda: {
+    cuantitativo: 'Se evalúa con cálculos y problemas',
+    conceptual: 'Se evalúa con conceptos y casos, sin cuentas',
+    mixto: 'Conceptos y algo de cálculo',
+  },
+  cambiarCaracter: (unidad: string, actual: string) => `${unidad}: ${actual}. Cambiar cómo se evalúa`,
+  elegirCaracter: 'Cómo se evalúa esta unidad',
+  guardado: 'Listo, lo cambiamos.',
+  noSeGuardo: 'No se pudo guardar. Probá de nuevo.',
 } as const

@@ -46,3 +46,12 @@ describe('horaRelativa', () => {
     expect(horaRelativa('2026-11-22T02:00:00.000Z', medianoche)).toBe('ayer')
   })
 })
+
+describe('el nombre del botón de la campanita', () => {
+  it('con más de 9 dice "9+", como el globo (axe: label-in-name)', async () => {
+    const { AVISOS } = await import('@/lib/textos')
+    expect(AVISOS.boton(0)).toBe('Avisos')
+    expect(AVISOS.boton(3)).toBe('Avisos: 3 sin leer')
+    expect(AVISOS.boton(10)).toBe('Avisos: 9+ sin leer')
+  })
+})

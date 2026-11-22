@@ -13,7 +13,12 @@ import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import type { TeacherProgram } from '@/lib/types'
 import { ASSESSMENT_STYLE_LABELS, type PanelDocente } from '@/components/docente/use-panel-docente'
 import { EsqueletoTarjetasDeMateria } from '@/components/docente/esqueletos'
-import { contar, MIS_MATERIAS } from '@/lib/textos'
+import { contar, MIS_MATERIAS, AREA_DE_LA_MATERIA } from '@/lib/textos'
+import { AreaDeLaMateria, ChipDeCaracter } from '@/components/docente/area-de-la-materia'
+import { useToast } from '@/hooks/use-toast'
+import { PERFILES, type AreaId, type Caracter } from '@/lib/areas'
+import { caracterDeLaUnidad } from '@/lib/area-del-programa'
+import { useState } from 'react'
 
 /**
  * "Mis materias": el listado de materias del docente, el armado de una tarea
@@ -59,6 +64,28 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
     setTeacherProgramFilters,
     setTeacherSection,
   } = panel
+
+  // Ronda T · A3: cambiar el área o el carácter de una unidad, sin abrir la edición.
+  const { toast } = useToast()
+  const [guardandoArea, setGuardandoArea] = useState(false)
+  const guardarArea = async (programId: number, cambio: { area: AreaId } | { unidadId: string; caracter: Caracter }) => {
+    setGuardandoArea(true)
+    try {
+      const res = await fetch(`/api/teacher/programs/${programId}/area`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cambio),
+      })
+      if (!res.ok) throw new Error(String(res.status))
+      const data = await res.json()
+      updateTeacherProgram(programId, { pedagogyProfile: data.pedagogyProfile, units: data.units })
+      toast({ title: AREA_DE_LA_MATERIA.guardado })
+    } catch {
+      toast({ title: AREA_DE_LA_MATERIA.noSeGuardo })
+    } finally {
+      setGuardandoArea(false)
+    }
+  }
 
   /**
    * `showCreateQuizAction` is on inside "Mis materias": starting a quiz used to
@@ -150,6 +177,11 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
             </p>
           )}
           <p className="text-xs text-muted-foreground">{contar(program.units.length, 'unidad', 'unidades')}</p>
+          {program.pedagogyProfile?.area && (
+            <p className="nota text-texto-suave" data-area={program.pedagogyProfile.area}>
+              {PERFILES[program.pedagogyProfile.area]?.nombre}
+            </p>
+          )}
 
           {showCreateQuizAction && (
             <Button
@@ -342,6 +374,15 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
               </DialogHeader>
 
               <div className="space-y-4">
+                {activeTeacherProgram.pedagogyProfile.area && (
+                  <AreaDeLaMateria
+                    area={activeTeacherProgram.pedagogyProfile.area}
+                    confianza={activeTeacherProgram.pedagogyProfile.areaConfianza}
+                    origen={activeTeacherProgram.pedagogyProfile.areaOrigen}
+                    deshabilitado={guardandoArea}
+                    onCambiar={(area) => guardarArea(activeTeacherProgram.id, { area })}
+                  />
+                )}
                 <div className="grid sm:grid-cols-3 gap-3 text-sm">
                   <div className="rounded-xl border p-3">
                     <p className="text-xs text-muted-foreground">Complejidad</p>
@@ -372,12 +413,22 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
                   <p className="text-xs font-semibold text-muted-foreground">Temario completo</p>
                   {activeTeacherProgram.units.map((unit, index) => (
                     <div key={unit.id} className="rounded-xl border p-3 space-y-2">
-                      <p className="font-semibold text-sm">
-                        {index + 1}. {unit.name}
-                      </p>
+                      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                        <p className="min-w-0 flex-1 break-words font-semibold text-sm">
+                          {index + 1}. {unit.name}
+                        </p>
+                        {activeTeacherProgram.pedagogyProfile.area && (
+                          <ChipDeCaracter
+                            unidad={unit.name}
+                            caracter={caracterDeLaUnidad(unit, activeTeacherProgram.pedagogyProfile.area)}
+                            deshabilitado={guardandoArea}
+                            onCambiar={(caracter) => guardarArea(activeTeacherProgram.id, { unidadId: unit.id, caracter })}
+                          />
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-1.5">
                         {unit.topics.map((topic) => (
-                          <Badge key={topic.id} variant={topic.origin === 'curriculum' ? 'secondary' : 'outline'} className="text-xs">
+                          <Badge key={topic.id} variant={topic.origin === 'curriculum' ? 'secondary' : 'outline'} className="max-w-full whitespace-normal break-words text-left text-xs">
                             {topic.name}
                           </Badge>
                         ))}

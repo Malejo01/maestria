@@ -30,6 +30,7 @@ import { NOMBRE_DE_ICONO, SUBJECT_ICON_OPTIONS } from '@/lib/subject-appearance'
 import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import { Boton } from '@/components/sistema/boton'
 import { ProgramFileImport, type AreaSugerida, type ProgramSourceMeta } from '@/components/program-file-import'
+import { AreaDeLaMateria } from '@/components/docente/area-de-la-materia'
 import { PASO, gradoAPrecargar, ordenDePasos, pasoVecino, puedeLlegarA, type NivelSugerido, type PasoId } from '@/lib/wizard-temario'
 import { WIZARD_TEMARIO, contar } from '@/lib/textos'
 import type {
@@ -1319,6 +1320,15 @@ export function TeacherSubjectWizard({
           {step === 2 && renderStepTwo()}
           {step === 3 && (
             <div className="space-y-4">
+              {/* Ronda T · A3: el área que se detectó al leer el programa. Informa, no frena. */}
+              {pedagogy.area && (
+                <AreaDeLaMateria
+                  area={pedagogy.area}
+                  confianza={pedagogy.areaConfianza}
+                  origen={pedagogy.areaOrigen}
+                  onCambiar={(area) => setPedagogy((prev) => ({ ...prev, area, areaConfianza: 1, areaOrigen: 'manual' }))}
+                />
+              )}
               {renderUnitsPanel()}
               <div className="space-y-3">
                 {/* El plan oficial se filtra por nivel y año. Si todavía no se
