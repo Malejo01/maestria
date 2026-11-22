@@ -39,8 +39,14 @@ export default auth((req) => {
       pathname === '/api/admin' ||
       pathname.startsWith('/api/admin/')
 
+    // P1: 404 y no redirect ni 403. Si no es para vos, /admin no existe: ni
+    // siquiera se confirma que hay algo ahí. Las páginas se reescriben a una
+    // ruta que no existe (el not-found de la app, con estado 404).
     if (isAdminPath && !isAdminEmail(session?.user?.email)) {
-      return NextResponse.redirect(new URL('/', nextUrl.origin))
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
+      }
+      return NextResponse.rewrite(new URL('/_no-existe', nextUrl.origin))
     }
   }
 

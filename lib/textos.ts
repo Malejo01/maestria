@@ -137,7 +137,7 @@ export const INVITADO = {
 export const CUENTA = {
   abrirMenu: 'Abrir el menú de tu cuenta',
   /** H4: sólo para la lista de admin. */
-  admin: { titulo: 'Administración', planes: 'Planes de los docentes', usoDeIA: 'Uso de la IA' },
+  admin: { titulo: 'Administración' },
   estasComo: { DOCENTE: 'Estás como docente', ALUMNO: 'Estás como alumno' },
   cerrarSesion: 'Cerrar sesión',
   /** Docente: mirar la app como la ve un alumno, sin dejar de ser docente. */
@@ -1481,3 +1481,68 @@ export const CUESTIONARIO_ACCESIBLE = {
   salir: 'Salir del cuestionario',
   avance: 'Avance del cuestionario',
 } as const
+
+/** P1: el panel de administrador (sólo ADMIN_EMAILS). */
+export const ADMIN = {
+  boton: 'Admin',
+  botonEtiqueta: 'Panel de administrador',
+  menu: 'Panel de administrador',
+  titulo: 'Panel de administrador',
+  detalle: 'Lo de hoy y cada sección con su número. Sólo lo ves vos.',
+  navEtiqueta: 'Secciones de administración',
+  volverALaApp: 'Volver a la app',
+  secciones: {
+    inicio: 'Inicio',
+    reportes: 'Reportes',
+    embudo: 'Embudo',
+    usoDeIA: 'Uso de IA',
+    planes: 'Planes',
+    docentes: 'Docentes',
+  },
+  hoy: {
+    titulo: 'Hoy',
+    docentesActivos: 'Docentes activos',
+    docentesActivosAyuda: 'Generaron, guardaron o mandaron algo, o un alumno les respondió',
+    alumnos: 'Alumnos que respondieron',
+    intentos: 'Intentos terminados',
+    reportesNuevos: 'Reportes nuevos',
+  },
+  sinDato: '—',
+  tarjetas: {
+    reportes: (n: number) => (n === 0 ? 'Ninguno nuevo' : n === 1 ? '1 nuevo' : `${n} nuevos`),
+    embudo: (n: number) => (n === 0 ? 'Nadie trabado más de 3 días' : n === 1 ? '1 docente trabado más de 3 días' : `${n} docentes trabados más de 3 días`),
+    usoDeIA: (usd: string, llamadas: number) => `${usd} este mes · ${llamadas === 1 ? '1 llamada' : `${llamadas} llamadas`} hoy`,
+    planes: (prueba: number, vencen: number, vencidos: number) =>
+      `${prueba} en prueba · ${vencen} vencen esta semana · ${vencidos} ${vencidos === 1 ? 'vencido' : 'vencidos'}`,
+    docentes: (n: number) => (n === 1 ? '1 docente' : `${n} docentes`),
+    abrir: 'Abrir',
+  },
+  docentes: {
+    titulo: 'Docentes',
+    detalle: 'Todos los docentes con su plan, lo que armaron y su última actividad. De los alumnos, sólo cantidades.',
+    columnas: {
+      docente: 'Docente',
+      alta: 'Alta',
+      plan: 'Plan',
+      materias: 'Materias',
+      grupos: 'Grupos',
+      alumnos: 'Alumnos activos',
+      ultima: 'Última actividad',
+    },
+    nunca: 'Nunca',
+    vacio: 'Todavía no hay docentes.',
+    volver: 'Todos los docentes',
+    sinNombre: 'Sin nombre',
+    materias: 'Materias',
+    grupos: 'Grupos',
+    sinMaterias: 'No creó materias.',
+    sinGrupos: 'No creó grupos.',
+    archivada: 'Archivada',
+    cerrado: 'Cerrado',
+    unidades: (n: number) => (n === 1 ? '1 unidad' : `${n} unidades`),
+    tareas: (n: number) => (n === 1 ? '1 tarea' : `${n} tareas`),
+    alumnosDelGrupo: (n: number) => (n === 1 ? '1 alumno activo' : `${n} alumnos activos`),
+    creadoEl: (fecha: string) => `Desde el ${fecha}`,
+    estado: { exento: 'Exento', prueba: 'Prueba', activo: 'Activo', gratis: 'Gratis', vencido: 'Vencido' },
+  },
+}

@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { useRefrescarSesion } from '@/hooks/use-refrescar-sesion'
-import { ArrowLeftRight, CreditCard, ExternalLink, Filter, Gauge, LogOut, Undo2, Inbox } from 'lucide-react'
+import { ArrowLeftRight, ExternalLink, LogOut, ShieldCheck, Undo2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -27,7 +27,7 @@ import {
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { inicioDe } from '@/lib/navegacion'
-import { BUZON, EMBUDO, CUENTA } from '@/lib/textos'
+import { ADMIN, BUZON, CUENTA } from '@/lib/textos'
 import type { UserRole } from '@/lib/types'
 
 const ITEM = 'min-h-11 cursor-pointer gap-3 rounded-sm px-3 cuerpo-s text-texto focus:bg-superficie-suave focus:text-texto'
@@ -60,9 +60,9 @@ export function MenuUsuario({
   /** Un docente mirando las pantallas de alumno. */
   vistaPrevia: boolean
   /**
-   * H4: la lista de admin (`isAdminEmail`). Suma los links a /admin/planes y
-   * /admin/ai-usage, que antes sólo se encontraban escribiendo la dirección.
-   * Para cualquier otra cuenta el menú no cambia.
+   * H4/P1: la lista de admin (`isAdminEmail`). Suma un solo link, al panel de
+   * administrador (/admin), que lleva a todas sus secciones. Para cualquier
+   * otra cuenta el menú no cambia.
    */
   esAdmin?: boolean
 }) {
@@ -148,32 +148,14 @@ export function MenuUsuario({
               <DropdownMenuSeparator className="bg-borde" />
               <DropdownMenuLabel className="etiqueta px-3 pt-2 pb-1 text-texto-suave">{CUENTA.admin.titulo}</DropdownMenuLabel>
               <DropdownMenuItem asChild className={ITEM}>
-                <Link href="/admin/planes">
-                  <CreditCard aria-hidden="true" strokeWidth={TRAZO_ICONO} />
-                  {CUENTA.admin.planes}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className={ITEM}>
-                <Link href="/admin/reportes">
-                  <Inbox aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                <Link href="/admin">
+                  <ShieldCheck aria-hidden="true" strokeWidth={TRAZO_ICONO} />
                   <span className="flex flex-1 items-center justify-between gap-2">
-                    {BUZON.menu}
+                    {ADMIN.menu}
                     {nuevos > 0 && (
                       <span className="nota rounded-full bg-accion px-2 font-bold text-texto-sobre-accion">{BUZON.menuNuevos(nuevos)}</span>
                     )}
                   </span>
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className={ITEM}>
-                <Link href="/admin/embudo">
-                  <Filter aria-hidden="true" strokeWidth={TRAZO_ICONO} />
-                  {EMBUDO.menu}
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild className={ITEM}>
-                <Link href="/admin/ai-usage">
-                  <Gauge aria-hidden="true" strokeWidth={TRAZO_ICONO} />
-                  {CUENTA.admin.usoDeIA}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-borde" />
