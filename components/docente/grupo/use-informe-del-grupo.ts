@@ -29,6 +29,8 @@ export interface AlumnoDelInforme {
   passedCount: number
   lastAttemptAt: string | null
   weakTopics: TemaFlojo[]
+  /** P4: las prácticas extra de las tareas del grupo, aparte del promedio. */
+  practicasExtra?: { cantidad: number; promedio: number | null } | null
 }
 
 export interface TemaDelGrupo extends TemaFlojo {

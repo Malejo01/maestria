@@ -19,9 +19,18 @@ import { generateQuiz, resolveQuizRequest } from '@/lib/quiz-generation'
 import { bloqueoParaGenerar } from '@/lib/planes-server'
 import { perfilSinRomper } from '@/lib/fichas-server'
 import { getViewer } from '@/lib/auth-session'
+import { paramsDePracticaExtra } from '@/lib/practica-extra-server'
+import type { QuizRequestParams } from '@/lib/quiz-generation'
 
 export async function POST(req: Request) {
-  const resolved = resolveQuizRequest(await req.json())
+  const body = await req.json()
+
+  // P4: la práctica extra de una tarea. La configuración NO sale del cuerpo:
+  // se lee de la tarea en el servidor, y la IA se le cobra al docente.
+  const practicaExtraId = Number((body as { practicaExtraId?: unknown } | null)?.practicaExtraId)
+  if (Number.isInteger(practicaExtraId) && practicaExtraId > 0) return generarPracticaExtra(practicaExtraId)
+
+  const resolved = resolveQuizRequest(body)
 
   if (!resolved.ok) {
     return Response.json({ questions: [], error: resolved.error }, { status: 400 })
@@ -107,6 +116,40 @@ export async function POST(req: Request) {
         details: err.message || 'Error interno al generar el quiz',
       },
       { status: 502 }
+    )
+  }
+}
+
+/**
+ * P4 · Las preguntas de una práctica extra ya reservada (POST
+ * /api/student/practica-extra). Sólo para quien la reservó; los parámetros
+ * salen de la tarea; el límite de IA es el del docente de la tarea.
+ */
+async function generarPracticaExtra(practicaExtraId: number) {
+  const viewer = await getViewer()
+  if (!viewer) return Response.json({ questions: [], error: 'unauthenticated' }, { status: 401 })
+  const practica = await paramsDePracticaExtra(viewer.id, practicaExtraId)
+  if (!practica) return Response.json({ questions: [], error: 'Esta práctica ya no está disponible.' }, { status: 404 })
+  const params: QuizRequestParams = { ...practica.params, evitar: await preguntasAEvitar(practica.params.teacherProgramId!) }
+  const guard = await guardAiCall({
+    bucket: 'quiz_generation',
+    nivel: params.nivel,
+    cobrarA: practica.docente,
+    errorBody: () => ({ questions: [] }),
+  })
+  if (!guard.ok) return guard.response
+  const usageParts: (AiSdkUsage | undefined)[] = []
+  try {
+    const result = await generateQuiz(params, (usage) => usageParts.push(usage))
+    await guard.finish(sumUsage(...usageParts))
+    if (!result.ok) return Response.json({ questions: [], error: result.message }, { status: 409 })
+    return Response.json({ questions: result.questions })
+  } catch (error) {
+    await guard.fail()
+    captureRouteFailure(error, { endpoint: '/api/generate-quiz', operation: 'practicaExtra' })
+    return Response.json(
+      { questions: [], error: 'La IA no pudo generar el cuestionario en este momento. Volvé a intentarlo en unos instantes.' },
+      { status: 502 },
     )
   }
 }

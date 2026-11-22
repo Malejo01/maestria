@@ -9,7 +9,7 @@ import { formatDateTime, formatPercent, formatScore } from '@/components/classro
 import { pedirJson } from '@/lib/pedir-json'
 import { NOTA_DE_APROBACION } from '@/lib/answer-grading'
 import { cuantasPorFiltro, filasVisibles, type FilaDePlanilla } from '@/lib/planilla-grupo'
-import { PAGINA_DEL_GRUPO } from '@/lib/textos'
+import { PAGINA_DEL_GRUPO, PRACTICA_EXTRA } from '@/lib/textos'
 import { TraerAlumnos } from '@/components/docente/grupo/traer-alumnos'
 import { cn } from '@/lib/utils'
 import { BarraDePlanilla, CLASES_DE_TABLA as C, EncabezadoOrdenable, useEstadoDePlanilla } from './controles-de-planilla'
@@ -202,7 +202,14 @@ export function PlanillaDelGrupo({
                         className="flex min-h-11 items-center gap-1.5 text-left text-texto hover:underline"
                         onClick={() => setAbierto(alumno)}
                       >
-                        <span className="font-medium">{alumno.displayName}</span>
+                        <span className="flex flex-col">
+                          <span className="font-medium">{alumno.displayName}</span>
+                          {alumno.practicasExtra && alumno.practicasExtra.cantidad > 0 && (
+                            <span className="nota text-texto-suave">
+                              {PRACTICA_EXTRA.resumen(alumno.practicasExtra.cantidad, alumno.practicasExtra.promedio)}
+                            </span>
+                          )}
+                        </span>
                         {alumno.isVerified ? (
                           <BadgeCheck className="size-4 shrink-0 text-logrado" aria-label={T.verificada} />
                         ) : (

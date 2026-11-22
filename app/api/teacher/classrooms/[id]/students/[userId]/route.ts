@@ -4,6 +4,7 @@ import { getTeacherViewer } from '@/lib/auth-session'
 import { getOwnedClassroom } from '@/lib/classrooms-server'
 import { captureRouteFailure } from '@/lib/observability'
 import { marcarTemaDelAlumno } from '@/lib/a-reforzar-server'
+import { practicasExtraDelGrupo } from '@/lib/practica-extra-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,6 +50,7 @@ export async function GET(
       return NextResponse.json({ error: 'Ese alumno no está en esta aula' }, { status: 404 })
     }
 
+    const extras = await practicasExtraDelGrupo(classroomId, studentId)
     const [attemptRows, topicRows, tipRows] = await Promise.all([
       sql`
         SELECT att.id,
@@ -61,6 +63,7 @@ export async function GET(
                att.attempt_number,
                att.completed_at,
                att.assignment_id,
+               (to_jsonb(att) ->> 'practica_extra_id') IS NOT NULL AS es_practica_extra,
                q.title AS assignment_title
         FROM quiz_attempts att
         LEFT JOIN classroom_assignments a ON a.id = att.assignment_id
@@ -103,6 +106,7 @@ export async function GET(
       .sort((a, b) => a.accuracy - b.accuracy)
 
     return NextResponse.json({
+      practicasExtra: extras.get(studentId) ?? null,
       student: {
         memberId: Number(memberRows[0].id),
         userId: String(memberRows[0].user_id),
@@ -121,6 +125,7 @@ export async function GET(
         attemptNumber: row.attempt_number === null ? null : Number(row.attempt_number),
         completedAt: row.completed_at,
         assignmentId: row.assignment_id === null ? null : Number(row.assignment_id),
+        practicaExtra: Boolean(row.es_practica_extra),
         // Null title = free practice on the aula's temario, not an assignment.
         assignmentTitle: row.assignment_title ?? null,
       })),

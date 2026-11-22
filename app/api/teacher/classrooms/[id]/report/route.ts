@@ -4,6 +4,7 @@ import { getTeacherViewer } from '@/lib/auth-session'
 import { getOwnedClassroom } from '@/lib/classrooms-server'
 import { captureRouteFailure } from '@/lib/observability'
 import { destinatarioDeFila, esDelGrupo } from '@/lib/destinatario'
+import { practicasExtraDelGrupo } from '@/lib/practica-extra-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -67,6 +68,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         FROM classroom_members m
         LEFT JOIN quiz_attempts a
           ON a.user_id = m.user_id AND a.classroom_id = ${classroomId}
+         -- P4: las prácticas extra van aparte ("Prácticas extra"), no en el promedio.
+         -- Por to_jsonb: sin la 036 la clave no existe y no se excluye nada.
+         AND (to_jsonb(a) ->> 'practica_extra_id') IS NULL
          AND (a.assignment_id IS NULL OR a.assignment_id NOT IN (
                SELECT ia.id FROM classroom_assignments ia
                WHERE ia.classroom_id = ${classroomId}
@@ -137,6 +141,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     ])
 
     const students = (studentRows as Record<string, any>[]).map((row) => String(row.user_id))
+    const extras = await practicasExtraDelGrupo(classroomId)
 
     // Per-student topic accuracy, grouped so each student carries only their
     // own weak spots instead of the whole matrix.
@@ -213,6 +218,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         passedCount: Number(row.passed_count),
         lastAttemptAt: row.last_attempt_at,
         weakTopics: (weakByStudent.get(String(row.user_id)) ?? []).slice(0, 3),
+        practicasExtra: extras.get(String(row.user_id)) ?? null,
       })),
       topics,
       assignments: (assignmentRows as Record<string, any>[]).map((row) => {

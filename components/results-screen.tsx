@@ -29,6 +29,7 @@ import { usePendientesDeGuardado } from '@/hooks/use-pendientes-de-guardado'
 import { nuevoClientAttemptId } from '@/lib/guardado-pendiente'
 import { almacenDelNavegador, descartarBorrador, idDeBorrador } from '@/lib/borrador-cuestionario'
 import { EstadoDelGuardado } from './estado-del-guardado'
+import { PracticaExtra } from '@/components/alumno/practica-extra'
 
 /**
  * Los colores del papel picado, leídos de los tokens del modo activo. El
@@ -121,6 +122,7 @@ export function ResultsScreen() {
       score: results.score,
       classroomId: config.classroomId ?? null,
       assignmentId: config.assignmentId ?? null,
+      ...(config.practicaExtraId ? { practicaExtraId: config.practicaExtraId } : {}),
       answers: answers.map(a => ({
         ...a,
         explanation: a.explanation || '',
@@ -624,6 +626,10 @@ export function ResultsScreen() {
         className="fixed bottom-0 left-0 right-0 z-20 border-t-2 border-border bg-card/95 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]"
       >
         <div className="max-w-md mx-auto space-y-2.5">
+          {/* P4: otra práctica igual a la tarea, con preguntas nuevas (no cuenta como intento). */}
+          {!config?.previewOnly && (config?.assignmentId || config?.practicaDeTarea) && (
+            <PracticaExtra asignacionId={Number(config.assignmentId ?? config.practicaDeTarea)} />
+          )}
           {!results.passed && (
             <Button
               onClick={() => handleRetry('practico')}
