@@ -36,6 +36,8 @@ export interface ContextoDeArea {
   /** Unidad por unidad: su carácter y cuántos de los temas elegidos son suyos. */
   pesos: { caracter: Caracter; temas: number }[]
   bloques: BloquesDeNotacion
+  /** A5: el carácter de la unidad de cada tema (nombre normalizado). */
+  caracterPorTema: Record<string, Caracter>
 }
 
 const normalizar = (texto: unknown) =>
@@ -64,6 +66,15 @@ export function contextoDeArea({
   const ids = new Set(temas.map((t) => String(t.id ?? '')).filter(Boolean))
   const nombres = new Set(temas.map((t) => normalizar(t.name)).filter(Boolean))
 
+  const caracterPorTema: Record<string, Caracter> = {}
+  for (const unidad of unidades) {
+    const caracter = caracterDeLaUnidad(unidad, area)
+    for (const t of Array.isArray(unidad.topics) ? unidad.topics : []) {
+      const clave = normalizar(t?.name)
+      if (clave) caracterPorTema[clave] = caracter
+    }
+  }
+
   const pesos = unidades
     .map((unidad) => {
       const propios = (Array.isArray(unidad.topics) ? unidad.topics : []).filter(
@@ -81,7 +92,19 @@ export function contextoDeArea({
     caracteres,
     pesos: usados.length > 0 ? usados : [{ caracter: perfil.caracter, temas: 1 }],
     bloques: bloquesDeNotacion(area, caracteres),
+    caracterPorTema,
   }
+}
+
+/**
+ * A5 · El carácter con el que se valida una pregunta: el de la unidad de su
+ * tema; si no se ubica, el único que hay en la tanda; si hay varios, 'mixto'
+ * (no se marca nada antes que marcar de más).
+ */
+export function caracterDeLaPregunta(ctx: ContextoDeArea, tema: unknown): Caracter {
+  const delTema = ctx.caracterPorTema[normalizar(tema)]
+  if (delTema) return delTema
+  return ctx.caracteres.length === 1 ? ctx.caracteres[0] : 'mixto'
 }
 
 /** La mezcla del área para un modo, ya con el tope del 50 %. */

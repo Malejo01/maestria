@@ -60,3 +60,15 @@ describe('el prompt', () => {
     expect(seccion).toContain('- Práctico: Casos breves')
   })
 })
+
+describe('caracterDeLaPregunta (A5)', () => {
+  it('el de la unidad del tema; si no se ubica y hay de los dos, mixto (no marca de más)', async () => {
+    const { caracterDeLaPregunta } = await import('./area-para-generar')
+    const ctx = contextoDeArea({ area: 'educacion', unidades: DIDACTICA, temas: [{ name: 'Fracciones' }, { name: 'Obstáculos' }] })
+    expect(caracterDeLaPregunta(ctx, 'Obstáculos')).toBe('conceptual')
+    expect(caracterDeLaPregunta(ctx, 'fracciones')).toBe('cuantitativo')
+    expect(caracterDeLaPregunta(ctx, 'Otro tema')).toBe('mixto')
+    const soloConceptual = contextoDeArea({ area: 'sociales', unidades: [], temas: [] })
+    expect(caracterDeLaPregunta(soloConceptual, 'cualquiera')).toBe('conceptual')
+  })
+})

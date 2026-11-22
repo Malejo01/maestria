@@ -41,6 +41,7 @@ import { limitarMezcla, maximoPorTipo, tiposPermitidos, type AreaId, type Modo }
 import {
   BLOQUE_LATEX,
   bloqueDeNotacion,
+  caracterDeLaPregunta,
   descripcionDelModo,
   excedeElTope,
   mezclaDelArea,
@@ -48,6 +49,7 @@ import {
   seccionDeArea,
 } from '@/lib/area-para-generar'
 import { areaParaGenerar } from '@/lib/area-para-generar-server'
+import { MOTIVO_DE_AREA, problemaDeArea } from '@/lib/validar-area'
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -1020,6 +1022,7 @@ export async function generateQuiz(
   const specialistRole = rolDeLaGeneracion(areaCtx, subject)
   const notacion = bloqueDeNotacion(areaCtx.bloques)
   const sinCalculo = areaCtx.caracteres.every((c) => c === 'conceptual')
+  const numericaAMano = !tiposPorDefecto && explicitQuestionTypes.includes('numeric')
 
   // Lo que declara el programa de cátedra: contexto profesional (migración 022)
   // y mezcla sugerida de tipos de pregunta (migración 023).
@@ -1130,6 +1133,15 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     // pide otra pregunta (completa la cantidad).
     if (!tiposDeLaTanda.includes(question.type as QuestionType)) {
       console.log(`[generate-quiz] Dropped (tipo no pedido: ${question.type}):`, question.question)
+      return true
+    }
+    // Ronda T · A5: en una unidad conceptual, ni LaTeX, ni numérica, ni cuentas.
+    // Salvo una numérica que una persona tildó a mano (A1 la permite): ahí
+    // descartarla dejaría sin cuestionario a quien la pidió.
+    const deArea =
+      question.type === 'numeric' && numericaAMano ? null : problemaDeArea(question, caracterDeLaPregunta(areaCtx, question.topicName))
+    if (deArea) {
+      console.log(`[generate-quiz] Dropped (${MOTIVO_DE_AREA[deArea]}):`, question.question)
       return true
     }
     // M2: el tipo tiene que encajar con la consigna. Lo que se arregla sin IA

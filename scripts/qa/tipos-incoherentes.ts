@@ -7,6 +7,11 @@
  *   - numérica que pide un concepto, un procedimiento o un nombre,
  *   - respuesta corta que pide "el valor" de una inecuación.
  *
+ * Ronda T · A5: además, las que no encajan con el área (`problemaDeArea`): en
+ * una unidad conceptual, LaTeX, una numérica o una cuenta. El carácter de cada
+ * pregunta sale del programa de la materia (o, sin programa, de inferir el
+ * área por el nombre del cuestionario).
+ *
  * Uso:
  *   npx tsx scripts/qa/tipos-incoherentes.ts --env=staging
  *   npx tsx scripts/qa/tipos-incoherentes.ts            (producción: lo corre Mauro)
@@ -18,12 +23,18 @@
  */
 import { resolveDbTarget } from '../lib/db-target'
 import { MOTIVO_DE_PROBLEMA, problemaDeTipo, type ProblemaDeTipo } from '../../lib/validar-tipo-de-pregunta'
+import { MOTIVO_DE_AREA, problemaDeArea, type ProblemaDeArea } from '../../lib/validar-area'
+import { completarAreaDelPrograma } from '../../lib/area-del-programa'
+import { caracterDeLaPregunta, contextoDeArea } from '../../lib/area-para-generar'
 
 interface Fila {
   id: number
   title: string
   created_at: string
   questions: unknown
+  subject_name: string | null
+  pedagogy_profile: Record<string, unknown> | null
+  units: unknown
 }
 
 async function run() {
@@ -34,16 +45,33 @@ async function run() {
 
   const desde = process.argv.find((a) => a.startsWith('--desde='))?.slice('--desde='.length) ?? null
   const filas = (await target.sql`
-    SELECT id, title, created_at, questions FROM teacher_quizzes
-    WHERE ${desde}::date IS NULL OR created_at >= ${desde}::date
-    ORDER BY id
+    SELECT q.id, q.title, q.created_at, q.questions, q.subject_name, p.pedagogy_profile, p.units
+    FROM teacher_quizzes q
+    LEFT JOIN teacher_programs p ON p.id = q.teacher_program_id
+    WHERE ${desde}::date IS NULL OR q.created_at >= ${desde}::date
+    ORDER BY q.id
   `) as Fila[]
 
   let revisadas = 0
   const porMotivo = new Map<ProblemaDeTipo, number>()
   const marcadas: string[] = []
+  const porArea = new Map<ProblemaDeArea, number>()
+  const fueraDelArea: string[] = []
   for (const fila of filas) {
     const preguntas = Array.isArray(fila.questions) ? (fila.questions as Record<string, unknown>[]) : []
+    const unidades = Array.isArray(fila.units) ? (fila.units as { name?: string; topics?: { name?: string }[] }[]) : []
+    const completo = completarAreaDelPrograma({ materia: fila.subject_name ?? fila.title, perfil: fila.pedagogy_profile ?? {}, unidades })
+    const ctx = contextoDeArea({ area: completo.perfil.area, unidades: completo.unidades, temas: preguntas.map((p) => ({ name: p.topicName })) })
+    preguntas.forEach((p, i) => {
+      const deArea = problemaDeArea(p, caracterDeLaPregunta(ctx, p.topicName))
+      if (deArea) {
+        porArea.set(deArea, (porArea.get(deArea) ?? 0) + 1)
+        fueraDelArea.push(
+          `- cuestionario ${fila.id} «${fila.title}» (${completo.perfil.area}), pregunta ${i + 1}: ${MOTIVO_DE_AREA[deArea]}\n` +
+            `  ${String(p.question ?? '').replace(/\s+/g, ' ')}`,
+        )
+      }
+    })
     preguntas.forEach((p, i) => {
       revisadas++
       const problema = problemaDeTipo(p)
@@ -60,6 +88,10 @@ async function run() {
   console.log(`Cuestionarios: ${filas.length} · preguntas revisadas: ${revisadas} · marcadas: ${marcadas.length}`)
   for (const [problema, cantidad] of porMotivo) console.log(`  ${MOTIVO_DE_PROBLEMA[problema]}: ${cantidad}`)
   if (marcadas.length) console.log('\n' + marcadas.join('\n'))
+
+  console.log(`\nFuera del área (A5): ${fueraDelArea.length}`)
+  for (const [problema, cantidad] of porArea) console.log(`  ${MOTIVO_DE_AREA[problema]}: ${cantidad}`)
+  if (fueraDelArea.length) console.log('\n' + fueraDelArea.join('\n'))
 
   // Los enunciados ya respondidos (práctica libre incluida): no se pueden
   // corregir, pero dicen cuánto pasaba antes del validador.
