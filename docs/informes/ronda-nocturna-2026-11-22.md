@@ -17,7 +17,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O7 · Traer alumnos de otro grupo | hecho | [#82](https://github.com/Malejo01/maestria/pull/82) | Tests del diálogo y de la API (sólo los elegidos, origen propio, plan vencido); en staging Irina trajo a Sofía de Lengua a "Prueba M3"; `npm run e2e` en verde | US$0 |
 | O8 · Pulgar arriba / abajo del docente (migración 033) | hecho | [#83](https://github.com/Malejo01/maestria/pull/83) | Tests de la regla de recorte, la API (propio, válvula), y que la generación recibe "Evitá esto" (lo del cuerpo se ignora); en staging Irina valoró dos preguntas del cuestionario 39; contador en `/admin/ai-usage` | US$0 |
 | O9 · Informe del grupo para imprimir | hecho | [#84](https://github.com/Malejo01/maestria/pull/84) | Tests de la parte pura; en staging el informe de Lengua ordenado por promedio, en modo impresión | US$0 |
-| O10 · Avisos al docente dentro de la app (migración 034) | hecho | (este PR) | Tests de los textos, el orden, los no leídos y la válvula; en staging la campanita de Irina con avisos reales | US$0 |
+| O10 · Avisos al docente dentro de la app (migración 034) | hecho | [#85](https://github.com/Malejo01/maestria/pull/85) | Tests de los textos, el orden, los no leídos y la válvula; en staging la campanita de Irina con avisos reales | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
