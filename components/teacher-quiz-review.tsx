@@ -38,8 +38,10 @@ import { leerRespuesta, type Fraccion } from '@/lib/fraccion'
 import type { Question, TeacherQuiz } from '@/lib/types'
 import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
 import { DialogoDeLimite } from '@/components/docente/pantalla-de-limite'
-import { TECLADO_MATEMATICO, TIPO_INCOHERENTE } from '@/lib/textos'
+import { CORREGIR_TIPOS, TECLADO_MATEMATICO, TIPO_INCOHERENTE } from '@/lib/textos'
 import { problemaDeTipo } from '@/lib/validar-tipo-de-pregunta'
+import { contarMarcadas } from '@/lib/corregir-tipos'
+import { CorregirTiposDialog } from '@/components/docente/corregir-tipos-dialog'
 
 /**
  * Revisión y edición de un cuestionario guardado, pregunta por pregunta.
@@ -125,6 +127,9 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
   const [bloqueoPlan, setBloqueoPlan] = useState<CuerpoDeBloqueo | null>(null)
 
   const [conflicto, setConflicto] = useState<QuizImpact | null>(null)
+  /** N2: el diálogo de corregir en lote lo marcado. */
+  const [corrigiendo, setCorrigiendo] = useState(false)
+  const marcadas = useMemo(() => contarMarcadas(questions), [questions])
   const [salidaPendiente, setSalidaPendiente] = useState(false)
 
   const sucio = useMemo(() => stableStringify(questions) !== guardadoComo, [questions, guardadoComo])
@@ -346,6 +351,30 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
           Guardar
         </Button>
       </div>
+
+      {/* N2: lo marcado, de una vez y con antes → después. Lo aplicado queda
+          en pantalla sin guardar: Guardar sigue siendo el único camino de
+          escritura (y respeta los intentos ya hechos). */}
+      {marcadas > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border border-flojo/50 p-3">
+          <AlertTriangle className="h-4 w-4 text-flojo" aria-hidden="true" />
+          <p className="flex-1 text-sm">{CORREGIR_TIPOS.resumen(marcadas)}</p>
+          <Button size="sm" variant="outline" onClick={() => setCorrigiendo(true)}>
+            {CORREGIR_TIPOS.boton(marcadas)}
+          </Button>
+        </div>
+      )}
+      <CorregirTiposDialog
+        quizId={quiz.id}
+        preguntas={questions}
+        abierto={corrigiendo}
+        onOpenChange={setCorrigiendo}
+        alBloquear={setBloqueoPlan}
+        alAplicar={(nuevas, cambios) => {
+          setQuestions(nuevas)
+          toast({ title: CORREGIR_TIPOS.aplicado(cambios), description: CORREGIR_TIPOS.aplicadoSinGuardar })
+        }}
+      />
 
       {questions.length === 0 && (
         <p className="py-12 text-center text-sm text-muted-foreground">

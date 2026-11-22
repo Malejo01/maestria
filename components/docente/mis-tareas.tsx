@@ -13,6 +13,13 @@ import { EsqueletoListaDeTareas } from '@/components/docente/esqueletos'
 import { resumirTemas } from '@/lib/alumnos-docente'
 import { etiquetaDeMateria, materiaDePrograma } from '@/lib/etiqueta-materia'
 import { filtrarPorTipo, type FiltroDeTipo } from '@/lib/tarea-docente'
+import { CorregirTiposDialog } from '@/components/docente/corregir-tipos-dialog'
+import { DialogoDeLimite } from '@/components/docente/pantalla-de-limite'
+import { useToast } from '@/hooks/use-toast'
+import { contarMarcadas } from '@/lib/corregir-tipos'
+import { guardarPreguntas } from '@/lib/guardar-preguntas'
+import type { CuerpoDeBloqueo } from '@/lib/planes'
+import { CORREGIR_TIPOS } from '@/lib/textos'
 
 /**
  * "Mis tareas": las tareas guardadas y las realizadas, con revisar, editar,
@@ -53,6 +60,11 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
 
   /** La tarea que está pidiendo confirmación para borrarse, o null. */
   const [borrando, setBorrando] = useState<number | null>(null)
+
+  // N2: corregir en lote las preguntas cuyo tipo no encaja con la consigna.
+  const { toast } = useToast()
+  const [corrigiendo, setCorrigiendo] = useState<(typeof teacherQuizzes)[number] | null>(null)
+  const [bloqueoPlan, setBloqueoPlan] = useState<CuerpoDeBloqueo | null>(null)
 
   // L1: los cuestionarios del diagnóstico salían mezclados con las tareas.
   const [tipo, setTipo] = useState<FiltroDeTipo>('todas')
@@ -185,6 +197,13 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                         <TemasDeTarea temas={quiz.selectedTopics.map((topic) => topic.name)} />
                       </div>
 
+                      {/* N2: lo marcado se corrige de una vez, con antes → después. */}
+                      {contarMarcadas(quiz.questions) > 0 && (
+                        <Boton variante="secundario" className="self-start border-flojo text-flojo hover:border-flojo hover:text-flojo" onClick={() => setCorrigiendo(quiz)}>
+                          {CORREGIR_TIPOS.boton(contarMarcadas(quiz.questions))}
+                        </Boton>
+                      )}
+
                       {/* Una sola acción principal por tarea: mandarla. */}
                       <Boton className="self-start" onClick={() => setSharingQuiz(quiz)}>
                         {T.mandar}
@@ -254,6 +273,39 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
             )}
           </section>
         )}
+
+      {corrigiendo && (
+        <CorregirTiposDialog
+          quizId={corrigiendo.id}
+          preguntas={corrigiendo.questions}
+          abierto={Boolean(corrigiendo)}
+          onOpenChange={(abierto) => !abierto && setCorrigiendo(null)}
+          alBloquear={setBloqueoPlan}
+          alAplicar={async (nuevas, cambios) => {
+            const resultado = await guardarPreguntas(corrigiendo, nuevas)
+            if (!resultado.ok) {
+              if ('bloqueo' in resultado) {
+                setCorrigiendo(null)
+                setBloqueoPlan(resultado.bloqueo)
+                return
+              }
+              return resultado.error
+            }
+            // Con copia, el id cambió: la copia entra a la lista y el original
+            // (que sostiene los intentos viejos) se queda.
+            setTeacherQuizzes(
+              resultado.copiado
+                ? [resultado.quiz, ...teacherQuizzes]
+                : teacherQuizzes.map((q) => (q.id === resultado.quiz.id ? resultado.quiz : q)),
+            )
+            toast({
+              title: CORREGIR_TIPOS.aplicado(cambios),
+              description: resultado.copiado ? CORREGIR_TIPOS.aplicadoCopia : undefined,
+            })
+          }}
+        />
+      )}
+      <DialogoDeLimite bloqueo={bloqueoPlan} onCerrar={() => setBloqueoPlan(null)} />
 
       <ShareQuizDialog
         open={Boolean(sharingQuiz)}
