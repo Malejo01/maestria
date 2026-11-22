@@ -1,6 +1,7 @@
 'use client'
 
 import { Cargando } from '@/components/sistema/cargando'
+import { useBarraDeAccion } from '@/hooks/use-barra-de-accion'
 
 import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
@@ -103,6 +104,9 @@ export function QuizEngine() {
 }
 
 function QuizQuestionRunner({ question: currentQuestion }: { question: Question }) {
+  // P6: la barra de abajo publica su alto para que "Reportar" se apoye encima.
+  // Este componente se monta de nuevo con cada pregunta: el ref sigue a la barra.
+  const refDeLaBarra = useBarraDeAccion()
   const { currentQuiz, answerQuestion, nextQuestion, previousQuestion, setActiveView, finishQuiz, updateQuestions } = useAppStore()
   const { questions, currentIndex, config } = currentQuiz
 
@@ -856,6 +860,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
           toque. */}
       <div
         data-quiz-action-bar=""
+        ref={refDeLaBarra}
         className="fixed bottom-0 left-0 right-0 p-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))] bg-card/95 border-t-2 border-border z-20"
       >
         <div className={cn(isPreviewMode ? 'flex flex-col gap-2.5' : 'flex gap-2.5')}>
