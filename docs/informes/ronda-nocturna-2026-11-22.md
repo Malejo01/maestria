@@ -8,7 +8,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 |---|---|---|---|---|
 | N1 · Aviso al que reportó (migración 030) | hecho | [#74](https://github.com/Malejo01/maestria/pull/74) | Tests de permisos, del texto y del componente; en staging, de punta a punta con un invitado (ver abajo) | US$0 (no llama a la IA) |
 | N2 · Corregir en lote las preguntas marcadas | hecho | [#75](https://github.com/Malejo01/maestria/pull/75) | Tests con el modelo simulado (sí/no → afirmación, abierta → opción múltiple, valor de verdad cambiado → rechazada, sin aplicar no se escribe); en staging, dry-run del script y "Aplicar" desde *Mis tareas* | US$0,004 |
-| O1 · Pruebas de punta a punta (Playwright) | hecho | (este PR) | Los 6 recorridos en verde contra `npm run dev:staging` (7 pruebas + limpieza, 2,1 min) | US$0 (IA simulada) |
+| O1 · Pruebas de punta a punta (Playwright) | hecho | [#76](https://github.com/Malejo01/maestria/pull/76) | Los 6 recorridos en verde contra `npm run dev:staging` (7 pruebas + limpieza, 2,1 min) | US$0 (IA simulada) |
 
 **Gasto de IA acumulado de la noche:** US$0,004 (medido en `ai_usage_log` de staging: 6 llamadas, US$0,0032; más ~US$0,0005 del dry-run del script, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
