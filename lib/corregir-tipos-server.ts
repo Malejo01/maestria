@@ -14,6 +14,7 @@ import {
   type PropuestaDeCorreccion,
 } from '@/lib/corregir-tipos'
 import type { Question } from '@/lib/types'
+import type { AreaId } from '@/lib/areas'
 
 /**
  * N2 · La parte que llama al modelo. Lo usan el endpoint
@@ -48,6 +49,8 @@ export async function proponerCorrecciones(
   preguntas: readonly Question[],
   generar: GenerarReescritura,
   onUsage?: (usage: AiSdkUsage | undefined) => void,
+  /** Ronda T · A4: el área de la materia (sin LaTeX ni cálculo en lo conceptual). */
+  area?: AreaId | null,
 ): Promise<PropuestaDeCorreccion[]> {
   const propuestas: PropuestaDeCorreccion[] = []
   for (const { indice, problema } of preguntasMarcadas(preguntas)) {
@@ -63,7 +66,7 @@ export async function proponerCorrecciones(
       continue
     }
     try {
-      const { object, usage } = await generar(objetivo, promptDeReescritura(antes, objetivo))
+      const { object, usage } = await generar(objetivo, promptDeReescritura(antes, objetivo, area))
       onUsage?.(usage)
       const verificada = verificarReescritura(antes, objetivo, object)
       propuestas.push(

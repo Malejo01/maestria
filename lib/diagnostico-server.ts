@@ -207,6 +207,11 @@ export async function parametrosDeGeneracion(
     carrera: grupo.carrera,
     difficulty: 'intermedio',
     explicitQuestionTypes: TIPOS_DIAGNOSTICO,
+    // Ronda T · A4: el área y el carácter de las unidades salen del programa;
+    // los tipos del diagnóstico son un valor del código, no una elección: en
+    // lo conceptual no habilitan la numérica.
+    teacherProgramId: grupo.materiaId,
+    tiposPorDefecto: true,
     perfilAlumnos: await perfilSinRomper(teacherId, grupo.materiaId),
     // O8: "Evitá esto", con los pulgares abajo de esta materia.
     evitar: await preguntasAEvitar(grupo.materiaId),

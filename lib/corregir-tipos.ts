@@ -1,3 +1,4 @@
+import { perfilDeArea, type AreaId } from './areas'
 import { z } from 'zod'
 import { corregirTipoDePregunta, problemaDeTipo, type ProblemaDeTipo } from '@/lib/validar-tipo-de-pregunta'
 import type { MultipleChoiceQuestion, Question, TrueFalseQuestion } from '@/lib/types'
@@ -66,13 +67,19 @@ export type SalidaAfirmacion = z.infer<typeof afirmacionSchema>
 export type SalidaOpcionMultiple = z.infer<typeof opcionMultipleSchema>
 
 /** El pedido al modelo para UNA pregunta. Es la misma consigna, no otra pregunta. */
-export function promptDeReescritura(pregunta: Question, objetivo: Objetivo): string {
+export function promptDeReescritura(pregunta: Question, objetivo: Objetivo, area?: AreaId | null): string {
+  // Ronda T · A4: en un área sin cálculo, ni LaTeX ni cuentas.
+  const perfil = area ? perfilDeArea(area) : null
+  const notacion =
+    perfil && perfil.caracter === 'conceptual'
+      ? `Es una materia de ${perfil.nombre}: sin LaTeX, sin fórmulas y sin cálculos.`
+      : 'Conservá el LaTeX entre $…$ si lo hay.'
   const comun = [
     'Sos un docente que corrige una pregunta de un cuestionario ya armado. No inventes otra pregunta: arreglá ESTA.',
     `Consigna original: «${pregunta.question}»`,
     pregunta.explanation ? `Explicación que ya tiene: «${pregunta.explanation}»` : '',
     `Identificador de tema (devolvelo igual, sin cambiarlo): ${pregunta.topic}`,
-    'Escribí en castellano rioplatense, con voseo, sin signos de exclamación de apertura. Conservá el LaTeX entre $…$ si lo hay.',
+    `Escribí en castellano rioplatense, con voseo, sin signos de exclamación de apertura. ${notacion}`,
   ]
   if (objetivo === 'afirmacion') {
     const valor = pregunta.type === 'true_false' ? (pregunta.correctAnswer ? 'VERDADERA' : 'FALSA') : 'la que corresponda'

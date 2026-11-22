@@ -1,4 +1,5 @@
 'use client'
+import { inferirArea } from '@/lib/inferir-area'
 import { useRef, useState } from 'react'
 import { parametrosDeLaPractica } from '@/lib/practica-del-grupo'
 import { Button } from '@/components/ui/button'
@@ -95,6 +96,8 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
   const bloqueoRef = useRef<CuerpoDeBloqueo | null>(null)
   
   const colors = colorConfig[subject.id as keyof typeof colorConfig] || colorConfig.algebra
+  // Ronda T · A4: el área de la materia (la guardada; si no hay, inferida del nombre).
+  const areaDeLaMateria = subject.pedagogyProfile?.area ?? inferirArea(subject.name).area
   const pedagogyContext = subject.pedagogyProfile
     ? pedagogyProfileToContext(subject.pedagogyProfile)
     : undefined
@@ -711,6 +714,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
         open={showModeDialog}
         onOpenChange={setShowModeDialog}
         onSelectMode={handleStartQuiz}
+        area={areaDeLaMateria}
         isLoading={isLoading}
         title="Empezar cuestionario"
         description="Elegí la cantidad de preguntas y el tipo de cuestionario."

@@ -1642,4 +1642,8 @@ export const AREA_DE_LA_MATERIA = {
   elegirCaracter: 'Cómo se evalúa esta unidad',
   guardado: 'Listo, lo cambiamos.',
   noSeGuardo: 'No se pudo guardar. Probá de nuevo.',
+  // A4: las tarjetas de modo del selector, según el área.
+  modoTeorico: 'Conceptos, definiciones y relaciones entre ideas.',
+  modoPractico: (practicas: string) => `Aplicar lo aprendido: ${practicas}.`,
+  modoMixto: 'Las dos cosas en el mismo cuestionario.',
 } as const

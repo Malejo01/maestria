@@ -103,7 +103,7 @@ test('primer uso de un docente nuevo, con las propuestas de O13', async ({ page,
   await page.getByRole('button', { name: /Unidad 1: Dimensión Ambiental/ }).click()
   await page.getByRole('button', { name: /^Generar cuestionario/ }).click()
   await page.getByRole('spinbutton', { name: 'Cantidad de preguntas' }).fill('5')
-  await page.getByRole('button', { name: /^Examen práctico/ }).click()
+  await page.getByRole('button', { name: /^(Examen práctico|Práctico:)/ }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Compartir' }).click()
   const mandar = page.getByRole('dialog', { name: 'Mandar la tarea' })
   await mandar.getByRole('button', { name: 'Mandar la tarea' }).click()

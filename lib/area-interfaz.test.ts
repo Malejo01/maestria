@@ -24,3 +24,11 @@ describe('el renglón del área', () => {
     expect(['cuantitativo', 'conceptual', 'mixto'].map((c) => etiquetaDeCaracter(c as never))).toEqual(['Con cálculos', 'Conceptual', 'Mixta'])
   })
 })
+
+describe('las tarjetas de modo según el área (A4)', () => {
+  it('Antropología: "Práctico: análisis de casos", no ejercicios', async () => {
+    const { tarjetaDeModo } = await import('./area-interfaz')
+    expect(tarjetaDeModo('sociales', 'practico')).toEqual({ titulo: 'Práctico: análisis de casos', detalle: 'Aplicar lo aprendido: análisis de casos.' })
+    expect(tarjetaDeModo('matematica', 'practico').titulo).toBe('Práctico: ejercicios y problemas')
+  })
+})

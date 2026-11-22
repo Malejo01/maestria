@@ -64,7 +64,7 @@ async function crearYMandarTarea(page: Page) {
   await page.getByRole('button', { name: /^Generar cuestionario/ }).click()
   // 5 preguntas: el mínimo, para que el invitado termine rápido.
   await page.getByRole('spinbutton', { name: 'Cantidad de preguntas' }).fill('5')
-  await page.getByRole('button', { name: /^Examen práctico/ }).click()
+  await page.getByRole('button', { name: /^(Examen práctico|Práctico:)/ }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Compartir' }).click()
 
   const mandar = page.getByRole('dialog', { name: 'Mandar la tarea' })

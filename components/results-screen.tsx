@@ -1,5 +1,6 @@
 'use client'
 
+import { revanchaPermitida } from '@/lib/revancha'
 import { formatearNumero } from '@/lib/numeros'
 import { RACHA, RESULTADOS } from '@/lib/textos'
 import { textoDeRacha } from '@/lib/racha'
@@ -263,6 +264,9 @@ export function ResultsScreen() {
       setLoadingExplanation(null)
     }
   }, [explanations, config])
+
+  // Decisión 1 de la tanda P: sin Revancha en lo que tiene nota (lib/revancha.ts).
+  const conRevancha = revanchaPermitida(config)
 
   const handleRetry = useCallback(async (mode: 'teorico' | 'practico' | 'mixto') => {
     if (!config) return
@@ -638,7 +642,7 @@ export function ResultsScreen() {
           {!config?.previewOnly && (config?.assignmentId || config?.practicaDeTarea) && (
             <PracticaExtra asignacionId={Number(config.assignmentId ?? config.practicaDeTarea)} />
           )}
-          {!results.passed && (
+          {!results.passed && conRevancha && (
             <Button
               onClick={() => handleRetry('practico')}
               disabled={isRetrying}
@@ -659,7 +663,7 @@ export function ResultsScreen() {
           )}
 
           <div className="flex gap-2.5">
-            {results.passed && (
+            {results.passed && conRevancha && (
               <Button
                 variant="outline"
                 onClick={() => setShowRetryModal(true)}
@@ -732,7 +736,7 @@ export function ResultsScreen() {
           subject={config?.subjectName}
           nivel={config?.nivel}
           grado={config?.grado}
-          allowRevancha={selectedModalAnswer.type === 'multiple_choice'}
+          allowRevancha={conRevancha && selectedModalAnswer.type === 'multiple_choice'}
         />
       )}
     </div>

@@ -1,3 +1,4 @@
+import { areaDeLaMateria } from '@/lib/area-para-generar-server'
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
@@ -40,8 +41,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   let markFailed: (() => Promise<void>) | null = null
   try {
     const filas = (await sql`
-      SELECT id, questions FROM teacher_quizzes WHERE id = ${quizId} AND user_id = ${teacher.id} LIMIT 1
-    `) as { id: number; questions: Question[] }[]
+      SELECT id, questions, subject_name, teacher_program_id FROM teacher_quizzes WHERE id = ${quizId} AND user_id = ${teacher.id} LIMIT 1
+    `) as { id: number; questions: Question[]; subject_name?: string | null; teacher_program_id?: number | null }[]
     if (!filas[0]) return NextResponse.json({ error: 'Cuestionario no encontrado' }, { status: 404 })
 
     const cuerpo = (await req.json().catch(() => null)) as { questions?: unknown } | null
@@ -64,7 +65,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       finish = guard.finish
     }
 
-    const propuestas = await proponerCorrecciones(preguntas, generarConGemini, (u) => usos.push(u))
+    // Ronda T · A4: el área de la materia del cuestionario (o la inferida de su nombre).
+    const area = await areaDeLaMateria(filas[0].teacher_program_id ?? null, filas[0].subject_name ?? '')
+    const propuestas = await proponerCorrecciones(preguntas, generarConGemini, (u) => usos.push(u), area)
     if (finish) await finish(sumUsage(...usos))
     return NextResponse.json({ propuestas })
   } catch (error) {

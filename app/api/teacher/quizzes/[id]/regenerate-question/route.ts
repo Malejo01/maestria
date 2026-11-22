@@ -146,6 +146,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       difficulty: 'intermedio',
       explicitQuestionTypes: [convertirA ?? (objetivo.type as QuestionType)],
       rejectionNote: rejectionNote || undefined,
+      // Ronda T · A4: el área de la materia, del programa.
+      teacherProgramId: Number(quiz.teacher_program_id),
       // J3: la pregunta nueva también se parece al examen real del alumno.
       perfilAlumnos: await perfilSinRomper(teacher.id, Number(quiz.teacher_program_id)),
       // O8: "Evitá esto", con los pulgares abajo de esta materia.

@@ -93,6 +93,9 @@ function request(body: Record<string, unknown> = {}) {
       questionCount: 3,
       nivel: 'Secundario',
       grado: '4to Año',
+      // Ronda T · A4: sin tipos pedidos se usa la mezcla del área; estos tests
+      // fijan el resto del comportamiento con opción múltiple, como antes.
+      questionTypes: ['multiple_choice'],
       ...body,
     }),
   })
@@ -193,13 +196,24 @@ describe('POST — camino feliz', () => {
     )
   })
 
-  it('pide sólo multiple_choice cuando el caller no manda questionTypes', async () => {
+  it('con questionTypes explícitos, pide sólo ésos', async () => {
     generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
     await POST(request())
 
     const { system } = generateObject.mock.calls[0][0]
     expect(system).toContain('multiple_choice')
     expect(system).not.toContain('TIPO "numeric"')
+  })
+
+  it('Ronda T · A4: sin questionTypes, la mezcla del área (Matemática práctico: con numérica, nada pasa del 50 %)', async () => {
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+    await POST(request({ questionTypes: undefined, questionCount: 10 }))
+
+    const { system } = generateObject.mock.calls[0][0]
+    expect(system).toContain('TIPO "numeric"')
+    expect(system).toContain('DISTRIBUCIÓN OBLIGATORIA POR TIPO')
+    const cuotas = [...system.matchAll(/- (\w+): (\d+) preguntas?/g)].map((m: RegExpMatchArray) => Number(m[2]))
+    expect(Math.max(...cuotas)).toBeLessThanOrEqual(5)
   })
 
   it('filtra los questionTypes desconocidos y conserva los válidos', async () => {
@@ -718,5 +732,107 @@ describe('POST — O8: los pulgares abajo de la materia entran como "Evitá esto
     await POST(request({ evitar: [{ enunciado: 'INYECTADO', motivo: 'muy_facil' }] }))
     expect(promptDelUsuario()).not.toContain('INYECTADO')
     expect(promptDelUsuario()).not.toContain('EVITÁ ESTO')
+  })
+})
+
+describe('POST — Ronda T · A4: el área de la materia guía la generación', () => {
+  /** Preguntas de un tipo, todas distintas. */
+  function deTipo(tipo: 'true_false' | 'multiple_choice' | 'short_answer', count: number, seed: number) {
+    return Array.from({ length: count }, (_, i) => {
+      const n = seed * 100 + i
+      const base = { id: `x${n}`, topic: 't1', topicName: 'Etnocentrismo', explanation: 'Porque sí.' }
+      if (tipo === 'true_false') return { ...base, type: 'true_false', question: `El caso ${n} muestra una mirada etnocéntrica.`, correctAnswer: true }
+      if (tipo === 'short_answer') return { ...base, type: 'short_answer', question: `¿Qué categoría describe el caso ${n}?`, acceptedAnswers: ['etnocentrismo'] }
+      return { ...base, type: 'multiple_choice', question: `En el caso ${n}, ¿qué se observa?`, options: ['a', 'b', 'c', 'd'], correctAnswer: 0 }
+    })
+  }
+  const ANTROPOLOGIA = {
+    subject: 'Temas de Antropología Cultural en Psicología',
+    nivel: 'Superior',
+    grado: '1er Año',
+    topics: [{ id: 't1', name: 'Etnocentrismo' }],
+    subjectUnits: [{ name: 'Unidad 2: Cultura', topics: [{ id: 't1', name: 'Etnocentrismo' }] }],
+  }
+
+  it('Antropología: sin LaTeX, "práctico" es análisis de casos, sin numérica y con la mezcla conceptual', async () => {
+    generateObject.mockResolvedValue({ object: { questions: [...deTipo('multiple_choice', 5, 1), ...deTipo('short_answer', 3, 2), ...deTipo('true_false', 2, 3)] }, usage: {} })
+    const res = await POST(request({ ...ANTROPOLOGIA, questionTypes: undefined, questionCount: 10 }))
+    expect(res.status).toBe(200)
+
+    const { system, prompt } = generateObject.mock.calls[0][0]
+    expect(system).not.toContain('FORMATO ESTRICTO PARA CONTENIDO MATEMÁTICO')
+    expect(system).toContain('ÁREA Y CÓMO SE EVALÚA: Ciencias sociales y humanidades')
+    expect(system).toContain('SIN cálculos')
+    expect(system).not.toContain('modelar y resolver')
+    expect(system).not.toContain('TIPO "numeric"')
+    expect(system).toContain('- multiple_choice: 5 preguntas')
+    expect(system).toContain('- short_answer: 4 preguntas')
+    expect(system).toContain('- true_false: 1 pregunta')
+    expect(prompt).toContain('MODO PRÁCTICO: Análisis de situaciones')
+    expect(prompt).not.toContain('Ejercicios de cálculo')
+  })
+
+  it('el caso de Silvana: el modelo devuelve 40 de 40 verdadero o falso y salen como mucho la mitad', async () => {
+    generateObject
+      .mockResolvedValueOnce({ object: { questions: deTipo('true_false', 40, 4) }, usage: {} })
+      .mockResolvedValueOnce({ object: { questions: [...deTipo('multiple_choice', 25, 5), ...deTipo('short_answer', 15, 6)] }, usage: {} })
+    const res = await POST(
+      request({ ...ANTROPOLOGIA, mode: 'teorico', questionTypes: ['multiple_choice', 'true_false', 'short_answer'], questionCount: 40 }),
+    )
+    const body = await res.json()
+    expect(res.status).toBe(200)
+    expect(body.questions).toHaveLength(40)
+    expect(body.questions.filter((q: { type: string }) => q.type === 'true_false').length).toBeLessThanOrEqual(20)
+  })
+
+  it('un tipo que no se pidió se descarta y se completa la cantidad (decisión 2 de la tanda P)', async () => {
+    generateObject
+      .mockResolvedValueOnce({ object: { questions: [...deTipo('true_false', 2, 7), ...deTipo('multiple_choice', 1, 8)] }, usage: {} })
+      .mockResolvedValueOnce({ object: { questions: deTipo('multiple_choice', 3, 9) }, usage: {} })
+    const res = await POST(request({ ...ANTROPOLOGIA, questionTypes: ['multiple_choice'], questionCount: 3 }))
+    const body = await res.json()
+    expect(body.questions).toHaveLength(3)
+    expect(body.questions.every((q: { type: string }) => q.type === 'multiple_choice')).toBe(true)
+  })
+
+  it('el área y el carácter de las unidades salen del programa del docente, no del cuerpo', async () => {
+    getViewer.mockResolvedValue({ id: 'doc', role: 'DOCENTE', isGuest: false, email: 'd@x.com' })
+    sqlMock.mockImplementation(async (partes: TemplateStringsArray) =>
+      partes.join('?').includes('FROM teacher_programs')
+        ? [{
+            subject_name: 'Matemática y su Didáctica',
+            pedagogy_profile: { area: 'educacion', areaConfianza: 0.9, areaOrigen: 'ia', degree: 'Profesorado' },
+            units: [
+              { name: 'Unidad I: Números', caracter: 'cuantitativo', topics: [{ id: 'n1', name: 'Fracciones' }] },
+              { name: 'Unidad II: Didáctica', caracter: 'conceptual', topics: [{ id: 'd1', name: 'Obstáculos' }] },
+            ],
+          }]
+        : [],
+    )
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+
+    await POST(request({ subject: 'Matemática y su Didáctica', teacherProgramId: 16, topics: [{ id: 'd1', name: 'Obstáculos' }], area: 'matematica' }))
+    const conceptual = generateObject.mock.calls[0][0].system as string
+    expect(conceptual).toContain('ÁREA Y CÓMO SE EVALÚA: Educación y didácticas')
+    expect(conceptual).not.toContain('FORMATO ESTRICTO PARA CONTENIDO MATEMÁTICO')
+
+    generateObject.mockClear()
+    await POST(request({ subject: 'Matemática y su Didáctica', teacherProgramId: 16, topics: [{ id: 'n1', name: 'Fracciones' }] }))
+    expect(generateObject.mock.calls[0][0].system).toContain('FORMATO ESTRICTO PARA CONTENIDO MATEMÁTICO')
+  })
+
+  it('matemática no cambia: el bloque de LaTeX y "MODO PRÁCTICO: Ejercicios de cálculo"', async () => {
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+    await POST(request())
+    const { system, prompt } = generateObject.mock.calls[0][0]
+    expect(system).toContain('FORMATO ESTRICTO PARA CONTENIDO MATEMÁTICO')
+    expect(system).toContain('ESTRATEGIA MATEMÁTICA')
+    expect(prompt).toContain('MODO PRÁCTICO: Ejercicios de cálculo y resolución de problemas numéricos.')
+  })
+
+  it('la metodología del docente sigue llegando como PREFERENCIAS PEDAGOGICAS DEL DOCENTE', async () => {
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+    await POST(request({ ...ANTROPOLOGIA, questionTypes: ['multiple_choice'], pedagogyContext: 'Trabajo con casos de la vida cotidiana' }))
+    expect(generateObject.mock.calls[0][0].prompt).toContain('PREFERENCIAS PEDAGOGICAS DEL DOCENTE:\nTrabajo con casos de la vida cotidiana')
   })
 })

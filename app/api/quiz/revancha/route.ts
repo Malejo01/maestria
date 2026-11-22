@@ -2,6 +2,7 @@ import { generateObject, generateText, type RepairTextFunction } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 import { buildEducationSystemPrompt } from '@/lib/education-context'
+import { inferirArea } from '@/lib/inferir-area'
 import { guardAiCall } from '@/lib/ai-guard'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { captureAiSchemaFailure, captureRouteFailure } from '@/lib/observability'
@@ -56,6 +57,8 @@ export async function POST(req: Request) {
       grado,
       materia: subject || 'la materia',
       difficulty: 'intermedio',
+      // Ronda T · A4: la estrategia de distractores del área (inferida de la materia).
+      area: subject ? inferirArea(subject).area : undefined,
     })
 
     const selectedText = Array.isArray(options) && selectedAnswer !== undefined ? options[selectedAnswer] : ''

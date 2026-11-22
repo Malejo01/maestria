@@ -142,3 +142,16 @@ describe('N2 · aplicar lo elegido', () => {
     expect(preguntas[1]).toBe(siNo)
   })
 })
+
+describe('Ronda T · A4: la corrección en lote según el área', () => {
+  const pregunta = { id: 'q1', type: 'true_false', question: '¿El etnocentrismo es universal?', topic: 't', topicName: 'T', correctAnswer: false, explanation: 'x' } as never
+  it('en un área conceptual: sin LaTeX ni cálculos', () => {
+    const prompt = promptDeReescritura(pregunta, 'afirmacion', 'sociales')
+    expect(prompt).toContain('Ciencias sociales y humanidades: sin LaTeX, sin fórmulas y sin cálculos')
+    expect(prompt).not.toContain('Conservá el LaTeX')
+  })
+  it('en matemática (o sin área), como antes', () => {
+    expect(promptDeReescritura(pregunta, 'afirmacion', 'matematica')).toContain('Conservá el LaTeX')
+    expect(promptDeReescritura(pregunta, 'afirmacion')).toContain('Conservá el LaTeX')
+  })
+})

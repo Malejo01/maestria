@@ -105,3 +105,43 @@ describe('P4 · generar una práctica extra', () => {
     expect(generateObject).not.toHaveBeenCalled()
   })
 })
+
+describe('P4 · Ronda T · A4: la práctica extra usa el área del programa de la tarea', () => {
+  it('con un programa de Antropología: sin LaTeX y con "práctico" como análisis de casos', async () => {
+    sqlMock.mockImplementation(async (partes: TemplateStringsArray) =>
+      partes.join('?').includes('FROM teacher_programs')
+        ? [{ subject_name: 'Temas de Antropología Cultural en Psicología', pedagogy_profile: { area: 'sociales', areaConfianza: 0.9, areaOrigen: 'ia' }, units: [] }]
+        : [],
+    )
+    generateObject.mockResolvedValue({ object: { questions: [pregunta('Uno nuevo', 1), pregunta('Otro nuevo', 2)] }, usage: {} })
+    await POST(new Request('http://x', { method: 'POST', body: JSON.stringify({ practicaExtraId: 31 }) }))
+    const { system, prompt } = generateObject.mock.calls[0][0]
+    expect(system).toContain('ÁREA Y CÓMO SE EVALÚA: Ciencias sociales y humanidades')
+    expect(system).not.toContain('FORMATO ESTRICTO PARA CONTENIDO MATEMÁTICO')
+    expect(prompt).toContain('MODO PRÁCTICO: Análisis de situaciones')
+  })
+})
+
+describe('Ronda T · A4: tipos por defecto del código (el diagnóstico)', () => {
+  it('no habilitan la numérica en lo conceptual; los tildados a mano, sí', async () => {
+    const { generateQuiz } = await import('@/lib/quiz-generation')
+    generateObject.mockResolvedValue({ object: { questions: [pregunta('Uno nuevo', 1), pregunta('Otro nuevo', 2)] }, usage: {} })
+    const base = {
+      subject: 'Temas de Antropología Cultural en Psicología',
+      subjectUnits: [],
+      topics: [{ id: 't', name: 'Etnocentrismo' }],
+      mode: 'practico',
+      previousQuestions: [],
+      questionCount: 2,
+      nivel: 'Superior',
+      carrera: '',
+      difficulty: 'intermedio',
+      explicitQuestionTypes: ['multiple_choice', 'numeric'] as ('multiple_choice' | 'numeric')[],
+    }
+    await generateQuiz({ ...base, tiposPorDefecto: true })
+    expect(generateObject.mock.calls[0][0].system).not.toContain('TIPO "numeric"')
+    generateObject.mockClear()
+    await generateQuiz(base)
+    expect(generateObject.mock.calls[0][0].system).toContain('TIPO "numeric"')
+  })
+})
