@@ -955,6 +955,22 @@ export const INFORME_IMPRESO = {
   busqueda: (texto: string) => `Buscando «${texto}»`,
 } as const
 
+/** O10: la campanita de avisos del docente. */
+export const AVISOS_DOCENTE = {
+  boton: (n: number) => (n === 0 ? 'Avisos' : n === 1 ? 'Avisos: 1 sin ver' : `Avisos: ${n} sin ver`),
+  titulo: 'Avisos',
+  vacio: 'Nada nuevo en las últimas dos semanas.',
+  cargando: 'Buscando avisos…',
+  terminaron: (n: number, grupo: string, tarea: string) =>
+    n === 1 ? `1 alumno de ${grupo} terminó «${tarea}»` : `${n} alumnos de ${grupo} terminaron «${tarea}»`,
+  nuevos: (n: number, grupo: string) =>
+    n === 1 ? `1 alumno nuevo entró a ${grupo}` : `${n} alumnos nuevos entraron a ${grupo}`,
+  reportes: (n: number, grupo: string | null) =>
+    `${n === 1 ? 'Reportaron un problema' : `Reportaron ${n} problemas`}${grupo ? ` en ${grupo}` : ''}`,
+  hoy: 'Hoy',
+  ayer: 'Ayer',
+} as const
+
 /** O6: el reporte del diagnóstico del 10/08, leído contra un programa. */
 export const DIAGNOSTICO_DEL_CURSO = {
   leerContra: 'Leer contra el programa de',
