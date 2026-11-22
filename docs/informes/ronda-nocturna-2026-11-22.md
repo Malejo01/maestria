@@ -8,6 +8,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 |---|---|---|---|---|
 | N1 · Aviso al que reportó (migración 030) | hecho | [#74](https://github.com/Malejo01/maestria/pull/74) | Tests de permisos, del texto y del componente; en staging, de punta a punta con un invitado (ver abajo) | US$0 (no llama a la IA) |
 | N2 · Corregir en lote las preguntas marcadas | hecho | [#75](https://github.com/Malejo01/maestria/pull/75) | Tests con el modelo simulado (sí/no → afirmación, abierta → opción múltiple, valor de verdad cambiado → rechazada, sin aplicar no se escribe); en staging, dry-run del script y "Aplicar" desde *Mis tareas* | US$0,004 |
+| O1 · Pruebas de punta a punta (Playwright) | hecho | [#76](https://github.com/Malejo01/maestria/pull/76) | Los 6 recorridos en verde contra `npm run dev:staging` (7 pruebas + limpieza, 2,1 min) | US$0 (IA simulada) |
 
 **Gasto de IA acumulado de la noche:** US$0,004 (medido en `ai_usage_log` de staging: 6 llamadas, US$0,0032; más ~US$0,0005 del dry-run del script, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -40,6 +41,12 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
   ```
   La pregunta 1 traía la justificación pegada ("porque…"): el pedido ahora lo prohíbe, y en la corrida desde la pantalla salió "El número 1.242 es divisible por 9.".
 
+### O1 · Pruebas de punta a punta
+
+- `npm run e2e` (Playwright 1.63.0, el de los navegadores ya instalados: no se bajó nada). Seis recorridos en `e2e/`; la IA está simulada. Documentado en el README. No entra al CI.
+- La primera corrida pasó los 6 recorridos. Datos en staging: una materia, un grupo y una tarea "E2E · …" por corrida (el invitado se quita del grupo al final, para no llenar el tope de 10 alumnos del plan de prueba de Irina).
+- El smoke test de Auth.js del backlog queda cubierto en lo que no necesita Google (alumno bloqueado en `/teacher` y su API, sin sesión → afuera). **El login real con Google y el cambio de rol ALUMNO↔DOCENTE siguen siendo manuales de Mauro.**
+
 ## Pasos manuales de Mauro, en orden
 
 1. Migración 030 en producción:
@@ -62,5 +69,6 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 
 ## Datos de prueba que quedaron en staging
 
+- De O1, por cada corrida de `npm run e2e`: una materia "E2E · Geografía <fecha>", un grupo "E2E · Grupo <fecha>" y la tarea "E2E · Geografía <fecha> - Práctico - …" de Irina, con el intento del invitado "E2E · Invitado <fecha>" (que ya no está en el grupo). Además, de la exploración: la materia "E2E · Geografía" y su grupo "E2E · Geografía" (se armó solo al compartir una tarea que no llegó a guardarse).
 - Cuestionario **39 "Prueba N2 · tipos mal armados"** de Irina (Matemática, 3.º Sec.), ya corregido desde la pantalla.
 - Invitado **"Prueba N1 Invitada"** (`guest_746f3dcd015289be8016e284589db685`) en el grupo Lengua de Irina, y su reporte **#2** (resuelto, aviso visto).

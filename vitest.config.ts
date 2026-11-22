@@ -16,7 +16,7 @@ export default defineConfig({
     // `node_modules`, `dist` y `.next` van explícitos porque declarar
     // `exclude` reemplaza los valores por defecto de vitest en vez de
     // sumarse a ellos.
-    exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/.claude/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', '**/.claude/**', 'e2e/**'],
   },
   resolve: {
     alias: {
