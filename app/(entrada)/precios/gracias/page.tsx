@@ -20,7 +20,8 @@ export default async function GraciasPage({ searchParams }: { searchParams: Prom
   const pago = viewer && Number.isInteger(id) && id > 0 ? await leerPago(viewer.id, id).catch(() => null) : null
 
   const titulo = !pago ? T.gracias.noEncontrado : pago.estado === 'aprobado' ? T.gracias.aprobado : pago.estado === 'pendiente' ? T.gracias.pendiente : T.gracias.rechazado
-  const detalle = !pago ? null : pago.estado === 'aprobado' ? T.gracias.aprobadoDetalle : pago.estado === 'pendiente' ? T.gracias.pendienteDetalle : T.gracias.rechazadoDetalle
+  const esPase = pago?.plan === 'pase_alumno' && pago.materia
+  const detalle = !pago ? null : pago.estado === 'aprobado' ? (esPase ? T.gracias.aprobadoPase : T.gracias.aprobadoDetalle) : pago.estado === 'pendiente' ? T.gracias.pendienteDetalle : T.gracias.rechazadoDetalle
   const tono = pago?.estado === 'aprobado' ? 'text-logrado' : pago?.estado === 'pendiente' ? 'text-texto' : 'text-flojo'
 
   return (
@@ -37,9 +38,9 @@ export default async function GraciasPage({ searchParams }: { searchParams: Prom
       </div>
       <div className="flex flex-wrap justify-center gap-2">
         <Boton asChild>
-          <Link href="/teacher">{T.gracias.volverAlPanel}</Link>
+          {esPase ? <Link href={`/autodidacta/${pago.materia}`}>{T.gracias.volverAMiMateria}</Link> : <Link href="/teacher">{T.gracias.volverAlPanel}</Link>}
         </Boton>
-        {pago?.estado !== 'aprobado' && (
+        {pago?.estado !== 'aprobado' && !esPase && (
           <Boton asChild variante="secundario">
             <Link href="/precios">{T.gracias.volverAPrecios}</Link>
           </Boton>

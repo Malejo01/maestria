@@ -16,6 +16,10 @@ describe('C2 · el pedido', () => {
     expect(leerPedido({ plan: 'aula', forma: 'mensual', cantidad: '2' })).toEqual({ plan: 'aula', forma: 'mensual', cantidad: 2 })
     expect(leerPedido({ plan: 'particular', forma: 'mensual', cantidad: 9 })).toBeNull()
     expect(leerPedido({ plan: 'aula', forma: 'pase', cantidad: 1 })).toBeNull()
+    // E2: el pase de alumno va con su materia personal, siempre.
+    expect(leerPedido({ plan: 'pase_alumno', forma: 'pase', cantidad: 1 })).toBeNull()
+    expect(leerPedido({ plan: 'pase_alumno', forma: 'pase', cantidad: 1, materia: '57' })).toEqual({ plan: 'pase_alumno', forma: 'pase', cantidad: 1, materia: 57 })
+    expect(armarCobro({ plan: 'pase_alumno', forma: 'pase', cantidad: 1, materia: 57 }, null, ENV)?.descripcion).toBe('Pase por materia · hasta el examen + 7 días')
     expect(leerPedido({ plan: 'otro', forma: 'mensual' })).toBeNull()
     expect(leerPedido(null)).toBeNull()
   })

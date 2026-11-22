@@ -20,6 +20,8 @@ export interface PedidoDePago {
   forma: FormaAPagar
   /** Particular: el nivel (1 a 5). Aula: los cursos. Pase de alumno: 1. */
   cantidad: number
+  /** E2 · Pase de alumno: la materia personal a la que se le acredita. */
+  materia?: number
 }
 
 export interface Cobro {
@@ -34,20 +36,25 @@ export interface Cobro {
 
 const nombreDelPedido = (p: PedidoDePago) => {
   if (p.plan === 'aula') return `Plan Aula · ${p.cantidad === 1 ? '1 curso' : `${p.cantidad} cursos`}`
-  if (p.plan === 'pase_alumno') return 'Pase por materia hasta el examen'
+  if (p.plan === 'pase_alumno') return 'Pase por materia'
   return `Plan Particular · ${p.cantidad === 5 ? 'tope' : p.cantidad === 1 ? '1 bloque' : `${p.cantidad} bloques`}`
 }
 
 /** Valida y normaliza lo que se pide pagar (del cuerpo). null si no tiene sentido. */
 export function leerPedido(cuerpo: unknown): PedidoDePago | null {
-  const c = (cuerpo ?? {}) as { plan?: unknown; forma?: unknown; cantidad?: unknown }
+  const c = (cuerpo ?? {}) as { plan?: unknown; forma?: unknown; cantidad?: unknown; materia?: unknown }
   const plan = c.plan === 'particular' || c.plan === 'aula' || c.plan === 'pase_alumno' ? c.plan : null
   const forma = c.forma === 'mensual' || c.forma === 'pase' ? c.forma : null
   const cantidad = Number(c.cantidad ?? 1)
   if (!plan || !forma || !Number.isInteger(cantidad) || cantidad < 1) return null
   if (plan === 'particular' && (normalizarNivel(cantidad) === null || cantidad === 0)) return null
   if (plan === 'aula' && (cantidad > 50 || forma !== 'mensual')) return null
-  if (plan === 'pase_alumno' && (cantidad !== 1 || forma !== 'pase')) return null
+  if (plan === 'pase_alumno') {
+    // E2: el pase es de una materia personal; sin ella no hay a qué acreditarlo.
+    const materia = Number(c.materia)
+    if (cantidad !== 1 || forma !== 'pase' || !Number.isInteger(materia) || materia <= 0) return null
+    return { plan, forma, cantidad, materia }
+  }
   return { plan, forma, cantidad }
 }
 
@@ -76,9 +83,10 @@ export function armarCobro(p: PedidoDePago, codigo: ResultadoDelCodigo | null, e
   const lista = precioDeLista(p, env)
   if (lista === null) return null
   const monto = codigo?.ok ? precioConDescuento(lista, codigo.porcentaje) : lista
-  // El pase de alumno dura hasta el examen + 7: los días los fija E2; acá, 0.
+  // El pase de alumno dura hasta el examen + 7 (E2, lib/autodidacta.ts): no son días fijos.
   const dias = p.plan === 'pase_alumno' ? 0 : p.forma === 'mensual' ? DIAS_MENSUAL : DIAS_PASE
-  return { pedido: p, montoLista: lista, monto, dias, descripcion: `${nombreDelPedido(p)} · ${p.forma === 'mensual' ? 'mes' : 'pase de 90 días'}` }
+  const duracion = p.plan === 'pase_alumno' ? 'hasta el examen + 7 días' : p.forma === 'mensual' ? 'mes' : 'pase de 90 días'
+  return { pedido: p, montoLista: lista, monto, dias, descripcion: `${nombreDelPedido(p)} · ${duracion}` }
 }
 
 /**

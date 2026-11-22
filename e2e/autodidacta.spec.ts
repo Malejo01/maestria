@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { ALUMNA, entrarComo, marca, responderUna, simularGeneracion } from './ayudas'
+import { ALUMNA, entrarComo, marca, responderUna, simularGeneracion, sqlDeStaging } from './ayudas'
 
 /**
  * Ronda T · E1: el alumno que se prepara solo. Declara que es mayor de 18 (si
@@ -58,6 +58,13 @@ test('autodidacta: programa, diagnóstico, plan, práctica y simulacro', async (
   await page.getByRole('button', { name: 'Práctica de hoy (10 preguntas)' }).click()
   for (let i = 0; i < 10; i++) await responderUna(page)
   await page.getByRole('link', { name: 'Volver a mi plan' }).click()
+
+  // El simulacro viene con el pase (E2; el pago está en autodidacta-pase.spec.ts):
+  // acá la materia de prueba recibe el pase directo en staging.
+  const materia = Number(page.url().match(/autodidacta\/(\d+)/)?.[1])
+  const sql = await sqlDeStaging()
+  await sql`UPDATE teacher_programs SET pase_hasta = CURRENT_DATE + 30 WHERE id = ${materia} AND user_id = 'stg-demo-sofia' AND personal = TRUE`
+  await page.reload()
 
   // El simulacro: cronometrado y con el aviso de que nunca usa exámenes reales.
   await expect(page.getByText('Nunca usamos preguntas de exámenes reales.')).toBeVisible({ timeout: 30_000 })

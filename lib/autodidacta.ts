@@ -129,3 +129,43 @@ export const SIMULACROS = [
   { preguntas: 20, minutos: 30 },
   { preguntas: 40, minutos: 60 },
 ] as const
+
+/**
+ * Ronda T · E2 — El pase por materia. Gratis: subir el programa, el
+ * diagnóstico (dos intentos de generarlo, por si se corta) y dos prácticas.
+ * Con el pase de esa materia, todo hasta el examen + 7 días.
+ */
+export const GRATIS: Record<TipoDeResultado, number> = { diagnostico: 2, practica: 2, simulacro: 0 }
+export const DIAS_DE_GRACIA_DEL_PASE = 7
+
+/** Hasta qué día vale un pase que se paga hoy: examen + 7 (si el examen ya pasó, hoy + 7). */
+export function paseHastaPara(fechaExamen: string | null, hoy: Date): string {
+  const hoyAr = diaArgentino(hoy)
+  const examen = fechaExamen && fechaExamen.slice(0, 10) > hoyAr ? fechaExamen.slice(0, 10) : hoyAr
+  return new Date(Date.parse(`${examen}T00:00:00Z`) + DIAS_DE_GRACIA_DEL_PASE * MS_POR_DIA).toISOString().slice(0, 10)
+}
+
+/** El pase vale hasta ese día inclusive (en Argentina). */
+export function paseVigente(paseHasta: string | null | undefined, hoy: Date): boolean {
+  return Boolean(paseHasta) && diaArgentino(hoy) <= String(paseHasta).slice(0, 10)
+}
+
+export interface Acceso {
+  /** El día hasta el que vale el pase, si está vigente. */
+  pase: string | null
+  /** Cuántos quedan gratis de cada uno; null = sin límite (con pase). */
+  quedan: Record<TipoDeResultado, number | null>
+}
+
+export function accesoALaMateria(params: { paseHasta: string | null | undefined; usos: Partial<Record<TipoDeResultado, number>>; hoy: Date }): Acceso {
+  if (paseVigente(params.paseHasta, params.hoy)) {
+    return { pase: String(params.paseHasta).slice(0, 10), quedan: { diagnostico: null, practica: null, simulacro: null } }
+  }
+  const queda = (t: TipoDeResultado) => Math.max(0, GRATIS[t] - (params.usos[t] ?? 0))
+  return { pase: null, quedan: { diagnostico: queda('diagnostico'), practica: queda('practica'), simulacro: queda('simulacro') } }
+}
+
+export function puedeGenerar(acceso: Acceso, tipo: TipoDeResultado): boolean {
+  const q = acceso.quedan[tipo]
+  return q === null || q > 0
+}

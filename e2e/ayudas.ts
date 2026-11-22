@@ -78,3 +78,19 @@ export async function entrarConId(page: Page, userId: string) {
   const res = await page.request.post('/api/auth/callback/dev', { form: { csrfToken, userId, callbackUrl: '/' } })
   expect(res.ok(), 'el ingreso de desarrollo sólo existe con `npm run dev:staging`').toBe(true)
 }
+
+/**
+ * Ronda T · E2: la base de STAGING para un e2e que necesita dejarla en un
+ * estado (por ejemplo, lo que contó el servidor cuando la IA está simulada en
+ * el navegador). Se niega si la base no está marcada staging.
+ */
+export async function sqlDeStaging() {
+  const { readFileSync } = await import('node:fs')
+  const { neon } = await import('@neondatabase/serverless')
+  const url = readFileSync('.env.staging.local', 'utf8').match(/^DATABASE_URL=(.*)$/m)?.[1]?.replace(/^["']|["']$/g, '')
+  if (!url) throw new Error('Falta DATABASE_URL en .env.staging.local')
+  const sql = neon(url)
+  const [env] = (await sql`SELECT environment FROM deployment_env LIMIT 1`) as { environment: string }[]
+  if (env?.environment !== 'staging') throw new Error('Sólo contra una base marcada staging')
+  return sql
+}

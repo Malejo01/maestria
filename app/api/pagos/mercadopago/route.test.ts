@@ -6,16 +6,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
  * credenciales reales): aprobado acredita, repetido no duplica, rechazado no
  * acredita, firma inválida da 401. La base es una tabla `pagos` en memoria.
  */
-const { sqlMock, acreditarPlan, marcarFundadora, registrarUso } = vi.hoisted(() => ({
+const { sqlMock, acreditarPlan, marcarFundadora, registrarUso, acreditarPase } = vi.hoisted(() => ({
   sqlMock: vi.fn(),
   acreditarPlan: vi.fn(),
   marcarFundadora: vi.fn(),
   registrarUso: vi.fn(),
+  acreditarPase: vi.fn(),
 }))
 vi.mock('@/lib/db', () => ({ sql: sqlMock }))
 vi.mock('@/lib/planes-server', () => ({ acreditarPlan, marcarFundadora }))
 vi.mock('@/lib/codigos-descuento-server', () => ({ registrarUso, buscarCodigo: vi.fn() }))
 vi.mock('@/lib/observability', () => ({ captureRouteFailure: vi.fn() }))
+vi.mock('@/lib/auth-session', () => ({ getViewer: vi.fn(), getTeacherViewer: vi.fn() }))
+vi.mock('@/lib/autodidacta-server', () => ({ acreditarPase, materiaParaElPase: vi.fn() }))
 
 import { POST } from './route'
 
@@ -105,6 +108,18 @@ describe('POST /api/pagos/mercadopago', () => {
     const res = await POST(pedido('9001'))
     expect(await res.json()).toMatchObject({ resultado: 'pendiente' })
     expect(acreditarPlan).not.toHaveBeenCalled()
+  })
+
+  it('E2 · un pase de alumno aprobado acredita el pase de SU materia, no un plan de docente', async () => {
+    pagos[0] = { ...pagos[0], user_id: 'sofia', plan: 'pase_alumno', forma: 'pase', monto: 3000, detalle: { dias: 0, fundadora: false, materia: 57, descripcion: 'Pase por materia' } }
+    montoEnMercadoPago = 3000
+    acreditarPase.mockResolvedValue(true)
+    const res = await POST(pedido('9001'))
+    expect(await res.json()).toMatchObject({ resultado: 'acreditado' })
+    expect(acreditarPase).toHaveBeenCalledWith('sofia', 57)
+    expect(acreditarPlan).not.toHaveBeenCalled()
+    expect(marcarFundadora).not.toHaveBeenCalled()
+    expect(registrarUso).toHaveBeenCalledWith(7, 'sofia')
   })
 
   it('lo que no es un pago: 200 y nada', async () => {
