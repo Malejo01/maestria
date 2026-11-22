@@ -15,6 +15,8 @@ import { ASSESSMENT_STYLE_LABELS, type PanelDocente } from '@/components/docente
 import { EsqueletoTarjetasDeMateria } from '@/components/docente/esqueletos'
 import { contar, MIS_MATERIAS, AREA_DE_LA_MATERIA } from '@/lib/textos'
 import { AreaDeLaMateria, ChipDeCaracter } from '@/components/docente/area-de-la-materia'
+import { SepararTema } from '@/components/docente/separar-tema'
+import { LARGO_MAXIMO_DE_TEMA } from '@/lib/temas-granulares'
 import { useToast } from '@/hooks/use-toast'
 import { PERFILES, type AreaId, type Caracter } from '@/lib/areas'
 import { caracterDeLaUnidad } from '@/lib/area-del-programa'
@@ -428,9 +430,20 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         {unit.topics.map((topic) => (
-                          <Badge key={topic.id} variant={topic.origin === 'curriculum' ? 'secondary' : 'outline'} className="max-w-full whitespace-normal break-words text-left text-xs">
-                            {topic.name}
-                          </Badge>
+                          <span key={topic.id} className="inline-flex max-w-full flex-col gap-0.5">
+                            <Badge variant={topic.origin === 'curriculum' ? 'secondary' : 'outline'} className="max-w-full whitespace-normal break-words text-left text-xs">
+                              {topic.name}
+                            </Badge>
+                            {/* D2: un tema largo se puede separar, revisando la propuesta antes de guardar. */}
+                            {topic.name.replace(/\s+/g, ' ').trim().length > LARGO_MAXIMO_DE_TEMA && (
+                              <SepararTema
+                                programId={activeTeacherProgram.id}
+                                unidadId={unit.id}
+                                tema={topic}
+                                onGuardado={(units) => updateTeacherProgram(activeTeacherProgram.id, { units })}
+                              />
+                            )}
+                          </span>
                         ))}
                         {unit.topics.length === 0 && (
                           <p className="text-xs text-muted-foreground">Sin temas.</p>
