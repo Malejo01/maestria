@@ -11,6 +11,9 @@
  *
  * Uso (sólo staging):
  *   npx tsx scripts/qa/simular-pago.ts --env=staging --docente=<id> [--codigo=FUNDADORA-SIL] [--cantidad=1]
+ *
+ * E2 · El pase por materia de un alumno (`--docente` es entonces el alumno):
+ *   npx tsx scripts/qa/simular-pago.ts --env=staging --docente=<alumno> --materia=<id> [--codigo=…]
  */
 import { readFileSync } from 'node:fs'
 
@@ -29,6 +32,7 @@ process.env.DATABASE_URL = leer('.env.staging.local', 'DATABASE_URL')
 process.env.MERCADOPAGO_ACCESS_TOKEN = 'TEST-simulado'
 process.env.MAESTRIA_PRECIO_MENSUAL_BLOQUE ||= '20000'
 process.env.MAESTRIA_PRECIO_PASE_BLOQUE ||= '50000'
+process.env.MAESTRIA_PRECIO_PASE_ALUMNO ||= '6000'
 
 const arg = (n: string) => process.argv.find((a) => a.startsWith(`--${n}=`))?.slice(n.length + 3)
 
@@ -57,7 +61,9 @@ async function main() {
   const checkout = await iniciarCheckout({
     userId: docente,
     email: null,
-    pedido: { plan: 'particular', forma: 'mensual', cantidad: Number(arg('cantidad') ?? 1) },
+    pedido: arg('materia')
+      ? { plan: 'pase_alumno', forma: 'pase', cantidad: 1, materia: Number(arg('materia')) }
+      : { plan: 'particular', forma: 'mensual', cantidad: Number(arg('cantidad') ?? 1) },
     textoDelCodigo: arg('codigo') ?? '',
     urlBase: 'http://localhost:3000',
     pedir: falso,
@@ -73,6 +79,7 @@ async function main() {
   console.log('4. pago:', pago)
   console.log('   docente:', usuario)
   console.log('   usos de códigos:', usos)
+  if (arg('materia')) console.log('   la materia:', (await sql`SELECT id, subject_name, fecha_examen, pase_hasta FROM teacher_programs WHERE id = ${Number(arg('materia'))}`)[0])
   console.log(`   /precios/gracias?pago=${checkout.pagoId}`)
 }
 

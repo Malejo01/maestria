@@ -2,6 +2,7 @@ import { sql } from '@/lib/db'
 import { MOTIVO_DEL_RECHAZO, validarCodigo, type ResultadoDelCodigo } from '@/lib/codigos-descuento'
 import { buscarCodigo, registrarUso } from '@/lib/codigos-descuento-server'
 import { acreditarPlan, marcarFundadora } from '@/lib/planes-server'
+import { acreditarPase } from '@/lib/autodidacta-server'
 import { linkDePago, type NivelPlan } from '@/lib/planes'
 import { linkDeWhatsApp } from '@/lib/precios'
 import { armarCobro, estadoDelPago, nuevoVencimiento, queSePaga, type Cobro, type PedidoDePago } from '@/lib/pagos'
@@ -28,6 +29,11 @@ export interface ResumenDelPago {
   manual: { link: string | null; whatsapp: string | null } | null
 }
 
+/** El cobro con el nombre de la materia del pase, para que se lea en Mercado Pago. */
+function conMateria(cobro: Cobro | null, materia: string | null | undefined): Cobro | null {
+  return cobro && materia ? { ...cobro, descripcion: `${cobro.descripcion} · ${materia.slice(0, 60)}` } : cobro
+}
+
 async function validar(userId: string, pedido: PedidoDePago, texto: string): Promise<ResultadoDelCodigo | null> {
   if (!texto.trim()) return null
   const encontrado = await buscarCodigo(texto, userId)
@@ -50,9 +56,9 @@ async function hayTablaDePagos(): Promise<boolean> {
 }
 
 /** Lo que se muestra antes de pagar: lista, código, total y cómo se paga. */
-export async function resumenDelPago(userId: string, pedido: PedidoDePago, textoDelCodigo: string): Promise<ResumenDelPago> {
+export async function resumenDelPago(userId: string, pedido: PedidoDePago, textoDelCodigo: string, materia?: string | null): Promise<ResumenDelPago> {
   const resultado = await validar(userId, pedido, textoDelCodigo)
-  const cobro = armarCobro(pedido, resultado)
+  const cobro = conMateria(armarCobro(pedido, resultado), materia)
   const conCheckout = Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()) && (await hayTablaDePagos())
   const codigo =
     resultado === null
@@ -83,12 +89,14 @@ export async function iniciarCheckout(params: {
   textoDelCodigo: string
   urlBase: string
   pedir?: Pedir
+  /** E2: el nombre de la materia del pase. */
+  materia?: string | null
 }): Promise<{ ok: true; url: string; pagoId: number } | { ok: false; error: string }> {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim()
   if (!token) return { ok: false, error: T.sinCheckout }
   const resultado = await validar(params.userId, params.pedido, params.textoDelCodigo)
   if (resultado && !resultado.ok) return { ok: false, error: MOTIVO_DEL_RECHAZO[resultado.motivo] }
-  const cobro = armarCobro(params.pedido, resultado)
+  const cobro = conMateria(armarCobro(params.pedido, resultado), params.materia)
   if (!cobro) return { ok: false, error: T.sinPrecio }
   if (cobro.monto <= 0) return { ok: false, error: T.montoCero }
 
@@ -96,7 +104,12 @@ export async function iniciarCheckout(params: {
     INSERT INTO pagos (user_id, plan, forma, cantidad, monto_lista, monto, codigo_id, codigo, detalle)
     VALUES (${params.userId}, ${cobro.pedido.plan}, ${cobro.pedido.forma}, ${cobro.pedido.cantidad}, ${cobro.montoLista}, ${cobro.monto},
             ${resultado?.ok ? resultado.codigo.id : null}, ${resultado?.ok ? resultado.codigo.codigo : null},
-            ${JSON.stringify({ descripcion: cobro.descripcion, dias: cobro.dias, fundadora: resultado?.ok ? resultado.codigo.fundadora : false })})
+            ${JSON.stringify({
+              descripcion: cobro.descripcion,
+              dias: cobro.dias,
+              fundadora: resultado?.ok ? resultado.codigo.fundadora : false,
+              ...(cobro.pedido.materia ? { materia: cobro.pedido.materia } : {}),
+            })})
     RETURNING id
   `) as { id: number }[]
   const pagoId = Number(fila.id)
@@ -158,7 +171,7 @@ export async function procesarNotificacion(paymentId: string, pedir?: Pedir): Pr
 
 async function acreditarDesdePago(fila: Record<string, unknown>): Promise<void> {
   const userId = String(fila.user_id)
-  const detalle = (fila.detalle ?? {}) as { dias?: number; fundadora?: boolean; descripcion?: string }
+  const detalle = (fila.detalle ?? {}) as { dias?: number; fundadora?: boolean; descripcion?: string; materia?: number }
   const plan = String(fila.plan)
   if (plan === 'particular' || plan === 'aula') {
     const [usuario] = (await sql`SELECT plan_vence_el FROM users WHERE id = ${userId}`) as { plan_vence_el: string | null }[]
@@ -173,7 +186,13 @@ async function acreditarDesdePago(fila: Record<string, unknown>): Promise<void> 
       cursos: plan === 'aula' ? Number(fila.cantidad) : undefined,
     })
   }
-  // El pase de alumno (E2) lo acredita su propio módulo al leer `pagos`.
+  // E2: el pase de alumno, a su materia personal (examen + 7).
+  if (plan === 'pase_alumno') {
+    const ok = detalle.materia ? await acreditarPase(userId, Number(detalle.materia)) : false
+    if (!ok) {
+      captureRouteFailure(new Error(`Pago ${fila.id}: pase sin materia personal de esa persona`), { endpoint: '/api/pagos/mercadopago', operation: 'paseSinMateria' })
+    }
+  }
   if (fila.codigo_id) await registrarUso(Number(fila.codigo_id), userId)
   if (detalle.fundadora) await marcarFundadora({ docenteId: userId, fundadora: true, marcadoPor: 'Mercado Pago (código fundadora)' })
 }
@@ -184,22 +203,28 @@ export interface PagoLeido {
   descripcion: string
   monto: number
   acreditadoEl: string | null
+  /** E2: el pase de alumno vuelve a su materia. */
+  plan?: string
+  materia?: number | null
 }
 
 /** Para /precios/gracias: el pago, sólo si es de esta persona. */
 export async function leerPago(userId: string, pagoId: number): Promise<PagoLeido | null> {
   try {
     const filas = (await sql`
-      SELECT id, estado, monto, detalle, acreditado_el FROM pagos WHERE id = ${pagoId} AND user_id = ${userId}
+      SELECT id, estado, monto, detalle, acreditado_el, plan FROM pagos WHERE id = ${pagoId} AND user_id = ${userId}
     `) as Record<string, unknown>[]
     const f = filas[0]
     if (!f) return null
+    const detalle = (f.detalle ?? {}) as { descripcion?: string; materia?: number }
     return {
       id: Number(f.id),
       estado: f.estado as PagoLeido['estado'],
-      descripcion: String((f.detalle as { descripcion?: string } | null)?.descripcion ?? ''),
+      descripcion: String(detalle.descripcion ?? ''),
       monto: Number(f.monto),
       acreditadoEl: f.acreditado_el ? new Date(String(f.acreditado_el)).toISOString() : null,
+      plan: String(f.plan ?? ''),
+      materia: detalle.materia ? Number(detalle.materia) : null,
     }
   } catch (error) {
     if (faltaLaTabla(error)) return null

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Logo } from '@/components/sistema/logo'
 import { Boton } from '@/components/sistema/boton'
 import { ResumenDePago } from '@/components/pagos/resumen-de-pago'
-import { getTeacherViewer } from '@/lib/auth-session'
+import { getTeacherViewer, getViewer } from '@/lib/auth-session'
 import { leerPedido } from '@/lib/pagos'
 import { PAGAR as T } from '@/lib/textos'
 
@@ -16,7 +16,10 @@ export const dynamic = 'force-dynamic'
 export default async function PagarPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams
   const pedido = leerPedido(params)
-  const docente = await getTeacherViewer()
+  // E2: el pase de alumno lo paga el alumno con cuenta (no invitado); el resto, el docente.
+  const esPase = pedido?.plan === 'pase_alumno'
+  const viewer = esPase ? await getViewer() : null
+  const docente = esPase ? (viewer && !viewer.isGuest ? viewer : null) : await getTeacherViewer()
   const volver = `/precios/pagar?${new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => typeof e[1] === 'string')).toString()}`
 
   return (
@@ -31,7 +34,7 @@ export default async function PagarPage({ searchParams }: { searchParams: Promis
         <div className="space-y-3 text-center">
           <p className="cuerpo text-texto">{T.entrar}</p>
           <Boton asChild>
-            <Link href={`/sign-in?rol=docente&callbackUrl=${encodeURIComponent(volver)}`}>{T.entrar}</Link>
+            <Link href={`/sign-in?${esPase ? '' : 'rol=docente&'}callbackUrl=${encodeURIComponent(volver)}`}>{T.entrar}</Link>
           </Boton>
         </div>
       ) : (

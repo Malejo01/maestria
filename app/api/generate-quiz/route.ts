@@ -21,6 +21,9 @@ import { perfilSinRomper } from '@/lib/fichas-server'
 import { getViewer } from '@/lib/auth-session'
 import { paramsDePracticaExtra } from '@/lib/practica-extra-server'
 import type { QuizRequestParams } from '@/lib/quiz-generation'
+import { accesoParaGenerar, registrarUso } from '@/lib/autodidacta-server'
+import { puedeGenerar, type TipoDeResultado } from '@/lib/autodidacta'
+import { AUTODIDACTA } from '@/lib/textos'
 
 export async function POST(req: Request) {
   const body = await req.json()
@@ -54,11 +57,28 @@ export async function POST(req: Request) {
   // para la práctica de sus alumnos en el grupo. Nunca lanza.
   if (params.teacherProgramId) params.evitar = await preguntasAEvitar(params.teacherProgramId)
 
+  // E2: la materia personal del modo autodidacta. Sólo la usa su dueño, con lo
+  // gratis (diagnóstico y dos prácticas) o con el pase; y la IA va a su propio
+  // tope ('autodidacta'), con el gasto anotado por alumno.
+  let autodidacta: { userId: string; programId: number; tipo: TipoDeResultado } | null = null
+  if (params.teacherProgramId) {
+    const acceso = await accesoParaGenerar(viewer && !viewer.isGuest ? viewer.id : '', params.teacherProgramId)
+    if (acceso.personal) {
+      if (acceso.ajena || !viewer || viewer.isGuest) return Response.json({ questions: [], error: AUTODIDACTA.materiaAjena }, { status: 403 })
+      const pedido = (body as { autodidactaTipo?: unknown } | null)?.autodidactaTipo
+      const tipo: TipoDeResultado = pedido === 'diagnostico' || pedido === 'simulacro' ? pedido : 'practica'
+      if (!puedeGenerar(acceso.acceso, tipo)) {
+        return Response.json({ questions: [], error: AUTODIDACTA.paseNecesario, pase: true }, { status: 402 })
+      }
+      autodidacta = { userId: viewer.id, programId: params.teacherProgramId, tipo }
+    }
+  }
+
   // Recién acá, con el nivel ya resuelto, para que el mensaje de corte le hable
   // a un chico de primaria distinto que a un estudiante de terciario. Todo lo
   // anterior es parseo del body: no cuesta tokens.
   const guard = await guardAiCall({
-    bucket: 'quiz_generation',
+    bucket: autodidacta ? 'autodidacta' : 'quiz_generation',
     nivel: params.nivel,
     errorBody: () => ({ questions: [] }),
   })
@@ -82,6 +102,7 @@ export async function POST(req: Request) {
     }
 
     await guard.finish(sumUsage(...usageParts))
+    if (autodidacta) await registrarUso(autodidacta.userId, autodidacta.programId, autodidacta.tipo)
     return Response.json({ questions: result.questions })
   } catch (error) {
     // La fila queda en 'error' y sigue contando: si Gemini alcanzó a responder

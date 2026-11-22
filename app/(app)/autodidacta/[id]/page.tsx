@@ -9,7 +9,8 @@ import { Cargando } from '@/components/sistema/cargando'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { pedirJson } from '@/lib/pedir-json'
 import { useAppStore } from '@/lib/store'
-import { PREGUNTAS_POR_DIA, SIMULACROS, diasHastaElExamen, preguntasDelDiagnostico } from '@/lib/autodidacta'
+import { PREGUNTAS_POR_DIA, SIMULACROS, diasHastaElExamen, preguntasDelDiagnostico, puedeGenerar } from '@/lib/autodidacta'
+import { formatearPesos } from '@/lib/planes'
 import type { MateriaConPlan } from '@/lib/autodidacta-server'
 import type { Question, QuizConfig } from '@/lib/types'
 import { AUTODIDACTA as T } from '@/lib/textos'
@@ -73,6 +74,8 @@ export default function MateriaAutodidactaPage() {
         questionCount: cantidad,
         nivel: 'Superior',
         teacherProgramId: materia.id,
+        // E2: lo gratis y el pase se cuentan por tipo, en el servidor.
+        autodidactaTipo: tipo,
       }),
     })
     setGenerando(false)
@@ -84,6 +87,9 @@ export default function MateriaAutodidactaPage() {
     setActiveView('quiz')
   }
 
+  const { acceso } = materia
+  const linkDelPase = `/precios/pagar?plan=pase_alumno&forma=pase&cantidad=1&materia=${materia.id}`
+  const textoDelPase = materia.precioPase ? T.sacarPase(formatearPesos(materia.precioPase)) : T.sacarPaseSinPrecio
   const sabidos = materia.estados.filter((e) => e.estado === 'sabido')
   const flojos = materia.estados.filter((e) => e.estado === 'reforzar')
   const temasDeHoy = hoy ? todos.filter((t) => hoy.temas.includes(t.name)) : []
@@ -102,6 +108,20 @@ export default function MateriaAutodidactaPage() {
         )}
       </header>
 
+      {/* E2: el pase por materia, o lo gratis que queda. */}
+      <section className="space-y-2 rounded-lg border border-borde bg-superficie-suave p-4" data-pase={acceso.pase ? 'vigente' : 'gratis'}>
+        {acceso.pase ? (
+          <p className="cuerpo-s text-texto">{T.conPase(new Date(`${acceso.pase}T12:00:00`).toLocaleDateString('es-AR'))}</p>
+        ) : (
+          <>
+            <p className="cuerpo-s text-texto">{T.gratis(acceso.quedan.practica ?? 0)}</p>
+            <Boton asChild variante="secundario">
+              <Link href={linkDelPase}>{textoDelPase}</Link>
+            </Boton>
+          </>
+        )}
+      </section>
+
       {generando && (
         <p className="cuerpo-s flex items-center gap-2 text-texto-suave" role="status">
           <Cargando /> {T.generando}
@@ -112,7 +132,7 @@ export default function MateriaAutodidactaPage() {
         <section className="space-y-2 rounded-lg border border-borde bg-superficie-tarjeta p-4">
           <h2 className="titulo-m text-texto">{T.diagnostico}</h2>
           <p className="cuerpo-s text-texto-suave">{T.diagnosticoDetalle}</p>
-          <Boton disabled={generando} onClick={() => empezar('diagnostico', todos.slice(0, 20), preguntasDelDiagnostico(todos.length))}>
+          <Boton disabled={generando || !puedeGenerar(acceso, 'diagnostico')} onClick={() => empezar('diagnostico', todos.slice(0, 20), preguntasDelDiagnostico(todos.length))}>
             {T.hacerDiagnostico}
           </Boton>
         </section>
@@ -139,7 +159,7 @@ export default function MateriaAutodidactaPage() {
                   <p className="etiqueta text-accion">{T.hoy}</p>
                   <p className="cuerpo-s text-texto">{hoy.simulacro ? T.diaDeSimulacro : hoy.temas.join(' · ')}</p>
                   {!hoy.simulacro && (
-                    <Boton disabled={generando || temasDeHoy.length === 0} onClick={() => empezar('practica', temasDeHoy, PREGUNTAS_POR_DIA)}>
+                    <Boton disabled={generando || temasDeHoy.length === 0 || !puedeGenerar(acceso, 'practica')} onClick={() => empezar('practica', temasDeHoy, PREGUNTAS_POR_DIA)}>
                       {T.practicaDeHoy}
                     </Boton>
                   )}
@@ -164,9 +184,10 @@ export default function MateriaAutodidactaPage() {
         </h2>
         <p className="cuerpo-s text-texto-suave">{T.simulacroDetalle}</p>
         <p className="cuerpo-s font-semibold text-texto">{T.nuncaReales}</p>
+        {!puedeGenerar(acceso, 'simulacro') && <p className="cuerpo-s text-texto-suave">{T.conPaseSimulacros}</p>}
         <div className="flex flex-wrap gap-2">
           {SIMULACROS.map((s) => (
-            <Boton key={s.preguntas} variante="secundario" disabled={generando} onClick={() => empezar('simulacro', todos, s.preguntas, s.minutos)}>
+            <Boton key={s.preguntas} variante="secundario" disabled={generando || !puedeGenerar(acceso, 'simulacro')} onClick={() => empezar('simulacro', todos, s.preguntas, s.minutos)}>
               {T.empezarSimulacro(s.preguntas, s.minutos)}
             </Boton>
           ))}

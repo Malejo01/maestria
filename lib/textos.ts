@@ -1721,6 +1721,17 @@ export const AUTODIDACTA = {
   noSePudo: 'No se pudo armar el cuestionario. Probá de nuevo.',
   volverAMiPlan: 'Volver a mi plan',
   guardado: 'Tu plan se actualizó con este resultado.',
+  /** E2: el pase por materia. */
+  materiaAjena: 'Esa materia no es tuya.',
+  paseNecesario: 'Ya usaste lo gratis de esta materia. Con el pase seguís hasta el examen.',
+  gratis: (practicas: number) =>
+    practicas === 0
+      ? 'Ya usaste las dos prácticas gratis de esta materia.'
+      : `Gratis: el diagnóstico y ${practicas === 1 ? '1 práctica más' : `${practicas} prácticas`}. Con el pase, el plan completo y los simulacros hasta el examen.`,
+  conPase: (hasta: string) => `Tenés el pase de esta materia hasta el ${hasta}.`,
+  sacarPase: (precio: string) => `Sacar el pase (${precio})`,
+  sacarPaseSinPrecio: 'Sacar el pase',
+  conPaseSimulacros: 'Los simulacros vienen con el pase.',
 } as const
 
 /** Ronda T · E1: el simulacro cronometrado. */
@@ -1769,6 +1780,9 @@ export const PAGAR = {
     noEncontrado: 'No encontramos ese pago',
     volverAlPanel: 'Volver a mi panel',
     volverAPrecios: 'Volver a Precios',
+    // E2: el pase por materia del alumno.
+    aprobadoPase: 'Ya tenés el pase de esta materia: el plan completo y los simulacros hasta el examen.',
+    volverAMiMateria: 'Volver a mi materia',
   },
   // Campanita y admin
   aviso: { titulo: 'Se acreditó tu pago', detalle: (descripcion: string) => descripcion || 'Tu plan ya está activo' },

@@ -1,13 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 /** C2 · El checkout: el monto lo calcula el servidor, con el código; la preferencia lleva la fila como referencia. */
-const { sqlMock, docente, buscarCodigo } = vi.hoisted(() => ({
+const { sqlMock, docente, alumno, buscarCodigo, materiaParaElPase } = vi.hoisted(() => ({
   sqlMock: vi.fn(),
   docente: { actual: { id: 'silvana', email: 's@x' } as { id: string; email: string } | null },
+  alumno: { actual: { id: 'sofia', email: null, isGuest: false } as { id: string; email: string | null; isGuest: boolean } | null },
   buscarCodigo: vi.fn(),
+  materiaParaElPase: vi.fn(),
 }))
 vi.mock('@/lib/db', () => ({ sql: sqlMock }))
-vi.mock('@/lib/auth-session', () => ({ getTeacherViewer: async () => docente.actual }))
+vi.mock('@/lib/auth-session', () => ({ getTeacherViewer: async () => docente.actual, getViewer: async () => alumno.actual }))
+vi.mock('@/lib/autodidacta-server', () => ({ materiaParaElPase, acreditarPase: vi.fn() }))
 vi.mock('@/lib/codigos-descuento-server', () => ({ buscarCodigo, registrarUso: vi.fn() }))
 vi.mock('@/lib/planes-server', () => ({ acreditarPlan: vi.fn(), marcarFundadora: vi.fn() }))
 vi.mock('@/lib/observability', () => ({ captureRouteFailure: vi.fn() }))
@@ -22,6 +25,9 @@ let insertado: unknown[] | null
 beforeEach(() => {
   vi.clearAllMocks()
   docente.actual = { id: 'silvana', email: 's@x' }
+  alumno.actual = { id: 'sofia', email: null, isGuest: false }
+  materiaParaElPase.mockImplementation(async (userId: string, id: number) => (userId === 'sofia' && id === 57 ? { id: 57, nombre: 'Economía', fechaExamen: '2026-12-04' } : null))
+  vi.stubEnv('MAESTRIA_PRECIO_PASE_ALUMNO', '6000')
   insertado = null
   vi.stubEnv('MAESTRIA_PRECIO_MENSUAL_BLOQUE', '20000')
   vi.stubEnv('MERCADOPAGO_ACCESS_TOKEN', 'TEST-token-simulado')
@@ -71,5 +77,25 @@ describe('POST /api/pagos/checkout', () => {
     const r = await (await pedir(resumen, { plan: 'particular', forma: 'mensual', cantidad: 1, codigo: 'FUNDADORA-SIL' })).json()
     expect(r).toMatchObject({ conCheckout: false, codigo: { ok: true, porcentaje: 50 }, cobro: { monto: 10000 } })
     expect(r.manual.whatsapp).toMatch(/^https:\/\/wa\.me\/5491100000000\?text=.*FUNDADORA-SIL/)
+  })
+
+  it('E2 · el pase de alumno lo paga el alumno dueño de la materia, y la fila lleva la materia', async () => {
+    docente.actual = null
+    buscarCodigo.mockResolvedValue(null)
+    const res = await pedir(POST, { plan: 'pase_alumno', forma: 'pase', cantidad: 1, materia: 57 })
+    expect(await res.json()).toEqual({ url: 'https://mp/sandbox', pago: 41 })
+    // user, plan, forma, cantidad, lista, monto
+    expect(insertado?.slice(0, 6)).toEqual(['sofia', 'pase_alumno', 'pase', 1, 6000, 6000])
+    expect(JSON.parse(String(insertado?.[8]))).toMatchObject({ materia: 57, descripcion: 'Pase por materia · hasta el examen + 7 días · Economía' })
+  })
+
+  it('E2 · sin cuenta o invitado: 401; la materia de otro (o sin materia): 404 / 400', async () => {
+    alumno.actual = { id: 'guest-1', email: null, isGuest: true }
+    expect((await pedir(POST, { plan: 'pase_alumno', forma: 'pase', cantidad: 1, materia: 57 })).status).toBe(401)
+    alumno.actual = { id: 'otra', email: null, isGuest: false }
+    expect((await pedir(POST, { plan: 'pase_alumno', forma: 'pase', cantidad: 1, materia: 57 })).status).toBe(404)
+    expect((await pedir(resumen, { plan: 'pase_alumno', forma: 'pase', cantidad: 1, materia: 57 })).status).toBe(404)
+    expect((await pedir(POST, { plan: 'pase_alumno', forma: 'pase', cantidad: 1 })).status).toBe(400)
+    expect(insertado).toBeNull()
   })
 })

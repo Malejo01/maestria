@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { diasHastaElExamen, estadoPorTema, planHastaElExamen, preguntasDelDiagnostico, resultadoPorTema } from './autodidacta'
+import { accesoALaMateria, diasHastaElExamen, estadoPorTema, paseHastaPara, paseVigente, planHastaElExamen, preguntasDelDiagnostico, puedeGenerar, resultadoPorTema } from './autodidacta'
 
 const HOY = new Date('2027-02-01T15:00:00-03:00')
 
@@ -73,5 +73,41 @@ describe('E1 · el plan hasta el examen (reparto de temas en los días)', () => 
     expect(preguntasDelDiagnostico(3)).toBe(5)
     expect(preguntasDelDiagnostico(12)).toBe(12)
     expect(preguntasDelDiagnostico(40)).toBe(20)
+  })
+})
+
+describe('E2 · el pase por materia', () => {
+  it('vale hasta el examen + 7; si el examen ya pasó, hasta hoy + 7', () => {
+    expect(paseHastaPara('2027-02-20', HOY)).toBe('2027-02-27')
+    expect(paseHastaPara('2027-01-10', HOY)).toBe('2027-02-08')
+    expect(paseHastaPara(null, HOY)).toBe('2027-02-08')
+  })
+
+  it('está vigente hasta ese día inclusive, en hora argentina', () => {
+    expect(paseVigente('2027-02-01', HOY)).toBe(true)
+    expect(paseVigente('2027-01-31', HOY)).toBe(false)
+    expect(paseVigente(null, HOY)).toBe(false)
+    // 23:30 del 1/2 en Argentina ya es 2/2 en UTC: sigue valiendo.
+    expect(paseVigente('2027-02-01', new Date('2027-02-01T23:30:00-03:00'))).toBe(true)
+  })
+
+  it('gratis: el diagnóstico (dos intentos) y dos prácticas; ningún simulacro', () => {
+    const nuevo = accesoALaMateria({ paseHasta: null, usos: {}, hoy: HOY })
+    expect(nuevo).toEqual({ pase: null, quedan: { diagnostico: 2, practica: 2, simulacro: 0 } })
+    expect(puedeGenerar(nuevo, 'practica')).toBe(true)
+    expect(puedeGenerar(nuevo, 'simulacro')).toBe(false)
+    const usado = accesoALaMateria({ paseHasta: null, usos: { diagnostico: 1, practica: 2 }, hoy: HOY })
+    expect(usado.quedan).toEqual({ diagnostico: 1, practica: 0, simulacro: 0 })
+    expect(puedeGenerar(usado, 'practica')).toBe(false)
+  })
+
+  it('con el pase vigente, todo; vencido, vuelve a lo gratis', () => {
+    const conPase = accesoALaMateria({ paseHasta: '2027-02-27', usos: { practica: 9, simulacro: 3 }, hoy: HOY })
+    expect(conPase.pase).toBe('2027-02-27')
+    expect(puedeGenerar(conPase, 'simulacro')).toBe(true)
+    expect(puedeGenerar(conPase, 'practica')).toBe(true)
+    const vencido = accesoALaMateria({ paseHasta: '2027-01-20', usos: { practica: 9 }, hoy: HOY })
+    expect(vencido.pase).toBeNull()
+    expect(puedeGenerar(vencido, 'practica')).toBe(false)
   })
 })

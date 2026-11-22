@@ -27,6 +27,7 @@ export const AI_BUCKETS = [
   'grading',
   'program_extraction',
   'program_upload',
+  'autodidacta',
 ] as const
 export type AiBucket = (typeof AI_BUCKETS)[number]
 
@@ -82,6 +83,17 @@ export const AI_LIMITS: Record<AiBucket, Record<Exclude<AiActor, 'admin'>, Bucke
     guest: { perDay: 0, perHour: 0 },
     alumno: { perDay: 8, perHour: 4 },
     docente: { perDay: 20, perHour: 8 },
+  },
+  /**
+   * Ronda T · E2: el modo autodidacta (diagnóstico, práctica del día y
+   * simulacros de una materia personal) tiene su propio tope, aparte de la
+   * práctica de siempre, y su gasto queda en `ai_usage_log` con este endpoint,
+   * por alumno. Un día intenso: diagnóstico, dos prácticas y dos simulacros.
+   */
+  autodidacta: {
+    guest: { perDay: 0, perHour: 0 },
+    alumno: { perDay: 12, perHour: 6 },
+    docente: { perDay: 12, perHour: 6 },
   },
 }
 

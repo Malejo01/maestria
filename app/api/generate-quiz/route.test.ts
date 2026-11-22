@@ -32,7 +32,11 @@ const {
   getViewer,
   bloqueoParaGenerar,
   perfilSinRomper,
+  accesoParaGenerar,
+  registrarUso,
 } = vi.hoisted(() => ({
+  accesoParaGenerar: vi.fn(),
+  registrarUso: vi.fn(),
   perfilSinRomper: vi.fn(),
   getViewer: vi.fn(),
   bloqueoParaGenerar: vi.fn(),
@@ -63,6 +67,8 @@ vi.mock('@/lib/auth-session', () => ({ getViewer }))
 vi.mock('@/lib/planes-server', () => ({ bloqueoParaGenerar }))
 
 vi.mock('@/lib/fichas-server', () => ({ perfilSinRomper }))
+
+vi.mock('@/lib/autodidacta-server', () => ({ accesoParaGenerar, registrarUso }))
 
 import { POST } from './route'
 
@@ -108,6 +114,7 @@ beforeEach(() => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
   getViewer.mockResolvedValue(null)
   bloqueoParaGenerar.mockResolvedValue(null)
+  accesoParaGenerar.mockResolvedValue({ personal: false })
 
   guardAiCall.mockResolvedValue({
     ok: true,
@@ -169,6 +176,59 @@ describe('POST — plan del docente', () => {
     getViewer.mockResolvedValue({ id: 'a1', role: 'ALUMNO', isGuest: false, displayName: 'A', email: null })
     await POST(request())
     expect(bloqueoParaGenerar).not.toHaveBeenCalled()
+  })
+})
+
+describe('POST — Ronda T · E2: la materia personal del modo autodidacta', () => {
+  const SOFIA = { id: 'sofia', role: 'ALUMNO', isGuest: false, displayName: 'S', email: null }
+  const LIBRE = { pase: null, quedan: { diagnostico: 2, practica: 2, simulacro: 0 } }
+
+  it('con lo gratis: genera con el tope propio de autodidacta y anota el uso', async () => {
+    getViewer.mockResolvedValue(SOFIA)
+    accesoParaGenerar.mockResolvedValue({ personal: true, ajena: false, acceso: LIBRE })
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+    const res = await POST(request({ teacherProgramId: 57, autodidactaTipo: 'practica' }))
+    expect(res.status).toBe(200)
+    expect(guardAiCall).toHaveBeenCalledWith(expect.objectContaining({ bucket: 'autodidacta' }))
+    expect(registrarUso).toHaveBeenCalledWith('sofia', 57, 'practica')
+  })
+
+  it('sin pase, el simulacro (o la tercera práctica) da 402 sin gastar IA', async () => {
+    getViewer.mockResolvedValue(SOFIA)
+    accesoParaGenerar.mockResolvedValue({ personal: true, ajena: false, acceso: LIBRE })
+    const res = await POST(request({ teacherProgramId: 57, autodidactaTipo: 'simulacro' }))
+    expect(res.status).toBe(402)
+    expect(await res.json()).toMatchObject({ questions: [], pase: true })
+    expect(guardAiCall).not.toHaveBeenCalled()
+    expect(generateObject).not.toHaveBeenCalled()
+
+    accesoParaGenerar.mockResolvedValue({ personal: true, ajena: false, acceso: { ...LIBRE, quedan: { ...LIBRE.quedan, practica: 0 } } })
+    expect((await POST(request({ teacherProgramId: 57 }))).status).toBe(402)
+  })
+
+  it('con el pase, el simulacro sale', async () => {
+    getViewer.mockResolvedValue(SOFIA)
+    accesoParaGenerar.mockResolvedValue({ personal: true, ajena: false, acceso: { pase: '2026-12-09', quedan: { diagnostico: null, practica: null, simulacro: null } } })
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+    expect((await POST(request({ teacherProgramId: 57, autodidactaTipo: 'simulacro' }))).status).toBe(200)
+    expect(registrarUso).toHaveBeenCalledWith('sofia', 57, 'simulacro')
+  })
+
+  it('la materia personal de otra persona (o un invitado): 403', async () => {
+    getViewer.mockResolvedValue(SOFIA)
+    accesoParaGenerar.mockResolvedValue({ personal: true, ajena: true })
+    expect((await POST(request({ teacherProgramId: 99 }))).status).toBe(403)
+    getViewer.mockResolvedValue({ id: 'guest-1', role: 'ALUMNO', isGuest: true, displayName: 'I', email: null })
+    expect((await POST(request({ teacherProgramId: 99 }))).status).toBe(403)
+    expect(generateObject).not.toHaveBeenCalled()
+  })
+
+  it('una materia de docente no cambia nada: el tope de siempre y sin anotar usos', async () => {
+    getViewer.mockResolvedValue(SOFIA)
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+    await POST(request({ teacherProgramId: 16 }))
+    expect(guardAiCall).toHaveBeenCalledWith(expect.objectContaining({ bucket: 'quiz_generation' }))
+    expect(registrarUso).not.toHaveBeenCalled()
   })
 })
 
