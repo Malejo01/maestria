@@ -69,6 +69,9 @@ export type Desenlace =
   | { tipo: 'reintentar' }
   | { tipo: 'error'; mensaje: string }
 
+/** O4: el evento con la racha que devolvió el servidor al guardar. */
+export const EVENTO_RACHA = 'maestria:racha'
+
 export async function enviarPendiente(fetchImpl: typeof fetch, pendiente: Pendiente): Promise<Desenlace> {
   let respuesta: Response
   try {
@@ -81,7 +84,11 @@ export async function enviarPendiente(fetchImpl: typeof fetch, pendiente: Pendie
     return { tipo: 'reintentar' }
   }
   if (respuesta.ok) {
-    const datos = (await respuesta.json().catch(() => null)) as { quizAttemptId?: unknown } | null
+    const datos = (await respuesta.json().catch(() => null)) as { quizAttemptId?: unknown; racha?: unknown } | null
+    // O4: la racha la cuenta el servidor; la pantalla se entera por este evento.
+    if (typeof datos?.racha === 'number' && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(EVENTO_RACHA, { detail: datos.racha }))
+    }
     const id = Number(datos?.quizAttemptId)
     return { tipo: 'guardado', ...(Number.isFinite(id) && id > 0 ? { quizAttemptId: id } : {}) }
   }

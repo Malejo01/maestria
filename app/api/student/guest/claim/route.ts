@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { pasarRachaDeInvitado } from '@/lib/racha-server'
 import { sql } from '@/lib/db'
 import { traspasarDeInvitadoACuenta } from '@/lib/destinatario-server'
 import { auth } from '@/auth'
@@ -80,6 +81,9 @@ export async function POST() {
     await sql`DELETE FROM topic_mastery WHERE user_id = ${guestId}`
 
     await sql`UPDATE student_misconceptions SET user_id = ${userId} WHERE user_id = ${guestId}`
+
+    // O4: la racha del invitado pasa a la cuenta, si la cuenta no tenía.
+    await pasarRachaDeInvitado(guestId, userId)
 
     // Memberships the account already has win; the guest's duplicates go away.
     await sql`

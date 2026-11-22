@@ -15,7 +15,7 @@ import { WeakPointsSection } from '@/components/weak-points-section'
 import { YaLoDominas } from '@/components/alumno/ya-lo-dominas'
 import { separarDominados, type TemaDominado } from '@/lib/a-reforzar'
 import { TipsDelAlumno } from '@/components/alumno/tips-del-alumno'
-import { MI_PROGRESO } from '@/lib/textos'
+import { MI_PROGRESO, RESULTADOS } from '@/lib/textos'
 import { DiagnosticReportCard } from '@/components/diagnostic-report-card'
 import { CargaFallida } from '@/components/carga-fallida'
 import { pedirJson } from '@/lib/pedir-json'
@@ -441,7 +441,7 @@ function HistoryPageContent() {
                     </div>
                     <div className="text-xl font-black text-foreground leading-none">{stats.total}</div>
                     <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide leading-tight">
-                      Evaluaciones
+                      {MI_PROGRESO.cuestionarios}
                     </div>
                   </div>
                 </Card>
@@ -513,30 +513,30 @@ function HistoryPageContent() {
                     )
                   })}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2" role="group" aria-label={MI_PROGRESO.filtroModo}>
                   {(['all', 'teorico', 'practico', 'mixto'] as ModeFilter[]).map((m) => (
                     <button
                       key={m}
                       type="button"
                       onClick={() => setModeFilter(m)}
                       className={cn(
-                        'px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all',
+                        'whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-bold border-2 transition-all',
                         modeFilter === m
                           ? 'bg-primary text-primary-foreground border-transparent '
                           : 'bg-card/80 border-border text-muted-foreground hover:border-primary/40'
                       )}
                     >
-                      {m === 'all' ? 'Todos los modos' : m === 'teorico' ? 'Teórico' : m === 'practico' ? 'Práctico' : 'Mixto'}
+                      {MI_PROGRESO.modos[m]}
                     </button>
                   ))}
                 </div>
               </section>
 
-              {/* ── Evaluaciones ────────────────────────── */}
+              {/* ── Lo último que hizo ──────────────────── */}
               <section>
                 <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-3 px-1 flex items-center gap-2">
                   <BookOpen className="w-4 h-4" />
-                  Evaluaciones recientes
+                  {MI_PROGRESO.ultimos}
                   {filteredAttempts.length !== attempts.length && (
                     <span className="text-primary">({filteredAttempts.length})</span>
                   )}
@@ -686,12 +686,12 @@ function HistoryPageContent() {
                                                 {loadingExplanation === answer.id ? (
                                                   <>
                                                     <Cargando className="w-3 h-3" />
-                                                    Cargando...
+                                                    {RESULTADOS.cargando}
                                                   </>
                                                 ) : (
                                                   <>
                                                     <AlertCircle className="w-3 h-3" />
-                                                    Explicar Error
+                                                    {RESULTADOS.explicarError}
                                                   </>
                                                 )}
                                               </Button>
