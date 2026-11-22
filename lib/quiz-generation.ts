@@ -14,6 +14,7 @@
  * y las ramas tolerantes de abajo están tal como estaban.
  */
 import { generateObject, generateText, type RepairTextFunction } from 'ai'
+import { seccionEvitar, type PreguntaAEvitar } from '@/lib/valoraciones'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 import { buildEducationSystemPrompt, type ContextoProfesionalCarrera } from '@/lib/education-context'
@@ -789,6 +790,11 @@ export interface QuizRequestParams {
    * sale del cuerpo de la request.
    */
   perfilAlumnos?: PerfilAlumnos | null
+  /**
+   * O8: los últimos pulgares abajo del docente en esta materia ("Evitá
+   * esto"). Los carga la ruta en el servidor, NUNCA salen del cuerpo.
+   */
+  evitar?: PreguntaAEvitar[]
 }
 
 export type ResolveQuizRequestResult =
@@ -973,6 +979,7 @@ export async function generateQuiz(
     explicitQuestionTypes,
     rejectionNote,
     perfilAlumnos,
+    evitar,
   } = params
 
   const topicsText = topics.map((t: { id: string; name: string }) => `- ${t.name}`).join('\n')
@@ -1054,18 +1061,21 @@ Generá una pregunta que NO tenga ese problema. El motivo describe qué corregir
 no de qué tratar: el tema y el tipo de pregunta no cambian.`
       : ''
 
+  // O8: lo que el docente marcó con pulgar abajo en esta materia.
+  const evitarBlock = seccionEvitar(evitar ?? [])
+
   const buildPreviousNote = () => {
     if (askedTexts.length === 0) {
       const base =
         previousQuestionIds && previousQuestionIds.length > 0 ? 'Genera preguntas diferentes a las anteriores.' : ''
-      return base + rejectionBlock
+      return base + rejectionBlock + evitarBlock
     }
     return `NO repitas ni reformules ninguna de estas preguntas (ya fueron usadas):
 ${askedTexts.map((question: string, index: number) => `${index + 1}. ${question}`).join('\n')}
 
 Una pregunta cuenta como repetida aunque cambies el tipo, el formato o la redacción,
 si se resuelve con la misma cuenta o evalúa el mismo caso puntual. Usá números o
-situaciones diferentes.${rejectionBlock}`
+situaciones diferentes.${rejectionBlock}${evitarBlock}`
   }
 
   /** Signatures seen in THIS run — see numericSignature for why it is not global. */

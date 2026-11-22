@@ -15,6 +15,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O5 · Los cuestionarios viejos muestran fracciones | hecho | [#80](https://github.com/Malejo01/maestria/pull/80) | Tests de la fracción simple (exacta y periódica), cómo se muestra y la corrección con las dos formas; en staging, la revisión del cuestionario 26 muestra "5/12 (0,4167 ± 0,001)"; `npm run e2e` en verde | US$0 |
 | O6 · Reporte de diagnóstico parametrizado por programa | hecho | [#81](https://github.com/Malejo01/maestria/pull/81) | Test de caracterización del 10/08 escrito antes de cambiar nada (sigue igual); vínculo por temas con tests; en staging, el 10/08 leído contra "Matemática · 3er Año" de Irina | US$0 |
 | O7 · Traer alumnos de otro grupo | hecho | [#82](https://github.com/Malejo01/maestria/pull/82) | Tests del diálogo y de la API (sólo los elegidos, origen propio, plan vencido); en staging Irina trajo a Sofía de Lengua a "Prueba M3"; `npm run e2e` en verde | US$0 |
+| O8 · Pulgar arriba / abajo del docente (migración 033) | hecho | (este PR) | Tests de la regla de recorte, la API (propio, válvula), y que la generación recibe "Evitá esto" (lo del cuerpo se ignora); en staging Irina valoró dos preguntas del cuestionario 39; contador en `/admin/ai-usage` | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -99,6 +100,14 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - **Tope del plan:** traer alumnos propios no suma personas al conteo (cada alumno cuenta una vez en todos los grupos), así que no puede pasarse del cupo; con el plan vencido el endpoint frena como siempre (402 y pantalla de límite).
 - Lo encontró la captura: a 390 el botón con un nombre de grupo largo desbordaba el diálogo; corregido.
 
+### O8 · Pulgares del docente
+
+- En *Revisar y editar*, debajo de cada pregunta: "Está bien" / "Está mal"; el segundo pide el motivo con chips (*Fuera del programa, Mal redactada, Respuesta incorrecta, Muy fácil, Muy difícil, Tipo equivocado*) y se guarda al elegirlo. Tocar el marcado lo saca. Con cambios sin guardar, los pulgares esperan (el servidor valora lo guardado).
+- Migración **033**: `pregunta_valoraciones` (docente, cuestionario, materia, índice, valor, motivo, la consigna como estaba, fecha; una por pregunta y docente).
+- **"Evitá esto"**: los últimos 10 pulgares abajo de ese docente en esa materia entran al prompt (generar, regenerar una pregunta, armar diagnóstico, y la práctica de sus alumnos en el grupo), cargados en el servidor. Regla de recorte (`seccionEvitar`, con test): los más nuevos, hasta 10; cada consigna hasta 220 caracteres; el total hasta 1.800, y el renglón que no entra entero no entra.
+- `/admin/ai-usage` suma el contador de pulgares abajo por motivo (y el total de arriba).
+- Sin la 033: no se ven guardados, guardar responde 503 con el motivo, y la generación sigue sin la sección.
+
 ## Pasos manuales de Mauro, en orden
 
 1. Migración 030 en producción:
@@ -114,7 +123,11 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
    ```powershell
    $env:CONFIRM_PRODUCTION="noisy-smoke-23995229"; npx tsx scripts/run-migration-032.ts
    ```
-4. Corrección en lote de las 18 preguntas marcadas de producción. Primero sólo mirar (no escribe; la IA sí se llama, ~US$0,01):
+4. Migración 033 en producción:
+   ```powershell
+   $env:CONFIRM_PRODUCTION="noisy-smoke-23995229"; npx tsx scripts/run-migration-033.ts
+   ```
+5. Corrección en lote de las 18 preguntas marcadas de producción. Primero sólo mirar (no escribe; la IA sí se llama, ~US$0,01):
    ```powershell
    npx tsx scripts/qa/corregir-tipos.ts --desde=2026-11-20
    ```
@@ -129,6 +142,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 
 ## Datos de prueba que quedaron en staging
 
+- Dos valoraciones de Irina en el cuestionario 39 (pregunta 1 arriba; pregunta 2 abajo, "Muy fácil"): entran al prompt de su Matemática 3.º Sec.
 - Sofía también quedó en el grupo 4 "Prueba M3 · Matemática 1 Virtual" (traída desde Lengua en la prueba de O7).
 - Racha de Sofía en `rachas_alumno` (0, migrada del navegador) y su intento en "Lengua · 4to Año · 11/7/2026" (2/10).
 - Temas "a reforzar" marcados como superados a mano por Irina: #58 (Tomás Villa) y #57 (Sofía Ramírez), los dos de Lengua. Se devuelven con "Volver a reforzar" en la ficha.

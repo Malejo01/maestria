@@ -696,3 +696,27 @@ describe('POST — J3: la ficha de los alumnos entra al prompt', () => {
     expect(perfilSinRomper).not.toHaveBeenCalled()
   })
 })
+
+describe('POST — O8: los pulgares abajo de la materia entran como "Evitá esto"', () => {
+  const promptDelUsuario = () => String(generateObject.mock.calls[0][0].prompt)
+
+  it('con materia: se cargan en el servidor y llegan al prompt', async () => {
+    getViewer.mockResolvedValue({ id: 'doc', role: 'DOCENTE', isGuest: false, email: 'd@x.com' })
+    perfilSinRomper.mockResolvedValue(null)
+    sqlMock.mockImplementation(async (strings: TemplateStringsArray) =>
+      strings.join('?').includes('pregunta_valoraciones') ? [{ enunciado: '¿Es 7 primo?', motivo: 'tipo_equivocado' }] : [],
+    )
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+
+    expect((await POST(request({ teacherProgramId: 13 }))).status).toBe(200)
+    expect(promptDelUsuario()).toContain('EVITÁ ESTO')
+    expect(promptDelUsuario()).toContain('«¿Es 7 primo?» (tipo equivocado)')
+  })
+
+  it('lo que venga en el cuerpo se ignora, y sin materia no hay sección', async () => {
+    generateObject.mockResolvedValue({ object: { questions: questions(3) }, usage: {} })
+    await POST(request({ evitar: [{ enunciado: 'INYECTADO', motivo: 'muy_facil' }] }))
+    expect(promptDelUsuario()).not.toContain('INYECTADO')
+    expect(promptDelUsuario()).not.toContain('EVITÁ ESTO')
+  })
+})

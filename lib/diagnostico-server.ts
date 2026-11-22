@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { preguntasAEvitar } from '@/lib/valoraciones-server'
 import { etiquetaDeMateriaDe } from '@/lib/etiqueta-materia-server'
 import { invitacionDe } from '@/lib/alumnos-docente'
 import { leerInvitaciones, leerMiembros } from '@/lib/alumnos-docente-server'
@@ -207,6 +208,8 @@ export async function parametrosDeGeneracion(
     difficulty: 'intermedio',
     explicitQuestionTypes: TIPOS_DIAGNOSTICO,
     perfilAlumnos: await perfilSinRomper(teacherId, grupo.materiaId),
+    // O8: "Evitá esto", con los pulgares abajo de esta materia.
+    evitar: await preguntasAEvitar(grupo.materiaId),
   }
 }
 

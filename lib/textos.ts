@@ -896,6 +896,29 @@ export const BUZON = {
   tuMensaje: 'Tu mensaje',
 } as const
 
+/** O8: pulgar arriba / abajo del docente en cada pregunta. */
+export const VALORACIONES = {
+  arriba: 'Está bien',
+  abajo: 'Está mal',
+  porQue: '¿Qué tiene?',
+  motivos: {
+    fuera_del_programa: 'Fuera del programa',
+    mal_redactada: 'Mal redactada',
+    respuesta_incorrecta: 'Respuesta incorrecta',
+    muy_facil: 'Muy fácil',
+    muy_dificil: 'Muy difícil',
+    tipo_equivocado: 'Tipo equivocado',
+  },
+  guardada: 'Gracias: la próxima generación de esta materia lo tiene en cuenta.',
+  guardaPrimero: 'Guardá los cambios para valorar las preguntas',
+  noSeGuardo: 'No se pudo guardar la valoración.',
+  // /admin/ai-usage
+  titulo: 'Valoraciones de los docentes',
+  detalle: 'Pulgares abajo por motivo, en toda la app. Entran al prompt de la materia como "Evitá esto".',
+  arribaTotal: (n: number) => (n === 1 ? '1 pulgar arriba' : `${n} pulgares arriba`),
+  sinDatos: 'Todavía no hay valoraciones.',
+} as const
+
 /** O6: el reporte del diagnóstico del 10/08, leído contra un programa. */
 export const DIAGNOSTICO_DEL_CURSO = {
   leerContra: 'Leer contra el programa de',

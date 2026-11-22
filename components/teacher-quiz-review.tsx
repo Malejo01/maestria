@@ -42,6 +42,10 @@ import { CORREGIR_TIPOS, TECLADO_MATEMATICO, TIPO_INCOHERENTE } from '@/lib/text
 import { problemaDeTipo } from '@/lib/validar-tipo-de-pregunta'
 import { contarMarcadas } from '@/lib/corregir-tipos'
 import { CorregirTiposDialog } from '@/components/docente/corregir-tipos-dialog'
+import { ValorarPregunta } from '@/components/docente/valorar-pregunta'
+import { pedirJson } from '@/lib/pedir-json'
+import type { Motivo, Valoracion } from '@/lib/valoraciones'
+import { VALORACIONES } from '@/lib/textos'
 
 /**
  * Revisión y edición de un cuestionario guardado, pregunta por pregunta.
@@ -130,6 +134,52 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
   /** N2: el diálogo de corregir en lote lo marcado. */
   const [corrigiendo, setCorrigiendo] = useState(false)
   const marcadas = useMemo(() => contarMarcadas(questions), [questions])
+
+  // O8: el pulgar del docente en cada pregunta (lo guardado, por índice).
+  const [valoraciones, setValoraciones] = useState<Map<number, Valoracion>>(new Map())
+  useEffect(() => {
+    let vigente = true
+    void pedirJson<{ valoraciones: Valoracion[] }>(`/api/teacher/quizzes/${quiz.id}/valoraciones`).then((r) => {
+      if (vigente && !('error' in r) && Array.isArray(r.data?.valoraciones)) {
+        setValoraciones(new Map(r.data.valoraciones.map((v) => [v.indice, v])))
+      }
+    })
+    return () => {
+      vigente = false
+    }
+  }, [quiz.id])
+
+  const valorar = useCallback(
+    async (indice: number, valor: 1 | -1, motivo: Motivo | null) => {
+      const r = await pedirJson(`/api/teacher/quizzes/${quiz.id}/valoraciones`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ indice, valor, motivo }),
+      })
+      if ('error' in r) {
+        toast({ variant: 'destructive', title: VALORACIONES.noSeGuardo, description: r.error })
+        return false
+      }
+      setValoraciones((prev) => new Map(prev).set(indice, { indice, valor, motivo }))
+      if (valor === -1) toast({ title: VALORACIONES.guardada })
+      return true
+    },
+    [quiz.id, toast],
+  )
+
+  const sacarValoracion = useCallback(
+    async (indice: number) => {
+      const r = await pedirJson(`/api/teacher/quizzes/${quiz.id}/valoraciones?indice=${indice}`, { method: 'DELETE' })
+      if ('error' in r) return false
+      setValoraciones((prev) => {
+        const sig = new Map(prev)
+        sig.delete(indice)
+        return sig
+      })
+      return true
+    },
+    [quiz.id],
+  )
   const [salidaPendiente, setSalidaPendiente] = useState(false)
 
   const sucio = useMemo(() => stableStringify(questions) !== guardadoComo, [questions, guardadoComo])
@@ -504,6 +554,14 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
                 ) : (
                   <VistaDePregunta question={q} />
                 )}
+
+                <ValorarPregunta
+                  valoracion={valoraciones.get(index) ?? null}
+                  deshabilitado={sucio}
+                  titleDeshabilitado={VALORACIONES.guardaPrimero}
+                  alValorar={(valor, motivo) => valorar(index, valor, motivo)}
+                  alSacar={() => sacarValoracion(index)}
+                />
               </Card>
             </li>
           )

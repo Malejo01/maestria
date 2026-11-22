@@ -12,6 +12,7 @@
  * ahí la generación.
  */
 import { guardAiCall } from '@/lib/ai-guard'
+import { preguntasAEvitar } from '@/lib/valoraciones-server'
 import { captureRouteFailure } from '@/lib/observability'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { generateQuiz, resolveQuizRequest } from '@/lib/quiz-generation'
@@ -40,6 +41,9 @@ export async function POST(req: Request) {
       params.perfilAlumnos = await perfilSinRomper(viewer.id, params.teacherProgramId)
     }
   }
+  // O8: los pulgares abajo del docente en esa materia ("Evitá esto"), también
+  // para la práctica de sus alumnos en el grupo. Nunca lanza.
+  if (params.teacherProgramId) params.evitar = await preguntasAEvitar(params.teacherProgramId)
 
   // Recién acá, con el nivel ya resuelto, para que el mensaje de corte le hable
   // a un chico de primaria distinto que a un estudiante de terciario. Todo lo
