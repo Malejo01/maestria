@@ -21,7 +21,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O11 · Títulos de unidad en la misma línea que los temas | hecho | [#86](https://github.com/Malejo01/maestria/pull/86) | Tests con el caso de la tanda I y casos que no se tocan; test de la ruta `extract` | US$0 |
 | O12 · El embudo del docente | hecho | [#87](https://github.com/Malejo01/maestria/pull/87) | Tests de la ubicación, el orden y el conteo, y el 404 para no admins; en staging, con los 7 docentes | US$0 |
 | O13 · Primer uso de un docente nuevo sin ayuda | hecho | [#88](https://github.com/Malejo01/maestria/pull/88) | Recorrido con Playwright a 390 de punta a punta en staging (docente recién creado → alumno → tarea → resultado); 2 arreglos, 4 propuestas | US$0 (IA simulada) |
-| O19 · Limpieza: placeholders de v0 | hecho | (este PR) | `grep` sin referencias (sólo el roadmap); build en verde | US$0 |
+| O19 · Limpieza: placeholders de v0 | hecho | [#90](https://github.com/Malejo01/maestria/pull/90) | `grep` sin referencias (sólo el roadmap); build en verde | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
