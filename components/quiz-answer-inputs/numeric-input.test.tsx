@@ -167,7 +167,8 @@ describe('estado ya enviado', () => {
         onChange={vi.fn()}
       />
     )
-    expect(document.body.textContent).toMatch(/Respuesta correcta: 3,5/)
+    // O5: 3,5 es 7/2: la fracción va adelante y el decimal entre paréntesis.
+    expect(document.body.textContent).toMatch(/Respuesta correcta: .*\(3,5\)/)
   })
 
   it('no muestra el aviso de interpretación una vez enviada', () => {
@@ -195,7 +196,7 @@ describe('estado ya enviado', () => {
         onChange={vi.fn()}
       />
     )
-    expect(document.body.textContent).toMatch(/Respuesta correcta: 0,9167/)
+    expect(document.body.textContent).toMatch(/Respuesta correcta: .*\(0,9167\)/)
   })
 
   it('K2: si la pregunta pide una fracción, el campo lo dice y pasa el texto tal cual', () => {

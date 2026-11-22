@@ -11,7 +11,7 @@
  * exige punto decimal en las respuestas numéricas (`{#0.75:0.01}`).
  */
 
-import { fraccionEnLatex, leerRespuesta } from '@/lib/fraccion'
+import { fraccionDeDecimal, fraccionEnLatex, leerRespuesta } from '@/lib/fraccion'
 import { esFactorizacion, factorizacionEnLatex, leerProducto, productoEscrito } from '@/lib/factorizacion'
 
 const MAX_DECIMALES = 4
@@ -106,7 +106,37 @@ export function respuestaNumerica(
     return fraccionEnLatex(fraccion)
   }
   const valor = formatearNumero(Number(correcta))
-  return typeof tolerancia === 'number' && tolerancia > 0 ? `${valor} (± ${formatearNumero(tolerancia)})` : valor
+  const margen = typeof tolerancia === 'number' && tolerancia > 0 ? ` ± ${formatearNumero(tolerancia)}` : ''
+  // O5: las preguntas de antes de K2 no traen `fraccion`. Si el decimal es una
+  // fracción simple, se muestra la fracción además del decimal: "3/4 (0,75)".
+  // Con margen, sólo si es periódica ("5/12 (0,4167 ± 0,001)": ahí el margen
+  // es el redondeo); "3,5 ± 0,1" es una medida y queda como está. Sólo al
+  // mostrar: el dato guardado no se toca.
+  const simple = fraccionSimple(Number(correcta))
+  if (simple && (!margen || esPeriodica(simple))) return `${fraccionEnLatex(simple)} (${valor}${margen})`
+  return margen ? `${valor} (±${margen.slice(2)})` : valor
+}
+
+/** ¿El decimal de esta fracción no termina? (el denominador tiene otro primo que 2 y 5) */
+function esPeriodica({ denominador }: { denominador: number }): boolean {
+  let d = Math.abs(denominador)
+  while (d % 2 === 0) d /= 2
+  while (d % 5 === 0) d /= 5
+  return d > 1
+}
+
+/** O5: el denominador más grande que cuenta como "fracción simple". */
+export const DENOMINADOR_SIMPLE = 20
+
+/**
+ * La fracción simple de un decimal (denominador hasta 20, irreducible), si la
+ * hay: `0.75` → 3/4; `0.9166666666666666` (lo que guarda la máquina de 11/12)
+ * → 11/12. Un entero, o un decimal que no es una fracción chica, da null.
+ */
+export function fraccionSimple(valor: number): { numerador: number; denominador: number } | null {
+  if (!Number.isFinite(valor) || Number.isInteger(valor)) return null
+  const f = fraccionDeDecimal(valor, DENOMINADOR_SIMPLE)
+  return f && f.denominador > 1 ? f : null
 }
 
 /**

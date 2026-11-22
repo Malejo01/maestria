@@ -35,7 +35,9 @@ describe('preguntaImpresa — la respuesta correcta, escrita, para la hoja del d
     expect(preguntaImpresa({ type: 'numeric', question: '¿?', correctAnswer: 3.5, tolerance: 0.1 }, 0).correcta).toBe('3,5 (± 0,1)')
   })
   it('K1: el decimal de máquina sale redondeado y con coma', () => {
-    expect(preguntaImpresa({ type: 'numeric', question: '¿?', correctAnswer: 0.9166666666666666 }, 0).correcta).toBe('0,9167')
+    // O5: un decimal que es una fracción simple suma la fracción.
+    expect(preguntaImpresa({ type: 'numeric', question: '¿?', correctAnswer: 0.9166666666666666 }, 0).correcta).toBe('$\\frac{11}{12}$ (0,9167)')
+    expect(preguntaImpresa({ type: 'numeric', question: '¿?', correctAnswer: 0.123456 }, 0).correcta).toBe('0,1235')
     expect(preguntaImpresa({ type: 'numeric', question: '¿?', correctAnswer: 12500 }, 0).correcta).toBe('12.500')
   })
   it('verdadero o falso', () => {

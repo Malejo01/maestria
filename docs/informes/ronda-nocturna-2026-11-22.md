@@ -12,6 +12,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O2 · Cerrar el ciclo de "A reforzar" (migración 031) | hecho | [#77](https://github.com/Malejo01/maestria/pull/77) | Tests de la regla con nombres reales de temas, del servidor y de permisos; simulación sobre staging; el docente marcó un tema desde la ficha; "Ya lo dominás" de Sofía; `npm run e2e` en verde | US$0 |
 | O3 · La práctica del grupo usa la materia del grupo | hecho | [#78](https://github.com/Malejo01/maestria/pull/78) | Tests de los parámetros, los ejemplos por carrera y la persona de didáctica; 3 + 3 prácticas con IA real antes/después; `npm run e2e` en verde | US$0,025 |
 | O4 · Textos viejos del alumno y la racha en la base (migración 032) | hecho | [#79](https://github.com/Malejo01/maestria/pull/79) | Tests de la regla, el servidor (válvula) y la migración desde el navegador; en staging Sofía hizo una tarea: racha migrada y anotada; capturas a 390; `npm run e2e` en verde | US$0 |
+| O5 · Los cuestionarios viejos muestran fracciones | hecho | [#80](https://github.com/Malejo01/maestria/pull/80) | Tests de la fracción simple (exacta y periódica), cómo se muestra y la corrección con las dos formas; en staging, la revisión del cuestionario 26 muestra "5/12 (0,4167 ± 0,001)"; `npm run e2e` en verde | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -74,6 +75,13 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - Staging: Sofía entró, su racha del navegador (0) pasó a la base (`migrada_de_local`), hizo una tarea (2/10) y la fila se anotó.
 - **Lo encontró la prueba y no es de este ítem:** a 390 px el botón flotante "Reportar un problema" tapa el borde derecho de "Siguiente" en el cuestionario (Playwright no pudo tocarlo). Ya figuraba como punto (4) de la tanda H; sigue abierto.
 - La pestaña "A reforzar (3)" cuenta los puntos débiles del navegador y la tarjeta "A reforzar 0" los de la base: no coinciden. Viene de antes (no lo tocó O4); con O2 se acercan, pero los del navegador siguen siendo otra fuente.
+
+### O5 · Fracciones en los cuestionarios viejos
+
+- `respuestaNumerica` ([lib/numeros.ts](../../lib/numeros.ts)): una `numeric` sin `fraccion` cuyo decimal es una fracción simple (denominador ≤ 20, exacta o periódica de máquina, `fraccionSimple`) se muestra "3/4 (0,75)". Con margen, sólo si es periódica ("5/12 (0,4167 ± 0,001)": ahí el margen es redondeo); "3,5 ± 0,1" es una medida y queda igual. Vale en todas las pantallas que ya usaban la función (campo del alumno, resumen, Mi progreso, revisión, hoja impresa). **No se reescribe ningún dato.**
+- La corrección ya aceptaba las dos formas (K2: `3/4`, `6/8` y `0,75` valen para 0,75; `11/12` para la periódica): quedó fijado con tests.
+- No encontré el cuestionario 34 de producción en staging (allá el 34 es otro); el caso equivalente es el 26 de Irina (5/12 con margen 0,001), que antes se mostraba "0,4167 (± 0,001)".
+- De paso: la prueba e2e del invitado se iba a `/aulas` antes de que el intento terminara de guardarse (falló una vez de cuatro); ahora espera el "Guardado".
 
 ## Pasos manuales de Mauro, en orden
 
