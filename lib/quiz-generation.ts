@@ -370,6 +370,7 @@ async function generateQuizBatchWithFallback({
   grado,
   contextoProfesional,
   perfilAlumnos,
+  contenido,
   questionTypes,
   questionMix,
   onUsage,
@@ -387,6 +388,8 @@ async function generateQuizBatchWithFallback({
   grado?: string
   contextoProfesional?: ContextoProfesionalCarrera
   perfilAlumnos?: PerfilAlumnos | null
+  /** O3: unidades y temas de la tanda (para reconocer una unidad de didáctica). */
+  contenido?: { unidades: string[]; temas: string[] }
   questionTypes: QuestionType[]
   /** Reparto por tipo que declara el programa de cátedra (migración 023). */
   questionMix?: QuestionTypeMix
@@ -404,6 +407,7 @@ async function generateQuizBatchWithFallback({
     difficulty,
     contextoProfesional,
     perfilAlumnos,
+    contenido,
   })
 
   const systemPrompt = `${educationPrompt}
@@ -998,6 +1002,14 @@ export async function generateQuiz(
       : [],
   })
 
+  // O3: con qué unidades y temas se genera, para la persona de didáctica.
+  const contenido = {
+    unidades: (Array.isArray(scopedUnits) ? scopedUnits : [])
+      .map((unit: { name?: unknown }) => (typeof unit?.name === 'string' ? unit.name : ''))
+      .filter((name: string) => name.length > 0),
+    temas: (topics ?? []).map((t: { name?: unknown }) => (typeof t?.name === 'string' ? t.name : '')).filter(Boolean),
+  }
+
   const finalQuestionTypes = resolveQuestionTypes(explicitQuestionTypes, suggestedMix)
 
   // La mezcla se recorta a los tipos que finalmente se van a usar y se
@@ -1134,6 +1146,7 @@ situaciones diferentes.${rejectionBlock}`
           grado,
           contextoProfesional,
           perfilAlumnos,
+          contenido,
           questionTypes: teoricoQuestionTypes,
           questionMix: teoricoQuestionMix,
           onUsage,
@@ -1163,6 +1176,7 @@ situaciones diferentes.${rejectionBlock}`
           grado,
           contextoProfesional,
           perfilAlumnos,
+          contenido,
           questionTypes: finalQuestionTypes,
           questionMix,
           onUsage,
@@ -1204,6 +1218,7 @@ situaciones diferentes.${rejectionBlock}`
       grado,
       contextoProfesional,
       perfilAlumnos,
+      contenido,
       questionTypes: batchQuestionTypes,
       questionMix: batchQuestionMix,
       onUsage,

@@ -99,10 +99,29 @@ function estrategiaDeLaMateria(materia: string): string {
 - Distractores diagnósticos: Confusiones conceptuales típicas del tema.`
 }
 
+/**
+ * O3 · ¿Es contenido de didáctica (de la matemática)? La persona de Superior +
+ * Matemática exige demostración y pone 0-40 % al resultado sin desarrollo: no
+ * calza con una unidad que pregunta cómo se enseña. Cuenta como didáctica si
+ * lo dice la materia ("Matemática y su Didáctica", "Didáctica de la
+ * Matemática"), alguna unidad, o la mitad de los temas.
+ */
+const DIDACTICA =
+  /did[aá]ctic|ense[nñ]anza|aprendizaje|transposici[oó]n|secuencia did|planificaci[oó]n|obst[aá]culo|dise[nñ]o curricular|interven(ci[oó]n|ir) docente|errores? (de|en) los alumnos/i
+
+export function esContenidoDeDidactica(fuentes: { materia?: string | null; unidades?: readonly string[]; temas?: readonly string[] }): boolean {
+  if (DIDACTICA.test(fuentes.materia ?? '')) return true
+  if ((fuentes.unidades ?? []).some((u) => DIDACTICA.test(u))) return true
+  const temas = (fuentes.temas ?? []).filter((t) => t.trim())
+  return temas.length > 0 && temas.filter((t) => DIDACTICA.test(t)).length * 2 >= temas.length
+}
+
 export function getEducationContext(
   nivelStr?: string,
   gradoStr?: string,
-  materia: string = 'la materia'
+  materia: string = 'la materia',
+  /** O3: unidades y temas de lo que se genera, para reconocer una unidad de didáctica. */
+  contenido?: { unidades?: readonly string[]; temas?: readonly string[] },
 ): EducationContext {
   const nivel = normalizarNivel(nivelStr) ?? NIVEL_POR_DEFECTO
 
@@ -262,7 +281,19 @@ ${SIN_EMOJIS}`
 - Plantea problemas con precisión conceptual y lenguaje universitario sin simplificaciones artificiales.
 ${SIN_EMOJIS}`
 
-  if (materia.toLowerCase().includes('matemát') || materia.toLowerCase().includes('matemat') || materia.toLowerCase().includes('álgebra') || materia.toLowerCase().includes('algebra') || materia.toLowerCase().includes('análisis') || materia.toLowerCase().includes('analisis') || materia.toLowerCase().includes('cálculo')) {
+  const esMatematica = materia.toLowerCase().includes('matemát') || materia.toLowerCase().includes('matemat') || materia.toLowerCase().includes('álgebra') || materia.toLowerCase().includes('algebra') || materia.toLowerCase().includes('análisis') || materia.toLowerCase().includes('analisis') || materia.toLowerCase().includes('cálculo')
+  if (esMatematica && esContenidoDeDidactica({ materia, ...contenido })) {
+    // Persona 5b (O3): Didáctica de la Matemática en Superior. Sigue siendo
+    // formal y rigurosa en la matemática, pero lo que se evalúa es el saber
+    // didáctico (cómo se enseña, qué errores aparecen, qué consigna elegir):
+    // no se exige demostración ni se castiga la respuesta sin desarrollo formal.
+    rolDocente = `Profesor/a de Didáctica de la Matemática en un profesorado`
+    registroLinguistico += `\n- Formal y preciso en la matemática, pero el foco es didáctico: situaciones de aula, producciones de alumnos, consignas, errores frecuentes y decisiones de enseñanza. NO pidas demostraciones formales.`
+    rubricaCorta = `RÚBRICA PARA RESPUESTA CORTA (Didáctica de la Matemática):
+- Excelente (100%): Fundamenta la decisión o el análisis didáctico con un criterio claro (qué se enseña, por qué, qué error se previene) y la matemática involucrada es correcta.
+- Parcial (70%): La idea didáctica es correcta pero está poco fundamentada, o hay una imprecisión matemática menor.
+- A mejorar (40%): Respuesta genérica sin criterio didáctico, o con un error conceptual matemático.`
+  } else if (esMatematica) {
     // Persona 5: Matemática Superior
     rolDocente = `Profesor/a Universitario/a de Matemática implacable en lógica y rigor`
     registroLinguistico += `\n- Estrictamente formal, objetivo, riguroso e implacable en la lógica. Uso absoluto de terminología matemática precisa. Fomenta el pensamiento abstracto y la demostración.`
@@ -483,8 +514,37 @@ export interface ContextoProfesionalCarrera {
  * otras quince reglas del prompt y el modelo vuelve al ejercicio genérico, que
  * es el default de cualquier corpus de matemática.
  */
+/**
+ * O3 · Los ejemplos y el vocabulario de la regla de contextualización, según
+ * la carrera. Estaban escritos a mano para Sistemas (algoritmos, usuarios de
+ * una app, bases de datos) y se filtraban a cualquier carrera con contexto
+ * profesional cargado: el Profesorado recibía ejemplos de inventarios.
+ *   - Sistemas / Informática → los de siempre.
+ *   - Profesorado / Educación → situaciones de aula de primaria.
+ *   - Otra carrera → sin ejemplos (mejor nada que los de otra).
+ */
+export function ejemplosDeCarrera(carrera: string | null | undefined): { ejemplos: string; vocabulario: string } | null {
+  const c = (carrera ?? '').toLowerCase()
+  if (/sistem|inform[aá]t|computaci|software|programaci/.test(c)) {
+    return {
+      ejemplos:
+        'validar un algoritmo con tablas de verdad, modelar el crecimiento de usuarios de una aplicación, optimizar un inventario, consultar una base de datos con operaciones de conjuntos',
+      vocabulario: 'usuarios, registros, consultas, procesos, inventario, costos, rendimiento',
+    }
+  }
+  if (/profesorad|docen|magisteri|educaci[oó]n (primaria|inicial|b[aá]sica)|maestr/.test(c)) {
+    return {
+      ejemplos:
+        'analizar la resolución de un alumno de 4.º grado que suma fracciones sumando numeradores y denominadores, elegir el problema para introducir la división en 3.er grado, anticipar los errores de una consigna de proporcionalidad, ordenar una secuencia de actividades sobre el sistema de numeración',
+      vocabulario: 'alumnos, consigna, producción, error, intervención docente, secuencia, grado, aula',
+    }
+  }
+  return null
+}
+
 function buildProfessionalContextSection(ctx: ContextoProfesionalCarrera | undefined): string {
-  if (!ctx || ctx.unidades.length === 0) return ''
+  if (!ctx || ctx.unidades.length === 0 || !ctx.carrera.trim()) return ''
+  const deLaCarrera = ejemplosDeCarrera(ctx.carrera)
 
   const unidades = ctx.unidades
     .map((u) => {
@@ -502,8 +562,8 @@ Los estudiantes cursan ${ctx.carrera}. Esta no es una materia de matemática gen
 ${unidades}
 
 REGLAS DE CONTEXTUALIZACIÓN:
-1. Al menos la MITAD de las preguntas deben estar situadas en un problema real del dominio profesional listado arriba (por ejemplo: validar un algoritmo con tablas de verdad, modelar el crecimiento de usuarios de una aplicación, optimizar un inventario, consultar una base de datos con operaciones de conjuntos).
-2. Usá el vocabulario del dominio (usuarios, registros, consultas, procesos, inventario, costos, rendimiento) en los enunciados situados.
+1. Al menos la MITAD de las preguntas deben estar situadas en un problema real del dominio profesional listado arriba${deLaCarrera ? ` (por ejemplo: ${deLaCarrera.ejemplos})` : ''}.
+2. Usá el vocabulario del dominio${deLaCarrera ? ` (${deLaCarrera.vocabulario})` : ''} en los enunciados situados.
 3. El rigor matemático NO se relaja al contextualizar: el problema se sitúa, la exigencia formal se mantiene.
 4. Evitá el ejercicio descontextualizado ("resolvé la siguiente ecuación", "hallá el dominio de f(x)") cuando el tema admite una situación profesional. Reservalo sólo para lo puramente instrumental.`
 }
@@ -515,16 +575,19 @@ export function buildEducationSystemPrompt({
   difficulty = 'intermedio',
   contextoProfesional,
   perfilAlumnos,
+  contenido,
 }: {
   nivel?: string
   grado?: string
   materia: string
   difficulty?: string
+  /** O3: unidades y temas que se generan (reconoce una unidad de didáctica). */
+  contenido?: { unidades?: readonly string[]; temas?: readonly string[] }
   contextoProfesional?: ContextoProfesionalCarrera
   /** J3: lo pedagógico de la ficha de los alumnos del grupo. Ver lib/perfil-alumnos.ts. */
   perfilAlumnos?: PerfilAlumnos | null
 }): string {
-  const ctx = getEducationContext(nivel, grado, materia)
+  const ctx = getEducationContext(nivel, grado, materia, contenido)
 
   let difficultyCognitiveInstruction = ''
   if (difficulty === 'basico') {

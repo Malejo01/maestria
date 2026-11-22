@@ -1,5 +1,6 @@
 'use client'
 import { useRef, useState } from 'react'
+import { parametrosDeLaPractica } from '@/lib/practica-del-grupo'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -80,6 +81,8 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
   const [selectedQuestionCount, setSelectedQuestionCount] = useState<number | null>(null)
   const [questionCountValue, setQuestionCountValue] = useState<string>(String(DEFAULT_QUESTION_COUNT))
   const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<QuestionType[]>(DEFAULT_QUESTION_TYPES)
+  // O3: en un grupo, los tipos se mandan sólo si el alumno tocó el selector.
+  const [tocoLosTipos, setTocoLosTipos] = useState(false)
   const [pendingSharedQuiz, setPendingSharedQuiz] = useState<TeacherQuiz | null>(null)
   const [isExportingMoodle, setIsExportingMoodle] = useState(false)
   const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>({})
@@ -180,8 +183,15 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
   const generateQuestionsByMode = async (mode: 'teorico' | 'practico' | 'mixto', questionCount: number): Promise<Question[] | null> => {
     if (selectedTopics.length === 0) return null
 
-    const targetNivel = currentQuiz?.config?.nivel || userProfile?.nivel
-    const targetGrado = currentQuiz?.config?.grado || userProfile?.grado
+    // O3: en un grupo, nivel, año y carrera salen del programa del grupo.
+    const practica = parametrosDeLaPractica({
+      classroomId,
+      programa: { nivel: subject.nivel, grado: subject.grado, carrera: subject.pedagogyProfile?.degree },
+      config: currentQuiz?.config,
+      perfil: userProfile,
+      tipos: selectedQuestionTypes,
+      tocoLosTipos,
+    })
     const targetDifficulty = currentQuiz?.config?.difficulty || 'intermedio'
 
     try {
@@ -192,13 +202,14 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
           subject: subject.name,
           subjectSource: subject.source || 'core',
           subjectUnits: subject.units || [],
-          nivel: targetNivel,
-          grado: targetGrado,
+          nivel: practica.nivel,
+          grado: practica.grado,
+          ...(practica.carrera ? { carrera: practica.carrera } : {}),
           difficulty: targetDifficulty,
           topics: selectedTopics,
           mode,
           questionCount,
-          questionTypes: selectedQuestionTypes,
+          ...(practica.questionTypes ? { questionTypes: practica.questionTypes } : {}),
           pedagogyContext,
           previousQuestionIds: getUsedQuestionIds(),
           // J3: para que el servidor sume lo pedagógico de las fichas del grupo.
@@ -710,7 +721,10 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
         maxQuestionCount={MAX_QUESTION_COUNT}
         showQuestionTypeSelector
         questionTypes={selectedQuestionTypes}
-        onQuestionTypesChange={setSelectedQuestionTypes}
+        onQuestionTypesChange={(tipos) => {
+          setTocoLosTipos(true)
+          setSelectedQuestionTypes(tipos)
+        }}
       />
 
       {userProfile?.role === 'DOCENTE' && (

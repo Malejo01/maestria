@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   buildEducationSystemPrompt,
   buildExplainErrorPrompt,
+  ejemplosDeCarrera,
+  esContenidoDeDidactica,
   getEducationContext,
   normalizarNivel,
   quitarEmojis,
@@ -272,5 +274,75 @@ describe('quitarEmojis', () => {
 
   it('emojis compuestos (familia, tono de piel, bandera) salen enteros', () => {
     expect(quitarEmojis('Hola 👨‍👩‍👧 y 👍🏽 desde 🇦🇷.')).toBe('Hola y desde.')
+  })
+})
+
+describe('O3 · ejemplos del contexto profesional según la carrera', () => {
+  const unidad = { eje: 'Unidad 2 — Números racionales', aplicacion: 'Enseñanza de fracciones en el segundo ciclo', herramientas: [] }
+
+  it('Sistemas lleva los ejemplos de Sistemas', () => {
+    const prompt = buildEducationSystemPrompt({ nivel: 'Superior', grado: '1er Año', materia: 'Matemática', contextoProfesional: SISTEMAS })
+    expect(prompt).toContain('crecimiento de usuarios de una aplicación')
+  })
+
+  it('el Profesorado lleva situaciones de aula de primaria, nunca las de Sistemas', () => {
+    const prompt = buildEducationSystemPrompt({
+      nivel: 'Superior',
+      grado: '1er Año',
+      materia: 'Matemática y su Didáctica',
+      contextoProfesional: { carrera: 'Profesorado de Educación Primaria', unidades: [unidad] },
+    })
+    expect(prompt).toContain('alumno de 4.º grado')
+    expect(prompt).not.toMatch(/usuarios de una aplicación|base de datos|inventario/)
+  })
+
+  it('otra carrera: la regla queda, sin ejemplos de otra', () => {
+    const prompt = buildEducationSystemPrompt({
+      nivel: 'Superior',
+      grado: '1er Año',
+      materia: 'Matemática',
+      contextoProfesional: { carrera: 'Tecnicatura en Enfermería', unidades: [unidad] },
+    })
+    expect(prompt).toContain('CONTEXTO PROFESIONAL DE LA CARRERA')
+    expect(prompt).not.toMatch(/usuarios de una aplicación|alumno de 4\.º grado/)
+    expect(ejemplosDeCarrera('Tecnicatura en Enfermería')).toBeNull()
+  })
+
+  it('sin carrera, nada', () => {
+    const prompt = buildEducationSystemPrompt({ nivel: 'Superior', grado: '1er Año', materia: 'Matemática', contextoProfesional: { carrera: '', unidades: [unidad] } })
+    expect(prompt).not.toContain('CONTEXTO PROFESIONAL DE LA CARRERA')
+  })
+})
+
+describe('O3 · Superior + Matemática en una unidad de didáctica no exige demostración', () => {
+  it('la materia de didáctica cambia la persona y la rúbrica', () => {
+    const ctx = getEducationContext('Superior', '1er Año', 'Matemática y su Didáctica')
+    expect(ctx.rolDocente).toContain('Didáctica de la Matemática')
+    expect(ctx.registroLinguistico).toContain('NO pidas demostraciones')
+    expect(ctx.rubricaRespuestaCorta).toContain('criterio didáctico')
+    expect(ctx.registroLinguistico).not.toContain('Fomenta el pensamiento abstracto y la demostración')
+  })
+
+  it('una unidad de didáctica dentro de Matemática, también', () => {
+    const ctx = getEducationContext('Superior', '1er Año', 'Matemática', { unidades: ['Unidad 4: La enseñanza de las fracciones en la escuela primaria'] })
+    expect(ctx.rolDocente).toContain('Didáctica de la Matemática')
+  })
+
+  it('Matemática de Sistemas sigue siendo implacable con la demostración', () => {
+    const ctx = getEducationContext('Superior', '1er Año', 'Matemática', { unidades: ['Unidad 2 — Funciones'], temas: ['Dominio e imagen', 'Función lineal'] })
+    expect(ctx.rolDocente).toContain('implacable')
+    expect(ctx.registroLinguistico).toContain('demostración')
+  })
+
+  it('la regla: materia, alguna unidad, o la mitad de los temas', () => {
+    expect(esContenidoDeDidactica({ materia: 'Didáctica de la Matemática' })).toBe(true)
+    expect(esContenidoDeDidactica({ materia: 'Matemática', temas: ['Errores de los alumnos al sumar fracciones', 'Fracciones equivalentes'] })).toBe(true)
+    expect(esContenidoDeDidactica({ materia: 'Matemática', temas: ['Planificación de una clase', 'Límites', 'Derivadas'] })).toBe(false)
+    expect(esContenidoDeDidactica({ materia: 'Matemática' })).toBe(false)
+  })
+
+  it('el prompt de generación recibe la persona según el contenido', () => {
+    const prompt = buildEducationSystemPrompt({ nivel: 'Superior', grado: '1er Año', materia: 'Matemática', contenido: { unidades: ['Didáctica de la geometría'] } })
+    expect(prompt).toContain('Didáctica de la Matemática')
   })
 })

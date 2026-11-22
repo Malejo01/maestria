@@ -10,8 +10,9 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | N2 · Corregir en lote las preguntas marcadas | hecho | [#75](https://github.com/Malejo01/maestria/pull/75) | Tests con el modelo simulado (sí/no → afirmación, abierta → opción múltiple, valor de verdad cambiado → rechazada, sin aplicar no se escribe); en staging, dry-run del script y "Aplicar" desde *Mis tareas* | US$0,004 |
 | O1 · Pruebas de punta a punta (Playwright) | hecho | [#76](https://github.com/Malejo01/maestria/pull/76) | Los 6 recorridos en verde contra `npm run dev:staging` (7 pruebas + limpieza, 2,1 min) | US$0 (IA simulada) |
 | O2 · Cerrar el ciclo de "A reforzar" (migración 031) | hecho | [#77](https://github.com/Malejo01/maestria/pull/77) | Tests de la regla con nombres reales de temas, del servidor y de permisos; simulación sobre staging; el docente marcó un tema desde la ficha; "Ya lo dominás" de Sofía; `npm run e2e` en verde | US$0 |
+| O3 · La práctica del grupo usa la materia del grupo | hecho | [#78](https://github.com/Malejo01/maestria/pull/78) | Tests de los parámetros, los ejemplos por carrera y la persona de didáctica; 3 + 3 prácticas con IA real antes/después; `npm run e2e` en verde | US$0,025 |
 
-**Gasto de IA acumulado de la noche:** US$0,004 (medido en `ai_usage_log` de staging: 6 llamadas, US$0,0032; más ~US$0,0005 del dry-run del script, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
+**Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
 ## Detalle
 
@@ -56,6 +57,14 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - **Manual**: "Ya lo superó" / "Volver a reforzar" en la ficha del alumno que se abre desde la planilla del grupo (`PATCH /api/teacher/classrooms/[id]/students/[userId]`). Probado en staging con Tomás Villa (grupo Lengua): quedó `resolved_by = stg-user-0008`.
 - **Alumno**: en `/history`, pestaña "A reforzar", lo superado sale de la lista y pasa a "Ya lo dominás", plegado (Sofía, en las capturas).
 - **Migración 031**: `resolved_at`, `resolved_by`; corrida dos veces en staging. Sin ella, todo marca `resolved` igual.
+
+### O3 · Práctica del grupo
+
+- En `/aulas`, la práctica dentro de un grupo manda **nivel, año y carrera del programa del grupo** (nunca del perfil) y **no manda tipos de pregunta** hasta que el alumno toca el selector ([lib/practica-del-grupo.ts](../../lib/practica-del-grupo.ts), puro). "No aplica" (lo que guarda el asistente sin carrera) no cuenta como carrera. Fuera de un grupo nada cambia.
+- `buildProfessionalContextSection`: los ejemplos de Sistemas sólo para Sistemas; el Profesorado tiene ejemplos de aula de primaria; otra carrera, la regla sin ejemplos; sin carrera, nada.
+- **Superior + Matemática en didáctica**: si la materia, alguna unidad o la mitad de los temas son de didáctica (`esContenidoDeDidactica`), la persona es "Profesor/a de Didáctica de la Matemática en un profesorado", sin demostraciones y con una rúbrica de fundamentación didáctica. Vale también para la corrección de respuesta corta y "Explicar error" cuando la materia es de didáctica (se reconoce por el nombre).
+- **IA real, antes/después** (12 generaciones, US$0,025; detalle en [docs/calidad/o3-antes-despues.md](../calidad/o3-antes-despues.md)): en Sistemas, las preguntas situadas en el dominio pasaron de 0-1 de 5 a 3-5 de 5 ("en una base de datos de usuarios, el conjunto A…"); en el Profesorado aparecen situaciones de aula ("un estudiante afirma que entre 5 y 6 hay un natural: ¿qué intervención docente…?"); ninguna pide demostrar.
+- **Ojo:** en staging el Profesorado no tiene contexto profesional cargado en `curriculum` (sólo Sistemas): la mejora del Profesorado viene del nivel correcto y la persona de didáctica.
 
 ## Pasos manuales de Mauro, en orden
 
