@@ -1,6 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
+import { siguienteRacha } from '@/lib/racha'
 import { persist } from 'zustand/middleware'
 import { normalizeQuestions } from './normalize-questions'
 import { aprueba, countsAsCorrect, countsAsIncorrect, isGraded, scoreOutOfTen, tallyAnswers } from './answer-grading'
@@ -54,6 +55,8 @@ interface AppState {
   previousQuestion: () => void
   finishQuiz: () => QuizResult
   updateStreak: (passed: boolean) => void
+  /** O4: la racha que dice la base (manda sobre la del navegador). */
+  setStreak: (racha: number) => void
   updateSubjectAverage: (subject: string, score: number) => void
   addWeakPoint: (topic: string, topicName: string, subject: string, nivel?: string, grado?: string, misconceptionType?: string) => void
   removeWeakPoint: (topic: string) => void
@@ -254,9 +257,13 @@ export const useAppStore = create<AppState>()(
       updateStreak: (passed) => set((state) => ({
         userProgress: {
           ...state.userProgress,
-          streak: passed ? state.userProgress.streak + 1 : 0,
+          streak: siguienteRacha(state.userProgress.streak, passed),
           lastAttemptDate: new Date().toISOString()
         }
+      })),
+
+      setStreak: (racha) => set((state) => ({
+        userProgress: { ...state.userProgress, streak: Math.max(0, Math.floor(racha)) },
       })),
 
       updateSubjectAverage: (subject, score) => set((state) => {

@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { anotarIntentoEnLaRacha } from '@/lib/racha-server'
 import { resolverPorAciertos } from '@/lib/a-reforzar-server'
 import { NextResponse } from 'next/server'
 import { debugLog } from '@/lib/utils'
@@ -323,6 +324,10 @@ export async function POST(req: Request) {
     debugLog('[v0] Quiz attempt created with ID:', quizAttemptId)
     debugLog('[v0] All answers saved')
 
+    // O4: la racha, en la base. Aprobar suma, no aprobar vuelve a cero. Nunca
+    // lanza; sin la 032 devuelve null y la pantalla usa la del navegador.
+    const racha = await anotarIntentoEnLaRacha(userId, passed)
+
     // 5. Actualizar topic_mastery si la nota aprueba
     if (aprueba(score)) {
       const topicsArray = Array.isArray(topics) ? topics : [topics]
@@ -381,6 +386,7 @@ export async function POST(req: Request) {
       classroomId,
       assignmentId,
       attemptNumber,
+      ...(racha !== null ? { racha } : {}),
       message: 'Resultado guardado exitosamente'
     })
 

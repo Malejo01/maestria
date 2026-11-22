@@ -1,6 +1,8 @@
 'use client'
 
 import { formatearNumero } from '@/lib/numeros'
+import { RACHA, RESULTADOS } from '@/lib/textos'
+import { textoDeRacha } from '@/lib/racha'
 import { Cargando } from '@/components/sistema/cargando'
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
@@ -445,18 +447,12 @@ export function ResultsScreen() {
           </div>
         </Card>
 
-        {/* Streak Card */}
+        {/* O4: la racha (aprobados seguidos), de la base; textos en lib/textos.ts. */}
         <Card className="p-5 border-2 border-border bg-card/90">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-foreground">Tu racha</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                {userProgress.streak >= 2 
-                  ? 'Racha activa, seguí así' 
-                  : userProgress.streak === 1
-                    ? 'Una más para activar la racha'
-                    : 'Aprobá 2 seguidos para activarla'}
-              </p>
+              <h3 className="font-bold text-foreground">{RACHA.titulo}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{textoDeRacha(userProgress.streak)}</p>
             </div>
             <StreakBadge streak={userProgress.streak} size="lg" />
           </div>
@@ -601,12 +597,12 @@ export function ResultsScreen() {
                       {loadingExplanation === answer.questionId ? (
                         <>
                           <Cargando className="w-4 h-4" />
-                          Cargando...
+                          {RESULTADOS.cargando}
                         </>
                       ) : (
                         <>
                           <AlertCircle className="w-4 h-4" />
-                          Explicar Error
+                          {RESULTADOS.explicarError}
                         </>
                       )}
                     </Button>

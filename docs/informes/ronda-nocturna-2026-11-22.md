@@ -11,6 +11,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O1 · Pruebas de punta a punta (Playwright) | hecho | [#76](https://github.com/Malejo01/maestria/pull/76) | Los 6 recorridos en verde contra `npm run dev:staging` (7 pruebas + limpieza, 2,1 min) | US$0 (IA simulada) |
 | O2 · Cerrar el ciclo de "A reforzar" (migración 031) | hecho | [#77](https://github.com/Malejo01/maestria/pull/77) | Tests de la regla con nombres reales de temas, del servidor y de permisos; simulación sobre staging; el docente marcó un tema desde la ficha; "Ya lo dominás" de Sofía; `npm run e2e` en verde | US$0 |
 | O3 · La práctica del grupo usa la materia del grupo | hecho | [#78](https://github.com/Malejo01/maestria/pull/78) | Tests de los parámetros, los ejemplos por carrera y la persona de didáctica; 3 + 3 prácticas con IA real antes/después; `npm run e2e` en verde | US$0,025 |
+| O4 · Textos viejos del alumno y la racha en la base (migración 032) | hecho | (este PR) | Tests de la regla, el servidor (válvula) y la migración desde el navegador; en staging Sofía hizo una tarea: racha migrada y anotada; capturas a 390; `npm run e2e` en verde | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -66,6 +67,14 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - **IA real, antes/después** (12 generaciones, US$0,025; detalle en [docs/calidad/o3-antes-despues.md](../calidad/o3-antes-despues.md)): en Sistemas, las preguntas situadas en el dominio pasaron de 0-1 de 5 a 3-5 de 5 ("en una base de datos de usuarios, el conjunto A…"); en el Profesorado aparecen situaciones de aula ("un estudiante afirma que entre 5 y 6 hay un natural: ¿qué intervención docente…?"); ninguna pide demostrar.
 - **Ojo:** en staging el Profesorado no tiene contexto profesional cargado en `curriculum` (sólo Sistemas): la mejora del Profesorado viene del nivel correcto y la persona de didáctica.
 
+### O4 · Textos del alumno y racha
+
+- **Resultados**: la tarjeta de la racha dice "Racha" y "Aprobaste 3 cuestionarios seguidos." / "Cuando apruebes un cuestionario, empieza tu racha." (fuera "Aprobá 2 seguidos para activarla"); "Explicar Error" → "Explicame el error". **Mi progreso**: "Evaluaciones" → "Cuestionarios", "Evaluaciones recientes" → "Lo último que hiciste", el filtro de modos dice "Todos" y entra en un renglón a 390 (32 px de alto, sin desborde). Todo en `lib/textos.ts` (`RACHA`, `RESULTADOS`, `MI_PROGRESO`).
+- **La racha en la base** (migración **032**, `rachas_alumno`, una fila por alumno; no existe racha por materia): `save-result` la anota en una sola sentencia atómica (la regla de siempre, `siguienteRacha`, pura) y la devuelve; al entrar, la app la lee una vez por pestaña y, si la base no tiene la de ese alumno, **la del navegador pasa una sola vez**. Un invitado que crea su cuenta se la lleva. Sin la 032, la de siempre del navegador.
+- Staging: Sofía entró, su racha del navegador (0) pasó a la base (`migrada_de_local`), hizo una tarea (2/10) y la fila se anotó.
+- **Lo encontró la prueba y no es de este ítem:** a 390 px el botón flotante "Reportar un problema" tapa el borde derecho de "Siguiente" en el cuestionario (Playwright no pudo tocarlo). Ya figuraba como punto (4) de la tanda H; sigue abierto.
+- La pestaña "A reforzar (3)" cuenta los puntos débiles del navegador y la tarjeta "A reforzar 0" los de la base: no coinciden. Viene de antes (no lo tocó O4); con O2 se acercan, pero los del navegador siguen siendo otra fuente.
+
 ## Pasos manuales de Mauro, en orden
 
 1. Migración 030 en producción:
@@ -77,7 +86,11 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
    ```powershell
    $env:CONFIRM_PRODUCTION="noisy-smoke-23995229"; npx tsx scripts/run-migration-031.ts
    ```
-3. Corrección en lote de las 18 preguntas marcadas de producción. Primero sólo mirar (no escribe; la IA sí se llama, ~US$0,01):
+3. Migración 032 en producción:
+   ```powershell
+   $env:CONFIRM_PRODUCTION="noisy-smoke-23995229"; npx tsx scripts/run-migration-032.ts
+   ```
+4. Corrección en lote de las 18 preguntas marcadas de producción. Primero sólo mirar (no escribe; la IA sí se llama, ~US$0,01):
    ```powershell
    npx tsx scripts/qa/corregir-tipos.ts --desde=2026-11-20
    ```
@@ -92,6 +105,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 
 ## Datos de prueba que quedaron en staging
 
+- Racha de Sofía en `rachas_alumno` (0, migrada del navegador) y su intento en "Lengua · 4to Año · 11/7/2026" (2/10).
 - Temas "a reforzar" marcados como superados a mano por Irina: #58 (Tomás Villa) y #57 (Sofía Ramírez), los dos de Lengua. Se devuelven con "Volver a reforzar" en la ficha.
 
 - De O1, por cada corrida de `npm run e2e`: una materia "E2E · Geografía <fecha>", un grupo "E2E · Grupo <fecha>" y la tarea "E2E · Geografía <fecha> - Práctico - …" de Irina, con el intento del invitado "E2E · Invitado <fecha>" (que ya no está en el grupo). Además, de la exploración: la materia "E2E · Geografía" y su grupo "E2E · Geografía" (se armó solo al compartir una tarea que no llegó a guardarse).

@@ -5,6 +5,7 @@ import { OnboardingGate } from './onboarding-gate'
 import { QuizOverlay } from './quiz-overlay'
 import { Toaster } from '@/components/ui/toaster'
 import { usePendientesDeGuardado } from '@/hooks/use-pendientes-de-guardado'
+import { useRachaDeLaBase } from '@/hooks/use-racha-de-la-base'
 
 /**
  * M1: cualquier pantalla reintenta, al cargar, los resultados que quedaron sin
@@ -12,6 +13,8 @@ import { usePendientesDeGuardado } from '@/hooks/use-pendientes-de-guardado'
  */
 function ReintentoDePendientes() {
   usePendientesDeGuardado()
+  // O4: la racha se lee de la base al entrar (y la del navegador pasa una vez).
+  useRachaDeLaBase()
   return null
 }
 

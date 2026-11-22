@@ -1110,6 +1110,19 @@ export const MIS_TAREAS_ALUMNO = {
   sumarme: { etiqueta: 'Sumarme a otro grupo con un código', ejemplo: '7K4P2M', boton: 'Entrar al grupo' },
 } as const
 
+/** O4: la racha (aprobados seguidos), en resultados. Vive en la base (032). */
+export const RACHA = {
+  titulo: 'Racha',
+  sinRacha: 'Cuando apruebes un cuestionario, empieza tu racha.',
+  conRacha: (n: number) => (n === 1 ? 'Aprobaste 1 cuestionario seguido.' : `Aprobaste ${n} cuestionarios seguidos.`),
+} as const
+
+/** O4: lo que quedaba suelto en la pantalla de resultados. */
+export const RESULTADOS = {
+  explicarError: 'Explicame el error',
+  cargando: 'Cargando…',
+} as const
+
 export const MI_PROGRESO = {
   titulo: 'Mi progreso',
   detalle: 'Lo que hiciste, los temas que te conviene reforzar y tus tips.',
@@ -1118,6 +1131,11 @@ export const MI_PROGRESO = {
     reforzar: (n: number) => (n > 0 ? `A reforzar (${n})` : 'A reforzar'),
     tips: 'Mis tips',
   },
+  // O4: lo que hace el alumno son cuestionarios (tareas y prácticas), no "evaluaciones".
+  cuestionarios: 'Cuestionarios',
+  ultimos: 'Lo último que hiciste',
+  modos: { all: 'Todos', teorico: 'Teórico', practico: 'Práctico', mixto: 'Mixto' },
+  filtroModo: 'Modo',
   tips: {
     cargando: 'Buscando tus tips…',
     queCargamos: 'tus tips',
