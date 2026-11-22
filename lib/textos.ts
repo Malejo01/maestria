@@ -1581,6 +1581,7 @@ export const ADMIN = {
     embudo: 'Embudo',
     usoDeIA: 'Uso de IA',
     planes: 'Planes',
+    codigos: 'Códigos',
     docentes: 'Docentes',
   },
   hoy: {
@@ -1593,6 +1594,7 @@ export const ADMIN = {
   },
   sinDato: '—',
   tarjetas: {
+    codigos: 'Crear y desactivar códigos de descuento',
     reportes: (n: number) => (n === 0 ? 'Ninguno nuevo' : n === 1 ? '1 nuevo' : `${n} nuevos`),
     embudo: (n: number) => (n === 0 ? 'Nadie trabado más de 3 días' : n === 1 ? '1 docente trabado más de 3 días' : `${n} docentes trabados más de 3 días`),
     usoDeIA: (usd: string, llamadas: number) => `${usd} este mes · ${llamadas === 1 ? '1 llamada' : `${llamadas} llamadas`} hoy`,
@@ -1652,6 +1654,43 @@ export const PRACTICA_EXTRA = {
 /** P7: "A reforzar" en la ficha del alumno (lo mismo que ve el alumno en Mi progreso). */
 export const FICHA_A_REFORZAR = {
   titulo: (n: number) => `A reforzar (${n})`,
+} as const
+
+/** Ronda T · C1: /admin/codigos. */
+export const CODIGOS_ADMIN = {
+  titulo: 'Códigos de descuento',
+  detalle: 'Un código baja el precio al pagar desde Precios. Un uso es una persona; quien ya lo usó lo vuelve a aplicar mientras duren sus meses.',
+  faltaMigracion: 'Falta correr la migración 038 para usar los códigos.',
+  noSePudo: 'No se pudieron leer los códigos.',
+  crear: 'Crear un código',
+  crearBoton: 'Crear',
+  creando: 'Creando…',
+  creado: 'Código creado.',
+  ninguno: 'Todavía no hay códigos.',
+  activo: 'Activo',
+  inactivo: 'Desactivado',
+  desactivar: 'Desactivar',
+  activar: 'Volver a activar',
+  marcaFundadora: 'marca Fundadora',
+  usadoPor: 'Lo usaron:',
+  aplica: { particular: 'Plan Particular', aula: 'Plan Aula', pase_alumno: 'Pase de alumno', todos: 'Todos los planes' },
+  forma: { mensual: 'mensual', pase: 'pase', ambos: 'mensual o pase' },
+  meses: (n: number) => (n === 1 ? 'por 1 mes' : `por ${n} meses`),
+  sinLimiteDeMeses: 'sin límite de meses',
+  usos: (hechos: number, maximos: number) => `${hechos} de ${maximos} ${maximos === 1 ? 'uso' : 'usos'}`,
+  vence: (fecha: string) => `vence el ${fecha}`,
+  campos: {
+    codigo: 'Código',
+    porcentaje: 'Descuento (%)',
+    aplica: 'Para',
+    forma: 'Forma',
+    meses: 'Meses',
+    usos: 'Usos',
+    vence: 'Vence',
+    fundadora: 'Marca Fundadora',
+    nota: 'Nota',
+    notaEjemplo: 'Para Silvana, primera fundadora',
+  },
 } as const
 
 /** Ronda T · B1: lo que el plan gratis no tiene. */

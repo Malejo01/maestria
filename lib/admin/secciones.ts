@@ -7,7 +7,7 @@ import { ADMIN } from '@/lib/textos'
  * de la portada y el test de permisos (que recorre cada `href` y espera un 404
  * para quien no está en ADMIN_EMAILS). Sumar una página de admin es sumarla acá.
  */
-export type SeccionAdmin = 'inicio' | 'reportes' | 'embudo' | 'usoDeIA' | 'planes' | 'docentes'
+export type SeccionAdmin = 'inicio' | 'reportes' | 'embudo' | 'usoDeIA' | 'planes' | 'codigos' | 'docentes'
 
 export interface EntradaAdmin {
   id: SeccionAdmin
@@ -21,6 +21,7 @@ export const SECCIONES_ADMIN: readonly EntradaAdmin[] = [
   { id: 'embudo', href: '/admin/embudo', texto: ADMIN.secciones.embudo },
   { id: 'usoDeIA', href: '/admin/ai-usage', texto: ADMIN.secciones.usoDeIA },
   { id: 'planes', href: '/admin/planes', texto: ADMIN.secciones.planes },
+  { id: 'codigos', href: '/admin/codigos', texto: ADMIN.secciones.codigos },
   { id: 'docentes', href: '/admin/docentes', texto: ADMIN.secciones.docentes },
 ]
 

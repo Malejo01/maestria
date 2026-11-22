@@ -42,6 +42,8 @@ export default async function AdminPage() {
         ? ADMIN.sinDato
         : ADMIN.tarjetas.planes(tarjetas.planes.prueba, tarjetas.planes.vencenEstaSemana, tarjetas.planes.vencidos),
     docentes: tarjetas.docentes === null ? ADMIN.sinDato : ADMIN.tarjetas.docentes(tarjetas.docentes),
+    // C1: los códigos no tienen un número del día.
+    codigos: ADMIN.tarjetas.codigos,
   }
 
   return (
