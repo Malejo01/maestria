@@ -1,5 +1,8 @@
 'use client'
 
+import { puedeExportarAMoodle } from '@/lib/puede-exportar'
+import { MENSAJE_CON_UN_PLAN } from '@/lib/planes'
+import { PLANES_GRATIS } from '@/lib/textos'
 import { comaDecimal, respuestaCorrectaNumerica } from '@/lib/numeros'
 import { Cargando } from '@/components/sistema/cargando'
 
@@ -126,7 +129,12 @@ export function TeacherQuizGenerated({ questions: initialQuestions, selection, o
   }
 
   // ── Export to Moodle GIFT ──────────────────────────────────────────────────
-  const handleExportMoodle = () => {
+  const handleExportMoodle = async () => {
+    // B1 (ronda T): en el plan gratis, la exportación a Moodle viene con un plan pago.
+    if (!(await puedeExportarAMoodle())) {
+      toast({ title: MENSAJE_CON_UN_PLAN, description: PLANES_GRATIS.verPlanes })
+      return
+    }
     // Build a TeacherQuiz-compatible shape from the current questions + metadata
     const quizForExport = {
       id: 0,

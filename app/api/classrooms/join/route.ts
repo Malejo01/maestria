@@ -14,8 +14,8 @@ import {
   newGuestId,
   signGuestToken,
 } from '@/lib/guest-session'
-import { grupoTieneLugarPara } from '@/lib/planes-server'
-import { MENSAJE_GRUPO_SIN_LUGAR } from '@/lib/planes'
+import { motivoSinLugarEnElGrupo } from '@/lib/planes-server'
+import { MENSAJE_CURSO_COMPLETO, MENSAJE_GRUPO_SIN_LUGAR } from '@/lib/planes'
 import {
   invitacionPorNombre,
   pendientesDelGrupo,
@@ -153,14 +153,16 @@ export async function POST(req: Request) {
 
       // Cupo del plan del docente (lib/planes.ts): sólo frena a quien ocuparía
       // un lugar nuevo.
-      const hayLugar = await grupoTieneLugarPara({
+      const sinLugar = await motivoSinLugarEnElGrupo({
         teacherId: String(classroom.teacher_id),
         classroomId: Number(classroom.id),
         userId: viewer.id,
         nombre: displayName,
       })
-      if (!hayLugar) {
-        return NextResponse.json({ error: MENSAJE_GRUPO_SIN_LUGAR, grupoSinLugar: true }, { status: 402 })
+      if (sinLugar) {
+        // B1: el curso del Aula (o del gratis) llegó a 35: "Este curso está completo".
+        const error = sinLugar === 'curso_completo' ? MENSAJE_CURSO_COMPLETO : MENSAJE_GRUPO_SIN_LUGAR
+        return NextResponse.json({ error, grupoSinLugar: true }, { status: 402 })
       }
 
       await sql`
@@ -203,14 +205,15 @@ export async function POST(req: Request) {
     // El rechazo no se disfraza: el alumno ve por qué y cómo entrar igual
     // (con Google, que en esta pantalla está al lado), el docente lo ve en su
     // panel y a nosotros nos llega a Sentry.
-    const hayLugar = await grupoTieneLugarPara({
+    const sinLugarInvitado = await motivoSinLugarEnElGrupo({
       teacherId: String(classroom.teacher_id),
       classroomId: Number(classroom.id),
       userId: null,
       nombre: nombreDelInvitado,
     })
-    if (!hayLugar) {
-      return NextResponse.json({ error: MENSAJE_GRUPO_SIN_LUGAR, grupoSinLugar: true }, { status: 402 })
+    if (sinLugarInvitado) {
+      const error = sinLugarInvitado === 'curso_completo' ? MENSAJE_CURSO_COMPLETO : MENSAJE_GRUPO_SIN_LUGAR
+      return NextResponse.json({ error, grupoSinLugar: true }, { status: 402 })
     }
 
     const limit = classroomDailyNewGuestLimit()

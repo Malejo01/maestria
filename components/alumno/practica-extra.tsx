@@ -48,10 +48,10 @@ export function PracticaExtra({ asignacionId }: { asignacionId: number }) {
 
   if (!muestraLaPracticaExtra(estado)) return null
 
-  if (estado?.motivo === 'tope') {
+  if (estado?.motivo === 'tope' || estado?.motivo === 'topeMes') {
     return (
       <p className="nota rounded-lg border border-borde bg-superficie-suave px-3 py-2 text-center text-texto-suave" role="status">
-        {T.tope}
+        {estado.motivo === 'topeMes' ? T.topeMes : T.tope}
       </p>
     )
   }

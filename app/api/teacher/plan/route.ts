@@ -45,6 +45,12 @@ export async function GET() {
         topeCuestionarios: cuestionariosGratisPorMes(),
         cuestionarios: null,
         docenteNuevo: true,
+        tipo: 'particular',
+        aulaCursos: 0,
+        alumnosPorCurso: 35,
+        permiteIndividual: true,
+        permiteImprimirYMoodle: true,
+        fundadoraDesde: null,
       } satisfies ResumenDelPlan,
       renovar: null,
     })

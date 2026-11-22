@@ -204,6 +204,12 @@ describe('cuerpoDeBloqueo', () => {
     topeCuestionarios: 20,
     cuestionarios: null,
     docenteNuevo: false,
+    tipo: 'particular',
+    aulaCursos: 0,
+    alumnosPorCurso: 35,
+    permiteIndividual: true,
+    permiteImprimirYMoodle: true,
+    fundadoraDesde: null,
   }
 
   it('sin cupo: ofrece el nivel que alcanza para uno más, con los dos montos', () => {
@@ -287,10 +293,10 @@ describe('plan gratis', () => {
     expect(puedeQuitarAlumno(false)).toBe(false)
   })
 
-  it('en gratis el cuestionario 20 se genera y el 21 se frena', () => {
-    // Llevando 19 generados, el que pide es el 20: pasa. Con 20, el 21 no.
-    expect(puedeGenerar('gratis', 19, {})).toBe(true)
-    expect(puedeGenerar('gratis', 20, {})).toBe(false)
+  it('en gratis el cuestionario 10 se genera y el 11 se frena (ronda T: 10, antes 20)', () => {
+    // Llevando 9 generados, el que pide es el 10: pasa. Con 10, el 11 no.
+    expect(puedeGenerar('gratis', 9, {})).toBe(true)
+    expect(puedeGenerar('gratis', 10, {})).toBe(false)
   })
 
   it('crear una materia o un grupo en el gratis no consume el tope', () => {
@@ -310,12 +316,12 @@ describe('plan gratis', () => {
     expect(contarEnVentana(['basura'], AHORA)).toBe(0)
   })
 
-  it('las variables: 2 y 20 si faltan o traen basura', () => {
+  it('las variables: 2 y 10 si faltan o traen basura', () => {
     expect(cupoGratis({})).toBe(2)
-    expect(cuestionariosGratisPorMes({})).toBe(20)
+    expect(cuestionariosGratisPorMes({})).toBe(10)
     for (const basura of ['', 'dos', '2.5', '-1', '1e3', ' ']) {
       expect(cupoGratis({ MAESTRIA_CUPO_GRATIS: basura })).toBe(2)
-      expect(cuestionariosGratisPorMes({ MAESTRIA_GRATIS_CUESTIONARIOS_MES: basura })).toBe(20)
+      expect(cuestionariosGratisPorMes({ MAESTRIA_GRATIS_CUESTIONARIOS_MES: basura })).toBe(10)
     }
     expect(cupoGratis({ MAESTRIA_CUPO_GRATIS: ' 3 ' })).toBe(3)
     expect(cuestionariosGratisPorMes({ MAESTRIA_GRATIS_CUESTIONARIOS_MES: '40' })).toBe(40)

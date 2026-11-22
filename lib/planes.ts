@@ -152,7 +152,8 @@ export function nivelQueAlcanza(alumnos: number): NivelPlan | null {
 // ─── Plan gratis ─────────────────────────────────────────────────────────────
 
 export const CUPO_GRATIS_POR_DEFECTO = 2
-export const CUESTIONARIOS_GRATIS_POR_DEFECTO = 20
+/** Ronda T · B1: 10 cada 30 días (antes 20). Si la variable está cargada en Vercel, manda ella. */
+export const CUESTIONARIOS_GRATIS_POR_DEFECTO = 10
 /** La ventana del tope de cuestionarios del gratis: 30 días corridos, no el mes calendario. */
 export const DIAS_VENTANA_GRATIS = 30
 
@@ -167,7 +168,7 @@ export function cupoGratis(env: Entorno = process.env): number {
   return enteroDe(env, 'MAESTRIA_CUPO_GRATIS', CUPO_GRATIS_POR_DEFECTO)
 }
 
-/** Cuántos cuestionarios genera el plan gratis cada 30 días (`MAESTRIA_GRATIS_CUESTIONARIOS_MES`, si no 20). */
+/** Cuántos cuestionarios genera el plan gratis cada 30 días (`MAESTRIA_GRATIS_CUESTIONARIOS_MES`, si no 10). */
 export function cuestionariosGratisPorMes(env: Entorno = process.env): number {
   return enteroDe(env, 'MAESTRIA_GRATIS_CUESTIONARIOS_MES', CUESTIONARIOS_GRATIS_POR_DEFECTO)
 }
@@ -219,6 +220,15 @@ export interface DatosDelPlan {
    * prueba o el plan ya terminaron: gratis o solo lectura.
    */
   alumnosActuales: number
+  /** B1: `users.plan_tipo`. Sin la 037, undefined: particular. */
+  tipo?: unknown
+  /** B1: `users.aula_cursos`. */
+  aulaCursos?: unknown
+  /**
+   * B1: los lugares por tipo, para el gratis ("2 particulares + 1 curso de
+   * hasta 35"). Sin esto, el gratis sigue la regla de antes (alumnos ≤ cupo).
+   */
+  lugares?: LugaresPorTipo
 }
 
 function aFecha(valor: Date | string | null | undefined): Date | null {
@@ -271,6 +281,9 @@ export function estadoDelPlan(datos: DatosDelPlan, env: Entorno = process.env): 
   // Un plan sin fecha no vence: una prueba que todavía no arrancó (el docente
   // no vio el aviso), o un nivel pago que se acreditó sin vencimiento.
   if (!terminoElPeriodo(datos)) return nivel === 0 ? 'prueba' : 'activo'
+  // B1: con los lugares por tipo, el gratis es "2 particulares + 1 curso de
+  // hasta 35". Sin ellos, la regla de antes. Las dos aceptan a quien ya cabía.
+  if (datos.lugares) return cabeEnElGratis(datos.lugares, env) ? 'gratis' : 'vencido'
   return datos.alumnosActuales <= cupoGratis(env) ? 'gratis' : 'vencido'
 }
 
@@ -291,10 +304,21 @@ export function puedeGenerar(
   return true
 }
 
-/** El cupo de alumnos que rige hoy: el del nivel, o el del gratis. null si no hay tope. */
-export function cupoVigente(estado: EstadoPlan, nivel: unknown, env: Entorno = process.env): number | null {
+/**
+ * El cupo de alumnos que rige hoy: el del nivel, el del Aula (cursos × 35) o
+ * el del gratis. null si no hay tope.
+ */
+export function cupoVigente(
+  estado: EstadoPlan,
+  nivel: unknown,
+  env: Entorno = process.env,
+  aula?: { tipo: unknown; cursos: unknown },
+): number | null {
   if (estado === 'exento') return null
   if (estado === 'gratis') return cupoGratis(env)
+  if (aula && tipoDePlan(aula.tipo) === 'aula' && estado === 'activo') {
+    return cupoDeCursosAula(aula.cursos) * alumnosMaximosPorCurso(env)
+  }
   const n = normalizarNivel(nivel)
   return n === null ? null : cupoDeNivel(n)
 }
@@ -337,7 +361,16 @@ export function diasRestantes(datos: DatosDelPlan, env: Entorno = process.env): 
 
 // ─── Lo que viaja a la UI ────────────────────────────────────────────────────
 
-export type MotivoDeBloqueo = 'vencido' | 'sin_cupo' | 'tope_cuestionarios'
+export type MotivoDeBloqueo =
+  | 'vencido'
+  | 'sin_cupo'
+  | 'tope_cuestionarios'
+  /** B1: el plan Aula no tiene más cursos. */
+  | 'sin_cursos'
+  /** B1: una función individual (ficha, invitación, diagnóstico o tarea de un alumno) en el plan Aula. */
+  | 'solo_particular'
+  /** B1: el informe para imprimir o la exportación a Moodle en el plan gratis. */
+  | 'con_un_plan'
 
 /** El resumen que devuelve GET /api/teacher/plan y el cuerpo de un 402. */
 export interface ResumenDelPlan {
@@ -360,6 +393,18 @@ export interface ResumenDelPlan {
   cuestionarios: number | null
   /** H3: se registró después del rediseño. Decide el texto del aviso de bienvenida. */
   docenteNuevo: boolean
+  /** B1: Particular o Aula. */
+  tipo: TipoDePlan
+  /** B1: los cursos del plan Aula (0 en Particular). */
+  aulaCursos: number
+  /** B1: hasta cuántos alumnos por curso. */
+  alumnosPorCurso: number
+  /** B1: las funciones individuales (fichas, invitación, diagnóstico y tareas de un alumno). */
+  permiteIndividual: boolean
+  /** B1: el informe para imprimir y la exportación a Moodle. */
+  permiteImprimirYMoodle: boolean
+  /** B2: docente fundadora (fecha), o null. */
+  fundadoraDesde: string | null
 }
 
 export interface CuerpoDeBloqueo {
@@ -397,8 +442,16 @@ export function cuerpoDeBloqueo(
     motivo === 'vencido'
       ? mensajeVencido(resumen.cupoGratis)
       : motivo === 'tope_cuestionarios'
-        ? mensajeTopeCuestionarios(resumen.topeCuestionarios)
-        : MENSAJE_SIN_CUPO
+        ? resumen.tipo === 'aula' && resumen.estado === 'activo'
+          ? mensajeTopeCuestionariosAula(resumen.topeCuestionarios)
+          : mensajeTopeCuestionarios(resumen.topeCuestionarios)
+        : motivo === 'sin_cursos'
+          ? MENSAJE_SIN_CURSOS
+          : motivo === 'solo_particular'
+            ? MENSAJE_SOLO_PARTICULAR
+            : motivo === 'con_un_plan'
+              ? MENSAJE_CON_UN_PLAN
+              : MENSAJE_SIN_CUPO
   return {
     error,
     plan: { ...resumen, motivo, siguiente: deseado === null ? null : opcionDePago(deseado, env) },
@@ -415,6 +468,131 @@ export function leerBloqueo(cuerpo: unknown): CuerpoDeBloqueo | null {
   const plan = (cuerpo as { plan?: unknown }).plan
   if (!plan || typeof plan !== 'object') return null
   const motivo = (plan as { motivo?: unknown }).motivo
-  if (motivo !== 'vencido' && motivo !== 'sin_cupo' && motivo !== 'tope_cuestionarios') return null
+  const motivos: MotivoDeBloqueo[] = ['vencido', 'sin_cupo', 'tope_cuestionarios', 'sin_cursos', 'solo_particular', 'con_un_plan']
+  if (!motivos.includes(motivo as MotivoDeBloqueo)) return null
   return cuerpo as CuerpoDeBloqueo
+}
+
+// ─── Ronda T · B1: Particular y Aula ─────────────────────────────────────────
+
+/**
+ * Dos tipos de plan. **Particular** (el de siempre): por bloques de alumnos,
+ * con todo lo individual. **Aula**: cursos de hasta 35 alumnos, con tareas y
+ * diagnósticos de grupo, informe para imprimir y Moodle, 60 cuestionarios cada
+ * 30 días y 10 prácticas extra por alumno por mes, y SIN funciones
+ * individuales (ficha, invitación, diagnóstico y tareas de un alumno). El
+ * cerco son las funciones individuales, no la cantidad de alumnos.
+ *
+ * El gratis: 2 particulares + 1 curso de hasta 35, 10 cuestionarios cada 30
+ * días, sin informe para imprimir ni Moodle.
+ *
+ * Válvula: sin la 037, todos son 'particular' y nada cambia.
+ */
+export type TipoDePlan = 'particular' | 'aula'
+
+export function tipoDePlan(valor: unknown): TipoDePlan {
+  return valor === 'aula' ? 'aula' : 'particular'
+}
+
+export const ALUMNOS_POR_CURSO_POR_DEFECTO = 35
+export const CUESTIONARIOS_AULA_POR_DEFECTO = 60
+export const PRACTICAS_EXTRA_AULA_POR_MES = 10
+/** El gratis: un curso. */
+export const CURSOS_GRATIS = 1
+
+/** Hasta cuántos alumnos por curso (`MAESTRIA_AULA_ALUMNOS_POR_CURSO`, si no 35). */
+export function alumnosMaximosPorCurso(env: Entorno = process.env): number {
+  return enteroDe(env, 'MAESTRIA_AULA_ALUMNOS_POR_CURSO', ALUMNOS_POR_CURSO_POR_DEFECTO)
+}
+
+/** Los cursos pagos del plan Aula: un entero ≥ 0 (un dato roto es 0). */
+export function cupoDeCursosAula(aulaCursos: unknown): number {
+  const n = typeof aulaCursos === 'string' ? Number(aulaCursos) : aulaCursos
+  return typeof n === 'number' && Number.isInteger(n) && n > 0 ? n : 0
+}
+
+/** El tope de cuestionarios cada 30 días, o null si no hay (Particular, prueba, exento). */
+export function cuestionariosDelMes(tipo: TipoDePlan, estado: EstadoPlan, env: Entorno = process.env): number | null {
+  if (estado === 'gratis') return cuestionariosGratisPorMes(env)
+  if (tipo === 'aula' && estado === 'activo') return enteroDe(env, 'MAESTRIA_AULA_CUESTIONARIOS_MES', CUESTIONARIOS_AULA_POR_DEFECTO)
+  return null
+}
+
+/**
+ * El tope de prácticas extra (P4) por alumno por mes, además de las 3 por día
+ * y por tarea de siempre. null: sin tope mensual.
+ */
+export function practicasExtraPorAlumnoMes(tipo: TipoDePlan, estado: EstadoPlan): number | null {
+  return tipo === 'aula' && estado === 'activo' ? PRACTICAS_EXTRA_AULA_POR_MES : null
+}
+
+/** Ficha, invitación individual, diagnóstico y tareas de un alumno: no en el plan Aula vigente. */
+export function permiteIndividual(tipo: TipoDePlan, estado: EstadoPlan): boolean {
+  return !(tipo === 'aula' && estado === 'activo')
+}
+
+/** El informe para imprimir (O9) y la exportación a Moodle: no en el gratis. */
+export function permiteImprimirYMoodle(estado: EstadoPlan): boolean {
+  return estado !== 'gratis'
+}
+
+/**
+ * Los lugares que ocupa un docente, por tipo. **Particulares**: los que tienen
+ * una invitación con su nombre (los sumó el docente, uno por uno). **Cursos**:
+ * los que entraron a un grupo con el código, sin invitación, contados por grupo.
+ */
+export interface LugaresPorTipo {
+  particulares: number
+  /** Alumnos por código en cada grupo que tiene alguno. */
+  cursos: number[]
+}
+
+/** "2 particulares + 1 curso de hasta 35". */
+export function cabeEnElGratis(lugares: LugaresPorTipo, env: Entorno = process.env): boolean {
+  const conAlumnos = lugares.cursos.filter((n) => n > 0)
+  return (
+    lugares.particulares <= cupoGratis(env) &&
+    conAlumnos.length <= CURSOS_GRATIS &&
+    conAlumnos.every((n) => n <= alumnosMaximosPorCurso(env))
+  )
+}
+
+/**
+ * ¿Entra un alumno más a ESTE grupo por código? En el Aula y en el gratis, un
+ * curso tiene hasta 35; en el gratis además hay un solo curso (los otros grupos
+ * no reciben por código). En Particular, la regla de siempre (el cupo).
+ */
+export function cursoTieneLugar(params: {
+  estado: EstadoPlan
+  tipo: TipoDePlan
+  /** Alumnos por código que ya tiene este grupo. */
+  enEsteCurso: number
+  /** Grupos del docente (sin contar éste) que ya tienen alumnos por código. */
+  otrosCursosConAlumnos: number
+  env?: Entorno
+}): boolean {
+  const env = params.env ?? process.env
+  if (params.estado === 'exento') return true
+  if (params.estado === 'vencido') return false
+  const porCurso = alumnosMaximosPorCurso(env)
+  if (params.estado === 'gratis') {
+    return params.enEsteCurso < porCurso && (params.enEsteCurso > 0 || params.otrosCursosConAlumnos < CURSOS_GRATIS)
+  }
+  if (params.tipo === 'aula' && params.estado === 'activo') return params.enEsteCurso < porCurso
+  return true
+}
+
+/** Aula: ¿puede abrir un grupo más? (Particular, prueba y gratis: como siempre.) */
+export function puedeCrearCurso(tipo: TipoDePlan, estado: EstadoPlan, gruposAbiertos: number, aulaCursos: unknown): boolean {
+  if (tipo !== 'aula' || estado !== 'activo') return true
+  return gruposAbiertos < cupoDeCursosAula(aulaCursos)
+}
+
+export const MENSAJE_CURSO_COMPLETO = 'Este curso está completo. Avisale a tu docente.'
+export const MENSAJE_SIN_CURSOS = 'Ya usaste los cursos de tu plan Aula. Para abrir otro, sumá un curso.'
+export const MENSAJE_SOLO_PARTICULAR = 'Las fichas, el diagnóstico y las tareas de cada alumno vienen con el plan Particular.'
+export const MENSAJE_CON_UN_PLAN = 'El informe para imprimir y la exportación a Moodle vienen con un plan pago.'
+
+export function mensajeTopeCuestionariosAula(tope: number): string {
+  return `El plan Aula genera hasta ${tope} cuestionarios cada 30 días, y ya llegaste.`
 }

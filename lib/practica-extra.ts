@@ -16,7 +16,7 @@ const TIPOS: readonly QuestionType[] = ['multiple_choice', 'short_answer', 'true
 /** Por alumno, por tarea y por día (de Argentina). */
 export const TOPE_PRACTICAS_EXTRA = 3
 
-export type MotivoSinPracticaExtra = 'sinMigracion' | 'noEsTuya' | 'diagnostico' | 'planVencido' | 'tope'
+export type MotivoSinPracticaExtra = 'sinMigracion' | 'noEsTuya' | 'diagnostico' | 'planVencido' | 'tope' | 'topeMes'
 
 export interface EstadoDePracticaExtra {
   disponible: boolean
@@ -35,6 +35,8 @@ export function estadoDePracticaExtra(e: {
   esDiagnostico: boolean
   planVencido: boolean
   hechasHoy: number
+  /** B1 (ronda T): en el plan Aula, 10 por alumno en los últimos 30 días. */
+  delMes?: { hechas: number; tope: number } | null
 }): EstadoDePracticaExtra {
   const restantes = Math.max(0, TOPE_PRACTICAS_EXTRA - e.hechasHoy)
   const no = (motivo: MotivoSinPracticaExtra) => ({ disponible: false, motivo, restantes })
@@ -43,12 +45,13 @@ export function estadoDePracticaExtra(e: {
   if (e.esDiagnostico) return no('diagnostico')
   if (e.planVencido) return no('planVencido')
   if (restantes === 0) return no('tope')
+  if (e.delMes && e.delMes.hechas >= e.delMes.tope) return no('topeMes')
   return { disponible: true, motivo: null, restantes }
 }
 
 /** El botón se muestra (habilitado o con el texto del tope) sólo en estos casos. */
 export const muestraLaPracticaExtra = (estado: EstadoDePracticaExtra | null) =>
-  Boolean(estado && (estado.disponible || estado.motivo === 'tope'))
+  Boolean(estado && (estado.disponible || estado.motivo === 'tope' || estado.motivo === 'topeMes'))
 
 export interface TareaGuardada {
   subjectName: string

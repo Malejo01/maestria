@@ -21,6 +21,9 @@ const esquema = z
     dias: z.number().int().min(1).max(400).optional(),
     venceEl: z.string().datetime({ offset: true }).optional(),
     nota: z.string().max(300).default(''),
+    // B1: el plan Aula, con sus cursos (Particular si no viene).
+    tipo: z.enum(['particular', 'aula']).optional(),
+    cursos: z.number().int().min(1).max(50).optional(),
   })
   .refine((datos) => datos.dias !== undefined || datos.venceEl !== undefined, 'Falta hasta cuándo')
 
@@ -30,7 +33,7 @@ export async function POST(req: Request) {
 
   const datos = esquema.safeParse(await req.json().catch(() => null))
   if (!datos.success) {
-    return NextResponse.json({ error: 'Elegí el nivel y hasta cuándo.' }, { status: 400 })
+    return NextResponse.json({ error: 'Elegí el nivel (o los cursos) y hasta cuándo.' }, { status: 400 })
   }
 
   const ahora = new Date()
@@ -43,6 +46,8 @@ export async function POST(req: Request) {
       nota: datos.data.nota,
       acreditadoPor: admin.email ?? admin.displayName,
       ahora,
+      tipo: datos.data.tipo,
+      cursos: datos.data.cursos,
     })
     if (!acreditado) return NextResponse.json({ error: 'Ese docente no existe.' }, { status: 404 })
     return NextResponse.json({ ok: true, venceEl: venceEl.toISOString() })

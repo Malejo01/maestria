@@ -15,9 +15,22 @@ const nombreNivel = (nivel: number) =>
  * días, 90 días o una fecha) y con qué pagó. Al acreditar, la página se
  * relee y la fila muestra el estado nuevo y la línea en las notas.
  */
-export function AcreditarPlan({ docenteId, nivelActual }: { docenteId: string; nivelActual: NivelPlan | null }) {
+export function AcreditarPlan({
+  docenteId,
+  nivelActual,
+  tipoActual = 'particular',
+  cursosActuales = 0,
+}: {
+  docenteId: string
+  nivelActual: NivelPlan | null
+  tipoActual?: 'particular' | 'aula'
+  cursosActuales?: number
+}) {
   const router = useRouter()
   const [nivel, setNivel] = useState<NivelPlan>(nivelActual && nivelActual > 0 ? nivelActual : 1)
+  // B1: Particular (bloques) o Aula (cursos de hasta 35).
+  const [tipo, setTipo] = useState<'particular' | 'aula'>(tipoActual)
+  const [cursos, setCursos] = useState(Math.max(1, cursosActuales))
   const [duracion, setDuracion] = useState<'30' | '90' | 'fecha'>('30')
   const [fecha, setFecha] = useState('')
   const [nota, setNota] = useState('')
@@ -30,10 +43,12 @@ export function AcreditarPlan({ docenteId, nivelActual }: { docenteId: string; n
     setEnviando(true)
     setEstado(null)
     // Una fecha elegida vale hasta el final de ese día, en hora argentina.
+    // En Aula el nivel no decide el cupo (lo deciden los cursos): va 1, "pago".
+    const base = tipo === 'aula' ? { docenteId, nivel: 1, nota, tipo, cursos } : { docenteId, nivel, nota, tipo }
     const cuerpo =
       duracion === 'fecha'
-        ? { docenteId, nivel, nota, venceEl: new Date(`${fecha}T23:59:59-03:00`).toISOString() }
-        : { docenteId, nivel, nota, dias: Number(duracion) }
+        ? { ...base, venceEl: new Date(`${fecha}T23:59:59-03:00`).toISOString() }
+        : { ...base, dias: Number(duracion) }
     const res = await pedirJson<{ venceEl: string }>('/api/admin/planes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -52,15 +67,36 @@ export function AcreditarPlan({ docenteId, nivelActual }: { docenteId: string; n
   return (
     <form onSubmit={acreditar} className="flex flex-wrap items-end gap-2">
       <label className="flex flex-col gap-1">
-        <span className="nota text-texto-suave">Nivel</span>
-        <select className={CAMPO} value={nivel} onChange={(e) => setNivel(Number(e.target.value) as NivelPlan)}>
-          {NIVELES.map((n) => (
-            <option key={n} value={n}>
-              {nombreNivel(n)} · {cupoDeNivel(n)} alumnos
-            </option>
-          ))}
+        <span className="nota text-texto-suave">Plan</span>
+        <select className={CAMPO} value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)}>
+          <option value="particular">Particular</option>
+          <option value="aula">Aula</option>
         </select>
       </label>
+      {tipo === 'particular' ? (
+        <label className="flex flex-col gap-1">
+          <span className="nota text-texto-suave">Nivel</span>
+          <select className={CAMPO} value={nivel} onChange={(e) => setNivel(Number(e.target.value) as NivelPlan)}>
+            {NIVELES.map((n) => (
+              <option key={n} value={n}>
+                {nombreNivel(n)} · {cupoDeNivel(n)} alumnos
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <label className="flex flex-col gap-1">
+          <span className="nota text-texto-suave">Cursos (hasta 35 c/u)</span>
+          <input
+            type="number"
+            min={1}
+            max={50}
+            className={`${CAMPO} w-24`}
+            value={cursos}
+            onChange={(e) => setCursos(Math.max(1, Number(e.target.value) || 1))}
+          />
+        </label>
+      )}
       <label className="flex flex-col gap-1">
         <span className="nota text-texto-suave">Hasta</span>
         <select className={CAMPO} value={duracion} onChange={(e) => setDuracion(e.target.value as typeof duracion)}>

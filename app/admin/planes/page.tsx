@@ -100,7 +100,12 @@ export default async function PlanesAdminPage() {
                   </pre>
                 )}
                 {docente.resumen.estado !== 'exento' && (
-                  <AcreditarPlan docenteId={docente.id} nivelActual={docente.resumen.nivel} />
+                  <AcreditarPlan
+                    docenteId={docente.id}
+                    nivelActual={docente.resumen.nivel}
+                    tipoActual={docente.resumen.tipo}
+                    cursosActuales={docente.resumen.aulaCursos}
+                  />
                 )}
               </li>
             )

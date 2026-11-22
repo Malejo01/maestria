@@ -29,6 +29,12 @@ const base: ResumenDelPlan = {
   topeCuestionarios: 20,
   cuestionarios: null,
   docenteNuevo: false,
+  tipo: 'particular',
+  aulaCursos: 0,
+  alumnosPorCurso: 35,
+  permiteIndividual: true,
+  permiteImprimirYMoodle: true,
+  fundadoraDesde: null,
 }
 
 afterEach(cleanup)
