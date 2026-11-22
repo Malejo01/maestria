@@ -228,6 +228,11 @@ export const ONBOARDING_DOCENTE = {
   listo: {
     titulo: 'Ya mandaste tu primera tarea.',
     detalle: 'Cuando tus alumnos la resuelvan, acá vas a ver en qué se equivoca cada uno.',
+    /** P5 (O13, propuesta 4): ya la resolvió al menos uno. */
+    detalleConIntentos: (n: number) =>
+      n === 1
+        ? 'Ya hay una resolución. En Mis alumnos ves en qué se equivocó.'
+        : `Ya hay ${n} resoluciones. En Mis alumnos ves en qué se equivoca cada uno.`,
     boton: 'Cerrar este aviso',
   },
   link: {
@@ -278,6 +283,9 @@ export const CHIP_TEMA = {
 } as const
 
 export const MIS_ALUMNOS = {
+  /** P5: en la barra, mientras el docente no tenga una materia. */
+  crearMateriaPrimero: 'Primero creá una materia',
+  crearMateriaCorto: '+ Materia',
   titulo: 'Mis alumnos',
   agregar: 'Agregar alumno',
   agregarCorto: '+ Alumno',

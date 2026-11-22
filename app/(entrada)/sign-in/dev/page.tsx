@@ -26,7 +26,9 @@ export default async function IngresoDeDesarrolloPage() {
     FROM users u
     WHERE u.is_guest = false AND u.email IS NOT NULL
     ORDER BY (u.role = 'DOCENTE') DESC, materias DESC, grupos DESC, u.id
-    LIMIT 12
+    -- P5: 60 y no 12. Los recorridos de primer uso crean docentes con una
+    -- materia, que van primero y dejaban afuera a las alumnas de las pruebas.
+    LIMIT 60
   `) as { id: string; name: string | null; role: string | null; materias: number; grupos: number }[]
 
   return (

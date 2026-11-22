@@ -98,7 +98,9 @@ export function HitosOnboarding({ onCrearMateria, onCargarTemario, onArmarTarea,
         >
           <div className="flex-1">
             <h2 className="cuerpo text-texto">{T.listo.titulo}</h2>
-            <p className="cuerpo-s text-texto-suave">{T.listo.detalle}</p>
+            <p className="cuerpo-s text-texto-suave">
+              {(estado.intentosDeAlumnos ?? 0) > 0 ? T.listo.detalleConIntentos(estado.intentosDeAlumnos) : T.listo.detalle}
+            </p>
           </div>
           <Boton
             variante="secundario"

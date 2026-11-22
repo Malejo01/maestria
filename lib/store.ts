@@ -23,6 +23,12 @@ interface AppState {
   userProgress: UserProgress
   userProfile: UserProfile | null
   teacherPrograms: TeacherProgram[]
+  /**
+   * P5: cuántas materias tiene el docente, sin filtros. null hasta que el
+   * panel las lee: la barra no esconde "+ Alumno" por algo que no sabe.
+   */
+  materiasDelDocente: number | null
+  setMateriasDelDocente: (n: number | null) => void
   teacherQuizzes: TeacherQuiz[]
   teacherProgramFilters: TeacherProgramFilters
   teacherSection: 'materias' | 'crear' | 'cuestionarios' | 'aulas'
@@ -102,6 +108,8 @@ export const useAppStore = create<AppState>()(
       userProgress: initialProgress,
       userProfile: null,
       teacherPrograms: [],
+      materiasDelDocente: null,
+      setMateriasDelDocente: (n) => set({ materiasDelDocente: n }),
       teacherQuizzes: [],
       teacherProgramFilters: initialTeacherProgramFilters,
       teacherSection: 'materias',
@@ -368,6 +376,7 @@ export const useAppStore = create<AppState>()(
 
       addTeacherProgram: (program) => set((state) => ({
         teacherPrograms: [program, ...state.teacherPrograms],
+        materiasDelDocente: state.materiasDelDocente === null ? null : state.materiasDelDocente + 1,
       })),
 
       updateTeacherProgram: (programId, updates) => set((state) => ({
@@ -378,6 +387,7 @@ export const useAppStore = create<AppState>()(
 
       removeTeacherProgram: (programId) => set((state) => ({
         teacherPrograms: state.teacherPrograms.filter((program) => program.id !== programId),
+        materiasDelDocente: state.materiasDelDocente === null ? null : Math.max(0, state.materiasDelDocente - 1),
         teacherQuizzes: state.teacherQuizzes.filter((quiz) => quiz.teacherProgramId !== programId),
       })),
 

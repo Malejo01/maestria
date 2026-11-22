@@ -239,6 +239,11 @@ export interface FilaAlumno {
    * Ausente: se mira sólo `intentos`.
    */
   respondioAlgunaVez?: boolean
+  /**
+   * P5 (O13, propuesta 3): cuándo entró a su primer grupo del docente. Null en
+   * un pendiente (todavía no entró).
+   */
+  seSumoEl?: string | null
 }
 
 /**
@@ -357,6 +362,7 @@ export function armarFilas(
       calificadas: suActividad?.calificadas ?? 0,
       invitacionId: suInvitacion?.id ?? null,
       fechaExamen: null,
+      seSumoEl: membresias.map((m) => m.seSumoEl).filter(Boolean).sort()[0] ?? null,
     })
   }
 
@@ -410,9 +416,22 @@ function unicasPorId<T extends { id: number }>(items: T[]): T[] {
  * docente ni por su cuenta. Antes alcanzaba con no tener intentos en el grupo,
  * y el lote se llevaba a alumnos que sí habían practicado.
  */
-export function nuncaRespondieron(filas: FilaAlumno[]): { userId: string; nombre: string; ultimaVez: string | null }[] {
+/**
+ * P5 (O13, propuesta 3): a un alumno que entró hace menos de esto no se le
+ * ofrece quitarlo por no haber respondido: recién llegó. Para un docente nuevo
+ * era lo primero que veía debajo de su único alumno.
+ */
+export const DIAS_PARA_OFRECER_QUITAR = 7
+
+export function nuncaRespondieron(
+  filas: FilaAlumno[],
+  ahora: Date = new Date(),
+): { userId: string; nombre: string; ultimaVez: string | null }[] {
+  const corte = ahora.getTime() - DIAS_PARA_OFRECER_QUITAR * 86_400_000
   return filas
     .filter((fila) => fila.userId && !fila.pendiente && fila.intentos === 0 && !fila.respondioAlgunaVez)
+    // Sin fecha (una fila armada antes de P5), como antes: se ofrece.
+    .filter((fila) => !fila.seSumoEl || new Date(fila.seSumoEl).getTime() <= corte)
     .map((fila) => ({ userId: fila.userId as string, nombre: fila.nombre, ultimaVez: fila.ultimaVez }))
 }
 
