@@ -37,6 +37,17 @@ import {
 import { sql } from '@/lib/db'
 import { AI_MODEL } from '@/lib/ai-model'
 import { isConceptualNumericQuestion, questionTypesForMode, scopeUnitsToTopics } from '@/lib/quiz-scope'
+import { limitarMezcla, maximoPorTipo, tiposPermitidos, type AreaId, type Modo } from '@/lib/areas'
+import {
+  BLOQUE_LATEX,
+  bloqueDeNotacion,
+  descripcionDelModo,
+  excedeElTope,
+  mezclaDelArea,
+  rolDeLaGeneracion,
+  seccionDeArea,
+} from '@/lib/area-para-generar'
+import { areaParaGenerar } from '@/lib/area-para-generar-server'
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -151,14 +162,16 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 function buildTypeInstructions(
   questionTypes: QuestionType[],
   questionMix: QuestionTypeMix | undefined,
-  questionCount: number
+  questionCount: number,
+  /** Ronda T · A4: sin nada cuantitativo, el porqué no habla de modelar y resolver. */
+  conceptual = false,
 ): string {
   const blocks = questionTypes.map((type) => PROMPT_FIELD_BLOCKS[type]).join('\n\n')
   const typesList = questionTypes.join(', ')
 
   // Con mezcla declarada, el reparto es numérico y explícito; sin ella queda el
   // "de forma pareja" de siempre, que es lo que ve todo K-12.
-  const mixInstruction = buildQuestionMixInstruction(questionMix, questionCount)
+  const mixInstruction = buildQuestionMixInstruction(questionMix, questionCount, conceptual ? RAZON_CONCEPTUAL : undefined)
   const distribution = mixInstruction || 'Distribuí las preguntas de forma pareja entre los tipos solicitados.'
 
   return `CAMPOS COMUNES A TODA PREGUNTA (además de los específicos del tipo):
@@ -184,6 +197,11 @@ Cada pregunta tiene que usar números o casos DISTINTOS de las demás, no solo
 otro formato.`
   : ''}`
 }
+
+const RAZON_CONCEPTUAL = `La mezcla equilibra reconocer y producir: con más de un tipo, ninguno puede ser más de la mitad.
+Un cuestionario de puro verdadero o falso se aprueba adivinando la mitad; las de respuesta corta
+y las de opción múltiple con casos obligan a usar el concepto. Si un tema te resulta difícil de
+plantear como respuesta corta, planteá un caso breve y pedí el concepto que lo explica.`
 
 function shuffleInPlace<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -375,6 +393,10 @@ async function generateQuizBatchWithFallback({
   contenido,
   questionTypes,
   questionMix,
+  area,
+  seccionArea,
+  notacion,
+  sinCalculo,
   onUsage,
 }: {
   subject: string
@@ -395,6 +417,14 @@ async function generateQuizBatchWithFallback({
   questionTypes: QuestionType[]
   /** Reparto por tipo que declara el programa de cátedra (migración 023). */
   questionMix?: QuestionTypeMix
+  /** Ronda T · A4: el área de la materia (lib/areas.ts). */
+  area?: AreaId
+  /** Ronda T · A4: "ÁREA Y CÓMO SE EVALÚA" (rol, modo, ejemplos). */
+  seccionArea?: string
+  /** Ronda T · A4: los bloques de notación que corresponden (LaTeX sólo si algo es cuantitativo). */
+  notacion?: string
+  /** Ronda T · A4: todas las unidades son conceptuales (el porqué de la mezcla cambia). */
+  sinCalculo?: boolean
   /**
    * Se invoca por CADA llamada al modelo, incluidas las del camino de fallback.
    * Una sola request puede gastar tres veces lo que sugiere su única fila de
@@ -410,10 +440,12 @@ async function generateQuizBatchWithFallback({
     contextoProfesional,
     perfilAlumnos,
     contenido,
+    area,
   })
 
   const systemPrompt = `${educationPrompt}
 ${specialistRole ? `\nASPECTO ADICIONAL DE MATERIA: ${specialistRole}` : ''}
+${seccionArea ? `\n${seccionArea}\n` : ''}
 
 Tu única tarea es generar un objeto JSON que contenga un array de preguntas.
 ADAPTA el estilo de las preguntas estrictamente a la materia solicitada (${subject}) y al nivel/grado del estudiante.
@@ -424,14 +456,9 @@ INSTRUCCIONES CRÍTICAS:
 3. Estructura: { "questions": [ { ...campos según tipo... }, ... ] }
 4. Ortografía: todo el texto (enunciados, opciones, respuestas y explicaciones) respeta la ortografía del español, con todas sus tildes: "Sí, es correcta" (no "Si, es correcta"), "más", "qué", "cuál", "está".
 
-FORMATO ESTRICTO PARA CONTENIDO MATEMÁTICO (si aplica):
-- TODO contenido matemático debe estar entre $...$
-- Usa LaTeX estándar: \\frac{a}{b}, \\sqrt{x}, x^2, etc.
-- Operadores lógicos: $p \\wedge q$ (y), $p \\vee q$ (o), $\\neg p$ (no), $p \\rightarrow q$ (si...entonces), $p \\leftrightarrow q$ (si y solo si)
-- Escapa backslashes: \\\\frac, \\\\sqrt, \\\\wedge (dos barras en JSON)
-- COMA DECIMAL (Argentina): en enunciados, opciones, respuestas aceptadas y explicaciones los decimales se escriben con coma, nunca con punto: 3,14 · 0,75. Dentro de LaTeX la coma decimal va como {,} para que no quede un espacio: $3{,}14$. Los miles, si hacen falta, con punto: 12.500. Un decimal largo se redondea a lo sumo a cuatro cifras (0,9167), y si el resultado es una fracción que no da un decimal exacto, se escribe como fracción. El campo numérico "correctAnswer" del JSON sigue siendo un número JSON con punto (0.75): la coma es sólo para el texto.
+${notacion ?? BLOQUE_LATEX}
 
-${buildTypeInstructions(questionTypes, questionMix, questionCount)}`
+${buildTypeInstructions(questionTypes, questionMix, questionCount, sinCalculo === true)}`
 
   const userPrompt = `Genera ${questionCount} preguntas para: ${subject}
 
@@ -630,34 +657,6 @@ function buildCurriculumFromUnits(subject: string, units: any[]): string {
   return `PROGRAMA DE ${subject.toUpperCase()}:\n\n${unitsText}`
 }
 
-function getSpecialistRole(subject: string): string {
-  const subjectLower = subject.toLowerCase()
-  if (subjectLower.includes('matemát') || subjectLower.includes('matemat') || subjectLower.includes('álgebra') || subjectLower.includes('algebra') || subjectLower.includes('análisis') || subjectLower.includes('analisis') || subjectLower.includes('cálculo') || subjectLower.includes('calculo') || subjectLower.includes('probabilidad') || subjectLower.includes('estadística') || subjectLower.includes('estadistica')) {
-    return `Eres un experto generador de exámenes de matemáticas especializado en ${subject}.`
-  }
-  if (subjectLower.includes('programación') || subjectLower.includes('informatica') || subjectLower.includes('computación')) {
-    return `Eres un experto generador de exámenes de programación e informática especializado en ${subject}.`
-  }
-  if (subjectLower.includes('física') || subjectLower.includes('mecanica')) {
-    return `Eres un experto generador de exámenes de física especializado en ${subject}.`
-  }
-  if (subjectLower.includes('química') || subjectLower.includes('quimica')) {
-    return `Eres un experto generador de exámenes de química especializado en ${subject}.`
-  }
-  if (subjectLower.includes('historia') || subjectLower.includes('geografía')) {
-    return `Eres un experto generador de exámenes de historia y geografía especializado en ${subject}.`
-  }
-  if (subjectLower.includes('idioma') || subjectLower.includes('lengua') || subjectLower.includes('english') || subjectLower.includes('español')) {
-    return `Eres un experto generador de exámenes de idiomas especializado en ${subject}.`
-  }
-  if (subjectLower.includes('derecho') || subjectLower.includes('leyes')) {
-    return `Eres un experto generador de exámenes de derecho especializado en ${subject}.`
-  }
-
-  return `Eres un experto generador de exámenes universitarios especializado en ${subject}.`
-}
-
-
 /** Lo que el programa de cátedra le aporta al prompt, en una sola consulta. */
 interface CurriculumPedagogy {
   contextoProfesional?: ContextoProfesionalCarrera
@@ -796,6 +795,17 @@ export interface QuizRequestParams {
    * esto"). Los carga la ruta en el servidor, NUNCA salen del cuerpo.
    */
   evitar?: PreguntaAEvitar[]
+  /**
+   * Ronda T · A4: el área, si quien llama ya la sabe. Si no, `generateQuiz`
+   * la lee del programa (`teacherProgramId`) o la infiere de la materia.
+   */
+  area?: AreaId
+  /**
+   * Ronda T · A4: los `explicitQuestionTypes` son un valor por defecto del
+   * código (el diagnóstico), no una elección de una persona: no habilitan
+   * `numeric` en lo conceptual.
+   */
+  tiposPorDefecto?: boolean
 }
 
 export type ResolveQuizRequestResult =
@@ -981,6 +991,7 @@ export async function generateQuiz(
     rejectionNote,
     perfilAlumnos,
     evitar,
+    tiposPorDefecto,
   } = params
 
   const topicsText = topics.map((t: { id: string; name: string }) => `- ${t.name}`).join('\n')
@@ -994,7 +1005,21 @@ export async function generateQuiz(
   // que evita que el modelo pregunte por los hermanos. Ver lib/quiz-scope.ts.
   const scopedUnits = scopeUnitsToTopics(Array.isArray(subjectUnits) ? subjectUnits : [], topics ?? [])
   const curriculum = buildCurriculumFromUnits(subject, scopedUnits)
-  const specialistRole = getSpecialistRole(subject)
+
+  // Ronda T · A4: el área manda el rol, qué significa cada modo, la mezcla de
+  // tipos y la notación (lib/areas.ts). Del programa si hay materia del
+  // docente; si no, inferida de la materia.
+  const areaCtx = await areaParaGenerar({
+    area: params.area,
+    teacherProgramId: params.teacherProgramId,
+    subject,
+    carrera,
+    unidades: (Array.isArray(scopedUnits) ? scopedUnits : []) as never[],
+    temas: topics ?? [],
+  })
+  const specialistRole = rolDeLaGeneracion(areaCtx, subject)
+  const notacion = bloqueDeNotacion(areaCtx.bloques)
+  const sinCalculo = areaCtx.caracteres.every((c) => c === 'conceptual')
 
   // Lo que declara el programa de cátedra: contexto profesional (migración 022)
   // y mezcla sugerida de tipos de pregunta (migración 023).
@@ -1018,27 +1043,41 @@ export async function generateQuiz(
     temas: (topics ?? []).map((t: { name?: unknown }) => (typeof t?.name === 'string' ? t.name : '')).filter(Boolean),
   }
 
-  const finalQuestionTypes = resolveQuestionTypes(explicitQuestionTypes, suggestedMix)
+  // Ronda T · A4: la mezcla de cada modo sale del programa de cátedra si lo
+  // declara; si no, del área. Siempre con el tope del 50 % (limitarMezcla).
+  const modoDeLaTanda: Modo = mode === 'teorico' || mode === 'practico' ? mode : 'mixto'
+  const mezclaBase = (modo: Modo) => suggestedMix ?? mezclaDelArea(areaCtx, modo)
+
+  // Sin tipos pedidos: los de la mezcla (programa de cátedra o área). `numeric`
+  // sólo si alguna unidad es cuantitativa o si una persona la tildó a mano.
+  const finalQuestionTypes = tiposPermitidos(
+    resolveQuestionTypes(explicitQuestionTypes, mezclaBase(modoDeLaTanda === 'teorico' ? 'teorico' : 'practico')),
+    areaCtx.caracteres,
+    tiposPorDefecto ? [] : explicitQuestionTypes,
+  )
 
   // La mezcla se recorta a los tipos que finalmente se van a usar y se
   // renormaliza. Un tipo que el usuario tildó y el programa no pondera entra
   // igual; un tipo que el usuario destildó no vuelve por la ventana.
-  const questionMix = restrictQuestionTypeMix(suggestedMix, finalQuestionTypes)
+  const mezclaDe = (modo: Modo, tipos: QuestionType[]) => {
+    const recortada = restrictQuestionTypeMix(mezclaBase(modo), tipos)
+    return recortada ? limitarMezcla(recortada) : undefined
+  }
+  const questionMix = mezclaDe(modoDeLaTanda === 'mixto' ? 'practico' : modoDeLaTanda, finalQuestionTypes)
 
   // La tanda teórica no admite `numeric` salvo que sea lo único pedido. Ver
   // `questionTypesForMode`. `mode === 'teorico'` cubre el aula, que pide las
   // dos mitades del mixto por separado; la tanda teórica del mixto de acá
   // abajo usa lo mismo.
   const teoricoQuestionTypes = questionTypesForMode(finalQuestionTypes, 'teorico')
-  const teoricoQuestionMix = restrictQuestionTypeMix(suggestedMix, teoricoQuestionTypes)
+  const teoricoQuestionMix = mezclaDe('teorico', teoricoQuestionTypes)
   const batchQuestionTypes = mode === 'teorico' ? teoricoQuestionTypes : finalQuestionTypes
   const batchQuestionMix = mode === 'teorico' ? teoricoQuestionMix : questionMix
 
-  const modeDescription = mode === 'teorico'
-    ? 'MODO TEÓRICO: Preguntas conceptuales sobre definiciones, teoremas y propiedades. Sin cálculos numéricos complejos.'
-    : mode === 'practico'
-      ? 'MODO PRÁCTICO: Ejercicios de cálculo y resolución de problemas numéricos.'
-      : 'MODO MIXTO: Equilibrar preguntas teoricas y practicas.'
+  // Qué significa cada modo en el área: en Antropología, "práctico" es análisis
+  // de casos, no ejercicios de cálculo.
+  const modeDescription = descripcionDelModo(areaCtx, modoDeLaTanda)
+  const seccionArea = seccionDeArea(areaCtx, modoDeLaTanda)
 
   // Grows as the run collects questions. Rebuilding it before every batch is
   // what stops a retry — or the other half of a "mixto" quiz — from producing
@@ -1083,7 +1122,16 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
   const runSignatures = new Set<string>()
 
   /** Returns true when the question is a duplicate, or a numeric one that asks for words, and should be dropped. */
-  const shouldDrop = (question: { question: string; topic?: string; topicName?: string; type?: string; acceptedAnswers?: unknown }): boolean => {
+  const shouldDrop = (
+    question: { question: string; topic?: string; topicName?: string; type?: string; acceptedAnswers?: unknown },
+    tiposDeLaTanda: QuestionType[] = finalQuestionTypes,
+  ): boolean => {
+    // Decisión 2 de la tanda P: un tipo que no se pidió se descarta y el bucle
+    // pide otra pregunta (completa la cantidad).
+    if (!tiposDeLaTanda.includes(question.type as QuestionType)) {
+      console.log(`[generate-quiz] Dropped (tipo no pedido: ${question.type}):`, question.question)
+      return true
+    }
     // M2: el tipo tiene que encajar con la consigna. Lo que se arregla sin IA
     // (un sí/no en orden sujeto-verbo, "el valor" de una inecuación) se
     // reescribe acá mismo; lo demás se descarta y el bucle pide otra pregunta
@@ -1135,18 +1183,56 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
 
   const collectedQuestions = []
 
+  /**
+   * Ronda T · A1/A4: con más de un tipo, ninguno pasa de la mitad. Lo que
+   * excede el tope queda de reserva: si al final no se completa la cantidad,
+   * se usa antes que devolver un 409 (el tope es una regla de calidad, no un
+   * motivo para dejar al alumno sin cuestionario).
+   */
+  const juntarConTope = (total: number, tipos: QuestionType[]) => {
+    const juntadas: any[] = []
+    const reserva: any[] = []
+    const cuenta = new Map<QuestionType, number>()
+    const maximo = maximoPorTipo(total, tipos.length)
+    return {
+      juntadas,
+      agregar(question: any) {
+        if (tipos.length > 1 && excedeElTope(cuenta, question.type, maximo)) {
+          reserva.push(question)
+          return
+        }
+        cuenta.set(question.type, (cuenta.get(question.type) ?? 0) + 1)
+        juntadas.push(question)
+      },
+      completarConReserva() {
+        while (juntadas.length < total && reserva.length > 0) juntadas.push(reserva.shift())
+      },
+      /**
+       * Falta juntar. Por el tope se pide a lo sumo UNA tanda más que la
+       * primera: desde la tercera, si con la reserva alcanza, no se vuelve a
+       * llamar al modelo.
+       */
+      falta(intento: number) {
+        if (juntadas.length >= total) return false
+        return !(intento >= 2 && juntadas.length + reserva.length >= total)
+      },
+    }
+  }
+
   if (mode === 'mixto') {
     const teoricoCount = Math.ceil(questionCount / 2)
     const practicoCount = Math.floor(questionCount / 2)
-    const teoricoCollected: any[] = []
-    const practicoCollected: any[] = []
+    const teorico = juntarConTope(teoricoCount, teoricoQuestionTypes)
+    const practico = juntarConTope(practicoCount, finalQuestionTypes)
+    const teoricoCollected = teorico.juntadas
+    const practicoCollected = practico.juntadas
 
-    for (let attempt = 0; attempt < 3 && (teoricoCollected.length < teoricoCount || practicoCollected.length < practicoCount); attempt++) {
-      if (teoricoCollected.length < teoricoCount) {
+    for (let attempt = 0; attempt < 3 && (teorico.falta(attempt) || practico.falta(attempt)); attempt++) {
+      if (teorico.falta(attempt)) {
         const teoricoBatch = await generateQuizBatch({
           subject,
           curriculum,
-          modeDescription: 'MODO TEÓRICO: Preguntas conceptuales sobre definiciones, teoremas y propiedades. Sin cálculos numéricos complejos.',
+          modeDescription: descripcionDelModo(areaCtx, 'teorico'),
           topicsText,
           questionCount: teoricoCount,
           previousNote: buildPreviousNote(),
@@ -1160,21 +1246,25 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
           contenido,
           questionTypes: teoricoQuestionTypes,
           questionMix: teoricoQuestionMix,
+          area: areaCtx.area,
+          seccionArea: seccionDeArea(areaCtx, 'teorico'),
+          notacion,
+          sinCalculo,
           onUsage,
         })
 
         for (const question of teoricoBatch) {
-          if (shouldDrop(question)) continue
-          teoricoCollected.push(question)
+          if (shouldDrop(question, teoricoQuestionTypes)) continue
+          teorico.agregar(question)
           if (teoricoCollected.length === teoricoCount) break
         }
       }
 
-      if (practicoCollected.length < practicoCount) {
+      if (practico.falta(attempt)) {
         const practicoBatch = await generateQuizBatch({
           subject,
           curriculum,
-          modeDescription: 'MODO PRÁCTICO: Ejercicios de cálculo y resolución de problemas numéricos.',
+          modeDescription: descripcionDelModo(areaCtx, 'practico'),
           topicsText,
           questionCount: practicoCount,
           // Rebuilt here on purpose: by now it also lists the teórico half,
@@ -1190,16 +1280,22 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
           contenido,
           questionTypes: finalQuestionTypes,
           questionMix,
+          area: areaCtx.area,
+          seccionArea: seccionDeArea(areaCtx, 'practico'),
+          notacion,
+          sinCalculo,
           onUsage,
         })
 
         for (const question of practicoBatch) {
-          if (shouldDrop(question)) continue
-          practicoCollected.push(question)
+          if (shouldDrop(question, finalQuestionTypes)) continue
+          practico.agregar(question)
           if (practicoCollected.length === practicoCount) break
         }
       }
     }
+    teorico.completarConReserva()
+    practico.completarConReserva()
 
     if (teoricoCollected.length < teoricoCount || practicoCollected.length < practicoCount) {
       return {
@@ -1213,7 +1309,8 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     return { ok: true, questions: mixedQuestions.map((q, idx) => shuffleAndRenumber(anclarTema(q, topics ?? []), `q${idx + 1}`)) }
   }
 
-  for (let attempt = 0; attempt < 3 && collectedQuestions.length < questionCount; attempt++) {
+  const juntando = juntarConTope(questionCount, batchQuestionTypes)
+  for (let attempt = 0; attempt < 3 && juntando.falta(attempt); attempt++) {
     const generatedQuestions = await generateQuizBatch({
       subject,
       curriculum,
@@ -1232,21 +1329,27 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
       contenido,
       questionTypes: batchQuestionTypes,
       questionMix: batchQuestionMix,
+      area: areaCtx.area,
+      seccionArea,
+      notacion,
+      sinCalculo,
       onUsage,
     })
 
     console.log('[generateObject] Success! Questions:', generatedQuestions.length)
 
     for (const question of generatedQuestions) {
-      if (shouldDrop(question)) continue
+      if (shouldDrop(question, batchQuestionTypes)) continue
 
-      collectedQuestions.push(question)
+      juntando.agregar(question)
 
-      if (collectedQuestions.length === questionCount) {
+      if (juntando.juntadas.length === questionCount) {
         break
       }
     }
   }
+  juntando.completarConReserva()
+  collectedQuestions.push(...juntando.juntadas)
 
   if (collectedQuestions.length < questionCount) {
     return {

@@ -1,5 +1,6 @@
 'use client'
 
+import { revanchaPermitida } from '@/lib/revancha'
 import { Cargando } from '@/components/sistema/cargando'
 import { useBarraDeAccion } from '@/hooks/use-barra-de-accion'
 
@@ -133,6 +134,8 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
   const [pendingAction, setPendingAction] = useState<'exit' | 'next' | 'prev' | 'cancel-edit' | null>(null)
 
   const isPreviewMode = Boolean(config?.previewOnly)
+  // Decisión 1 de la tanda P: sin Revancha en lo que tiene nota (lib/revancha.ts).
+  const conRevancha = revanchaPermitida(config)
   // J5: sin devolución hasta el final. Responder guarda la respuesta y pasa a
   // la siguiente; lo que acertó o erró, y la explicación, recién en resultados.
   const alFinal = config?.devolucion === 'al_final' && !isPreviewMode
@@ -817,7 +820,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                       ya recibió feedback de IA en la corrección misma. */}
                   {currentQuestion.type !== 'short_answer' && (
                     <div className="pt-2 flex flex-col sm:flex-row gap-2.5 w-full min-w-0 max-w-full">
-                      {currentQuestion.type === 'multiple_choice' && (
+                      {currentQuestion.type === 'multiple_choice' && conRevancha && (
                         <Button
                           type="button"
                           onClick={() => {
@@ -921,7 +924,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
             <>
           {answerState.submitted && answerState.isCorrect === false && (
             <>
-              {currentQuestion.type === 'multiple_choice' && (
+              {currentQuestion.type === 'multiple_choice' && conRevancha && (
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -1066,7 +1069,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
           nivel={config?.nivel}
           grado={config?.grado}
           initialMode={modalInitialMode}
-          allowRevancha={currentQuestion.type === 'multiple_choice'}
+          allowRevancha={conRevancha && currentQuestion.type === 'multiple_choice'}
         />
       )}
     </div>

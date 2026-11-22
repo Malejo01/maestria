@@ -237,7 +237,9 @@ export function distributeQuestionCounts(
  */
 export function buildQuestionMixInstruction(
   mix: QuestionTypeMix | undefined,
-  total: number
+  total: number,
+  /** Ronda T · A4: otro porqué, para las áreas sin cálculo. */
+  razon?: string
 ): string {
   const quotas = distributeQuestionCounts(mix, total)
   if (quotas.length === 0) return ''
@@ -250,6 +252,15 @@ export function buildQuestionMixInstruction(
   const omittedNote = omitted.length > 0
     ? `\nNo generes ninguna pregunta de tipo: ${omitted.join(', ')}.`
     : ''
+
+  if (razon) {
+    return `
+DISTRIBUCIÓN OBLIGATORIA POR TIPO (respetá los números, no los promedies):
+${lines}${omittedNote}
+
+POR QUÉ ESTA DISTRIBUCIÓN:
+${razon}`
+  }
 
   return `
 DISTRIBUCIÓN OBLIGATORIA POR TIPO (respetá los números, no los promedies):

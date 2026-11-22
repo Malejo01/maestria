@@ -1,5 +1,7 @@
 'use client'
 
+import { tarjetaDeModo } from '@/lib/area-interfaz'
+import type { AreaId } from '@/lib/areas'
 import { Cargando } from '@/components/sistema/cargando'
 
 
@@ -40,6 +42,8 @@ interface QuizModeDialogProps {
   showQuestionTypeSelector?: boolean
   questionTypes?: QuestionType[]
   onQuestionTypesChange?: (next: QuestionType[]) => void
+  /** Ronda T · A4: con el área, los modos dicen lo que significan en ella. */
+  area?: AreaId
 }
 
 const modeCards = [
@@ -91,7 +95,14 @@ export function QuizModeDialog({
   showQuestionTypeSelector = false,
   questionTypes = ['multiple_choice'],
   onQuestionTypesChange,
+  area,
 }: QuizModeDialogProps) {
+  const tarjetas = area
+    ? modeCards.map((card) => {
+        const { titulo, detalle } = tarjetaDeModo(area, card.mode)
+        return { ...card, title: titulo, description: detalle }
+      })
+    : modeCards
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/*
@@ -186,7 +197,7 @@ export function QuizModeDialog({
             </div>
           )}
 
-          {modeCards.map(({ mode, title: modeTitle, description: modeDescription, icon: Icon, accent, border, background }) => (
+          {tarjetas.map(({ mode, title: modeTitle, description: modeDescription, icon: Icon, accent, border, background }) => (
             <Button
               key={mode}
               type="button"

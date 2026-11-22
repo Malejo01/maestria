@@ -127,8 +127,10 @@ describe('/api/generate-quiz · mezcla sugerida vs. elección del usuario', () =
     await POST(buildRequest({ questionTypes: ['multiple_choice', 'true_false'] }))
     const prompt = systemPrompt()
 
-    expect(prompt).toContain('- multiple_choice: 16 preguntas')
-    expect(prompt).toContain('- true_false: 4 preguntas')
+    // Ronda T: con más de un tipo, ninguno pasa de la mitad (la cátedra
+    // ponderaba 16 y 4; el tope los deja en 10 y 10).
+    expect(prompt).toContain('- multiple_choice: 10 preguntas')
+    expect(prompt).toContain('- true_false: 10 preguntas')
     expect(prompt).not.toContain('- numeric:')
     expect(prompt).not.toContain('- short_answer:')
     expect(prompt).toContain('No generes ninguna pregunta de tipo: numeric, short_answer')
@@ -165,25 +167,29 @@ describe('/api/generate-quiz · mezcla sugerida vs. elección del usuario', () =
     expect(prompt).toMatch(/- true_false: [1-9]\d* pregunta/)
   })
 
-  it('sin mezcla declarada deja el reparto parejo de siempre', async () => {
+  it('Ronda T · A4: sin mezcla declarada, la mezcla del área (antes era "parejo")', async () => {
     // Todo K-12 y cualquier programa Superior que no declare la columna: el
-    // comportamiento previo a la migración 023, intacto.
+    // reparto sale del perfil del área (lib/areas.ts), recortado a lo elegido.
     vi.mocked(sql).mockResolvedValue([] as never)
 
     await POST(buildRequest({ questionTypes: ['multiple_choice', 'short_answer'] }))
     const prompt = systemPrompt()
 
-    expect(prompt).toContain('Distribuí las preguntas de forma pareja entre los tipos solicitados.')
-    expect(prompt).not.toContain('DISTRIBUCIÓN OBLIGATORIA POR TIPO')
+    expect(prompt).toContain('DISTRIBUCIÓN OBLIGATORIA POR TIPO')
+    expect(prompt).not.toContain('Distribuí las preguntas de forma pareja entre los tipos solicitados.')
+    expect(prompt).toContain('- multiple_choice: 10 preguntas')
+    expect(prompt).toContain('- short_answer: 10 preguntas')
   })
 
-  it('sin tipos elegidos ni mezcla declarada sigue siendo opción múltiple', async () => {
+  it('Ronda T · A4: sin tipos elegidos ni mezcla declarada, los tipos de la mezcla del área', async () => {
     vi.mocked(sql).mockResolvedValue([] as never)
 
     await POST(buildRequest({}))
     const prompt = systemPrompt()
 
+    // Matemática práctico: produce (numérica y respuesta corta) y nada pasa del 50 %.
     expect(prompt).toContain('TIPO "multiple_choice"')
-    expect(prompt).not.toContain('TIPO "numeric"')
+    expect(prompt).toContain('TIPO "numeric"')
+    expect(prompt).toContain('- numeric: 9 preguntas')
   })
 })

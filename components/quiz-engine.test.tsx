@@ -212,3 +212,28 @@ describe('QuizEngine — J5, devolución al final (diagnóstico)', () => {
     expect(screen.queryByText(/Esto es un diagnóstico/)).toBeNull()
   })
 })
+
+describe('QuizEngine — decisión 1 de la tanda P: la Revancha sólo en la práctica libre', () => {
+  function errarLaPrimera(conf: QuizConfig) {
+    render(<QuizEngine />)
+    act(() => {
+      useAppStore.getState().startQuiz(conf, [multipleChoice])
+    })
+    answerMultipleChoice(0)
+  }
+
+  it('en la práctica libre, al errar, ofrece la Revancha', () => {
+    errarLaPrimera({ ...config, questionCount: 1 })
+    expect(screen.queryAllByText(/revancha/i).length).toBeGreaterThan(0)
+  })
+
+  it('en una tarea (con nota), no', () => {
+    errarLaPrimera({ ...config, questionCount: 1, assignmentId: 12, classroomId: 4 })
+    expect(screen.queryAllByText(/revancha/i)).toHaveLength(0)
+  })
+
+  it('en una práctica extra de la tarea, tampoco', () => {
+    errarLaPrimera({ ...config, questionCount: 1, practicaExtraId: 3, classroomId: 4 })
+    expect(screen.queryAllByText(/revancha/i)).toHaveLength(0)
+  })
+})

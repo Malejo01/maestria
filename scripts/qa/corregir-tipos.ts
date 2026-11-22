@@ -35,12 +35,14 @@ import { aplicables, aplicarPropuestas, type PropuestaDeCorreccion } from '../..
 import { generarConGemini, proponerCorrecciones } from '../../lib/corregir-tipos-server'
 import { MOTIVO_DE_PROBLEMA } from '../../lib/validar-tipo-de-pregunta'
 import type { Question } from '../../lib/types'
+import { inferirArea } from '../../lib/inferir-area'
 
 interface Fila {
   id: number
   user_id: string
   title: string
   questions: Question[]
+  subject_name?: string | null
 }
 
 function cargarKeyDeGemini() {
@@ -133,7 +135,7 @@ async function run() {
   cargarKeyDeGemini()
 
   const filas = (await target.sql`
-    SELECT id, user_id, title, questions FROM teacher_quizzes
+    SELECT id, user_id, title, questions, subject_name FROM teacher_quizzes
     WHERE ${desde}::date IS NULL OR created_at >= ${desde}::date
     ORDER BY id
   `) as Fila[]
@@ -146,7 +148,9 @@ async function run() {
 
   for (const fila of filas) {
     const preguntas = Array.isArray(fila.questions) ? fila.questions : []
-    const propuestas = await proponerCorrecciones(preguntas, generarConGemini, (u) => usos.push(u))
+    // Ronda T · A4: el área se infiere del nombre de la materia (sin leer el programa).
+    const area = inferirArea(String(fila.subject_name ?? '')).area
+    const propuestas = await proponerCorrecciones(preguntas, generarConGemini, (u) => usos.push(u), area)
     if (propuestas.length === 0) continue
     marcadas += propuestas.length
     corregibles += aplicables(propuestas).length

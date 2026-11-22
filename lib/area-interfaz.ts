@@ -22,6 +22,17 @@ export function renglonDeArea(area: AreaId | null | undefined, confianza: number
   return dudosa ? T.nosParece(nombre, practicas) : T.renglon(nombre, practicas)
 }
 
+/**
+ * A4 · Lo que dicen las tarjetas de modo del selector, según el área. En
+ * Antropología: "Práctico: análisis de casos", no "ejercicios y cuentas".
+ */
+export function tarjetaDeModo(area: AreaId, modo: 'teorico' | 'practico' | 'mixto'): { titulo: string; detalle: string } {
+  const etiqueta = perfilDeArea(area).modos[modo].etiqueta
+  const detalle =
+    modo === 'teorico' ? T.modoTeorico : modo === 'practico' ? T.modoPractico(queSonLasPracticas(area)) : T.modoMixto
+  return { titulo: etiqueta, detalle }
+}
+
 /** "Con cálculos" / "Conceptual" / "Mixta". */
 export function etiquetaDeCaracter(caracter: Caracter): string {
   return T.caracter[caracter]

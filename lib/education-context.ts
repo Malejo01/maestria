@@ -1,5 +1,5 @@
 import { seccionPerfilAlumnos, type PerfilAlumnos } from '@/lib/perfil-alumnos'
-import { ESTRATEGIA_GENERAL, ESTRATEGIA_LENGUA, ESTRATEGIA_MATEMATICA, ESTRATEGIA_NATURALES, ESTRATEGIA_SOCIALES } from '@/lib/areas'
+import { ESTRATEGIA_GENERAL, ESTRATEGIA_LENGUA, ESTRATEGIA_MATEMATICA, ESTRATEGIA_NATURALES, ESTRATEGIA_SOCIALES, esAreaId, perfilDeArea, type AreaId } from '@/lib/areas'
 
 export interface EducationContext {
   nivel: 'Primario' | 'Secundario' | 'Superior'
@@ -66,8 +66,10 @@ export const COHERENCIA_DE_TIPOS = `COHERENCIA ENTRE TIPO Y CONSIGNA:
 - "true_false": la consigna es SIEMPRE una AFIRMACIÓN que se puede juzgar verdadera o falsa, sin "¿" y sin "?" al final ("El sentido de la desigualdad se invierte al multiplicar por un negativo."). Nunca una pregunta abierta ("¿qué sucede…?", "¿cómo…?", "¿por qué…?", "¿favorecen o dificultan…?"): ésas no se contestan con Verdadero o Falso.
 - "numeric": sólo cuando la respuesta es UN NÚMERO. Un concepto, un procedimiento, una propiedad o un nombre ("¿qué concepto se emplea?", "¿cómo se llama…?") van como "short_answer" o "multiple_choice".`
 
-function getSubjectStrategy(materia: string): string {
-  return `${estrategiaDeLaMateria(materia)}
+function getSubjectStrategy(materia: string, area?: AreaId): string {
+  // Ronda T · A4: con el área conocida, la estrategia de su perfil.
+  const estrategia = area && esAreaId(area) ? perfilDeArea(area).estrategiaDistractores : estrategiaDeLaMateria(materia)
+  return `${estrategia}
 ${COHERENCIA_DE_TIPOS}`
 }
 
@@ -116,11 +118,13 @@ export function getEducationContext(
   materia: string = 'la materia',
   /** O3: unidades y temas de lo que se genera, para reconocer una unidad de didáctica. */
   contenido?: { unidades?: readonly string[]; temas?: readonly string[] },
+  /** Ronda T · A4: el área de la materia, si se conoce. */
+  area?: AreaId,
 ): EducationContext {
   const nivel = normalizarNivel(nivelStr) ?? NIVEL_POR_DEFECTO
 
   const numGrado = parseNumeroGrado(gradoStr)
-  const estrategiaMateria = getSubjectStrategy(materia)
+  const estrategiaMateria = getSubjectStrategy(materia, area)
 
   if (nivel === 'Primario') {
     const gradoNum = Math.min(Math.max(numGrado, 1), 7)
@@ -570,6 +574,7 @@ export function buildEducationSystemPrompt({
   contextoProfesional,
   perfilAlumnos,
   contenido,
+  area,
 }: {
   nivel?: string
   grado?: string
@@ -580,8 +585,10 @@ export function buildEducationSystemPrompt({
   contextoProfesional?: ContextoProfesionalCarrera
   /** J3: lo pedagógico de la ficha de los alumnos del grupo. Ver lib/perfil-alumnos.ts. */
   perfilAlumnos?: PerfilAlumnos | null
+  /** Ronda T · A4: el área de la materia (estrategia de distractores). */
+  area?: AreaId
 }): string {
-  const ctx = getEducationContext(nivel, grado, materia, contenido)
+  const ctx = getEducationContext(nivel, grado, materia, contenido, area)
 
   let difficultyCognitiveInstruction = ''
   if (difficulty === 'basico') {
