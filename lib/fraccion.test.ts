@@ -98,8 +98,8 @@ describe('K2 · compatibilidad: una pregunta vieja sin `fraccion`', () => {
     // Sin `exigeIrreducible` no hay motivo de forma: 6/8 vale por 0,75.
     expect(isCorrectNumeric(base, 0.75, '6/8')).toBe(true)
   })
-  it('y se sigue mostrando como número', () => {
-    expect(respuestaNumerica(vieja.correctAnswer, vieja.tolerance, vieja.fraccion)).toBe('0,9167')
+  it('O5: se muestra la fracción además del decimal (el dato no cambia)', () => {
+    expect(respuestaNumerica(vieja.correctAnswer, vieja.tolerance, vieja.fraccion)).toBe('$\\frac{11}{12}$ (0,9167)')
   })
 })
 

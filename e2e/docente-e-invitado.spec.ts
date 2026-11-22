@@ -98,6 +98,9 @@ test('2 · un invitado entra por código y hace la tarea', async ({ browser }) =
     await expect(page.getByText(new RegExp(`^${i}/5$`))).toBeVisible()
     await responderUna(page)
   }
+  // Esperar a que el resultado llegue al servidor antes de irse (si no, la
+  // lista se lee antes de que termine el guardado).
+  await expect(page.getByText('Guardado', { exact: true })).toBeVisible()
   // El resultado se guardó: la tarjeta cuenta el intento.
   await page.goto('/aulas')
   await expect(page.getByRole('listitem').filter({ hasText: MATERIA }).first()).toContainText(/1 de|tu mejor nota|Volver a hacerla/)
