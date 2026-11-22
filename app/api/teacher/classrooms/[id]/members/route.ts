@@ -35,6 +35,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
 }
 
+/** O7: los ids de alumnos que vienen del cliente (null = todos). */
+export function idsDeAlumnos(valor: unknown): string[] | null {
+  if (valor === undefined || valor === null) return null
+  if (!Array.isArray(valor)) return []
+  return [...new Set(valor.filter((v): v is string => typeof v === 'string' && v.trim().length > 0).map((v) => v.trim()))].slice(0, 500)
+}
+
 /**
  * POST — copy the roster from another of the teacher's aulas.
  *
@@ -82,11 +89,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: 'El aula de origen no pertenece a este docente' }, { status: 403 })
     }
 
+    // O7: `userIds` elige a quiénes traer (todos, si no viene). Sólo cuentan
+    // los que están activos en el grupo de origen: un id ajeno no entra.
+    const elegidos = idsDeAlumnos(body?.userIds)
+    if (elegidos !== null && elegidos.length === 0) {
+      return NextResponse.json({ error: 'Elegí al menos un alumno' }, { status: 400 })
+    }
+
     const inserted = await sql`
       INSERT INTO classroom_members (classroom_id, user_id, display_name, is_verified, status, joined_at, updated_at)
       SELECT ${classroomId}, m.user_id, m.display_name, m.is_verified, 'active', NOW(), NOW()
       FROM classroom_members m
       WHERE m.classroom_id = ${sourceClassroomId} AND m.status = 'active'
+        AND (${elegidos}::text[] IS NULL OR m.user_id = ANY(${elegidos}::text[]))
       ON CONFLICT (classroom_id, user_id) DO UPDATE
         SET status = 'active', updated_at = NOW()
       RETURNING id
