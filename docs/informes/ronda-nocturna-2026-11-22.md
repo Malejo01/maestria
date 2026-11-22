@@ -22,6 +22,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O12 · El embudo del docente | hecho | [#87](https://github.com/Malejo01/maestria/pull/87) | Tests de la ubicación, el orden y el conteo, y el 404 para no admins; en staging, con los 7 docentes | US$0 |
 | O13 · Primer uso de un docente nuevo sin ayuda | hecho | [#88](https://github.com/Malejo01/maestria/pull/88) | Recorrido con Playwright a 390 de punta a punta en staging (docente recién creado → alumno → tarea → resultado); 2 arreglos, 4 propuestas | US$0 (IA simulada) |
 | O14 · Medición de calidad de la generación | hecho | [#89](https://github.com/Malejo01/maestria/pull/89) | 22 cuestionarios con IA real en staging; "fuera de tema" 8 % → corregido en la generación → re-medido 0 % | US$0,16 |
+| O19 · Limpieza: placeholders de v0 | hecho | [#90](https://github.com/Malejo01/maestria/pull/90) | `grep` sin referencias (sólo el roadmap); build en verde | US$0 |
 | O15 · Esquema que usa el código contra staging | hecho | [#91](https://github.com/Malejo01/maestria/pull/91) | Test manual contra `information_schema` de staging: en verde; en el CI se salta | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,19 (US$0,0285 en `ai_usage_log` de staging — 18 llamadas desde la app —, más US$0,157 de los scripts de O14 y US$0,0005 del dry-run de N2, que llaman al modelo directo y no pasan por el registro; los scripts imprimen su gasto estimado con la misma tarifa) (tope: US$10; a los US$8 se pasa a modelos simulados).
