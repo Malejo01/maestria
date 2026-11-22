@@ -10,6 +10,9 @@ export interface Subject {
   source?: 'core' | 'teacher'
   programId?: number
   pedagogyProfile?: PedagogyProfile
+  /** O3: nivel y año del programa (en un grupo, mandan sobre el perfil del alumno). */
+  nivel?: string | null
+  grado?: string | null
 }
 
 export interface Unit {

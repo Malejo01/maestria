@@ -28,6 +28,9 @@ function classroomToSubject(classroom: StudentClassroom): Subject {
     source: 'teacher',
     programId: classroom.teacherProgramId,
     pedagogyProfile: classroom.pedagogyProfile,
+    // O3: la práctica del grupo genera con el nivel y el año del programa.
+    nivel: classroom.nivel,
+    grado: classroom.grado,
     units: (classroom.units ?? []).map((unit) => ({
       id: unit.id,
       name: unit.name,
