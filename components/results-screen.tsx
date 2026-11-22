@@ -1,5 +1,7 @@
 'use client'
 
+import { resultadoPorTema } from '@/lib/autodidacta'
+import { AUTODIDACTA } from '@/lib/textos'
 import { revanchaPermitida } from '@/lib/revancha'
 import { formatearNumero } from '@/lib/numeros'
 import { RACHA, RESULTADOS } from '@/lib/textos'
@@ -267,6 +269,23 @@ export function ResultsScreen() {
 
   // Decisión 1 de la tanda P: sin Revancha en lo que tiene nota (lib/revancha.ts).
   const conRevancha = revanchaPermitida(config)
+
+  // E1: el modo autodidacta guarda el resultado tema por tema (una sola vez)
+  // para el plan hasta el examen. Lo que no se pudo corregir no cuenta.
+  // Volver al plan espera a que se guarde: si no, la navegación corta el envío
+  // y el plan se lee sin este resultado.
+  const autodidactaGuardadoRef = useRef<Promise<unknown> | null>(null)
+  useEffect(() => {
+    const ad = config?.autodidacta
+    if (!ad || autodidactaGuardadoRef.current || answers.length === 0) return
+    const porTema = resultadoPorTema(answers.filter(isGraded).map((a) => ({ topicName: a.topicName, isCorrect: a.isCorrect })))
+    autodidactaGuardadoRef.current = fetch(`/api/autodidacta/${ad.programId}/resultados`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo: ad.tipo, porTema, nota: results.graded > 0 ? results.score : null }),
+      keepalive: true,
+    }).catch(() => {})
+  }, [config?.autodidacta, answers, results.graded, results.score])
 
   const handleRetry = useCallback(async (mode: 'teorico' | 'practico' | 'mixto') => {
     if (!config) return
@@ -638,6 +657,23 @@ export function ResultsScreen() {
         className="fixed bottom-0 left-0 right-0 z-20 border-t-2 border-border bg-card/95 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]"
       >
         <div className="max-w-md mx-auto space-y-2.5">
+          {/* E1: del modo autodidacta se vuelve al plan de la materia. */}
+          {config?.autodidacta && (
+            <Button asChild className="h-auto min-h-13 w-full whitespace-normal rounded-2xl py-2 font-bold">
+              <a
+                href={`/autodidacta/${config.autodidacta.programId}`}
+                onClick={async (e) => {
+                  e.preventDefault()
+                  const destino = e.currentTarget.href
+                  await autodidactaGuardadoRef.current
+                  resetQuiz()
+                  window.location.assign(destino)
+                }}
+              >
+                {AUTODIDACTA.volverAMiPlan}
+              </a>
+            </Button>
+          )}
           {/* P4: otra práctica igual a la tarea, con preguntas nuevas (no cuenta como intento). */}
           {!config?.previewOnly && (config?.assignmentId || config?.practicaDeTarea) && (
             <PracticaExtra asignacionId={Number(config.assignmentId ?? config.practicaDeTarea)} />

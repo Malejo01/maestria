@@ -51,6 +51,8 @@ export async function GET(req: Request) {
                nivel, grado, jurisdiccion, created_from
         FROM teacher_programs
         WHERE user_id = ${userId} AND status = 'active'
+          -- E1: la materia personal (modo autodidacta) no es una materia del docente.
+          AND COALESCE((to_jsonb(teacher_programs) ->> 'personal')::boolean, false) = false
         ORDER BY created_at DESC
       `
     } catch {
@@ -59,6 +61,7 @@ export async function GET(req: Request) {
           SELECT id, user_id, subject_name, icon_name, color_name, pedagogy_profile, units, source_file_name, created_at
           FROM teacher_programs
           WHERE user_id = ${userId} AND status = 'active'
+            AND COALESCE((to_jsonb(teacher_programs) ->> 'personal')::boolean, false) = false
           ORDER BY created_at DESC
         `
       } catch {
@@ -66,6 +69,7 @@ export async function GET(req: Request) {
           SELECT id, user_id, subject_name, pedagogy_profile, units, source_file_name, created_at
           FROM teacher_programs
           WHERE user_id = ${userId} AND status = 'active'
+            AND COALESCE((to_jsonb(teacher_programs) ->> 'personal')::boolean, false) = false
           ORDER BY created_at DESC
         `
       }

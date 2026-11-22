@@ -37,7 +37,7 @@ export async function listarDocentes(ahora = new Date()): Promise<DocenteEnLista
       to_jsonb(u) ->> 'plan_vence_el' AS plan_vence_el,
       to_jsonb(u) ->> 'prueba_iniciada_el' AS prueba_iniciada_el,
       to_jsonb(u) ->> 'fundadora_desde' AS fundadora_desde,
-      (SELECT COUNT(*) FROM teacher_programs p WHERE p.user_id = u.id AND p.status = 'active')::int AS materias,
+      (SELECT COUNT(*) FROM teacher_programs p WHERE p.user_id = u.id AND p.status = 'active' AND COALESCE((to_jsonb(p) ->> 'personal')::boolean, false) = false)::int AS materias,
       (SELECT COUNT(*) FROM classrooms c WHERE c.teacher_id = u.id AND c.status = 'open')::int AS grupos,
       (SELECT COUNT(DISTINCT m.user_id) FROM classroom_members m JOIN classrooms c ON c.id = m.classroom_id
         WHERE c.teacher_id = u.id AND m.status = 'active' AND m.user_id <> u.id)::int AS alumnos,

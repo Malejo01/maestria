@@ -1676,6 +1676,62 @@ export const SEPARAR_EN_TEMAS = {
   noSePudo: 'No se pudo separar. Probá de nuevo.',
 } as const
 
+/** Ronda T · E1: el modo autodidacta (el alumno que se prepara solo). */
+export const AUTODIDACTA = {
+  entrada: 'Me preparo solo para un examen',
+  entradaDetalle: 'Subí el programa de tu materia, poné la fecha del examen y te armamos un plan hasta ese día.',
+  titulo: 'Me preparo solo para un examen',
+  mayor: {
+    titulo: 'Antes de empezar',
+    declaracion: 'Declaro que soy mayor de 18 años.',
+    detalle: 'Por ahora, este modo es para mayores de 18.',
+    seguir: 'Seguir',
+  },
+  misMaterias: 'Mis materias',
+  ninguna: 'Todavía no subiste ninguna materia.',
+  nueva: 'Nueva materia',
+  nombre: 'Nombre de la materia',
+  fechaExamen: 'Fecha del examen',
+  programa: 'Programa de la materia (PDF o Word)',
+  leyendo: 'Leyendo el programa…',
+  temasLeidos: (unidades: number, temas: number) => `Leímos ${unidades} ${unidades === 1 ? 'unidad' : 'unidades'} y ${temas} temas.`,
+  noSePudoLeer: 'No pudimos leer el programa. Probá con otro archivo.',
+  crear: 'Crear mi materia',
+  creando: 'Creando…',
+  examenEl: (fecha: string) => `Examen el ${fecha}`,
+  faltan: (dias: number) => (dias === 0 ? 'El examen es hoy' : dias === 1 ? 'Falta 1 día' : `Faltan ${dias} días`),
+  temas: (n: number) => (n === 1 ? '1 tema' : `${n} temas`),
+  abrir: 'Abrir',
+  volver: 'Mis materias',
+  diagnostico: 'Diagnóstico inicial',
+  diagnosticoDetalle: 'Una pregunta por tema, sin ver si acertás hasta el final. Con esto armamos tu plan.',
+  hacerDiagnostico: 'Hacer el diagnóstico',
+  loQueSabes: 'Lo que ya sabés',
+  loQueReforzar: 'Lo que tenés que reforzar',
+  sinDatos: 'Todavía sin datos',
+  plan: 'Tu plan hasta el examen',
+  hoy: 'Hoy',
+  practicaDeHoy: 'Práctica de hoy (10 preguntas)',
+  diaDeSimulacro: 'Simulacro',
+  simulacro: 'Simulacro de examen',
+  simulacroDetalle: 'Cronometrado, sin ver si acertás hasta el final. Generado sólo desde tu programa.',
+  nuncaReales: 'Nunca usamos preguntas de exámenes reales.',
+  empezarSimulacro: (preguntas: number, minutos: number) => `${preguntas} preguntas en ${minutos} minutos`,
+  generando: 'Armando las preguntas…',
+  noSePudo: 'No se pudo armar el cuestionario. Probá de nuevo.',
+  volverAMiPlan: 'Volver a mi plan',
+  guardado: 'Tu plan se actualizó con este resultado.',
+} as const
+
+/** Ronda T · E1: el simulacro cronometrado. */
+export const SIMULACRO = {
+  tiempoRestante: (tiempo: string) => `Tiempo restante: ${tiempo}`,
+  titulo: 'Simulacro de examen',
+  etiqueta: 'Simulacro',
+  aviso: (preguntas: number, minutos: number) =>
+    `Tenés ${minutos} minutos para ${preguntas} preguntas. El tiempo empieza cuando tocás Empezar; si se acaba, el simulacro termina con lo que respondiste.`,
+} as const
+
 /** Ronda T · C2: pagar desde la app (Mercado Pago Checkout Pro). */
 export const PAGAR = {
   titulo: 'Pagar',
