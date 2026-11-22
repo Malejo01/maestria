@@ -958,19 +958,34 @@ export const INFORME_IMPRESO = {
 } as const
 
 /** O10: la campanita de avisos del docente. */
-export const AVISOS_DOCENTE = {
-  boton: (n: number) => (n === 0 ? 'Avisos' : n === 1 ? 'Avisos: 1 sin ver' : `Avisos: ${n} sin ver`),
+/** P2: lo común de las dos campanitas (docente y alumno). */
+export const AVISOS = {
+  boton: (n: number) => (n === 0 ? 'Avisos' : n === 1 ? 'Avisos: 1 sin leer' : `Avisos: ${n} sin leer`),
+  contador: (n: number) => (n === 0 ? 'No tenés avisos sin leer' : n === 1 ? '1 aviso sin leer' : `${n} avisos sin leer`),
   titulo: 'Avisos',
-  vacio: 'Nada nuevo en las últimas dos semanas.',
   cargando: 'Buscando avisos…',
-  terminaron: (n: number, grupo: string, tarea: string) =>
-    n === 1 ? `1 alumno de ${grupo} terminó «${tarea}»` : `${n} alumnos de ${grupo} terminaron «${tarea}»`,
-  nuevos: (n: number, grupo: string) =>
-    n === 1 ? `1 alumno nuevo entró a ${grupo}` : `${n} alumnos nuevos entraron a ${grupo}`,
-  reportes: (n: number, grupo: string | null) =>
-    `${n === 1 ? 'Reportaron un problema' : `Reportaron ${n} problemas`}${grupo ? ` en ${grupo}` : ''}`,
-  hoy: 'Hoy',
-  ayer: 'Ayer',
+  marcarTodo: 'Marcar todo como leído',
+  sinLeer: 'Sin leer',
+  grupos: { hoy: 'Hoy', ayer: 'Ayer', antes: 'Antes' },
+  relativa: {
+    recien: 'hace un momento',
+    minutos: (n: number) => `hace ${n} min`,
+    horas: (n: number) => `hace ${n} h`,
+    ayer: 'ayer',
+    dias: (n: number) => `hace ${n} días`,
+  },
+} as const
+
+/** O10/P2: los avisos del docente. Título corto + una línea de detalle. */
+export const AVISOS_DOCENTE = {
+  vacio: 'Nada nuevo en las últimas dos semanas.',
+  vacioDetalle: 'Cuando tus alumnos terminen una tarea o entren a un grupo, te avisamos acá.',
+  terminaron: (n: number) => (n === 1 ? '1 alumno terminó la tarea' : `${n} terminaron la tarea`),
+  nuevos: (n: number) => (n === 1 ? '1 alumno nuevo' : `${n} alumnos nuevos`),
+  nuevosDetalle: (n: number, grupo: string) => `${n === 1 ? 'Entró' : 'Entraron'} a ${grupo}`,
+  reportes: (n: number) => (n === 1 ? 'Reportaron un problema' : `Reportaron ${n} problemas`),
+  reportesDetalle: (grupo: string | null) => (grupo ? `En ${grupo}` : 'En un cuestionario tuyo'),
+  detalleTarea: (grupo: string, tarea: string) => `${grupo} · ${tarea}`,
 } as const
 
 /** O6: el reporte del diagnóstico del 10/08, leído contra un programa. */

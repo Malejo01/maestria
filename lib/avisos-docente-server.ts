@@ -1,5 +1,6 @@
 import { sql } from '@/lib/db'
-import { armarAvisos, type AvisoDocente, type FilaDeAviso } from '@/lib/avisos-docente'
+import { armarAvisos, type FilaDeAviso } from '@/lib/avisos-docente'
+import type { Lectura, RespuestaDeAvisos } from '@/lib/avisos/tipos'
 
 /**
  * O10 · Los avisos del docente, de lo que ya está en la base, de las últimas
@@ -7,20 +8,21 @@ import { armarAvisos, type AvisoDocente, type FilaDeAviso } from '@/lib/avisos-d
  * alumnos nuevos por grupo y por día, y reportes (M6) de sus grupos o sus
  * cuestionarios. Los días van en hora de Argentina.
  *
- * Válvula: sin la 034 no hay `avisos_docente_visto_el`: todo cuenta como no
- * leído. Sin la 029 los reportes no saben de qué grupo son: no se listan.
+ * Válvula: sin la 034 no hay `avisos_docente_visto_el`: los avisos se listan
+ * sin "no leídos" (P2: igual que el alumno sin la 035). Sin la 029 los
+ * reportes no saben de qué grupo son: no se listan.
  */
 const DIAS = 14
 
 const iso = (v: string | Date | null | undefined) => (v ? new Date(v).toISOString() : '')
 const faltaColumna = (e: unknown) => ['42703', '42P01'].includes((e as { code?: string })?.code ?? '')
 
-async function vistoEl(docenteId: string): Promise<string | null> {
+async function lectura(docenteId: string): Promise<Lectura> {
   try {
     const filas = (await sql`SELECT avisos_docente_visto_el AS v FROM users WHERE id = ${docenteId}`) as { v: string | Date | null }[]
-    return filas[0]?.v ? iso(filas[0].v) : null
+    return { vistoEl: filas[0]?.v ? iso(filas[0].v) : null, puedeMarcar: true }
   } catch (error) {
-    if (faltaColumna(error)) return null
+    if (faltaColumna(error)) return { vistoEl: null, puedeMarcar: false }
     throw error
   }
 }
@@ -52,9 +54,9 @@ async function reportes(docenteId: string): Promise<FilaDeAviso[]> {
   }
 }
 
-export async function avisosDelDocente(docenteId: string): Promise<{ avisos: AvisoDocente[]; vistoEl: string | null }> {
-  const [visto, tareas, nuevos, reportados] = await Promise.all([
-    vistoEl(docenteId),
+export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAvisos> {
+  const [leida, tareas, nuevos, reportados] = await Promise.all([
+    lectura(docenteId),
     sql`
       SELECT c.id AS grupo_id, c.name AS grupo, q.title AS tarea,
              to_char((att.completed_at AT TIME ZONE 'America/Argentina/Buenos_Aires')::date, 'YYYY-MM-DD') AS dia,
@@ -84,10 +86,10 @@ export async function avisosDelDocente(docenteId: string): Promise<{ avisos: Avi
     ...nuevos.map((f) => ({ tipo: 'nuevos' as const, grupoId: Number(f.grupo_id), grupo: f.grupo, dia: f.dia, alumnos: Number(f.alumnos), ultimo: iso(f.ultimo) })),
     ...reportados,
   ]
-  return { avisos: armarAvisos(filas, visto), vistoEl: visto }
+  return { avisos: armarAvisos(filas, leida), vistoEl: leida.vistoEl, puedeMarcar: leida.puedeMarcar }
 }
 
-/** Abrir la campanita: desde ahora, lo anterior está visto. Sin la 034, no hace nada. */
+/** "Marcar todo como leído": desde ahora, lo anterior está visto. Sin la 034, no hace nada. */
 export async function marcarAvisosVistos(docenteId: string): Promise<void> {
   try {
     await sql`UPDATE users SET avisos_docente_visto_el = NOW() WHERE id = ${docenteId}`
