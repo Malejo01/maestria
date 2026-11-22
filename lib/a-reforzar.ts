@@ -163,3 +163,39 @@ export function separarDominados<T extends { subject: string; topicName: string 
   )
   return { pendientes, dominados: [...dominados] }
 }
+
+/**
+ * O14 · Anclar el tema de cada pregunta generada a uno de los temas pedidos.
+ * El prompt pide copiar el nombre textual, pero el modelo lo reformula
+ * ("Cuerpos geométricos" por "Cuerpos geométricos: características…") e
+ * inventa el `topic`. Con el mismo puente que "A reforzar": si el nombre se
+ * ubica con certeza entre los pedidos (o se pidió uno solo), la pregunta queda
+ * con el id y el nombre del tema pedido; si no, como vino. Así "A reforzar" y
+ * el reporte de temas leen la clave del programa y no la de la IA.
+ */
+/**
+ * El modelo suele acortar el nombre del tema ("Cuerpos" por "Cuerpos:
+ * Elementos y clasificación…", "Números Reales: Operaciones"). Vale si TODAS
+ * las palabras con contenido (4 letras o más) del nombre están en UNO SOLO de
+ * los temas pedidos. Sólo para anclar lo generado: el modelo tenía que elegir
+ * entre esos temas, así que no es el puente estricto de "A reforzar".
+ */
+function pedidoPorPalabras<P extends { name: string }>(nombre: string, pedidos: readonly P[]): P | undefined {
+  const palabras = normalizarTema(nombre).split(' ').filter((p) => p.length >= 4)
+  if (palabras.length === 0) return undefined
+  const candidatos = pedidos.filter((t) => {
+    const delPedido = new Set(normalizarTema(t.name).split(' '))
+    return palabras.every((p) => delPedido.has(p))
+  })
+  return candidatos.length === 1 ? candidatos[0] : undefined
+}
+
+export function anclarTema<T extends { topic?: string; topicName?: string }>(pregunta: T, pedidos: readonly { id: string; name: string }[]): T {
+  if (pedidos.length === 0) return pregunta
+  const porId = pedidos.find((t) => t.id === pregunta.topic)
+  if (porId) return { ...pregunta, topic: porId.id, topicName: porId.name }
+  const nombre = pregunta.topicName ? temaDelPrograma(pregunta.topicName, pedidos.map((t) => t.name)) : null
+  const porPalabras = !nombre && pregunta.topicName ? pedidoPorPalabras(pregunta.topicName, pedidos) : undefined
+  const elegido = nombre ? pedidos.find((t) => t.name === nombre) : (porPalabras ?? (pedidos.length === 1 ? pedidos[0] : undefined))
+  return elegido ? { ...pregunta, topic: elegido.id, topicName: elegido.name } : pregunta
+}
