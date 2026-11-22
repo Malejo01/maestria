@@ -1444,3 +1444,27 @@ export const GUARDADO_DEL_RESULTADO = {
   error: (mensaje: string) => `No se pudo guardar: ${mensaje}`,
   reintentar: 'Reintentar ahora',
 } as const
+
+/** O12: el embudo del docente (sólo admin). */
+export const EMBUDO = {
+  menu: 'Embudo de docentes',
+  titulo: 'Embudo de docentes',
+  detalle: 'En qué paso está cada docente y desde cuándo. Sale de las tablas de la app. Los trabados más de 3 días en un paso van arriba, con su email, para contactarlos.',
+  volver: 'Volver a la app',
+  pasos: {
+    registro: 'Se registró',
+    materia: 'Creó una materia',
+    grupo: 'Creó un grupo',
+    tarea: 'Mandó la primera tarea',
+    primerAlumno: 'El primer alumno la hizo',
+    cincoAlumnos: '5 alumnos activos',
+  },
+  trabados: (n: number) => (n === 1 ? '1 docente trabado' : `${n} docentes trabados`),
+  sinTrabados: 'Nadie trabado más de 3 días.',
+  resto: 'El resto',
+  enPaso: (paso: string, dias: number) => `${paso} · ${dias === 0 ? 'hoy' : dias === 1 ? 'hace 1 día' : `hace ${dias} días`}`,
+  terminado: 'Llegó a 5 alumnos activos',
+  sinNombre: 'Sin nombre',
+  columnas: { docente: 'Docente', paso: 'Paso', desde: 'Desde' },
+  vacio: 'Todavía no hay docentes.',
+} as const

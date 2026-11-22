@@ -19,6 +19,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O9 · Informe del grupo para imprimir | hecho | [#84](https://github.com/Malejo01/maestria/pull/84) | Tests de la parte pura; en staging el informe de Lengua ordenado por promedio, en modo impresión | US$0 |
 | O10 · Avisos al docente dentro de la app (migración 034) | hecho | [#85](https://github.com/Malejo01/maestria/pull/85) | Tests de los textos, el orden, los no leídos y la válvula; en staging la campanita de Irina con avisos reales | US$0 |
 | O11 · Títulos de unidad en la misma línea que los temas | hecho | [#86](https://github.com/Malejo01/maestria/pull/86) | Tests con el caso de la tanda I y casos que no se tocan; test de la ruta `extract` | US$0 |
+| O12 · El embudo del docente | hecho | (este PR) | Tests de la ubicación, el orden y el conteo, y el 404 para no admins; en staging, con los 7 docentes | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -127,6 +128,11 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 
 - `separarTituloDeUnidad` ([lib/nombre-de-unidad.ts](../../lib/nombre-de-unidad.ts)): "Unidad 2: Funciones. Dominio, imagen, ceros" → unidad "Unidad 2: Funciones" con los temas "Dominio", "Imagen", "Ceros" (adelante de los que tuviera); y "Unidad 2" pelado con un primer tema "Funciones. Dominio, imagen" → "Unidad 2: Funciones" (sólo si lo de antes del punto es corto). No se tocan un título solo, un guion largo, un decimal, "Nº." ni un tema con punto en una unidad con título. Aplicado en la normalización de `extract` y `guide`, y en la lectura heurística (donde la unidad quedaba sin temas y se descartaba).
 - No encontré programas de la tanda I en `docs/` ni fixtures en el repo: el caso del pedido quedó como test (de la función y de la ruta `extract` con la IA simulada).
+
+### O12 · Embudo del docente
+
+- `/admin/embudo` (sólo `ADMIN_EMAILS`; link en el menú del admin): el embudo (cuántos docentes alcanzaron cada paso) y la lista por docente con su paso y hace cuántos días. **Los trabados más de 3 días en un paso que no es el último van arriba, con su email**, los de más días primero. Pasos: se registró → creó una materia → creó un grupo → mandó la primera tarea → el primer alumno la hizo → 5 alumnos activos (el quinto alumno distinto que hizo una tarea suya). Todo de las tablas que ya existen ([lib/embudo.ts](../../lib/embudo.ts), puro; [lib/embudo-server.ts](../../lib/embudo-server.ts)).
+- No se saltean pasos: un docente con tarea pero sin grupo queda en "Creó una materia".
 
 ## Pasos manuales de Mauro, en orden
 
