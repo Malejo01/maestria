@@ -22,6 +22,8 @@ import { guardarRolElegido } from '@/lib/rol-elegido'
 import { CUENTA, INVITADO, MIS_ALUMNOS, NAVEGACION } from '@/lib/textos'
 import type { QuienEntro } from '@/lib/quien-entro'
 import { cn } from '@/lib/utils'
+import { useAppStore } from '@/lib/store'
+import { accionDeLaBarraDocente } from '@/lib/primer-uso-docente'
 
 export type { QuienEntro }
 
@@ -107,11 +109,7 @@ function Marco({
             {/* P1: el panel de administrador, sólo para ADMIN_EMAILS. */}
             {quien && <BotonAdmin esAdmin={quien.esAdmin} />}
             {/* La acción del panel docente, como en la referencia: siempre a mano. */}
-            {contexto === 'docente' && (
-              <Boton asChild className="px-3 sm:px-4">
-                <Link href="/teacher?agregar=1">{MIS_ALUMNOS.agregarCorto}</Link>
-              </Boton>
-            )}
+            {contexto === 'docente' && <AccionDelDocente />}
             {quien && !quien.esInvitado && quien.rol && (
               <MenuUsuario
                 nombre={quien.nombre}
@@ -249,5 +247,31 @@ function AvisoVistaPrevia() {
         <Link href="/teacher">{CUENTA.vistaAlumno.volver}</Link>
       </Boton>
     </Franja>
+  )
+}
+
+/**
+ * La acción del panel docente, siempre a mano: "+ Alumno". P5 (O13, propuesta
+ * 2): mientras no tenga una materia, "+ Alumno" llevaba a "Primero armá tu
+ * materia"; ahora la barra ofrece directamente crearla.
+ */
+function AccionDelDocente() {
+  const materias = useAppStore((s) => s.materiasDelDocente)
+  if (accionDeLaBarraDocente(materias) === 'crearMateria') {
+    return (
+      <Boton asChild className="px-3 sm:px-4">
+        <Link href="/teacher?seccion=materias&crear=materia">
+          {/* En el celular, del ancho de "+ Alumno": la barra entra en 360 px (O16).
+              Sin aria-label: el nombre accesible es lo que se ve (O17). */}
+          <span className="sm:hidden">{MIS_ALUMNOS.crearMateriaCorto}</span>
+          <span className="hidden sm:inline">{MIS_ALUMNOS.crearMateriaPrimero}</span>
+        </Link>
+      </Boton>
+    )
+  }
+  return (
+    <Boton asChild className="px-3 sm:px-4">
+      <Link href="/teacher?agregar=1">{MIS_ALUMNOS.agregarCorto}</Link>
+    </Boton>
   )
 }

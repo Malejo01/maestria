@@ -362,6 +362,30 @@ describe('J1 — un alumno quitado no ocupa lugar', () => {
 })
 
 describe('nuncaRespondieron (J1, quitar en lote)', () => {
+  it('P5: no ofrece quitar a quien entró hace menos de 7 días (recién llegó)', () => {
+    const filas = armarFilas(
+      [
+        miembro({ userId: 'u1', nombre: 'Recién', seSumoEl: hace(2) }),
+        miembro({ userId: 'u2', nombre: 'Hace una semana', seSumoEl: hace(7) }),
+        miembro({ userId: 'u3', nombre: 'Hace un mes', seSumoEl: hace(30) }),
+      ],
+      [],
+      [],
+      new Map(),
+    )
+    expect(nuncaRespondieron(filas, AHORA).map((f) => f.nombre)).toEqual(['Hace un mes', 'Hace una semana'])
+  })
+
+  it('P5: en dos grupos, cuenta desde el primero en que entró', () => {
+    const filas = armarFilas(
+      [miembro({ userId: 'u1', nombre: 'Ana', grupoId: 1, seSumoEl: hace(20) }), miembro({ userId: 'u1', nombre: 'Ana', grupoId: 2, seSumoEl: hace(1) })],
+      [],
+      [],
+      new Map(),
+    )
+    expect(nuncaRespondieron(filas, AHORA).map((f) => f.nombre)).toEqual(['Ana'])
+  })
+
   it('los que entraron y no tienen ningún intento; no los pendientes ni los que respondieron', () => {
     const filas = armarFilas(
       [miembro({ userId: 'u1', nombre: 'Sofía' }), miembro({ userId: 'u2', nombre: 'Tomás' }), miembro({ userId: 'u3', nombre: 'Uma' })],

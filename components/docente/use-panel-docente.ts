@@ -12,6 +12,7 @@ import { exportQuizToMoodleGift } from '@/lib/moodle-export'
 import { parseCreatedFrom, parseNivel } from '@/lib/teacher-programs'
 import type { TeacherProgram, TeacherQuiz } from '@/lib/types'
 import { configDeTarea, tareaDesdeFila } from '@/lib/tarea-docente'
+import { materiaInicialParaArmar } from '@/lib/primer-uso-docente'
 
 type TeacherProgramApiShape = TeacherProgram & {
   user_id?: string
@@ -128,6 +129,8 @@ export function usePanelDocente() {
   useEffect(() => {
     if (agregarDesdeLaUrl) setAgregarAlumno(true)
   }, [agregarDesdeLaUrl])
+  // P5: "Primero creá una materia" de la barra abre el asistente de materia.
+  const crearMateriaDesdeLaUrl = parametros.get('crear') === 'materia'
   /** La pestaña que marca la barra. Se sabe desde el primer render: sale de la URL. */
   const seccionDeLaBarra: SeccionDocente = esSeccionDocente(seccionDeLaUrl) ? seccionDeLaUrl : SECCION_DOCENTE_POR_DEFECTO
   /**
@@ -153,6 +156,12 @@ export function usePanelDocente() {
   const [showCreateWizard, setShowCreateWizard] = useState(false)
   const [showEditWizard, setShowEditWizard] = useState(false)
   const [showOnboardingModal, setShowOnboardingModal] = useState(false)
+  useEffect(() => {
+    if (!crearMateriaDesdeLaUrl) return
+    setShowOnboardingModal(true)
+    // Fuera de la URL: si no, recargar lo vuelve a abrir.
+    router.replace('/teacher?seccion=materias')
+  }, [crearMateriaDesdeLaUrl, router])
   const [initialWizardPath, setInitialWizardPath] = useState<'import' | 'curriculum' | 'manual' | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showDetailDialog, setShowDetailDialog] = useState(false)
@@ -230,6 +239,11 @@ export function usePanelDocente() {
           .map((program: any) => normalizeTeacherProgram(program as TeacherProgramApiShape))
 
         setTeacherPrograms(normalizedPrograms)
+        // P5: sin filtros, ésta es la cuenta real (la barra la usa para "+ Alumno").
+        const conFiltros = Boolean(
+          teacherProgramFilters.name || teacherProgramFilters.level || teacherProgramFilters.degree || teacherProgramFilters.createdAfter,
+        )
+        if (!conFiltros) useAppStore.getState().setMateriasDelDocente(normalizedPrograms.length)
       } catch {
         if (isMounted) {
           setTeacherPrograms([])
@@ -253,11 +267,19 @@ export function usePanelDocente() {
 
   const selectedSubject = teacherSubjects.find((subject) => subject.id === activeSubject)
 
+  // P5 (O13, propuesta 1): con una sola materia, "Armar tarea" entra directo
+  // a ella en lugar de pedir "Elegí una materia" con una sola opción.
+  const materiaParaArmar = materiaInicialParaArmar({
+    materiaDeLaUrl: materiaDesdeLaUrl,
+    armando: teacherSection === 'crear',
+    yaElegida: Boolean(activeSubject),
+    materias: teacherSubjects.map((subject) => subject.programId).filter((id): id is number => typeof id === 'number'),
+  })
   useEffect(() => {
-    if (!materiaDesdeLaUrl) return
-    const materia = teacherSubjects.find((subject) => subject.programId === materiaDesdeLaUrl)
+    if (!materiaParaArmar) return
+    const materia = teacherSubjects.find((subject) => subject.programId === materiaParaArmar)
     if (materia) setActiveSubject(materia.id)
-  }, [materiaDesdeLaUrl, teacherSubjects])
+  }, [materiaParaArmar, teacherSubjects])
 
   useEffect(() => {
     if (!isSignedIn || !isTeacher) return

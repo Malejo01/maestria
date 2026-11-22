@@ -19,6 +19,11 @@ export interface ContextoOnboarding {
    * componente no dependa de la hora al dibujar.
    */
   recienTerminado: boolean
+  /**
+   * P5 (O13, propuesta 4): cuántos intentos de alumnos hay en sus tareas. Con
+   * uno o más, el "¡Listo!" deja de decir "cuando tus alumnos la resuelvan".
+   */
+  intentosDeAlumnos: number
 }
 
 /** Cuánto dura a la vista el "¡Listo!" después de mandar la primera tarea. */
@@ -47,7 +52,9 @@ export async function leerOnboardingDocente(teacherId: string): Promise<Onboardi
              -- un alumno): para el hito "mandaste tu primera tarea" da lo mismo
              -- a quién fue. Ningún alumno ve nada desde acá.
              (SELECT COUNT(*)::int FROM classroom_assignments a WHERE a.classroom_id = c.id) AS tareas_mandadas,
-             (SELECT MIN(a.created_at) FROM classroom_assignments a WHERE a.classroom_id = c.id) AS primera_tarea
+             (SELECT MIN(a.created_at) FROM classroom_assignments a WHERE a.classroom_id = c.id) AS primera_tarea,
+             (SELECT COUNT(*)::int FROM quiz_attempts att
+               WHERE att.classroom_id = c.id AND att.assignment_id IS NOT NULL AND att.user_id <> ${teacherId}) AS intentos
       FROM classrooms c
       WHERE c.teacher_id = ${teacherId} AND c.status = 'open'
       ORDER BY c.created_at ASC, c.id ASC
@@ -60,6 +67,7 @@ export async function leerOnboardingDocente(teacherId: string): Promise<Onboardi
         alumnos: number
         tareas_mandadas: number
         primera_tarea: string | Date | null
+        intentos: number
       }[]
     >,
     sql`
@@ -90,6 +98,7 @@ export async function leerOnboardingDocente(teacherId: string): Promise<Onboardi
     grupo: grupo ? { id: Number(grupo.id), nombre: grupo.name, codigo: grupo.join_code } : null,
     recienTerminado:
       estado.completo && primeras[0] !== undefined && Date.now() - primeras[0] < HORAS_DE_FESTEJO * 3_600_000,
+    intentosDeAlumnos: grupos.reduce((total, g) => total + Number(g.intentos ?? 0), 0),
   }
 }
 
