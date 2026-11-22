@@ -71,6 +71,13 @@ export interface GuardAiCallOptions {
    * porque su cliente espera siempre esa clave.
    */
   errorBody?: (message: string) => Record<string, unknown>
+  /**
+   * P4: a quién se le cobra la llamada (límite por usuario y fila de uso),
+   * cuando no es quien la pide. La práctica extra de una tarea la pide el
+   * alumno (o el invitado) y cuenta en el límite del DOCENTE de esa tarea. La
+   * identidad se sigue exigiendo a quien pide; el presupuesto global, igual.
+   */
+  cobrarA?: { id: string; email: string | null }
 }
 
 /**
@@ -128,7 +135,11 @@ export async function guardAiCall(options: GuardAiCallOptions): Promise<AiGuardR
     }
   }
 
-  const actor = resolveActor(viewer, options.actor)
+  // P4: la cuenta a la que se le carga la llamada. Por defecto, quien la pide.
+  const cuenta: Viewer = options.cobrarA
+    ? { id: options.cobrarA.id, email: options.cobrarA.email, role: 'DOCENTE', isGuest: false, displayName: '' }
+    : viewer
+  const actor = options.cobrarA ? resolveActor(cuenta, 'docente') : resolveActor(viewer, options.actor)
 
   // El kill switch va antes que el límite por usuario y no lo saltea nadie,
   // ni siquiera la allowlist de admin: acá el objetivo es la factura, no el
@@ -154,7 +165,7 @@ export async function guardAiCall(options: GuardAiCallOptions): Promise<AiGuardR
   // `viewer.isGuest` y no por el actor, porque es la misma columna que suma
   // `readDailySpend`: si el guard y la suma no miran lo mismo, el tope no
   // corta a quien lo gastó.
-  if (viewer.isGuest) {
+  if (cuenta.isGuest) {
     const guestBudget = guestDailyBudgetUsd()
     if (spent.guestUsd >= guestBudget) {
       captureAiBudgetCutoff({ pool: 'guest', bucket, spentUsd: spent.guestUsd, budgetUsd: guestBudget })
@@ -172,7 +183,7 @@ export async function guardAiCall(options: GuardAiCallOptions): Promise<AiGuardR
     }
   }
 
-  const window = await readUsageWindow(viewer.id, bucket)
+  const window = await readUsageWindow(cuenta.id, bucket)
   const decision = evaluateAiRateLimit({
     bucket,
     actor,
@@ -205,8 +216,8 @@ export async function guardAiCall(options: GuardAiCallOptions): Promise<AiGuardR
   }
 
   const usageId = await startAiUsage({
-    userId: viewer.id,
-    isGuest: viewer.isGuest,
+    userId: cuenta.id,
+    isGuest: cuenta.isGuest,
     bucket,
     model,
   })
@@ -222,7 +233,7 @@ export async function guardAiCall(options: GuardAiCallOptions): Promise<AiGuardR
       // justo lo que la caché venía a evitar.
       if (cost != null && spendCache) {
         spendCache.value.totalUsd += cost
-        if (viewer.isGuest) spendCache.value.guestUsd += cost
+        if (cuenta.isGuest) spendCache.value.guestUsd += cost
       }
     },
     fail: async () => {

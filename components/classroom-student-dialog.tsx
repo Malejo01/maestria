@@ -6,7 +6,7 @@ import { Cargando } from '@/components/sistema/cargando'
 import { useEffect, useState } from 'react'
 import { Boton } from '@/components/sistema/boton'
 import { pedirJson } from '@/lib/pedir-json'
-import { A_REFORZAR } from '@/lib/textos'
+import { A_REFORZAR, PRACTICA_EXTRA } from '@/lib/textos'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -14,6 +14,8 @@ import { BadgeCheck, Lightbulb, Target } from 'lucide-react'
 import { AccuracyBar, formatDateTime, formatScore } from '@/components/classroom-report-parts'
 
 interface StudentAttempt {
+  /** P4: salió de "Practicar otra vez" de una tarea. */
+  practicaExtra?: boolean
   id: number
   mode: string
   score: number | null
@@ -56,6 +58,7 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
   const [attempts, setAttempts] = useState<StudentAttempt[]>([])
   const [topics, setTopics] = useState<StudentTopic[]>([])
   const [tips, setTips] = useState<StudentTip[]>([])
+  const [practicasExtra, setPracticasExtra] = useState<{ cantidad: number; promedio: number | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
   // O2: el docente marca un tema como superado (o lo devuelve a reforzar).
   const [marcando, setMarcando] = useState<number | null>(null)
@@ -94,6 +97,7 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
         setAttempts(Array.isArray(data.attempts) ? data.attempts : [])
         setTopics(Array.isArray(data.topics) ? data.topics : [])
         setTips(Array.isArray(data.tips) ? data.tips : [])
+        setPracticasExtra(data.practicasExtra && Number(data.practicasExtra.cantidad) > 0 ? data.practicasExtra : null)
       })
       .catch(() => {
         if (isMounted) setError('No se pudo abrir la ficha')
@@ -163,6 +167,10 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
 
             <Card className="p-4 space-y-2">
               <h3 className="font-semibold text-sm">Cuestionarios resueltos ({attempts.length})</h3>
+              {/* P4: las prácticas extra de sus tareas, aparte: no cambian la nota de la tarea. */}
+              {practicasExtra && (
+                <p className="nota text-texto-suave">{PRACTICA_EXTRA.resumen(practicasExtra.cantidad, practicasExtra.promedio)}</p>
+              )}
 
               {attempts.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Todavía no resolvió ninguno.</p>
@@ -181,7 +189,7 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
                       {attempts.map((attempt) => (
                         <tr key={attempt.id} className="border-b last:border-0">
                           <td className="py-2 pr-3">
-                            <span className="break-words">{attempt.assignmentTitle ?? 'Práctica libre'}</span>
+                            <span className="break-words">{attempt.practicaExtra ? PRACTICA_EXTRA.etiqueta : attempt.assignmentTitle ?? 'Práctica libre'}</span>
                             {attempt.attemptNumber ? (
                               <span className="text-xs text-muted-foreground"> · intento {attempt.attemptNumber}</span>
                             ) : null}

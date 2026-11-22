@@ -9,6 +9,7 @@ import { captureRouteFailure } from '@/lib/observability'
 import { destinatarioDeFila, visibleParaAlumno } from '@/lib/destinatario'
 import { buscarIntentoPrevio, esDuplicado, limpiarClientAttemptId, type IntentoPrevio } from '@/lib/intento-idempotente-server'
 import { aprueba } from '@/lib/answer-grading'
+import { grupoDeLaPracticaExtra } from '@/lib/practica-extra-server'
 
 /** M1: la respuesta de un intento que ya estaba guardado (reintento del mismo resultado). */
 function respuestaDeIntentoPrevio(intento: IntentoPrevio) {
@@ -130,6 +131,8 @@ export async function POST(req: Request) {
 
     let classroomId: number | null = null
     let assignmentId: number | null = null
+    const rawPracticaExtraId = Number(body?.practicaExtraId)
+    let practicaExtraId: number | null = Number.isInteger(rawPracticaExtraId) && rawPracticaExtraId > 0 ? rawPracticaExtraId : null
     let attemptNumber: number | null = null
 
     if (hasAssignment) {
@@ -140,6 +143,13 @@ export async function POST(req: Request) {
       classroomId = context.classroomId
       assignmentId = context.assignmentId
       attemptNumber = context.attemptNumber
+    } else if (practicaExtraId) {
+      // P4: una práctica extra de una tarea. No es un intento de la tarea
+      // (assignment_id queda NULL): es práctica del grupo de esa tarea. Si la
+      // práctica no es de este alumno, o ya tiene intento, se guarda como
+      // práctica suelta, sin grupo ni vínculo.
+      classroomId = await grupoDeLaPracticaExtra(userId, practicaExtraId)
+      if (classroomId === null) practicaExtraId = null
     } else {
       const rawClassroomId = Number(body?.classroomId)
       if (Number.isFinite(rawClassroomId) && rawClassroomId > 0) {
@@ -231,6 +241,13 @@ export async function POST(req: Request) {
             )
           `,
     ]
+
+    // P4: el vínculo con la práctica extra va aparte del INSERT, para que el
+    // INSERT de siempre no nombre una columna que sin la 036 no existe (sin la
+    // 036, `practicaExtraId` ya quedó en null más arriba).
+    if (practicaExtraId) {
+      consultas.push(sql`UPDATE quiz_attempts SET practica_extra_id = ${practicaExtraId} WHERE id = ${quizAttemptId}`)
+    }
 
     // Cada respuesta. multiple_choice sigue escribiendo las columnas
     // legacy (options/selected_answer/correct_answer) para no romper lectores

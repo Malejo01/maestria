@@ -183,6 +183,25 @@ describe('presupuesto de invitados', () => {
   })
 })
 
+describe('P4 · cobrarA: la práctica extra cuenta en el límite del docente', () => {
+  it('la fila de uso y el límite son del docente, aunque la pida un invitado', async () => {
+    getViewerMock.mockResolvedValue(guest(77))
+    const guard = await guardAiCall({ bucket: 'quiz_generation', cobrarA: { id: 'docente-9', email: 'docente@example.com' } })
+    expect(guard.ok).toBe(true)
+    if (guard.ok) await guard.finish(AVERAGE_GENERATION)
+    const fila = state.rows.at(-1)!
+    expect([fila.userId, fila.isGuest]).toEqual(['docente-9', false])
+    expect(state.rows.some((r) => r.userId === 'guest_77')).toBe(false)
+  })
+
+  it('sin identidad de quien pide, igual 401: cobrarle a otro no saltea el ingreso', async () => {
+    getViewerMock.mockResolvedValue(null)
+    const guard = await guardAiCall({ bucket: 'quiz_generation', cobrarA: { id: 'docente-9', email: null } })
+    expect(guard.ok).toBe(false)
+    if (!guard.ok) expect(guard.response.status).toBe(401)
+  })
+})
+
 describe('guestDailyBudgetUsd', () => {
   it('usa $3 por defecto y acepta sólo números positivos', () => {
     expect(guestDailyBudgetUsd()).toBe(DEFAULT_GUEST_DAILY_BUDGET_USD)

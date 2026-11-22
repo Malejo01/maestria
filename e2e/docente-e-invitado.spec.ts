@@ -6,7 +6,9 @@ import { DOCENTE, entrarComo, marca, responderUna, simularGeneracion } from './a
  *   1. el docente crea una materia (del plan oficial), un grupo y una tarea
  *      (con la IA simulada) y la manda al grupo;
  *   2. un invitado entra por el código del grupo, con su nombre, ve "Tarea
- *      nueva" en su campanita (P3), y hace la tarea.
+ *      nueva" en su campanita (P3), hace la tarea y practica otra vez con
+ *      preguntas nuevas (P4);
+ *   3. el docente ve "Prácticas extra: 1" aparte, y la tarea con un intento.
  *
  * Deja en staging una materia, un grupo, una tarea y un invitado "E2E · …".
  */
@@ -111,10 +113,34 @@ test('2 · un invitado entra por código y hace la tarea', async ({ browser }) =
   // Esperar a que el resultado llegue al servidor antes de irse (si no, la
   // lista se lee antes de que termine el guardado).
   await expect(page.getByText('Guardado', { exact: true })).toBeVisible()
+
+  // P4: otra práctica igual, con preguntas nuevas (IA simulada). No cuenta
+  // como intento de la tarea.
+  await simularGeneracion(page)
+  await page.getByRole('button', { name: 'Practicar otra vez con preguntas nuevas' }).click()
+  for (let i = 1; i <= 3; i++) {
+    await expect(page.getByText(new RegExp(`^${i}/3$`))).toBeVisible()
+    await responderUna(page)
+  }
+  await expect(page.getByText('Guardado', { exact: true })).toBeVisible()
+  // Y la práctica extra deja la siguiente a mano, con lo que queda del día.
+  await expect(page.getByText(/Te quedan 2 por hoy/)).toBeVisible()
   // El resultado se guardó: la tarjeta cuenta el intento.
   await page.goto('/aulas')
   await expect(page.getByRole('listitem').filter({ hasText: MATERIA }).first()).toContainText(/1 de|tu mejor nota|Volver a hacerla/)
   await contexto.close()
+})
+
+test('3 · el docente ve la práctica extra aparte, sin cambiar la tarea', async ({ page }) => {
+  test.skip(!invitadoId, 'No hubo invitado')
+  await entrarComo(page, DOCENTE)
+  await page.goto('/teacher?vista=grupos')
+  await page.getByRole('link', { name: new RegExp(GRUPO) }).first().click()
+  await expect(page.getByRole('heading', { name: GRUPO, level: 1 })).toBeVisible()
+  const fila = page.getByRole('row').filter({ hasText: `E2E · Invitado ${sello}` })
+  await expect(fila).toContainText('Prácticas extra: 1')
+  // La tarea sigue con un solo intento: la práctica extra no cuenta.
+  await expect(fila.getByRole('cell').first()).toHaveText('1')
 })
 
 /**

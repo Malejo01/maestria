@@ -1592,3 +1592,20 @@ export const ADMIN = {
     estado: { exento: 'Exento', prueba: 'Prueba', activo: 'Activo', gratis: 'Gratis', vencido: 'Vencido' },
   },
 }
+
+/** P4: "Practicar otra vez con preguntas nuevas" al terminar una tarea. */
+export const PRACTICA_EXTRA = {
+  boton: 'Practicar otra vez con preguntas nuevas',
+  detalle: 'Mismos temas que la tarea. No cambia tu nota.',
+  quedan: (n: number) => (n === 1 ? 'Te queda 1 por hoy' : `Te quedan ${n} por hoy`),
+  armando: 'Armando preguntas nuevas…',
+  tope: 'Por hoy ya hiciste 3 prácticas de esta tarea. Mañana podés seguir.',
+  noDisponible: 'Esta práctica no está disponible.',
+  fallo: 'No pudimos armar la práctica',
+  falloDetalle: 'Probá de nuevo en un rato.',
+  /** En el informe del grupo y la ficha. */
+  etiqueta: 'Prácticas extra',
+  resumen: (cantidad: number, promedio: number | null) =>
+    `Prácticas extra: ${cantidad}${promedio === null ? '' : ` · promedio ${promedio.toLocaleString('es-AR')}`}`,
+} as const
+

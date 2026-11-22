@@ -156,6 +156,14 @@ export interface QuizConfig {
    * mide lo que sabía.
    */
   devolucion?: 'inmediata' | 'al_final'
+  /**
+   * P4: la práctica extra reservada de la que salen estas preguntas. Viaja a
+   * save-result para que el intento quede como "Práctica extra" de la tarea
+   * (y no como un intento de la tarea).
+   */
+  practicaExtraId?: number
+  /** P4: la tarea de la que es práctica extra; deja "Practicar otra vez" a mano al terminarla. */
+  practicaDeTarea?: number
 }
 
 interface BaseAnswer {

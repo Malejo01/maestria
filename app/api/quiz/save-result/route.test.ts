@@ -160,3 +160,37 @@ describe('save-result idempotente (M1)', () => {
     expect(enTransaccion[0][0].texto).not.toContain('client_attempt_id')
   })
 })
+
+describe('P4 · la práctica extra no es un intento de la tarea', () => {
+  it('se guarda sin tarea ni número de intento, en el grupo de la tarea, con su vínculo', async () => {
+    responder = (c) => {
+      if (c.texto.includes('nextval')) return [{ id: 880 }]
+      if (c.texto.includes('FROM practicas_extra pe')) return [{ classroom_id: 4 }]
+      return []
+    }
+    // Aunque el cliente mande también assignmentId, una práctica extra se guarda por su lado.
+    const res = await POST(pedido({ clientAttemptId: ID, practicaExtraId: 31, classroomId: 99 }))
+    expect(res.status).toBe(200)
+    const datos = await res.json()
+    expect(datos).toMatchObject({ classroomId: 4, assignmentId: null, attemptNumber: null })
+
+    // Nunca se consulta el cupo ni la ventana de una tarea.
+    expect(ejecutadas.some((c) => c.texto.includes('max_attempts'))).toBe(false)
+    const [intento, vinculo] = enTransaccion[0]
+    expect(intento.texto).toContain('INSERT INTO quiz_attempts')
+    // classroom_id, assignment_id, attempt_number: el grupo de la tarea y nada más.
+    const i = intento.valores.indexOf(4)
+    expect(intento.valores.slice(i, i + 3)).toEqual([4, null, null])
+    expect(vinculo.texto).toContain('UPDATE quiz_attempts SET practica_extra_id')
+    expect(vinculo.valores).toEqual([31, 880])
+  })
+
+  it('una práctica ajena (o sin la 036) se guarda como práctica suelta, sin grupo ni vínculo', async () => {
+    responder = (c) => (c.texto.includes('nextval') ? [{ id: 881 }] : [])
+    const res = await POST(pedido({ practicaExtraId: 31 }))
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({ classroomId: null, assignmentId: null })
+    expect(enTransaccion[0].some((c) => c.texto.includes('practica_extra_id'))).toBe(false)
+  })
+})
+

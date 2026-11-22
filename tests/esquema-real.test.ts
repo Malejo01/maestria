@@ -25,7 +25,7 @@ const PEDIDO = process.env.ESQUEMA_REAL === '1'
 /** Las columnas que nombran las consultas de la app, por tabla (las de la ronda O incluidas). */
 export const COLUMNAS_QUE_USA_EL_CODIGO: Record<string, string[]> = {
   users: ['id', 'email', 'name', 'role', 'is_guest', 'claimed_by_user_id', 'nivel', 'grado', 'created_at', 'avisos_docente_visto_el'],
-  quiz_attempts: ['id', 'user_id', 'subject', 'mode', 'topics', 'score', 'passed', 'started_at', 'completed_at', 'classroom_id', 'assignment_id', 'attempt_number', 'client_attempt_id'],
+  quiz_attempts: ['id', 'user_id', 'subject', 'mode', 'topics', 'score', 'passed', 'started_at', 'completed_at', 'classroom_id', 'assignment_id', 'attempt_number', 'client_attempt_id', 'practica_extra_id'],
   quiz_answers: ['id', 'quiz_attempt_id', 'question_index', 'topic_name', 'question_text', 'is_correct', 'question_type', 'answer_payload'],
   student_misconceptions: ['id', 'user_id', 'subject', 'topic_id', 'topic_name', 'resolved', 'resolved_at', 'resolved_by', 'created_at'],
   feedback_reports: ['id', 'user_id', 'status', 'description', 'teacher_quiz_id', 'classroom_id', 'question_index', 'respuesta', 'respondido_por', 'resuelto_el', 'aviso_visto_el'],
@@ -36,6 +36,7 @@ export const COLUMNAS_QUE_USA_EL_CODIGO: Record<string, string[]> = {
   classroom_assignments: ['id', 'classroom_id', 'teacher_quiz_id', 'opens_at', 'due_at', 'max_attempts', 'created_at'],
   rachas_alumno: ['user_id', 'racha', 'mejor', 'migrada_de_local', 'actualizada_el'],
   avisos_lectura: ['user_id', 'visto_el'],
+  practicas_extra: ['id', 'assignment_id', 'user_id', 'creada_el'],
   pregunta_valoraciones: ['docente_id', 'teacher_quiz_id', 'teacher_program_id', 'indice', 'valor', 'motivo', 'enunciado', 'creado_el'],
   curriculum: ['id', 'nivel', 'materia', 'grado', 'eje', 'temas', 'carrera', 'contexto_profesional', 'tipos_pregunta_sugeridos'],
 }
