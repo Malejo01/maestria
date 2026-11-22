@@ -8,6 +8,7 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { EnlacesLegales } from '@/components/legal-notice'
 import { PageContainer } from '@/components/layout/page-container'
 import { AvisoDeReporte } from '@/components/caparazon/aviso-de-reporte'
+import { CampanitaDocente } from '@/components/caparazon/campanita-docente'
 import { MenuUsuario } from '@/components/caparazon/menu-usuario'
 import { SesionAlDia } from '@/components/caparazon/sesion-al-dia'
 import { Boton } from '@/components/sistema/boton'
@@ -89,13 +90,15 @@ function Marco({
             </nav>
           )}
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <BotonModo />
             {!quien && (
               <Boton variante="secundario" asChild>
                 <Link href="/">{NAVEGACION.ingresar}</Link>
               </Boton>
             )}
+            {/* O10: los avisos del docente (sólo en su panel, no en la vista previa). */}
+            {contexto === 'docente' && <CampanitaDocente />}
             {/* La acción del panel docente, como en la referencia: siempre a mano. */}
             {contexto === 'docente' && (
               <Boton asChild>

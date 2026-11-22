@@ -17,6 +17,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O7 · Traer alumnos de otro grupo | hecho | [#82](https://github.com/Malejo01/maestria/pull/82) | Tests del diálogo y de la API (sólo los elegidos, origen propio, plan vencido); en staging Irina trajo a Sofía de Lengua a "Prueba M3"; `npm run e2e` en verde | US$0 |
 | O8 · Pulgar arriba / abajo del docente (migración 033) | hecho | [#83](https://github.com/Malejo01/maestria/pull/83) | Tests de la regla de recorte, la API (propio, válvula), y que la generación recibe "Evitá esto" (lo del cuerpo se ignora); en staging Irina valoró dos preguntas del cuestionario 39; contador en `/admin/ai-usage` | US$0 |
 | O9 · Informe del grupo para imprimir | hecho | [#84](https://github.com/Malejo01/maestria/pull/84) | Tests de la parte pura; en staging el informe de Lengua ordenado por promedio, en modo impresión | US$0 |
+| O10 · Avisos al docente dentro de la app (migración 034) | hecho | [#85](https://github.com/Malejo01/maestria/pull/85) | Tests de los textos, el orden, los no leídos y la válvula; en staging la campanita de Irina con avisos reales | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -113,6 +114,14 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 
 - En la página del grupo, **"Imprimir informe"** abre `/teacher/grupos/[id]/imprimir` (en `(focus)`, sin la barra de la app) con el **orden y el filtro de la planilla** que había (se pasan por la URL, M4). Tres partes: la planilla (las mismas columnas que el CSV, con una línea que dice cómo está ordenada y filtrada), los temas flojos del grupo (del más flojo al menos) y las tareas con "18 de 25" (las individuales no van). CSS de impresión como la hoja del diagnóstico; **nada de PDF en el servidor**: el navegador imprime o guarda como PDF.
 
+### O10 · Avisos al docente
+
+- Una **campanita** en la barra del docente (no en la vista previa de alumno) con el número de avisos sin ver. Abierta, la lista de las últimas dos semanas, del más nuevo al más viejo: "8 alumnos de Matemática 1 Virtual terminaron «Práctica…»" (por tarea y por día), "3 alumnos nuevos entraron a 1er Año" (por grupo y por día), "Reportaron un problema en …" (M6). Cada uno lleva a su grupo. Abrirla marca todo como visto.
+- Se calcula de lo que ya hay (intentos, miembros, reportes); lo único nuevo es `users.avisos_docente_visto_el` (migración **034**). Sin la 034, todo cuenta como no leído. No hay correo ni push.
+- "Una alumna reportó…" del pedido quedó "Reportaron un problema": el reporte no guarda el género, y al docente no se le dice quién reportó (M6).
+- A 390 la barra no entraba con la campanita (el botón de la cuenta quedaba cortado): en celular la campanita mide 40 px y los botones van más juntos; medido, sin desborde.
+- Lección de la noche: al traer `main` con `stash pop`, dos ítems que suman textos en el mismo lugar de `lib/textos.ts` chocan. En O9 se commiteó con las marcas (resuelto en el mismo PR); desde O10 se verifica antes de commitear.
+
 ## Pasos manuales de Mauro, en orden
 
 1. Migración 030 en producción:
@@ -132,7 +141,11 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
    ```powershell
    $env:CONFIRM_PRODUCTION="noisy-smoke-23995229"; npx tsx scripts/run-migration-033.ts
    ```
-5. Corrección en lote de las 18 preguntas marcadas de producción. Primero sólo mirar (no escribe; la IA sí se llama, ~US$0,01):
+5. Migración 034 en producción:
+   ```powershell
+   $env:CONFIRM_PRODUCTION="noisy-smoke-23995229"; npx tsx scripts/run-migration-034.ts
+   ```
+6. Corrección en lote de las 18 preguntas marcadas de producción. Primero sólo mirar (no escribe; la IA sí se llama, ~US$0,01):
    ```powershell
    npx tsx scripts/qa/corregir-tipos.ts --desde=2026-11-20
    ```

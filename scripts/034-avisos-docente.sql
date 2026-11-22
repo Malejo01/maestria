@@ -1,0 +1,25 @@
+-- Migration: Avisos al docente dentro de la app (ronda O, O10)
+-- Version: 034
+-- Description: La campanita de la barra del docente ("8 alumnos de
+-- Matemática 1 Virtual terminaron «Práctica…»", "3 alumnos nuevos entraron a
+-- tu grupo", "reportaron un problema") se calcula de lo que YA está en la base
+-- (intentos, miembros, reportes). Lo único nuevo es hasta cuándo ya los vio,
+-- para contar los no leídos.
+--
+--   users.avisos_docente_visto_el → la última vez que el docente abrió la campanita.
+--
+-- ES ADITIVA E IDEMPOTENTE: ADD COLUMN IF NOT EXISTS, NULL, sin DEFAULT. Se
+-- puede correr dos veces.
+--
+-- LA VÁLVULA
+--
+-- Sin la 034 (42703): la campanita muestra los avisos igual, todos como no
+-- leídos, y abrirla no guarda nada. Nada da 500.
+--
+-- QUIÉN ESCRIBE LA COLUMNA: app/api/teacher/avisos (POST, al abrir la campanita).
+--
+-- Uso:
+--   npx tsx scripts/run-migration-034.ts --env=staging
+--   npx tsx scripts/run-migration-034.ts            (producción: la corre Mauro)
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avisos_docente_visto_el TIMESTAMPTZ NULL;
