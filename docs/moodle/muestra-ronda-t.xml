@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="category">
+    <category><text>$course$/Muestra MaestrIA/Ronda T</text></category>
+  </question>
+  <question type="multichoice">
+    <name><text>1. Para la antropología, el etnocentrismo es…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Para la antropología, el etnocentrismo es…</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Es tomar la propia cultura como medida de las demás.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>0</showstandardinstruction>
+    <answer fraction="100" format="html"><text><![CDATA[<p>juzgar otras culturas con los valores de la propia</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>estudiar una cultura desde adentro</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>comparar culturas sin juzgarlas</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>el estudio de los grupos étnicos</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="truefalse">
+    <name><text>2. Si la demanda es inelástica, una suba del precio aumenta…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Si la demanda es inelástica, una suba del precio aumenta el ingreso total.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>La cantidad baja proporcionalmente menos de lo que sube el precio.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <answer fraction="100" format="moodle_auto_format"><text>true</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="moodle_auto_format"><text>false</text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="numerical">
+    <name><text>3. El precio sube un 10 % y la cantidad demandada baja un 5…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>El precio sube un 10 % y la cantidad demandada baja un 5 %. ¿Cuál es el valor absoluto de la elasticidad precio, \(|E_p|\)?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>\(|E_p| = \frac{5\%}{10\%} = 0.5\)</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <answer fraction="100" format="moodle_auto_format"><text>0.5</text><feedback format="html"><text></text></feedback><tolerance>0.01</tolerance></answer>
+    <unitgradingtype>0</unitgradingtype>
+    <unitpenalty>0.1000000</unitpenalty>
+    <showunits>3</showunits>
+    <unitsleft>0</unitsleft>
+  </question>
+  <question type="shortanswer">
+    <name><text>4. ¿Cómo se llama el rito que marca el paso de una etapa de…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>¿Cómo se llama el rito que marca el paso de una etapa de la vida a otra?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Van Gennep los llamó ritos de paso.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <usecase>0</usecase>
+    <answer fraction="100" format="moodle_auto_format"><text>rito de paso</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="100" format="moodle_auto_format"><text>ritos de paso</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="100" format="moodle_auto_format"><text>rito de pasaje</text><feedback format="html"><text></text></feedback></answer>
+  </question>
+</quiz>

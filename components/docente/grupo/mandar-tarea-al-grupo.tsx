@@ -7,7 +7,7 @@ import { Cargando } from '@/components/sistema/cargando'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { ShareQuizDialog } from '@/components/share-quiz-dialog'
 import { tamanoDeTarea } from '@/lib/diagnostico'
-import { exportQuizToMoodleGift } from '@/lib/moodle-export'
+import { exportarParaMoodle } from '@/lib/moodle-xml'
 import { pedirJson } from '@/lib/pedir-json'
 import { tareaDesdeFila } from '@/lib/tarea-docente'
 import { PAGINA_DEL_GRUPO } from '@/lib/textos'
@@ -113,7 +113,7 @@ export function MandarTareaAlGrupo({
         }}
         quiz={elegida}
         grupoInicial={grupoId}
-        onExportMoodle={() => elegida && exportQuizToMoodleGift(elegida)}
+        onExportMoodle={(formato) => elegida && exportarParaMoodle(elegida, formato)}
       />
     </>
   )

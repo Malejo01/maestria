@@ -13,7 +13,7 @@ import { QuizModeDialog } from './quiz-mode-dialog'
 import { pedagogyProfileToContext } from '@/lib/teacher-programs'
 import { QuizActionDialog } from './quiz-action-dialog'
 import { ShareQuizDialog } from './share-quiz-dialog'
-import { exportQuizToMoodleGift } from '@/lib/moodle-export'
+import { exportarParaMoodle, type FormatoMoodle } from '@/lib/moodle-xml'
 import type { ProgramUnit, Question, QuestionType, QuizActionMode, SubjectColorName, SubjectIconName, TeacherQuiz } from '@/lib/types'
 import { DEFAULT_QUESTION_TYPES } from '@/lib/question-types'
 import { useToast } from '@/hooks/use-toast'
@@ -445,7 +445,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
     }
   }
 
-  const handleExportPendingShare = () => {
+  const handleExportPendingShare = (formato: FormatoMoodle) => {
     if (!pendingSharedQuiz) {
       toast({ title: 'No hay cuestionario para exportar', description: 'Generá o seleccioná un cuestionario primero.' })
       return
@@ -453,7 +453,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
 
     try {
       setIsExportingMoodle(true)
-      const fileName = exportQuizToMoodleGift(pendingSharedQuiz)
+      const fileName = exportarParaMoodle(pendingSharedQuiz, formato)
       toast({ title: 'Exportación lista', description: `Se descargó ${fileName}` })
       setShowShareDialog(false)
     } catch (error) {

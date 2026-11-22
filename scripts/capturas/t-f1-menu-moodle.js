@@ -1,0 +1,12 @@
+(async () => {
+  const esperar = (ms) => new Promise((r) => setTimeout(r, ms))
+  const boton = () => [...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Exportar a Moodle')
+  for (let i = 0; i < 80 && !boton(); i++) await esperar(250)
+  const b = boton()
+  if (!b) throw new Error('LISTA sin botón')
+  b.scrollIntoView({ block: 'center' })
+  await esperar(300)
+  b.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerType: 'mouse' }))
+  for (let i = 0; i < 20 && !document.querySelector('[data-formato-moodle]'); i++) await esperar(150)
+  await esperar(400)
+})()

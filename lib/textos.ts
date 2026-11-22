@@ -636,8 +636,6 @@ export const COMPARTIR_TAREA = {
     mandando: 'Mandando…',
     fallo: 'No pudimos mandarla. Probá de nuevo.',
     intentosInvalidos: 'Tiene que ser un número mayor que cero.',
-    moodle: 'Exportar para Moodle',
-    exportando: 'Exportando…',
   },
   lista: {
     titulo: 'La tarea ya está en el grupo.',
@@ -677,8 +675,6 @@ export const MIS_TAREAS = {
   revisar: 'Revisar y editar',
   verComoAlumno: 'Ver como alumno',
   probar: 'Probarla yo',
-  moodle: 'Exportar a Moodle',
-  exportando: 'Exportando…',
   borrar: 'Borrar tarea',
   confirmarBorrado: 'Sí, borrarla',
   noBorrar: 'No borrar',
@@ -1741,6 +1737,19 @@ export const SIMULACRO = {
   etiqueta: 'Simulacro',
   aviso: (preguntas: number, minutos: number) =>
     `Tenés ${minutos} minutos para ${preguntas} preguntas. El tiempo empieza cuando tocás Empezar; si se acaba, el simulacro termina con lo que respondiste.`,
+} as const
+
+/** Ronda T · F1: exportar a Moodle, en XML o en GIFT. */
+export const EXPORTAR_MOODLE = {
+  boton: 'Exportar a Moodle',
+  exportando: 'Exportando…',
+  xml: 'Moodle XML (.xml)',
+  xmlDetalle: 'Recomendado: lleva todos los tipos de pregunta.',
+  gift: 'GIFT (.txt)',
+  giftDetalle: 'El formato de siempre. No lleva ordenar ni arrastrar.',
+  listo: 'Exportación lista',
+  seDescargo: (archivo: string) => `Se descargó ${archivo}`,
+  noSePudo: 'No se pudo exportar',
 } as const
 
 /** Ronda T · C2: pagar desde la app (Mercado Pago Checkout Pro). */

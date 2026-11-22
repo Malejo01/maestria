@@ -11,7 +11,7 @@ import { teacherProgramToSubject } from '@/lib/teacher-programs'
 import { X } from 'lucide-react'
 import { useSession } from 'next-auth/react'
 import { useToast } from '@/hooks/use-toast'
-import { exportQuizToMoodleGift } from '@/lib/moodle-export'
+import { exportarParaMoodle, type FormatoMoodle } from '@/lib/moodle-xml'
 import { parseCreatedFrom, parseNivel } from '@/lib/teacher-programs'
 import type { TeacherProgram, TeacherQuiz } from '@/lib/types'
 import { configDeTarea, tareaDesdeFila } from '@/lib/tarea-docente'
@@ -416,7 +416,7 @@ export function usePanelDocente() {
     startQuizPreview(configDeTarea(quiz), quiz.questions)
   }
 
-  const handleExportQuiz = async (quiz: TeacherQuiz) => {
+  const handleExportQuiz = async (quiz: TeacherQuiz, formato: FormatoMoodle = 'xml') => {
     // B1: en el plan gratis, la exportación a Moodle viene con un plan pago.
     if (!(await puedeExportarAMoodle())) {
       toast({ title: MENSAJE_CON_UN_PLAN, description: PLAN_TEXTOS.verPlanes })
@@ -424,7 +424,7 @@ export function usePanelDocente() {
     }
     try {
       setExportingQuizId(quiz.id)
-      const fileName = exportQuizToMoodleGift(quiz)
+      const fileName = exportarParaMoodle(quiz, formato)
       toast({ title: 'Exportacion lista', description: `Se descargo ${fileName}` })
     } catch (error) {
       toast({

@@ -4,7 +4,7 @@ import { esFactorizacion, factorizar } from '@/lib/factorizacion'
 
 const MAX_CATEGORY_TOPICS = 5
 
-function normalizeMathJaxDelimiters(text: string): string {
+export function normalizeMathJaxDelimiters(text: string): string {
   let normalized = text.replace(/\$\$([\s\S]+?)\$\$/g, (_match, expr) => `\\[${expr}\\]`)
 
   normalized = normalized.replace(/(^|[^\\])\$(?!\$)([^\n$]+?)\$(?!\$)/g, (_match, prefix, expr) => {
@@ -14,7 +14,7 @@ function normalizeMathJaxDelimiters(text: string): string {
   return normalized
 }
 
-function normalizeLogicalNotation(text: string): string {
+export function normalizeLogicalNotation(text: string): string {
   return text
     .replace(/\\leftrightarrow/g, '↔')
     .replace(/\\rightarrow/g, '→')
@@ -96,7 +96,7 @@ function escapeGiftText(text: string): string {
     .trim()
 }
 
-function extractTopicNames(quiz: TeacherQuiz): string[] {
+export function extractTopicNames(quiz: TeacherQuiz): string[] {
   const selected = Array.isArray(quiz.selectedTopics)
     ? quiz.selectedTopics.map((topic) => sanitizePathSegment(topic.name)).filter(Boolean)
     : []
@@ -128,7 +128,7 @@ function recortarEnPalabra(texto: string, maximo = MAX_TRAMO_DE_CATEGORIA): stri
  * Matemática 1 con cinco temas largos dio un tramo de 300 y Moodle (que admite
  * 255) lo rechazó. Si los temas no entran, el tramo es "Varios temas".
  */
-function buildCategoryPath(quiz: TeacherQuiz): string {
+export function buildCategoryPath(quiz: TeacherQuiz): string {
   const subject = recortarEnPalabra(sanitizePathSegment(quiz.subjectName) || 'Materia')
   const topicNames = extractTopicNames(quiz)
 
