@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation'
 import { AcreditarPlan } from '@/components/admin/acreditar-plan'
+import { MarcarFundadora } from '@/components/admin/marcar-fundadora'
+import { DISTINTIVO_DEL_PLAN } from '@/lib/textos'
 import { getAdminViewer } from '@/lib/auth-session'
 import { listarDocentesConPlan, type DocenteEnPlanes } from '@/lib/planes-server'
 import type { EstadoPlan } from '@/lib/planes'
@@ -66,7 +68,14 @@ export default async function PlanesAdminPage() {
               <li key={docente.id} className="space-y-3 rounded-lg border border-borde bg-superficie-tarjeta p-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="cuerpo font-bold text-texto">{docente.nombre || 'Sin nombre'}</p>
+                    <p className="cuerpo font-bold text-texto">
+                      {docente.resumen.fundadoraDesde && (
+                        <span className="mr-1 text-accion" aria-label={DISTINTIVO_DEL_PLAN.fundadora} title={DISTINTIVO_DEL_PLAN.fundadora}>
+                          ★
+                        </span>
+                      )}
+                      {docente.nombre || 'Sin nombre'}
+                    </p>
                     <p className="nota break-all text-texto-suave">{docente.email ?? 'sin email'}</p>
                   </div>
                   <dl className="flex flex-wrap gap-x-5 gap-y-1 cuerpo-s">
@@ -98,6 +107,9 @@ export default async function PlanesAdminPage() {
                   <pre className="nota whitespace-pre-wrap rounded-md bg-superficie-suave p-3 font-sans text-texto-suave">
                     {docente.notas}
                   </pre>
+                )}
+                {docente.resumen.estado !== 'exento' && (
+                  <MarcarFundadora docenteId={docente.id} fundadora={Boolean(docente.resumen.fundadoraDesde)} />
                 )}
                 {docente.resumen.estado !== 'exento' && (
                   <AcreditarPlan

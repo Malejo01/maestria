@@ -20,6 +20,8 @@ export interface DocenteEnLista {
   grupos: number
   alumnos: number
   ultimaActividad: string | null
+  /** B2: docente fundadora (la marca del admin). */
+  fundadora: boolean
 }
 
 const iso = (v: string | Date | null | undefined) => (v ? new Date(v).toISOString() : null)
@@ -34,6 +36,7 @@ export async function listarDocentes(ahora = new Date()): Promise<DocenteEnLista
       to_jsonb(u) ->> 'plan_nivel' AS plan_nivel,
       to_jsonb(u) ->> 'plan_vence_el' AS plan_vence_el,
       to_jsonb(u) ->> 'prueba_iniciada_el' AS prueba_iniciada_el,
+      to_jsonb(u) ->> 'fundadora_desde' AS fundadora_desde,
       (SELECT COUNT(*) FROM teacher_programs p WHERE p.user_id = u.id AND p.status = 'active')::int AS materias,
       (SELECT COUNT(*) FROM classrooms c WHERE c.teacher_id = u.id AND c.status = 'open')::int AS grupos,
       (SELECT COUNT(DISTINCT m.user_id) FROM classroom_members m JOIN classrooms c ON c.id = m.classroom_id
@@ -56,6 +59,7 @@ export async function listarDocentes(ahora = new Date()): Promise<DocenteEnLista
     plan_nivel: string | null
     plan_vence_el: string | null
     prueba_iniciada_el: string | null
+    fundadora_desde: string | null
     materias: number
     grupos: number
     alumnos: number
@@ -82,6 +86,7 @@ export async function listarDocentes(ahora = new Date()): Promise<DocenteEnLista
     grupos: Number(f.grupos ?? 0),
     alumnos: Number(f.alumnos ?? 0),
     ultimaActividad: iso(f.ultima),
+    fundadora: Boolean(f.fundadora_desde),
   }))
 }
 

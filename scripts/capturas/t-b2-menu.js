@@ -1,0 +1,10 @@
+(async () => {
+  const esperar = (ms) => new Promise((r) => setTimeout(r, ms))
+  for (let i = 0; i < 60 && !document.querySelector('button[data-plan]'); i++) await esperar(250)
+  const avatar = document.querySelector('button[data-plan]')
+  if (!avatar) throw new Error('LISTA sin avatar con plan')
+  await esperar(800)
+  avatar.focus()
+  avatar.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+  await esperar(800)
+})()
