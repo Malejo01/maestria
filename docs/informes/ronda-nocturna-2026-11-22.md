@@ -2,6 +2,12 @@
 
 Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama desde `main` por ítem, PR, merge con el CI en verde. **Nada contra producción**: toda migración corrió sólo en staging, dos veces.
 
+## En una línea
+
+**Los 21 ítems hechos** (N1, N2, O1–O19), cada uno en su PR mergeado con el CI en verde (#74–#94); ninguno bloqueado. **Cinco migraciones nuevas (030–034) corridas sólo en staging**: falta correrlas en producción, en orden (abajo). Gasto de IA de toda la noche: **US$0,19** de US$10. Cierre: 08:25 (hora de Argentina).
+
+Fuera de orden: O19 se hizo antes que O15–O18 (era chico y no dependía de nada); después se retomó el orden.
+
 ## Estado ítem por ítem
 
 | Ítem | Estado | PR | Qué se probó | Gasto de IA |
@@ -222,9 +228,23 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
    $env:CONFIRM_PRODUCTION="noisy-smoke-23995229"; npx tsx scripts/qa/corregir-tipos.ts --desde=2026-11-20 --aplicar
    ```
 
+7. Mirar en producción, después del deploy de `main` (con las migraciones ya corridas):
+   - `/admin/reportes` y `/admin/embudo` (O12): que carguen, y el embudo con los docentes reales.
+   - Una tarea con fórmulas desde el celular: que las fórmulas aparezcan la primera vez (O18, KaTeX ahora llega aparte).
+   - La campanita del docente (O10) y, como alumno, la racha en los resultados (O4).
+   - El panel docente a 360 px: la barra entra entera (O16).
+8. Smoke test de Auth.js que no se puede automatizar (O1 cubre el resto): entrar con Google en producción, cambiar de rol docente ↔ alumno sin cerrar sesión, y salir.
+9. Para correr los e2e cuando haga falta (contra staging, nunca en el CI): `npm run e2e` con `npm run dev:staging` levantado. Son ocho recorridos (README, "Pruebas de punta a punta").
+
 ## Decisiones que quedaron pendientes
 
-(se completa al cierre)
+1. **"A reforzar" para lo anterior a O2 (backfill).** La regla de "3 aciertos seguidos" cuenta sólo desde la migración 031; los temas marcados antes no se resuelven solos con aciertos viejos. *Recomendación:* **no** hacer backfill — que se resuelvan con la práctica nueva o con la marca manual del docente, que ya existe.
+2. **Las cuatro propuestas de flujo de O13** ([docs/informes/o13-primer-uso-docente.md](o13-primer-uso-docente.md)): con una sola materia entrar directo a ella; no ofrecer "Quitar a los que nunca respondieron" con alumnos recién entrados; esconder "+ Alumno" hasta tener materia; cambiar el texto del aviso cuando ya hay un intento. *Recomendación:* las cuatro; la primera y la tercera son las que más frenan a un docente nuevo.
+3. **O3 · "Mis materias" del docente todavía manda los tipos de pregunta** elegidos a mano, aunque la práctica del grupo ya usa los de la materia. *Recomendación:* dejarlo así (el docente elige a propósito) salvo que aparezcan tareas con tipos que no corresponden.
+4. **El botón flotante de reportar tapa "Siguiente" a 390 px** en algunas preguntas largas del cuestionario (visto en O1/O13, previo a esta ronda). *Recomendación:* moverlo arriba de la barra de acción del cuestionario (como ya se hizo con "Generar cuestionario" en O13).
+5. **"A reforzar" en Mi progreso** se arma con lo del navegador y la ficha del docente con la base: pueden no coincidir. *Recomendación:* que Mi progreso lea de la base (la API de historial ya devuelve `dominados` desde O2).
+6. **O6 · El diagnóstico del curso** ya se elige por programa, pero la fecha de corte y el diseño curricular siguen fijos. *Recomendación:* esperar a tener un segundo curso real con diagnóstico antes de parametrizarlos.
+7. **Lo `moderate`/`minor` de axe (O17)** quedó anotado en el reporte de Playwright y no se corrigió. *Recomendación:* una pasada corta en la próxima ronda, empezando por el cuestionario (que todavía no está rediseñado).
 
 ## Datos de prueba que quedaron en staging
 
@@ -232,8 +252,21 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - Docente **"Docente Nueva O13"** (`o13-docente-mwrhwcrc`) con su materia Geografía, su grupo (código D8X5QT), una tarea y cuatro invitados "Alumno O13" (uno con la tarea hecha).
 - Sofía también quedó en el grupo 4 "Prueba M3 · Matemática 1 Virtual" (traída desde Lengua en la prueba de O7).
 - Racha de Sofía en `rachas_alumno` (0, migrada del navegador) y su intento en "Lengua · 4to Año · 11/7/2026" (2/10).
+- Cinco intentos más de Sofía en "Lengua · 4to Año · 11/7/2026" (2/10 cada uno), de las corridas de `e2e/accesibilidad.spec.ts` (O17). La tarea no tiene tope de intentos.
+- El invitado "E2E · Invitado 22/11 02:57:40" quedó como `removed` en su grupo (O16: lo había dejado activo una corrida cuya limpieza falló).
 - Temas "a reforzar" marcados como superados a mano por Irina: #58 (Tomás Villa) y #57 (Sofía Ramírez), los dos de Lengua. Se devuelven con "Volver a reforzar" en la ficha.
 
 - De O1, por cada corrida de `npm run e2e`: una materia "E2E · Geografía <fecha>", un grupo "E2E · Grupo <fecha>" y la tarea "E2E · Geografía <fecha> - Práctico - …" de Irina, con el intento del invitado "E2E · Invitado <fecha>" (que ya no está en el grupo). Además, de la exploración: la materia "E2E · Geografía" y su grupo "E2E · Geografía" (se armó solo al compartir una tarea que no llegó a guardarse).
 - Cuestionario **39 "Prueba N2 · tipos mal armados"** de Irina (Matemática, 3.º Sec.), ya corregido desde la pantalla.
 - Invitado **"Prueba N1 Invitada"** (`guest_746f3dcd015289be8016e284589db685`) en el grupo Lengua de Irina, y su reporte **#2** (resuelto, aviso visto).
+
+## Cuánto gastó la IA
+
+| Origen | Gasto |
+|---|---|
+| Llamadas desde la app en staging (`ai_usage_log`, 18 llamadas de las pruebas en pantalla) | US$0,0285 |
+| Scripts de O14 (medición y re-medición de calidad, 44 cuestionarios) | US$0,157 |
+| Dry-run de N2 (`corregir-tipos`) | US$0,0005 |
+| **Total** | **US$0,19** de US$10 |
+
+Los tests y los e2e simulan siempre la IA: correrlos no gasta.
