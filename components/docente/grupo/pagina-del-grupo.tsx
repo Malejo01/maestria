@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, Check, ClipboardCheck, Copy, RefreshCw, Send } from 'lucide-react'
+import { ArrowLeft, Check, ClipboardCheck, Copy, Printer, RefreshCw, Send } from 'lucide-react'
 import { ArmarDiagnostico } from '@/components/docente/armar-diagnostico'
 import { CargaFallida } from '@/components/carga-fallida'
 import { formatScore } from '@/components/classroom-report-parts'
@@ -13,7 +13,7 @@ import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { PESTANAS_DEL_GRUPO, rutaDePestana, type PestanaDelGrupo } from '@/lib/grupo-del-docente'
 import { pedirJson } from '@/lib/pedir-json'
-import { MIS_GRUPOS, PAGINA_DEL_GRUPO as T } from '@/lib/textos'
+import { INFORME_IMPRESO, MIS_GRUPOS, PAGINA_DEL_GRUPO as T } from '@/lib/textos'
 import { cn } from '@/lib/utils'
 import { AvisoDeInvitados } from './aviso-de-invitados'
 import { DiagnosticosDelGrupo, useDiagnosticosDelGrupo } from './diagnosticos-del-grupo'
@@ -61,6 +61,14 @@ export function PaginaDelGrupo({
 }) {
   const router = useRouter()
   const consulta = useSearchParams()
+  // O9: el informe impreso usa el orden y el filtro de la planilla (M4); la pestaña no va.
+  const consultaDePlanilla = (() => {
+    const p = new URLSearchParams(consulta?.toString() ?? '')
+    p.delete('pestaña')
+    p.delete('pestana')
+    p.delete('nuevo')
+    return p.toString()
+  })()
   const [grupo, setGrupo] = useState(inicial)
   const [fila, setFila] = useState<FilaDeGrupo | null>(null)
   const [otros, setOtros] = useState<OtroGrupo[]>([])
@@ -163,6 +171,13 @@ export function PaginaDelGrupo({
                 {T.mandarTarea}
               </Boton>
             )}
+            {/* O9: el informe para imprimir lleva el orden y el filtro de la planilla. */}
+            <Boton variante="secundario" asChild>
+              <Link href={`/teacher/grupos/${grupo.id}/imprimir${consultaDePlanilla ? `?${consultaDePlanilla}` : ''}`}>
+                <Printer aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                {INFORME_IMPRESO.boton}
+              </Link>
+            </Boton>
             <Boton
               variante="secundario"
               disabled={ocupado}
