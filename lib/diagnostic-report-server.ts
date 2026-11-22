@@ -9,7 +9,9 @@ import {
   suggestStrategy,
   summarizeDispersion,
   type ProgramLink,
+  type ProgramaParaVincular,
   type TeachingStrategy,
+  vinculoConPrograma,
 } from '@/lib/diagnostic-report'
 
 /**
@@ -96,14 +98,14 @@ export interface UnitReport {
   programLink: ProgramLink
 }
 
-function foldRows(rows: TallyRow[]): UnitReport[] {
+function foldRows(rows: TallyRow[], vincular: (unit: string) => ProgramLink = programLinkFor): UnitReport[] {
   const byUnit = new Map<string, UnitReport>()
 
   for (const row of rows) {
     const unit = String(row.unit)
     const current =
       byUnit.get(unit) ??
-      { unit, byType: emptyTallies(), excludedShortAnswers: 0, programLink: programLinkFor(unit) }
+      { unit, byType: emptyTallies(), excludedShortAnswers: 0, programLink: vincular(unit) }
 
     const total = Number(row.total)
     const correct = Number(row.correct)
@@ -189,6 +191,8 @@ export interface CourseUnitReport extends UnitReport {
 
 export interface CourseDiagnostic {
   date: string
+  /** O6: la materia del programa contra el que se leyó; null = el mapa del 10/08. */
+  programa?: string | null
   students: number
   attempts: number
   units: CourseUnitReport[]
@@ -204,7 +208,34 @@ export interface CourseDiagnostic {
  */
 const MIN_ANSWERS_FOR_DISPERSION = 5
 
-export async function loadCourseDiagnostic(): Promise<CourseDiagnostic> {
+/**
+ * O6: los temas de cada unidad del diagnóstico del 10/08, que se sirvió de
+ * `curriculum` Secundario 4to Matemática (el mismo ancla que WITH_ATTRIBUTABLE).
+ */
+async function temasDeLasUnidades(): Promise<Map<string, string[]>> {
+  const filas = (await sql.query(
+    `SELECT eje, temas FROM curriculum WHERE nivel = 'Secundario' AND grado = '4to Año' AND materia = 'Matemática' AND $1::date IS NOT NULL`,
+    [DIAGNOSTIC_DATE],
+  )) as unknown as { eje: string; temas: unknown }[]
+  const porUnidad = new Map<string, string[]>()
+  for (const f of filas) {
+    const temas = Array.isArray(f.temas) ? f.temas.filter((t): t is string => typeof t === 'string') : []
+    porUnidad.set(f.eje, [...(porUnidad.get(f.eje) ?? []), ...temas])
+  }
+  return porUnidad
+}
+
+/**
+ * El diagnóstico del 10/08 a nivel curso. Sin `programa`, contra el mapa a
+ * mano de esa cátedra (como siempre). O6: con `programa`, cada unidad se
+ * vincula con las unidades y temas de ese programa (`vinculoConPrograma`).
+ */
+export async function loadCourseDiagnostic(opciones: { programa?: ProgramaParaVincular | null } = {}): Promise<CourseDiagnostic> {
+  const programa = opciones.programa ?? null
+  const temasPorUnidad = programa ? await temasDeLasUnidades() : null
+  const vincular = programa && temasPorUnidad
+    ? (unit: string) => vinculoConPrograma(unit, temasPorUnidad.get(unit) ?? [], programa)
+    : programLinkFor
   const [tallyRows, perStudentRows, totals] = await Promise.all([
     sql.query(`${WITH_ATTRIBUTABLE} ${UNIT_TALLY_SELECT} GROUP BY cu.eje, ans.question_type`, [
       DIAGNOSTIC_DATE,
@@ -265,7 +296,7 @@ export async function loadCourseDiagnostic(): Promise<CourseDiagnostic> {
     studentsByUnit.set(unit, students)
   }
 
-  const units: CourseUnitReport[] = foldRows(tallyRows as unknown as TallyRow[]).map((unit) => {
+  const units: CourseUnitReport[] = foldRows(tallyRows as unknown as TallyRow[], vincular).map((unit) => {
     const dispersion = summarizeDispersion(scoresByUnit.get(unit.unit) ?? [])
     return {
       ...unit,
@@ -279,6 +310,7 @@ export async function loadCourseDiagnostic(): Promise<CourseDiagnostic> {
 
   return {
     date: DIAGNOSTIC_DATE,
+    programa: programa?.materia ?? null,
     students: Number(summary?.students ?? 0),
     attempts: Number(summary?.attempts ?? 0),
     units,

@@ -896,6 +896,12 @@ export const BUZON = {
   tuMensaje: 'Tu mensaje',
 } as const
 
+/** O6: el reporte del diagnóstico del 10/08, leído contra un programa. */
+export const DIAGNOSTICO_DEL_CURSO = {
+  leerContra: 'Leer contra el programa de',
+  mapaOriginal: 'Análisis de Sistemas (el mapa con que se armó el 10/08)',
+} as const
+
 /** O2: "A reforzar" se cierra (3 aciertos seguidos) o lo cierra el docente. */
 export const A_REFORZAR = {
   superado: 'superado',

@@ -23,6 +23,8 @@
  *    un 24% en cónicas que nadie le va a tomar.
  */
 
+import { temaDelPrograma } from '@/lib/a-reforzar'
+
 /** Día del diagnóstico. Los intentos de esa fecha tienen `classroom_id` NULL. */
 export const DIAGNOSTIC_DATE = '2026-08-10'
 
@@ -87,6 +89,12 @@ export const DIAGNOSTIC_UNIT_PROGRAM_MAP: Record<string, ProgramLink> = {
   },
 }
 
+/**
+ * El mapa de arriba es el del 10/08: escrito a mano para UNA cátedra
+ * (Matemática de Análisis de Sistemas). Sin programa, es lo que se usa, y
+ * `/teacher/diagnostico` se ve igual que siempre. Con un programa
+ * (`vinculoConPrograma`), el vínculo sale de sus unidades y temas.
+ */
 export function programLinkFor(unit: string): ProgramLink {
   return (
     DIAGNOSTIC_UNIT_PROGRAM_MAP[unit] ?? {
@@ -222,4 +230,45 @@ export const STRATEGY_LABEL: Record<TeachingStrategy, string> = {
   frontal: 'Re-enseñanza frontal — casi nadie llega al 60%',
   repaso_puntual: 'Repaso puntual — el curso lo tiene',
   sin_datos: 'Sin datos suficientes',
+}
+
+/** O6: un programa para leer el diagnóstico (de `teacher_programs` o `curriculum`). */
+export interface ProgramaParaVincular {
+  materia: string
+  unidades: { nombre: string; temas: string[] }[]
+}
+
+/**
+ * O6 · El vínculo de una unidad del diagnóstico con un programa cualquiera,
+ * sin mapa a mano: la unidad del programa que comparte más temas con ella (o
+ * que se llama igual). Los temas se comparan como en "A reforzar" (normalizados,
+ * igual o contenido con sentido). Si ninguna comparte nada, la unidad no está
+ * en el programa.
+ */
+export function vinculoConPrograma(unidad: string, temasDeLaUnidad: readonly string[], programa: ProgramaParaVincular): ProgramLink {
+  let mejor: { nombre: string; comunes: number; mismoNombre: boolean } | null = null
+  for (const u of programa.unidades) {
+    const mismoNombre = temaDelPrograma(unidad, [u.nombre]) !== null
+    const comunes = temasDeLaUnidad.filter((t) => temaDelPrograma(t, u.temas) !== null).length
+    const puntaje = comunes + (mismoNombre ? 1000 : 0)
+    const puntajeMejor = mejor ? mejor.comunes + (mejor.mismoNombre ? 1000 : 0) : 0
+    if (puntaje > puntajeMejor) mejor = { nombre: u.nombre, comunes, mismoNombre }
+  }
+  if (!mejor) {
+    return {
+      programUnit: null,
+      rationale: `Los temas de esta unidad no aparecen en el programa de ${programa.materia}. No hace falta nivelarlos para la materia.`,
+    }
+  }
+  if (mejor.mismoNombre && mejor.comunes === 0) {
+    return { programUnit: mejor.nombre, rationale: `El programa de ${programa.materia} tiene una unidad con el mismo nombre.` }
+  }
+  const total = temasDeLaUnidad.length
+  return {
+    programUnit: mejor.nombre,
+    rationale:
+      mejor.comunes === 1
+        ? `1 de los ${total} temas de esta unidad está en ${mejor.nombre}.`
+        : `${mejor.comunes} de los ${total} temas de esta unidad están en ${mejor.nombre}.`,
+  }
 }

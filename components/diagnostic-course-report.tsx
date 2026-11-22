@@ -31,6 +31,8 @@ export interface CourseUnitReport {
 
 export interface CourseDiagnostic {
   date: string
+  /** O6: la materia del programa contra el que se leyó; null = el mapa del 10/08. */
+  programa?: string | null
   students: number
   attempts: number
   units: CourseUnitReport[]
@@ -91,11 +93,14 @@ export function DiagnosticCourseReport({ report }: { report: CourseDiagnostic })
               choice de 4 opciones, {pct(CHANCE_FLOOR.true_false)} en verdadero/falso, 0% en
               numérica. La columna numérica es la única que retrata lo que el curso puede producir.
             </p>
-            <p className="text-muted-foreground">
-              <strong className="text-foreground">Faltan 5 de las 7 unidades del programa.</strong>{' '}
-              El diagnóstico midió el currículum de Secundario 4to, así que no dice nada sobre
-              lógica, conjuntos, matrices, límites ni derivadas.
-            </p>
+            {/* O6: este renglón es del programa de Sistemas; leído contra otra materia no aplica. */}
+            {!report.programa && (
+              <p className="text-muted-foreground">
+                <strong className="text-foreground">Faltan 5 de las 7 unidades del programa.</strong>{' '}
+                El diagnóstico midió el currículum de Secundario 4to, así que no dice nada sobre
+                lógica, conjuntos, matrices, límites ni derivadas.
+              </p>
+            )}
             {report.unattributedAttempts > 0 && (
               <p className="text-muted-foreground">
                 {report.unattributedAttempts} de {report.attempts} cuestionarios mezclaban temas de

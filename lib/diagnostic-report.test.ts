@@ -6,6 +6,7 @@ import {
   accuracy,
   chanceVerdict,
   programLinkFor,
+  vinculoConPrograma,
   suggestStrategy,
   summarizeDispersion,
 } from './diagnostic-report'
@@ -142,5 +143,32 @@ describe('mapeo contra el programa', () => {
     const link = programLinkFor('Trigonometría Esférica')
     expect(link.programUnit).toBeNull()
     expect(link.rationale).toBeTruthy()
+  })
+})
+
+describe('O6 · vinculoConPrograma', () => {
+  const programa = {
+    materia: 'Matemática',
+    unidades: [
+      { nombre: 'Unidad 2 — Teoría de Conjuntos', temas: ['Operaciones con conjuntos: unión, intersección, diferencia y complemento.'] },
+      { nombre: 'Unidad 5 — Funciones', temas: ['Función lineal', 'Función cuadrática', 'Dominio e imagen'] },
+    ],
+  }
+
+  it('elige la unidad que comparte más temas, y lo dice', () => {
+    const v = vinculoConPrograma('Álgebra y Funciones', ['Función lineal', 'Función cuadrática', 'Polinomios'], programa)
+    expect(v.programUnit).toBe('Unidad 5 — Funciones')
+    expect(v.rationale).toBe('2 de los 3 temas de esta unidad están en Unidad 5 — Funciones.')
+  })
+
+  it('sin temas en común, no está en el programa', () => {
+    const v = vinculoConPrograma('Geometría y Medida', ['Cónicas'], programa)
+    expect(v.programUnit).toBeNull()
+    expect(v.rationale).toContain('no aparecen en el programa de Matemática')
+  })
+
+  it('una unidad que se llama igual cuenta aunque los temas difieran', () => {
+    const v = vinculoConPrograma('Teoría de Conjuntos', ['Conjuntos numéricos'], { materia: 'M', unidades: [{ nombre: 'Teoría de conjuntos', temas: [] }] })
+    expect(v.programUnit).toBe('Teoría de conjuntos')
   })
 })
