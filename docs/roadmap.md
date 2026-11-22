@@ -1,6 +1,6 @@
 # MaestrIA — Roadmap
 
-Documento vivo. Última actualización: **21 de noviembre de 2026**.
+Documento vivo. Última actualización: **22 de noviembre de 2026**.
 
 ## Tesis de producto
 
@@ -404,6 +404,12 @@ Después de leer 16 programas reales de seis institutos (en `C:\Programacion\Mat
 - [x] **Tanda I, los 16 en producción** (deploy `a8f3d57`, con todo I1–I5). Con la sesión de docente de Mauro en su Chrome, cada archivo mandado a `/api/teacher/programs/extract` desde una página del sitio, sin crear materias: **16 de 16 dan 200 por IA**, entre 1,7 y 6,9 s. 01: 5 u/44 t · 02: 5/42 · 03: 7/32 · 04: 7/36 · 05: 5/48 · 06: 4/30 · 07: 4/37 · 08: 4/40 · 09: 3/35 · 10: 4/12 ("Unidad 1"…) · 11: 4/18 ("Unidad 1"…) · 12: 1/5 · 13: 3/36 · 14: 5/47 · **15 (escaneo): 4/41 en 4,8 s** · **16 (foto): 4/10 en 2,0 s**. Ningún tema pasa de 89 caracteres. Cada subida deja su copia temporal de 24 h en `teacher_program_uploads`.
 
 ---
+
+## 🌙 Ronda nocturna O — tanda N y bloque O (22/11/2026)
+
+Trabajo en loop sin supervisión (encargo del 22/11, 00:40). Informe de la mañana: [docs/informes/ronda-nocturna-2026-11-22.md](informes/ronda-nocturna-2026-11-22.md). Migraciones desde la **030**, una por PR, corridas sólo en staging; en producción las corre Mauro.
+
+- [x] **N1 · Aviso al que reportó** (PR [#74](https://github.com/Malejo01/maestria/pull/74), rama `ronda-o/n1-aviso-de-reporte`, **migración 030**). Al marcar un reporte como resuelto en `/admin/reportes` se abre "Mensaje para quien lo reportó" (opcional); se guardan `resuelto_el`, `respuesta` y `respondido_por` (nombre de pila del admin; columna sumada al SQL del encargo para no dejar "Mauro" fijo). Volver a nuevo o visto limpia `resuelto_el` y `aviso_visto_el`. Quien reportó —con cuenta **o invitado**— ve arriba del contenido un aviso del sistema ([components/sistema/aviso.tsx](../components/sistema/aviso.tsx), montado en el caparazón) con el texto de [lib/avisos-de-reporte.ts](../lib/avisos-de-reporte.ts) (puro: texto, agrupar varios, quién ve avisos); **Entendido** guarda `aviso_visto_el` (`POST /api/feedback/avisos/visto`, sólo sobre reportes propios). Se pide una vez por pestaña (memoria + sessionStorage) y no se muestra mientras el motor está en `quiz`/`loading`. El admin no ve avisos de lo suyo. Válvula: sin la 030, `GET /api/feedback/avisos` da `[]` y el buzón cambia estados como en M6. Verificado en staging con un invitado de punta a punta (capturas en `docs/capturas/n1-aviso-de-reporte/`). Sin verificar: el aviso de Clarita en producción (depende de correr la 030).
 
 ## 🏫 Tanda M — lo que salió del uso real con alumnos (21/11/2026)
 
