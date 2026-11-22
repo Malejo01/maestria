@@ -73,9 +73,13 @@ function Marco({
   )
   const activa = entradaActiva(contexto, pathname, seccion)
   const tieneBarraInferior = entradas.length > 0
+  // P8: con el cuestionario a pantalla completa (QuizOverlay, encima), la app
+  // de atrás queda inerte: ni el foco ni el lector de pantalla llegan a una
+  // barra y un <main> que no se ven (axe: landmarks duplicados).
+  const cuestionarioAbierto = useAppStore((s) => s.activeView === 'quiz' || s.activeView === 'results' || s.activeView === 'loading')
 
   return (
-    <div className="flex min-h-dvh flex-col bg-superficie-base">
+    <div className="flex min-h-dvh flex-col bg-superficie-base" inert={cuestionarioAbierto}>
       {quien && !quien.esInvitado && <SesionAlDia />}
 
       {/* z-30: sobre el contenido, debajo del cuestionario a pantalla completa

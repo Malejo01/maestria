@@ -458,7 +458,7 @@ export function ResultsScreen() {
         <Card className="p-5 border-2 border-border bg-card/90">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-foreground">{RACHA.titulo}</h3>
+              <h2 className="font-bold text-foreground">{RACHA.titulo}</h2>
               <p className="text-sm text-muted-foreground mt-1">{textoDeRacha(userProgress.streak)}</p>
             </div>
             <StreakBadge streak={userProgress.streak} size="lg" />
@@ -502,7 +502,8 @@ export function ResultsScreen() {
                 <XCircle className="w-6 h-6 text-texto-sobre-accion" />
               </div>
               <span className="text-3xl font-black text-destructive">{results.total - results.correct}</span>
-              <span className="text-xs text-muted-foreground font-bold uppercase tracking-wide mt-1">Incorrectas</span>
+              {/* P8: gris suave sobre el tinte de error no llegaba a 4,5:1. */}
+              <span className="text-xs text-texto font-bold uppercase tracking-wide mt-1">Incorrectas</span>
               <div className="flex items-center gap-1 mt-2 text-destructive">
                 <span className="text-xs font-semibold">Ver</span>
                 {showIncorrect ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -514,10 +515,10 @@ export function ResultsScreen() {
         {/* Correct Answers List */}
         {showCorrect && results.correctAnswers.length > 0 && (
           <div className="space-y-3 fade-in-50 slide-in-from-top-4">
-            <h3 className="font-bold text-foreground flex items-center gap-2 px-1">
+            <h2 className="font-bold text-foreground flex items-center gap-2 px-1">
               <CheckCircle className="w-5 h-5 text-logrado" />
               Respuestas Correctas
-            </h3>
+            </h2>
             {results.correctAnswers.map((answer, i) => (
               <Card key={answer.questionId} className="p-4 border-2 border-logrado/30 bg-logrado-fondo">
                 <div className="space-y-2">
@@ -548,10 +549,10 @@ export function ResultsScreen() {
         {/* Incorrect Answers List */}
         {showIncorrect && results.incorrectAnswers.length > 0 && (
           <div className="space-y-3 fade-in-50 slide-in-from-top-4">
-            <h3 className="font-bold text-foreground flex items-center gap-2 px-1">
+            <h2 className="font-bold text-foreground flex items-center gap-2 px-1">
               <XCircle className="w-5 h-5 text-destructive" />
               Respuestas Incorrectas
-            </h3>
+            </h2>
             {results.incorrectAnswers.map((answer, i) => (
               <Card key={answer.questionId} className="p-4 border-2 border-destructive/30 bg-destructive/5">
                 <div className="space-y-3">
@@ -627,6 +628,9 @@ export function ResultsScreen() {
       <div
         data-quiz-action-bar=""
         ref={refDeLaBarra}
+        // P8: es una región con nombre (axe, region): "Practicar otra vez" y su texto no quedan sueltos.
+        role="region"
+        aria-label={RESULTADOS.acciones}
         className="fixed bottom-0 left-0 right-0 z-20 border-t-2 border-border bg-card/95 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]"
       >
         <div className="max-w-md mx-auto space-y-2.5">
@@ -680,7 +684,9 @@ export function ResultsScreen() {
               <Button
                 variant="outline"
                 onClick={handleGoToHistory}
-                className="flex-1 h-13 gap-2 rounded-2xl border-2 font-bold text-primary border-primary/30 text-xs sm:text-sm hover:bg-primary/5"
+                // P8: sin hover:text-primary ni dark:bg-transparent, el outline de shadcn
+                // dejaba el texto sin contraste en oscuro (fondo input/30 o accent-foreground).
+                className="flex-1 h-13 gap-2 rounded-2xl border-2 font-bold text-primary border-primary/30 text-xs sm:text-sm hover:bg-primary/5 hover:text-primary dark:bg-transparent dark:hover:bg-primary/5"
               >
                 <History className="w-4 h-4" />
                 <span>Historial</span>
@@ -691,7 +697,8 @@ export function ResultsScreen() {
               onClick={handleGoHome}
               className={cn(
                 'flex-1 h-13 gap-2 rounded-2xl font-bold text-sm text-texto-sobre-accion',
-                ' bg-[var(--algebra)]',
+                // P8: mismo fondo en hover (el /90 de shadcn no llegaba a 4,5:1).
+                ' bg-[var(--algebra)] hover:bg-[var(--algebra)]',
                 ' hover:scale-[1.02] active:scale-[0.98] transition-all'
               )}
             >
