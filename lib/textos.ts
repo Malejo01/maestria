@@ -1657,6 +1657,25 @@ export const FICHA_A_REFORZAR = {
   titulo: (n: number) => `A reforzar (${n})`,
 } as const
 
+/** Ronda T · D2: separar en temas lo ya guardado. */
+export const SEPARAR_EN_TEMAS = {
+  boton: 'Separar en temas',
+  botonEtiqueta: (tema: string) => `Separar en temas: ${tema.slice(0, 60)}`,
+  titulo: 'Separar en temas',
+  detalle: 'Revisá la propuesta: podés corregir o sacar temas antes de guardar. El primero conserva lo que ya tenía (A reforzar, diagnósticos).',
+  buscando: 'Armando la propuesta…',
+  conIA: 'La propuesta la armó la IA con las palabras del tema.',
+  sinPropuesta: 'No encontramos cómo separarlo. Podés editarlo desde Editar materia.',
+  quitar: (tema: string) => `Quitar "${tema.slice(0, 40)}"`,
+  temaN: (n: number) => `Tema ${n}`,
+  guardar: 'Guardar',
+  guardando: 'Guardando…',
+  cancelar: 'Cancelar',
+  listo: 'Listo, quedó separado.',
+  pedazosInvalidos: 'Tienen que quedar al menos 2 temas, sin repetir.',
+  noSePudo: 'No se pudo separar. Probá de nuevo.',
+} as const
+
 /** Ronda T · C2: pagar desde la app (Mercado Pago Checkout Pro). */
 export const PAGAR = {
   titulo: 'Pagar',
