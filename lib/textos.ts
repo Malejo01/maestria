@@ -1468,3 +1468,8 @@ export const EMBUDO = {
   columnas: { docente: 'Docente', paso: 'Paso', desde: 'Desde' },
   vacio: 'Todavía no hay docentes.',
 } as const
+
+/** O13: Mis materias. */
+export const MIS_MATERIAS = {
+  elegir: (materia: string) => `Elegir ${materia}`,
+} as const

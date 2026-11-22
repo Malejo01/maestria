@@ -20,6 +20,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O10 · Avisos al docente dentro de la app (migración 034) | hecho | [#85](https://github.com/Malejo01/maestria/pull/85) | Tests de los textos, el orden, los no leídos y la válvula; en staging la campanita de Irina con avisos reales | US$0 |
 | O11 · Títulos de unidad en la misma línea que los temas | hecho | [#86](https://github.com/Malejo01/maestria/pull/86) | Tests con el caso de la tanda I y casos que no se tocan; test de la ruta `extract` | US$0 |
 | O12 · El embudo del docente | hecho | [#87](https://github.com/Malejo01/maestria/pull/87) | Tests de la ubicación, el orden y el conteo, y el 404 para no admins; en staging, con los 7 docentes | US$0 |
+| O13 · Primer uso de un docente nuevo sin ayuda | hecho | [#88](https://github.com/Malejo01/maestria/pull/88) | Recorrido con Playwright a 390 de punta a punta en staging (docente recién creado → alumno → tarea → resultado); 2 arreglos, 4 propuestas | US$0 (IA simulada) |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -134,6 +135,12 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - `/admin/embudo` (sólo `ADMIN_EMAILS`; link en el menú del admin): el embudo (cuántos docentes alcanzaron cada paso) y la lista por docente con su paso y hace cuántos días. **Los trabados más de 3 días en un paso que no es el último van arriba, con su email**, los de más días primero. Pasos: se registró → creó una materia → creó un grupo → mandó la primera tarea → el primer alumno la hizo → 5 alumnos activos (el quinto alumno distinto que hizo una tarea suya). Todo de las tablas que ya existen ([lib/embudo.ts](../../lib/embudo.ts), puro; [lib/embudo-server.ts](../../lib/embudo-server.ts)).
 - No se saltean pasos: un docente con tarea pero sin grupo queda en "Creó una materia".
 
+### O13 · Primer uso del docente
+
+- Informe aparte con el camino paso por paso y las capturas: [o13-primer-uso-docente.md](o13-primer-uso-docente.md).
+- **Arreglado:** (1) a 390, el botón **"Generar cuestionario" quedaba tapado por la barra inferior** de navegación: un docente nuevo en el celular no podía generar su primera tarea (y lo mismo la práctica del alumno, que usa el mismo componente); (2) la tarjeta de la materia en "Elegí una materia" no era un botón (teclado y lector de pantalla no podían elegirla).
+- **Propuestas** (cambios de flujo, no tocados): elegir sola la única materia en "Armar la primera tarea"; no ofrecer "Quitar a los que nunca respondieron" con alumnos recién entrados; esconder "+ Alumno" hasta tener materia; cambiar el texto del aviso de la primera tarea cuando ya hay un intento.
+
 ## Pasos manuales de Mauro, en orden
 
 1. Migración 030 en producción:
@@ -173,6 +180,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 ## Datos de prueba que quedaron en staging
 
 - Dos valoraciones de Irina en el cuestionario 39 (pregunta 1 arriba; pregunta 2 abajo, "Muy fácil"): entran al prompt de su Matemática 3.º Sec.
+- Docente **"Docente Nueva O13"** (`o13-docente-mwrhwcrc`) con su materia Geografía, su grupo (código D8X5QT), una tarea y cuatro invitados "Alumno O13" (uno con la tarea hecha).
 - Sofía también quedó en el grupo 4 "Prueba M3 · Matemática 1 Virtual" (traída desde Lengua en la prueba de O7).
 - Racha de Sofía en `rachas_alumno` (0, migrada del navegador) y su intento en "Lengua · 4to Año · 11/7/2026" (2/10).
 - Temas "a reforzar" marcados como superados a mano por Irina: #58 (Tomás Villa) y #57 (Sofía Ramírez), los dos de Lengua. Se devuelven con "Volver a reforzar" en la ficha.

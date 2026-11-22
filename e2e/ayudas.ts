@@ -67,3 +67,14 @@ export async function responderUna(page: Page) {
   const siguiente = page.getByRole('button', { name: /^(Siguiente|Ver resultados)$/ })
   if (await siguiente.isVisible().catch(() => false)) await siguiente.click()
 }
+
+/**
+ * Entra por el ingreso de desarrollo con el id del usuario, sin pasar por la
+ * lista de /sign-in/dev (que muestra sólo doce): para un usuario recién
+ * creado en staging (O13).
+ */
+export async function entrarConId(page: Page, userId: string) {
+  const { csrfToken } = (await (await page.request.get('/api/auth/csrf')).json()) as { csrfToken: string }
+  const res = await page.request.post('/api/auth/callback/dev', { form: { csrfToken, userId, callbackUrl: '/' } })
+  expect(res.ok(), 'el ingreso de desarrollo sólo existe con `npm run dev:staging`').toBe(true)
+}
