@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { useRefrescarSesion } from '@/hooks/use-refrescar-sesion'
-import { ArrowLeftRight, CreditCard, ExternalLink, Gauge, LogOut, Undo2, Inbox } from 'lucide-react'
+import { ArrowLeftRight, CreditCard, ExternalLink, Filter, Gauge, LogOut, Undo2, Inbox } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -27,7 +27,7 @@ import {
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { inicioDe } from '@/lib/navegacion'
-import { BUZON, CUENTA } from '@/lib/textos'
+import { BUZON, EMBUDO, CUENTA } from '@/lib/textos'
 import type { UserRole } from '@/lib/types'
 
 const ITEM = 'min-h-11 cursor-pointer gap-3 rounded-sm px-3 cuerpo-s text-texto focus:bg-superficie-suave focus:text-texto'
@@ -162,6 +162,12 @@ export function MenuUsuario({
                       <span className="nota rounded-full bg-accion px-2 font-bold text-texto-sobre-accion">{BUZON.menuNuevos(nuevos)}</span>
                     )}
                   </span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className={ITEM}>
+                <Link href="/admin/embudo">
+                  <Filter aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                  {EMBUDO.menu}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className={ITEM}>

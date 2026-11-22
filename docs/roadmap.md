@@ -422,6 +422,7 @@ Trabajo en loop sin supervisión (encargo del 22/11, 00:40). Informe de la maña
 - [x] **O9 · Informe del grupo para imprimir** (PR [#84](https://github.com/Malejo01/maestria/pull/84), rama `ronda-o/o9-informe-para-imprimir`; FASE 4). "Imprimir informe" en la página del grupo → `/teacher/grupos/[id]/imprimir` en `(focus)`, con el orden y el filtro de la planilla de la URL: planilla, temas flojos y tareas con cuántos las hicieron ([lib/informe-para-imprimir.ts](../lib/informe-para-imprimir.ts), puro). CSS de impresión, sin PDF en el servidor. Verificado en staging con `MEDIO=print`.
 - [x] **O10 · Avisos al docente dentro de la app** (PR [#85](https://github.com/Malejo01/maestria/pull/85), rama `ronda-o/o10-avisos-docente`, **migración 034**). Campanita en la barra del docente ([components/caparazon/campanita-docente.tsx](../components/caparazon/campanita-docente.tsx)) con los no leídos: intentos terminados por tarea y por día, alumnos nuevos por grupo y por día, y reportes (M6), de las últimas dos semanas, calculados de lo que ya hay ([lib/avisos-docente.ts](../lib/avisos-docente.ts), puro; [lib/avisos-docente-server.ts](../lib/avisos-docente-server.ts)). `users.avisos_docente_visto_el` (034) cuenta los no leídos; abrirla marca todo como visto. Sin correo ni push. Verificado en staging (Irina).
 - [x] **O11 · Títulos de unidad en la misma línea que los temas** (PR [#86](https://github.com/Malejo01/maestria/pull/86), rama `ronda-o/o11-titulos-de-unidad`; pendiente de la tanda I). `separarTituloDeUnidad` en [lib/nombre-de-unidad.ts](../lib/nombre-de-unidad.ts): "Unidad 2: Funciones. Dominio, imagen, …" ya no pierde "Funciones" ni queda sin temas; aplicado en `extract`, `guide` y la lectura heurística. Tests con el caso del pedido y lo que no se toca. Sin verificar: un programa real (no hay fixtures de la tanda I en el repo).
+- [x] **O12 · El embudo del docente** (PR [#87](https://github.com/Malejo01/maestria/pull/87), rama `ronda-o/o12-embudo`; FASE 2). `/admin/embudo`: el conteo por paso y, por docente, en qué paso está y hace cuántos días; los trabados más de 3 días arriba, con su email ([lib/embudo.ts](../lib/embudo.ts)). Todo de las tablas existentes. Verificado en staging.
 
 ## 🏫 Tanda M — lo que salió del uso real con alumnos (21/11/2026)
 
@@ -930,7 +931,7 @@ Precio de referencia: Docente Pro ~$4.000-7.000 ARS/mes. Costos medidos: IA ~$0,
 
 ## FASE 2 — Activación del docente
 
-- [ ] Analytics de producto, funnel signup → primera aula → primer cuestionario
+- [x] Analytics de producto, funnel signup → primera aula → primer cuestionario — O12 (22/11/2026): `/admin/embudo`, de las tablas de la app, sin herramientas externas.
 
 ## FASE 3 — Loop de calidad de generación IA
 
