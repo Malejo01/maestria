@@ -896,6 +896,17 @@ export const BUZON = {
   tuMensaje: 'Tu mensaje',
 } as const
 
+/** O2: "A reforzar" se cierra (3 aciertos seguidos) o lo cierra el docente. */
+export const A_REFORZAR = {
+  superado: 'superado',
+  marcarSuperado: 'Ya lo superó',
+  volverAReforzar: 'Volver a reforzar',
+  yaLoDominas: 'Ya lo dominás',
+  yaLoDominasDetalle: (n: number) =>
+    n === 1 ? '1 tema que tenías para reforzar y ya superaste.' : `${n} temas que tenías para reforzar y ya superaste.`,
+  superadoEl: (fecha: string) => `Superado el ${fecha}`,
+} as const
+
 /** N1: el aviso a quien reportó, cuando su reporte se resolvió. */
 export const AVISO_DE_REPORTE = {
   etiqueta: 'Tu reporte',

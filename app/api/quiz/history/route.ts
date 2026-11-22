@@ -35,11 +35,10 @@ interface AttemptRow {
  * con la forma declarada en lib/types.ts (`SubjectModeTotals`, `ReinforceTopic`),
  * que es la que consume el cliente: una sola definición para las dos puntas.
  *
- * Sobre `student_misconceptions.resolved`: es letra muerta hoy, ningún camino
- * de código la pone en TRUE (mismo caso que `topic_mastery.mastered_at`, ver
- * deuda-tecnica.md §7). El filtro se deja igual porque es lo que la columna
- * significa, y el día que algo marque un tema como superado esta consulta ya
- * hace lo correcto. Mientras tanto el conteo sólo crece — anotado en el backlog.
+ * Sobre `student_misconceptions.resolved`: desde O2 (22/11/2026) la pone en
+ * TRUE la regla de 3 aciertos seguidos (lib/a-reforzar-server.ts, al guardar
+ * un intento) o el docente desde la ficha. Los superados viajan aparte, en
+ * `dominados`, para "Ya lo dominás".
  */
 
 export async function GET(req: Request) {
@@ -138,11 +137,17 @@ export async function GET(req: Request) {
       WHERE user_id = ${userId} AND resolved = FALSE
     `) as ReinforceTopic[]
 
+    // O2: lo superado, sin lo que volvió a fallarse después. Sin la 031 no
+    // hay `resolved_at`: se lista sin fecha.
+    const pendientesClave = new Set(reinforce.map((r) => `${r.subject}|${r.topicId}`))
+    const dominados = (await leerDominados(userId)).filter((d) => !pendientesClave.has(`${d.materia}|${d.topicId}`))
+
     return NextResponse.json({
       attempts,
       mastery,
       totals,
-      reinforce
+      reinforce,
+      dominados: dominados.map(({ materia, tema, superadoEl }) => ({ materia, tema, superadoEl })),
     })
 
   } catch (error) {
@@ -154,4 +159,31 @@ export async function GET(req: Request) {
       { status: 500 }
     )
   }
+}
+
+async function leerDominados(userId: string): Promise<{ materia: string; topicId: string; tema: string; superadoEl: string | null }[]> {
+  type Fila = { subject: string; topic_id: string; topic_name: string; resolved_at?: string | Date | null }
+  let filas: Fila[]
+  try {
+    filas = (await sql`
+      SELECT DISTINCT ON (subject, topic_id) subject, topic_id, topic_name, resolved_at
+      FROM student_misconceptions
+      WHERE user_id = ${userId} AND resolved = TRUE
+      ORDER BY subject, topic_id, resolved_at DESC NULLS LAST
+      LIMIT 50
+    `) as Fila[]
+  } catch (error) {
+    if ((error as { code?: string })?.code !== '42703') throw error
+    filas = (await sql`
+      SELECT DISTINCT subject, topic_id, topic_name FROM student_misconceptions
+      WHERE user_id = ${userId} AND resolved = TRUE
+      LIMIT 50
+    `) as Fila[]
+  }
+  return filas.map((f) => ({
+    materia: f.subject,
+    topicId: f.topic_id,
+    tema: f.topic_name,
+    superadoEl: f.resolved_at ? new Date(f.resolved_at).toISOString() : null,
+  }))
 }
