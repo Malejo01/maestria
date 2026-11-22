@@ -23,6 +23,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O13 · Primer uso de un docente nuevo sin ayuda | hecho | [#88](https://github.com/Malejo01/maestria/pull/88) | Recorrido con Playwright a 390 de punta a punta en staging (docente recién creado → alumno → tarea → resultado); 2 arreglos, 4 propuestas | US$0 (IA simulada) |
 | O14 · Medición de calidad de la generación | hecho | [#89](https://github.com/Malejo01/maestria/pull/89) | 22 cuestionarios con IA real en staging; "fuera de tema" 8 % → corregido en la generación → re-medido 0 % | US$0,16 |
 | O19 · Limpieza: placeholders de v0 | hecho | [#90](https://github.com/Malejo01/maestria/pull/90) | `grep` sin referencias (sólo el roadmap); build en verde | US$0 |
+| O15 · Esquema que usa el código contra staging | hecho | [#91](https://github.com/Malejo01/maestria/pull/91) | Test manual contra `information_schema` de staging: en verde; en el CI se salta | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,19 (US$0,0285 en `ai_usage_log` de staging — 18 llamadas desde la app —, más US$0,157 de los scripts de O14 y US$0,0005 del dry-run de N2, que llaman al modelo directo y no pasan por el registro; los scripts imprimen su gasto estimado con la misma tarifa) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -148,6 +149,11 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - Script `scripts/qa/medir-calidad.ts --env=staging` (sólo staging; no escribe): genera con el núcleo de la app y mide con los validadores existentes. Grilla: Primario y Secundario de Matemática, y en Superior Matemática (Sistemas), Matemática y su Didáctica y Programación; teórico y práctico; 8 preguntas con los cuatro tipos. Salieron **22** cuestionarios (de 24 previstos: un par de unidades no tenía temas en staging).
 - Resultado completo en [docs/calidad/2026-11-22.md](../calidad/2026-11-22.md): **0 %** en tipo (M2), dos resultados (K3), factorización (L3) y repetidas, y **0 de 22** GIFT con errores (M5).
 - **"Fuera de tema" dio 8 %** (Secundario 25 %): eran preguntas del tema pedido con el nombre **acortado por el modelo** ("Cuerpos", "Semejanza", "Números Reales: Operaciones"). Se corrigió en la generación: `anclarTema` deja cada pregunta con el id y el nombre del tema pedido cuando se ubica con certeza. **Re-medido sólo ese caso: 0 %** ([re-medición](../calidad/2026-11-22-remedicion.md)). Efecto de paso: las respuestas nuevas quedan con el `topic_name` del programa, que es lo que necesita el puente de "A reforzar" (O2) y el reporte de temas.
+
+### O15 · Tipos y esquema
+
+- Los tipos `Db*` de `lib/db.ts` **ya no existen**: se borraron el 25/08 (estaban desalineados y no los usaba nadie); la convención es una interfaz por consulta. Lo que sí se puede verificar es que lo que nombran las consultas exista: `tests/esquema-real.test.ts` compara contra `information_schema` de staging (1) las tablas y columnas que declaran las migraciones y (2) una lista, a mantener con cada migración nueva, de las columnas que nombra el código (incluidas las de esta noche). En verde. No entra al CI: se corre con `$env:ESQUEMA_REAL="1"; npx vitest run tests/esquema-real.test.ts`.
+- De paso, `check-schema-drift` mostró que la 031 y la 032 figuraban en staging "con el archivo cambiado" (retoqué comentarios después de correrlas): se volvieron a correr en staging (son idempotentes) y quedaron con el archivo final.
 
 ## Pasos manuales de Mauro, en orden
 
