@@ -165,6 +165,14 @@ export interface QuizConfig {
   practicaExtraId?: number
   /** P4: la tarea de la que es práctica extra; deja "Practicar otra vez" a mano al terminarla. */
   practicaDeTarea?: number
+  /**
+   * Ronda T · E1: un cuestionario del modo autodidacta (diagnóstico, práctica
+   * del día o simulacro) de una materia personal. Al terminar, el resultado se
+   * guarda tema por tema para el plan hasta el examen.
+   */
+  autodidacta?: { programId: number; tipo: 'diagnostico' | 'practica' | 'simulacro' }
+  /** Ronda T · E1: el simulacro cronometrado. Al llegar a 0, termina solo. */
+  limiteMinutos?: number
 }
 
 interface BaseAnswer {

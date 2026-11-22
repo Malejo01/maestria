@@ -1,5 +1,7 @@
 'use client'
 
+import { useCuentaRegresiva, formatearTiempo } from '@/hooks/use-cuenta-regresiva'
+import { SIMULACRO } from '@/lib/textos'
 import { revanchaPermitida } from '@/lib/revancha'
 import { Cargando } from '@/components/sistema/cargando'
 import { useBarraDeAccion } from '@/hooks/use-barra-de-accion'
@@ -81,7 +83,17 @@ export function QuizEngine() {
 
   const alFinal = currentQuiz.config?.devolucion === 'al_final' && !currentQuiz.config?.previewOnly
   if (alFinal && !empezo && currentIndex === 0 && currentQuiz.answers.length === 0) {
-    return <AvisoDeDiagnostico onEmpezar={() => setEmpezo(true)} />
+    const limite = currentQuiz.config?.limiteMinutos
+    return (
+      <AvisoDeDiagnostico
+        {...(limite ? { titulo: SIMULACRO.titulo, aviso: SIMULACRO.aviso(questions.length, limite) } : {})}
+        onEmpezar={() => {
+          // E1: en el simulacro, el reloj arranca al tocar Empezar.
+          if (limite) useAppStore.setState((s) => ({ currentQuiz: { ...s.currentQuiz, startedAt: new Date().toISOString() } }))
+          setEmpezo(true)
+        }}
+      />
+    )
   }
 
   /**
@@ -143,6 +155,13 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     ? ((currentIndex + 1) / questions.length) * 100
     : ((currentIndex + (answerState.submitted ? 1 : 0)) / questions.length) * 100
   const isLastQuestion = currentIndex === questions.length - 1
+
+  // E1: el simulacro cronometrado. Cuenta desde que empieza y, en 0, termina
+  // el cuestionario con lo respondido hasta ahí.
+  const segundosRestantes = useCuentaRegresiva(config?.limiteMinutos, currentQuiz.startedAt, () => {
+    finishQuiz()
+    setActiveView('results')
+  })
   const isFirstQuestion = currentIndex === 0
 
   const requestOrRunAction = useCallback((
@@ -630,6 +649,15 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
               className="h-3 bg-muted [&>div]:bg-[var(--algebra)]"
             />
           </div>
+          {segundosRestantes !== null && (
+            <div
+              role="timer"
+              aria-label={SIMULACRO.tiempoRestante(formatearTiempo(segundosRestantes))}
+              className={`shrink-0 rounded-full border px-3 py-1 text-sm font-bold tabular-nums ${segundosRestantes <= 60 ? 'border-flojo bg-flojo-fondo text-flojo' : 'border-borde bg-superficie-suave text-texto'}`}
+            >
+              {formatearTiempo(segundosRestantes)}
+            </div>
+          )}
           {/* P8: en oscuro, el azul sobre su tinte no llegaba a 4,5:1 (axe). Texto del sistema. */}
           <div className="shrink-0 rounded-full border border-borde bg-superficie-suave px-3 py-1 text-sm font-bold text-texto">
             {currentIndex + 1}/{questions.length}
@@ -640,7 +668,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
             {isPreviewMode
               ? `Previsualizacion - ${currentQuestion.topicName}`
               : alFinal
-                ? `${DIAGNOSTICO.alumno.etiqueta} - ${currentQuestion.topicName}`
+                ? `${config?.limiteMinutos ? SIMULACRO.etiqueta : DIAGNOSTICO.alumno.etiqueta} - ${currentQuestion.topicName}`
                 : `${config?.mode === 'teorico' ? 'Modo teórico' : config?.mode === 'practico' ? 'Modo práctico' : 'Modo mixto'} - ${currentQuestion.topicName}`}
           </span>
         </div>
@@ -1077,11 +1105,19 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
 }
 
 /** J5: antes de la primera pregunta de un diagnóstico. */
-function AvisoDeDiagnostico({ onEmpezar }: { onEmpezar: () => void }) {
+function AvisoDeDiagnostico({
+  onEmpezar,
+  titulo = DIAGNOSTICO.alumno.titulo,
+  aviso = DIAGNOSTICO.alumno.aviso,
+}: {
+  onEmpezar: () => void
+  titulo?: string
+  aviso?: string
+}) {
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col justify-center gap-4 px-4">
-      <h1 className="titulo-l text-texto">{DIAGNOSTICO.alumno.titulo}</h1>
-      <p className="cuerpo text-texto-suave">{DIAGNOSTICO.alumno.aviso}</p>
+      <h1 className="titulo-l text-texto">{titulo}</h1>
+      <p className="cuerpo text-texto-suave">{aviso}</p>
       <Button onClick={onEmpezar} className="h-14 rounded-2xl text-base font-bold">
         {DIAGNOSTICO.alumno.empezar}
       </Button>

@@ -42,6 +42,8 @@ export async function leerOnboardingDocente(teacherId: string): Promise<Onboardi
       SELECT id, subject_name, units
       FROM teacher_programs
       WHERE user_id = ${teacherId} AND status = 'active'
+        -- E1: la materia personal (autodidacta) no cuenta como materia del docente.
+        AND COALESCE((to_jsonb(teacher_programs) ->> 'personal')::boolean, false) = false
       ORDER BY created_at ASC, id ASC
     ` as unknown as Promise<{ id: number; subject_name: string; units: unknown }[]>,
     sql`

@@ -29,7 +29,7 @@ export async function embudoDeDocentes(ahora = new Date()): Promise<DocenteEnElE
       SELECT teacher_id, primero, ROW_NUMBER() OVER (PARTITION BY teacher_id ORDER BY primero) AS n FROM intentos
     )
     SELECT d.id, d.name, d.email, d.created_at AS registro,
-      (SELECT MIN(p.created_at) FROM teacher_programs p WHERE p.user_id = d.id) AS materia,
+      (SELECT MIN(p.created_at) FROM teacher_programs p WHERE p.user_id = d.id AND COALESCE((to_jsonb(p) ->> 'personal')::boolean, false) = false) AS materia,
       (SELECT MIN(c.created_at) FROM classrooms c WHERE c.teacher_id = d.id) AS grupo,
       (SELECT MIN(a.created_at) FROM classroom_assignments a JOIN classrooms c ON c.id = a.classroom_id WHERE c.teacher_id = d.id) AS tarea,
       (SELECT primero FROM numerados x WHERE x.teacher_id = d.id AND x.n = 1) AS primer_alumno,

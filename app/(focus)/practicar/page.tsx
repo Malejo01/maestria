@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { AUTODIDACTA } from '@/lib/textos'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useAppStore } from '@/lib/store'
@@ -23,6 +25,20 @@ export default function PracticarPage() {
   const [lastSelection, setLastSelection] = useState<CurriculumSelection | null>(null)
 
   const isDocente = session?.user?.role === 'DOCENTE'
+
+  // E1: la entrada al modo autodidacta, sólo si está disponible (la válvula: sin la 040, no se muestra).
+  const [autodidactaDisponible, setAutodidactaDisponible] = useState(false)
+  useEffect(() => {
+    if (!session?.user || isDocente) return
+    let vigente = true
+    fetch('/api/autodidacta')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { disponible?: boolean } | null) => vigente && setAutodidactaDisponible(Boolean(d?.disponible)))
+      .catch(() => {})
+    return () => {
+      vigente = false
+    }
+  }, [session?.user, isDocente])
 
   const generateQuiz = async (selection: CurriculumSelection): Promise<Question[]> => {
     const ejesMap = new Map<string, string[]>()
@@ -137,6 +153,19 @@ export default function PracticarPage() {
 
   return (
     <>
+      {/* E1: el alumno con cuenta que se prepara solo para un examen. */}
+      {session?.user && !isDocente && autodidactaDisponible && (
+        <div className="mx-auto max-w-3xl px-4 pt-4">
+          <Link
+            href="/autodidacta"
+            className="flex min-h-11 flex-col gap-0.5 rounded-lg border-2 border-accion-tenue-borde bg-accion-tenue p-4 hover:border-accion"
+            data-entrada-autodidacta=""
+          >
+            <span className="cuerpo font-bold text-texto">{AUTODIDACTA.entrada}</span>
+            <span className="cuerpo-s text-texto-suave">{AUTODIDACTA.entradaDetalle}</span>
+          </Link>
+        </div>
+      )}
       <CurriculumSelector
         onStartQuiz={handleStartQuiz}
         onCancel={() => router.push('/')}
