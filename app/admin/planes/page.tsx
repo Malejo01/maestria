@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation'
 import { AcreditarPlan } from '@/components/admin/acreditar-plan'
 import { MarcarFundadora } from '@/components/admin/marcar-fundadora'
+import { pagosRecientes } from '@/lib/pagos-server'
+import { PAGAR } from '@/lib/textos'
+import { formatearPesos } from '@/lib/planes'
 import { DISTINTIVO_DEL_PLAN } from '@/lib/textos'
 import { getAdminViewer } from '@/lib/auth-session'
 import { listarDocentesConPlan, type DocenteEnPlanes } from '@/lib/planes-server'
@@ -29,6 +32,8 @@ const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('e
 export default async function PlanesAdminPage() {
   const admin = await getAdminViewer()
   if (!admin) notFound()
+  // C2: los pagos desde la app, arriba (también los pendientes y rechazados).
+  const pagos = await pagosRecientes().catch(() => [])
 
   let docentes: DocenteEnPlanes[] | null = null
   let error: string | null = null
@@ -51,6 +56,29 @@ export default async function PlanesAdminPage() {
           Acreditá a mano lo que pagó cada docente. Cada acreditación agrega una línea a sus notas con quién y cuándo.
         </p>
       </header>
+
+      <section className="space-y-2" aria-labelledby="pagos-recientes">
+        <h2 id="pagos-recientes" className="titulo-m text-texto">
+          {PAGAR.admin.titulo}
+        </h2>
+        {pagos.length === 0 ? (
+          <p className="cuerpo-s text-texto-suave">{PAGAR.admin.ninguno}</p>
+        ) : (
+          <ul className="divide-y divide-borde rounded-lg border border-borde bg-superficie-tarjeta">
+            {pagos.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-2" data-pago={p.id}>
+                <span className="cuerpo-s text-texto">
+                  <span className="font-semibold">{p.docente}</span> · {p.descripcion}
+                  {p.codigo ? ` · ${p.codigo}` : ''}
+                </span>
+                <span className="nota text-texto-suave">
+                  {formatearPesos(p.monto)} · <span className={p.estado === 'aprobado' ? 'text-logrado' : p.estado === 'pendiente' ? 'text-texto' : 'text-flojo'}>{PAGAR.admin.estado[p.estado]}</span> · {fecha(p.creadoEl)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {error && (
         <p role="alert" className="cuerpo-s rounded-lg border border-flojo bg-flojo-fondo p-4 text-texto">

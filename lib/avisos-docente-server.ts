@@ -1,7 +1,9 @@
 import { sql } from '@/lib/db'
 import { armarAvisos, type FilaDeAviso } from '@/lib/avisos-docente'
 import { leerLectura, marcarTodoLeido } from '@/lib/avisos/lectura-server'
-import type { RespuestaDeAvisos } from '@/lib/avisos/tipos'
+import { crearAviso, type RespuestaDeAvisos } from '@/lib/avisos/tipos'
+import { pagosAcreditadosDe } from '@/lib/pagos-server'
+import { PAGAR } from '@/lib/textos'
 
 /**
  * O10 · Los avisos del docente, de lo que ya está en la base, de las últimas
@@ -47,7 +49,7 @@ async function reportes(docenteId: string): Promise<FilaDeAviso[]> {
 }
 
 export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAvisos> {
-  const [leida, tareas, nuevos, reportados] = await Promise.all([
+  const [leida, tareas, nuevos, reportados, pagos] = await Promise.all([
     leerLectura(docenteId, { esDocente: true }),
     sql`
       SELECT c.id AS grupo_id, c.name AS grupo, q.title AS tarea,
@@ -71,6 +73,8 @@ export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAv
       GROUP BY c.id, c.name, dia
     ` as unknown as Promise<{ grupo_id: number; grupo: string; dia: string; alumnos: number; ultimo: string | Date }[]>,
     reportes(docenteId),
+    // C2: los pagos acreditados (sin la 039, ninguno).
+    pagosAcreditadosDe(docenteId).catch(() => []),
   ])
 
   const filas: FilaDeAviso[] = [
@@ -78,7 +82,15 @@ export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAv
     ...nuevos.map((f) => ({ tipo: 'nuevos' as const, grupoId: Number(f.grupo_id), grupo: f.grupo, dia: f.dia, alumnos: Number(f.alumnos), ultimo: iso(f.ultimo) })),
     ...reportados,
   ]
-  return { avisos: armarAvisos(filas, leida), vistoEl: leida.vistoEl, puedeMarcar: leida.puedeMarcar }
+  const deLosPagos = pagos.map((p) =>
+    crearAviso(
+      'pagoAcreditado',
+      { clave: `pago-${p.id}`, titulo: PAGAR.aviso.titulo, detalle: PAGAR.aviso.detalle(p.descripcion), href: `/precios/gracias?pago=${p.id}`, fecha: p.acreditadoEl },
+      leida,
+    ),
+  )
+  const avisos = [...armarAvisos(filas, leida), ...deLosPagos].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
+  return { avisos, vistoEl: leida.vistoEl, puedeMarcar: leida.puedeMarcar }
 }
 
 /** "Marcar todo como leído". Desde la 035, en `avisos_lectura`; sin ella, en la columna de la 034. */

@@ -65,7 +65,8 @@ describe('/precios', () => {
     const links = screen.getAllByRole('link', { name: /Pagar el pase de 90 días de 1 bloque/ })
     // Uno en la tabla y otro en la tarjeta de celular.
     expect(links).toHaveLength(2)
-    for (const link of links) expect(link.getAttribute('href')).toBe('https://mpago.la/pase-1')
+    // C2: lleva al resumen del pago (con el código); ahí está el link fijo si no hay Checkout Pro.
+    for (const link of links) expect(link.getAttribute('href')).toBe('/precios/pagar?plan=particular&forma=pase&cantidad=1')
     expect(screen.queryAllByRole('link', { name: /Pagar un mes/ })).toHaveLength(0)
     expect(screen.queryAllByRole('link', { name: /de 2 bloques/ })).toHaveLength(0)
   })
@@ -121,5 +122,13 @@ describe('/precios · B3: dos caminos', () => {
     render(await PreciosPage({ searchParams: Promise.resolve({}) }))
     expect(screen.getByRole('link', { name: /Cursos en un instituto/ }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByText('Tu plan')).toBeTruthy()
+  })
+})
+
+describe('/precios · C2: con Checkout Pro, todos los montos llevan al resumen del pago', () => {
+  it('con MERCADOPAGO_ACCESS_TOKEN, también los que no tienen link fijo', async () => {
+    vi.stubEnv('MERCADOPAGO_ACCESS_TOKEN', 'TEST-token')
+    await particular()
+    expect(screen.getAllByRole('link', { name: /Pagar un mes de 2 bloques/ })[0].getAttribute('href')).toBe('/precios/pagar?plan=particular&forma=mensual&cantidad=2')
   })
 })

@@ -227,16 +227,21 @@ export default async function PreciosPage({ searchParams }: { searchParams?: Pro
 function Monto({ monto, tipo, nivel }: { monto: number | null; tipo: TipoDePago; nivel: NivelPlan }) {
   if (monto === null) return <span className="cuerpo font-bold text-texto">—</span>
   const texto = formatearPesos(monto)
-  const link = linkDePago(tipo, nivel)
-  if (!link) return <span className="cuerpo font-bold text-texto">{texto}</span>
+  // C2: con Checkout Pro (o un link fijo, la válvula), el monto lleva al
+  // resumen del pago, donde va el código de descuento. Sin ninguno, texto.
+  if (!hayCobro() && !linkDePago(tipo, nivel)) return <span className="cuerpo font-bold text-texto">{texto}</span>
   return (
     <Boton asChild variante="secundario" className="gap-1.5">
-      <a href={link} target="_blank" rel="noopener noreferrer" aria-label={T.pagar(tipo, T.nombreNivel(nivel), texto)}>
+      <Link href={`/precios/pagar?plan=particular&forma=${tipo}&cantidad=${nivel}`} aria-label={T.pagar(tipo, T.nombreNivel(nivel), texto)}>
         {texto}
-        <ExternalLink className="h-4 w-4" aria-hidden="true" strokeWidth={TRAZO_ICONO} />
-      </a>
+      </Link>
     </Boton>
   )
+}
+
+/** C2: si hay Checkout Pro (el token de Mercado Pago). */
+function hayCobro(): boolean {
+  return Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN?.trim())
 }
 
 /** B3 · El plan del docente con sesión, para elegir el camino y marcar "Tu plan". null sin sesión o si falla. */
@@ -287,6 +292,11 @@ function CaminoAula({ porCurso, miPlan }: { porCurso: number; miPlan: ResumenDel
             {curso !== null ? formatearPesos(curso) : '—'} <span className="nota font-normal text-texto-suave">{T.porMesCorto}</span>
           </p>
           <p className="cuerpo-s mt-2 text-texto-suave">{T.aulaCursoDetalle}</p>
+          {curso !== null && (
+            <Boton asChild className="mt-3">
+              <Link href="/precios/pagar?plan=aula&forma=mensual&cantidad=1">{T.pagarAula}</Link>
+            </Boton>
+          )}
         </li>
         <li className="rounded-lg border border-borde bg-superficie-tarjeta p-4">
           <h3 className="cuerpo font-bold text-texto">{T.aulaAdicional}</h3>

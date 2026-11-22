@@ -1494,6 +1494,7 @@ export const PRECIOS = {
   aulaCurso: (porCurso: number) => `Un curso de hasta ${porCurso} alumnos`,
   aulaCursoDetalle: 'Tareas y diagnósticos del curso, el informe para imprimir y la exportación a Moodle. 60 cuestionarios cada 30 días.',
   aulaAdicional: 'Cada curso adicional',
+  pagarAula: 'Pagar un curso',
   aulaSinIndividual: 'Sin fichas ni diagnósticos de cada alumno: eso es del plan Particular.',
   porMesCorto: 'por mes',
   institucionTitulo: 'Institución',
@@ -1654,6 +1655,53 @@ export const PRACTICA_EXTRA = {
 /** P7: "A reforzar" en la ficha del alumno (lo mismo que ve el alumno en Mi progreso). */
 export const FICHA_A_REFORZAR = {
   titulo: (n: number) => `A reforzar (${n})`,
+} as const
+
+/** Ronda T · C2: pagar desde la app (Mercado Pago Checkout Pro). */
+export const PAGAR = {
+  titulo: 'Pagar',
+  resumen: 'Resumen',
+  plan: 'Plan',
+  precioDeLista: 'Precio',
+  descuento: (porcentaje: number) => `Descuento (${porcentaje} %)`,
+  total: 'Total',
+  tenesUnCodigo: '¿Tenés un código?',
+  aplicar: 'Aplicar',
+  codigoAplicado: (codigo: string, porcentaje: number) => `${codigo}: ${porcentaje} % de descuento`,
+  pagarConMercadoPago: 'Pagar con Mercado Pago',
+  yendo: 'Te llevamos a Mercado Pago…',
+  seguro: 'El pago lo procesa Mercado Pago. MaestrIA no ve ni guarda los datos de tu tarjeta.',
+  entrar: 'Entrá con tu cuenta de docente para pagar',
+  sinCheckout: 'Por ahora el pago es con el link de Mercado Pago.',
+  sinPrecio: 'Ese plan todavía no tiene precio cargado.',
+  montoCero: 'Con ese código no hay nada que pagar: escribile a Mauro y te lo acredita.',
+  pedidoInvalido: 'Ese plan no existe.',
+  linkFijo: 'Pagar con el link de Mercado Pago',
+  linkFijoDetalle: 'Después de pagar, Mauro te acredita el plan a mano (suele ser en el día).',
+  escribileAMauro: 'Escribile a Mauro para pagar con tu código',
+  escribile: 'Escribile a Mauro',
+  mensajeWhatsApp: (plan: string, codigo: string | null) =>
+    `Hola, quiero pagar ${plan || 'un plan'} de MaestrIA${codigo ? ` con el código ${codigo}` : ''}.`,
+  noSePudo: 'No pudimos armar el pago. Probá de nuevo en un rato.',
+  // /precios/gracias
+  gracias: {
+    aprobado: 'Listo, tu pago se acreditó',
+    aprobadoDetalle: 'Ya podés seguir con tu plan. Se ve en tu avatar, arriba a la derecha.',
+    pendiente: 'Tu pago está en proceso',
+    pendienteDetalle: 'Apenas Mercado Pago lo confirme, se acredita solo. No hace falta que hagas nada.',
+    rechazado: 'El pago no se pudo hacer',
+    rechazadoDetalle: 'Mercado Pago lo rechazó. Podés probar otra vez con otro medio de pago.',
+    noEncontrado: 'No encontramos ese pago',
+    volverAlPanel: 'Volver a mi panel',
+    volverAPrecios: 'Volver a Precios',
+  },
+  // Campanita y admin
+  aviso: { titulo: 'Se acreditó tu pago', detalle: (descripcion: string) => descripcion || 'Tu plan ya está activo' },
+  admin: {
+    titulo: 'Últimos pagos',
+    ninguno: 'Todavía no hay pagos desde la app.',
+    estado: { pendiente: 'Pendiente', aprobado: 'Acreditado', rechazado: 'Rechazado', cancelado: 'Cancelado' },
+  },
 } as const
 
 /** Ronda T · C1: /admin/codigos. */
