@@ -3,6 +3,7 @@ import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 import { debugLog } from '@/lib/utils'
 import type { ReinforceTopic, SubjectModeTotals } from '@/lib/types'
+import { temasAReforzar } from '@/lib/a-reforzar-alumno-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -142,11 +143,15 @@ export async function GET(req: Request) {
     const pendientesClave = new Set(reinforce.map((r) => `${r.subject}|${r.topicId}`))
     const dominados = (await leerDominados(userId)).filter((d) => !pendientesClave.has(`${d.materia}|${d.topicId}`))
 
+    // P7: "A reforzar" de la base (la misma función que la ficha del docente).
+    const aReforzar = await temasAReforzar(userId)
+
     return NextResponse.json({
       attempts,
       mastery,
       totals,
       reinforce,
+      aReforzar,
       dominados: dominados.map(({ materia, tema, superadoEl }) => ({ materia, tema, superadoEl })),
     })
 

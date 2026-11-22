@@ -13,7 +13,7 @@ import { LaTeXRenderer } from '@/components/latex-renderer'
 import { ExplicacionMarkdown } from '@/components/explicacion-markdown'
 import { WeakPointsSection } from '@/components/weak-points-section'
 import { YaLoDominas } from '@/components/alumno/ya-lo-dominas'
-import { separarDominados, type TemaDominado } from '@/lib/a-reforzar'
+import type { TemaDominado } from '@/lib/a-reforzar'
 import { TipsDelAlumno } from '@/components/alumno/tips-del-alumno'
 import { MI_PROGRESO, RESULTADOS } from '@/lib/textos'
 import { DiagnosticReportCard } from '@/components/diagnostic-report-card'
@@ -50,6 +50,7 @@ import { fraccionValida } from '@/lib/fraccion'
 import { SUBJECT_COLOR_CLASS } from '@/lib/subject-appearance'
 import Link from 'next/link'
 import type {
+  WeakPoint,
   QuizAttempt,
   TopicMastery,
   AttemptAnswer,
@@ -131,7 +132,6 @@ function HistoryPageContent() {
   const isSignedIn = status === 'authenticated'
   const isLoaded = status !== 'loading'
   const searchParams = useSearchParams()
-  const { userProgress } = useAppStore()
   const [attempts, setAttempts] = useState<QuizAttempt[]>([])
   const [mastery, setMastery] = useState<TopicMastery[]>([])
   // Agregados de las tarjetas: vienen del servidor sobre TODOS los intentos,
@@ -141,6 +141,8 @@ function HistoryPageContent() {
   const [reinforce, setReinforce] = useState<ReinforceTopic[]>([])
   // O2: los temas superados (3 aciertos seguidos, o los marcó el docente).
   const [dominados, setDominados] = useState<TemaDominado[]>([])
+  // P7: "A reforzar" de la base, igual que en la ficha del docente.
+  const [aReforzar, setAReforzar] = useState<WeakPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [historyError, setHistoryError] = useState<string | null>(null)
   const [expandedAttempt, setExpandedAttempt] = useState<string | null>(null)
@@ -160,6 +162,17 @@ function HistoryPageContent() {
 
     const fetchHistory = async () => {
       setHistoryError(null)
+      // P7: lo que el navegador todavía guardaba de "A reforzar" pasa a la base
+      // una vez y se borra de acá; después se lee todo de la base.
+      const delNavegador = useAppStore.getState().userProgress.weakPoints
+      if (delNavegador.length > 0) {
+        const migrado = await pedirJson<{ migrados: number }>('/api/student/a-reforzar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ debiles: delNavegador }),
+        })
+        if (!('error' in migrado)) useAppStore.getState().vaciarWeakPoints()
+      }
       // Un 500 acá se pintaba como historial vacío (§6a de deuda-tecnica.md).
       const res = await pedirJson<{
         attempts?: QuizAttempt[]
@@ -167,6 +180,7 @@ function HistoryPageContent() {
         totals?: SubjectModeTotals[]
         reinforce?: ReinforceTopic[]
         dominados?: TemaDominado[]
+        aReforzar?: WeakPoint[]
       }>('/api/quiz/history')
       if ('error' in res) {
         setHistoryError(res.error)
@@ -176,6 +190,7 @@ function HistoryPageContent() {
         setTotals(res.data.totals || [])
         setReinforce(res.data.reinforce || [])
         setDominados(res.data.dominados || [])
+        setAReforzar(res.data.aReforzar || [])
       }
       setLoading(false)
     }
@@ -267,12 +282,8 @@ function HistoryPageContent() {
     [totals, reinforce, selectedSubjectFilter, modeFilter]
   )
 
-  // O2: lo que el servidor ya dio por superado sale de "A reforzar" (los
-  // puntos débiles viven en el navegador y no se enteran solos).
-  const debilesPendientes = useMemo(
-    () => separarDominados(userProgress.weakPoints, dominados).pendientes,
-    [userProgress.weakPoints, dominados],
-  )
+  // P7: "A reforzar" sale de la base (lo superado ya no está: va en "Ya lo dominás").
+  const debilesPendientes = aReforzar
 
   /**
    * El promedio sólo se muestra con una materia elegida.

@@ -5,6 +5,7 @@ import { getOwnedClassroom } from '@/lib/classrooms-server'
 import { captureRouteFailure } from '@/lib/observability'
 import { marcarTemaDelAlumno } from '@/lib/a-reforzar-server'
 import { practicasExtraDelGrupo } from '@/lib/practica-extra-server'
+import { temasAReforzar } from '@/lib/a-reforzar-alumno-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -87,6 +88,8 @@ export async function GET(
         SELECT id, topic_name, misconception_type, tip, resolved, created_at
         FROM student_misconceptions
         WHERE user_id = ${studentId} AND subject = ${classroom.subject_name}
+          -- P7: los temas que vinieron del navegador no traen tip: van en "A reforzar", no acá.
+          AND tip <> ''
         ORDER BY created_at DESC
         LIMIT 10
       `,
@@ -106,6 +109,8 @@ export async function GET(
       .sort((a, b) => a.accuracy - b.accuracy)
 
     return NextResponse.json({
+      // P7: "A reforzar", con la misma función que Mi progreso del alumno.
+      aReforzar: await temasAReforzar(studentId, classroom.subject_name),
       practicasExtra: extras.get(studentId) ?? null,
       student: {
         memberId: Number(memberRows[0].id),

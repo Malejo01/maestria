@@ -6,7 +6,7 @@ import { Cargando } from '@/components/sistema/cargando'
 import { useEffect, useState } from 'react'
 import { Boton } from '@/components/sistema/boton'
 import { pedirJson } from '@/lib/pedir-json'
-import { A_REFORZAR, PRACTICA_EXTRA } from '@/lib/textos'
+import { A_REFORZAR, PRACTICA_EXTRA, FICHA_A_REFORZAR } from '@/lib/textos'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -58,6 +58,8 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
   const [attempts, setAttempts] = useState<StudentAttempt[]>([])
   const [topics, setTopics] = useState<StudentTopic[]>([])
   const [tips, setTips] = useState<StudentTip[]>([])
+  // P7: "A reforzar" con la misma función que Mi progreso del alumno.
+  const [aReforzar, setAReforzar] = useState<{ topic: string; topicName: string; count: number }[]>([])
   const [practicasExtra, setPracticasExtra] = useState<{ cantidad: number; promedio: number | null } | null>(null)
   const [error, setError] = useState<string | null>(null)
   // O2: el docente marca un tema como superado (o lo devuelve a reforzar).
@@ -97,6 +99,7 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
         setAttempts(Array.isArray(data.attempts) ? data.attempts : [])
         setTopics(Array.isArray(data.topics) ? data.topics : [])
         setTips(Array.isArray(data.tips) ? data.tips : [])
+        setAReforzar(Array.isArray(data.aReforzar) ? data.aReforzar : [])
         setPracticasExtra(data.practicasExtra && Number(data.practicasExtra.cantidad) > 0 ? data.practicasExtra : null)
       })
       .catch(() => {
@@ -164,6 +167,19 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
                 </ul>
               )}
             </Card>
+
+            {aReforzar.length > 0 && (
+              <Card className="p-4 space-y-2" data-a-reforzar="">
+                <h3 className="font-semibold text-sm">{FICHA_A_REFORZAR.titulo(aReforzar.length)}</h3>
+                <ul className="flex flex-wrap gap-2">
+                  {aReforzar.map((t) => (
+                    <li key={t.topic} className="nota rounded-full bg-flojo-fondo px-3 py-1 text-texto">
+                      {t.topicName}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
 
             <Card className="p-4 space-y-2">
               <h3 className="font-semibold text-sm">Cuestionarios resueltos ({attempts.length})</h3>

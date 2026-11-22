@@ -73,6 +73,8 @@ interface AppState {
   setUserProfile: (profile: UserProfile | null) => void
   setUserRole: (role: UserRole) => void
   setTeacherPrograms: (programs: TeacherProgram[]) => void
+  /** P7: ya están en la base; el navegador deja de guardarlos. */
+  vaciarWeakPoints: () => void
   addTeacherProgram: (program: TeacherProgram) => void
   updateTeacherProgram: (programId: number, updates: Partial<TeacherProgram>) => void
   removeTeacherProgram: (programId: number) => void
@@ -373,6 +375,8 @@ export const useAppStore = create<AppState>()(
       })),
 
       setTeacherPrograms: (programs) => set({ teacherPrograms: programs }),
+
+      vaciarWeakPoints: () => set((state) => ({ userProgress: { ...state.userProgress, weakPoints: [] } })),
 
       addTeacherProgram: (program) => set((state) => ({
         teacherPrograms: [program, ...state.teacherPrograms],
