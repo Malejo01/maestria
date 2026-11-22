@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LaTeXRenderer } from '@/components/latex-renderer'
 import { ExplicacionMarkdown } from '@/components/explicacion-markdown'
 import { WeakPointsSection } from '@/components/weak-points-section'
+import { YaLoDominas } from '@/components/alumno/ya-lo-dominas'
+import { separarDominados, type TemaDominado } from '@/lib/a-reforzar'
 import { TipsDelAlumno } from '@/components/alumno/tips-del-alumno'
 import { MI_PROGRESO } from '@/lib/textos'
 import { DiagnosticReportCard } from '@/components/diagnostic-report-card'
@@ -137,6 +139,8 @@ function HistoryPageContent() {
   // en lib/types.ts.
   const [totals, setTotals] = useState<SubjectModeTotals[]>([])
   const [reinforce, setReinforce] = useState<ReinforceTopic[]>([])
+  // O2: los temas superados (3 aciertos seguidos, o los marcó el docente).
+  const [dominados, setDominados] = useState<TemaDominado[]>([])
   const [loading, setLoading] = useState(true)
   const [historyError, setHistoryError] = useState<string | null>(null)
   const [expandedAttempt, setExpandedAttempt] = useState<string | null>(null)
@@ -162,6 +166,7 @@ function HistoryPageContent() {
         mastery?: TopicMastery[]
         totals?: SubjectModeTotals[]
         reinforce?: ReinforceTopic[]
+        dominados?: TemaDominado[]
       }>('/api/quiz/history')
       if ('error' in res) {
         setHistoryError(res.error)
@@ -170,6 +175,7 @@ function HistoryPageContent() {
         setMastery(res.data.mastery || [])
         setTotals(res.data.totals || [])
         setReinforce(res.data.reinforce || [])
+        setDominados(res.data.dominados || [])
       }
       setLoading(false)
     }
@@ -259,6 +265,13 @@ function HistoryPageContent() {
   const stats = useMemo(
     () => computeHistoryStats(totals, reinforce, selectedSubjectFilter, modeFilter),
     [totals, reinforce, selectedSubjectFilter, modeFilter]
+  )
+
+  // O2: lo que el servidor ya dio por superado sale de "A reforzar" (los
+  // puntos débiles viven en el navegador y no se enteran solos).
+  const debilesPendientes = useMemo(
+    () => separarDominados(userProgress.weakPoints, dominados).pendientes,
+    [userProgress.weakPoints, dominados],
   )
 
   /**
@@ -369,7 +382,7 @@ function HistoryPageContent() {
       <Tabs defaultValue={defaultTab}>
         <TabsList>
           <TabsTrigger value="historial">{MI_PROGRESO.pestanas.historial}</TabsTrigger>
-          <TabsTrigger value="reforzar">{MI_PROGRESO.pestanas.reforzar(userProgress.weakPoints.length)}</TabsTrigger>
+          <TabsTrigger value="reforzar">{MI_PROGRESO.pestanas.reforzar(debilesPendientes.length)}</TabsTrigger>
           <TabsTrigger value="tips">{MI_PROGRESO.pestanas.tips}</TabsTrigger>
         </TabsList>
 
@@ -377,9 +390,9 @@ function HistoryPageContent() {
           <TipsDelAlumno />
         </TabsContent>
 
-        <TabsContent value="reforzar" className="pt-4">
-          {userProgress.weakPoints.length > 0 ? (
-            <WeakPointsSection weakPoints={userProgress.weakPoints} variant="full" />
+        <TabsContent value="reforzar" className="space-y-4 pt-4">
+          {debilesPendientes.length > 0 ? (
+            <WeakPointsSection weakPoints={debilesPendientes} variant="full" />
           ) : (
             <Card className="p-8 text-center border-2 border-dashed bg-card/60 rounded-3xl">
               <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-flojo/10 flex items-center justify-center text-flojo">
@@ -391,6 +404,7 @@ function HistoryPageContent() {
               </p>
             </Card>
           )}
+          <YaLoDominas dominados={dominados} />
         </TabsContent>
 
         <TabsContent value="historial" className="pt-4 space-y-5">

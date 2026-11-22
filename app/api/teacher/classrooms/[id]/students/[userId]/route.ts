@@ -3,6 +3,7 @@ import { sql } from '@/lib/db'
 import { getTeacherViewer } from '@/lib/auth-session'
 import { getOwnedClassroom } from '@/lib/classrooms-server'
 import { captureRouteFailure } from '@/lib/observability'
+import { marcarTemaDelAlumno } from '@/lib/a-reforzar-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,7 +81,7 @@ export async function GET(
       // Tips the AI wrote for this student, limited to the aula's subject so
       // the teacher sees the reasoning behind the errors in *their* materia.
       sql`
-        SELECT topic_name, misconception_type, tip, resolved, created_at
+        SELECT id, topic_name, misconception_type, tip, resolved, created_at
         FROM student_misconceptions
         WHERE user_id = ${studentId} AND subject = ${classroom.subject_name}
         ORDER BY created_at DESC
@@ -125,6 +126,7 @@ export async function GET(
       })),
       topics,
       tips: (tipRows as Record<string, any>[]).map((row) => ({
+        id: Number(row.id),
         topicName: String(row.topic_name),
         misconceptionType: String(row.misconception_type),
         tip: String(row.tip),
@@ -138,5 +140,43 @@ export async function GET(
       { error: 'No se pudo obtener la ficha del alumno', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * PATCH /api/teacher/classrooms/[id]/students/[userId] — O2.
+ * `{ misconceptionId, superado: boolean }`: el docente marca un tema "a
+ * reforzar" de ese alumno como superado (o lo devuelve). Sólo si el grupo es
+ * suyo y el alumno está en él; el tema tiene que ser de ese alumno.
+ */
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string; userId: string }> }) {
+  const teacher = await getTeacherViewer()
+  if (!teacher) return NextResponse.json({ error: 'Solo docentes' }, { status: 403 })
+
+  const { id, userId } = await params
+  const classroomId = Number(id)
+  const studentId = String(userId ?? '').trim()
+  const cuerpo = (await req.json().catch(() => null)) as { misconceptionId?: unknown; superado?: unknown } | null
+  const misconceptionId = Number(cuerpo?.misconceptionId)
+  if (!Number.isInteger(classroomId) || classroomId <= 0 || !studentId || !Number.isInteger(misconceptionId) || misconceptionId <= 0 || typeof cuerpo?.superado !== 'boolean') {
+    return NextResponse.json({ error: 'Parámetros inválidos' }, { status: 400 })
+  }
+
+  try {
+    const classroom = await getOwnedClassroom(classroomId, teacher.id)
+    if (!classroom) return NextResponse.json({ error: 'Aula no encontrada' }, { status: 404 })
+    const miembro = (await sql`
+      SELECT 1 FROM classroom_members
+      WHERE classroom_id = ${classroomId} AND user_id = ${studentId} AND status = 'active'
+      LIMIT 1
+    `) as unknown[]
+    if (miembro.length === 0) return NextResponse.json({ error: 'Ese alumno no está en esta aula' }, { status: 404 })
+
+    const ok = await marcarTemaDelAlumno(studentId, misconceptionId, cuerpo.superado, teacher.id)
+    if (!ok) return NextResponse.json({ error: 'Ese tema no es de este alumno' }, { status: 404 })
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    captureRouteFailure(error, { endpoint: '/api/teacher/classrooms/[id]/students/[userId]', operation: 'PATCH' })
+    return NextResponse.json({ error: 'No se pudo guardar' }, { status: 500 })
   }
 }

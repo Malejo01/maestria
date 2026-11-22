@@ -9,6 +9,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | N1 · Aviso al que reportó (migración 030) | hecho | [#74](https://github.com/Malejo01/maestria/pull/74) | Tests de permisos, del texto y del componente; en staging, de punta a punta con un invitado (ver abajo) | US$0 (no llama a la IA) |
 | N2 · Corregir en lote las preguntas marcadas | hecho | [#75](https://github.com/Malejo01/maestria/pull/75) | Tests con el modelo simulado (sí/no → afirmación, abierta → opción múltiple, valor de verdad cambiado → rechazada, sin aplicar no se escribe); en staging, dry-run del script y "Aplicar" desde *Mis tareas* | US$0,004 |
 | O1 · Pruebas de punta a punta (Playwright) | hecho | [#76](https://github.com/Malejo01/maestria/pull/76) | Los 6 recorridos en verde contra `npm run dev:staging` (7 pruebas + limpieza, 2,1 min) | US$0 (IA simulada) |
+| O2 · Cerrar el ciclo de "A reforzar" (migración 031) | hecho | (este PR) | Tests de la regla con nombres reales de temas, del servidor y de permisos; simulación sobre staging; el docente marcó un tema desde la ficha; "Ya lo dominás" de Sofía; `npm run e2e` en verde | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,004 (medido en `ai_usage_log` de staging: 6 llamadas, US$0,0032; más ~US$0,0005 del dry-run del script, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
@@ -47,6 +48,15 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 - La primera corrida pasó los 6 recorridos. Datos en staging: una materia, un grupo y una tarea "E2E · …" por corrida (el invitado se quita del grupo al final, para no llenar el tope de 10 alumnos del plan de prueba de Irina).
 - El smoke test de Auth.js del backlog queda cubierto en lo que no necesita Google (alumno bloqueado en `/teacher` y su API, sin sesión → afuera). **El login real con Google y el cambio de rol ALUMNO↔DOCENTE siguen siendo manuales de Mauro.**
 
+### O2 · "A reforzar"
+
+- **Regla automática** ([lib/a-reforzar.ts](../../lib/a-reforzar.ts), pura): un tema sale con **3 aciertos seguidos en ese tema del programa**, en intentos que **empezaron** después del error (el intento donde se cometió el error termina después y no cuenta). Un error en ese tema corta la racha; las respuestas de otros temas o sin ubicar no la cortan ni la suman; una respuesta corta sin corregir no cuenta.
+- **El puente respuesta → tema del programa**: el `topic_name` de la respuesta contra `quiz_attempts.topics[]` (los temas del programa que se eligieron para ese intento, que salen de `teacher_programs`/`curriculum`): igual normalizado, o contenido con sentido (2 palabras y 8 letras) y único; si no, y el intento tenía un solo tema, ése; si no, **no cuenta**. Decisión: los "temas del programa" se toman de `quiz_attempts.topics[]` y no leyendo `teacher_programs.units` aparte: son los mismos nombres y ya están en la fila del intento.
+- **Simulación sobre staging** (sin escribir): 40 temas pendientes de 24 alumnos; de 1.206 respuestas, 597 se ubican con certeza; la regla resolvería 1 hoy. La regla corre al guardar cada intento nuevo: no hay backfill (decisión conservadora; ver pendientes).
+- **Manual**: "Ya lo superó" / "Volver a reforzar" en la ficha del alumno que se abre desde la planilla del grupo (`PATCH /api/teacher/classrooms/[id]/students/[userId]`). Probado en staging con Tomás Villa (grupo Lengua): quedó `resolved_by = stg-user-0008`.
+- **Alumno**: en `/history`, pestaña "A reforzar", lo superado sale de la lista y pasa a "Ya lo dominás", plegado (Sofía, en las capturas).
+- **Migración 031**: `resolved_at`, `resolved_by`; corrida dos veces en staging. Sin ella, todo marca `resolved` igual.
+
 ## Pasos manuales de Mauro, en orden
 
 1. Migración 030 en producción:
@@ -54,7 +64,11 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
    $env:CONFIRM_PRODUCTION="noisy-smoke-23995229"; npx tsx scripts/run-migration-030.ts
    ```
    Después, entrar a `/admin/reportes` → Resueltos: los 9 tienen que decir "Aviso pendiente" (el de Clarita) o "Sin aviso: lo reportó un admin" (los 8 tuyos).
-2. Corrección en lote de las 18 preguntas marcadas de producción. Primero sólo mirar (no escribe; la IA sí se llama, ~US$0,01):
+2. Migración 031 en producción (después de la 030):
+   ```powershell
+   $env:CONFIRM_PRODUCTION="noisy-smoke-23995229"; npx tsx scripts/run-migration-031.ts
+   ```
+3. Corrección en lote de las 18 preguntas marcadas de producción. Primero sólo mirar (no escribe; la IA sí se llama, ~US$0,01):
    ```powershell
    npx tsx scripts/qa/corregir-tipos.ts --desde=2026-11-20
    ```
@@ -68,6 +82,8 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 (se completa al cierre)
 
 ## Datos de prueba que quedaron en staging
+
+- Temas "a reforzar" marcados como superados a mano por Irina: #58 (Tomás Villa) y #57 (Sofía Ramírez), los dos de Lengua. Se devuelven con "Volver a reforzar" en la ficha.
 
 - De O1, por cada corrida de `npm run e2e`: una materia "E2E · Geografía <fecha>", un grupo "E2E · Grupo <fecha>" y la tarea "E2E · Geografía <fecha> - Práctico - …" de Irina, con el intento del invitado "E2E · Invitado <fecha>" (que ya no está en el grupo). Además, de la exploración: la materia "E2E · Geografía" y su grupo "E2E · Geografía" (se armó solo al compartir una tarea que no llegó a guardarse).
 - Cuestionario **39 "Prueba N2 · tipos mal armados"** de Irina (Matemática, 3.º Sec.), ya corregido desde la pantalla.

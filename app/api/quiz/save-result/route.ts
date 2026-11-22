@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { resolverPorAciertos } from '@/lib/a-reforzar-server'
 import { NextResponse } from 'next/server'
 import { debugLog } from '@/lib/utils'
 import { getViewer } from '@/lib/auth-session'
@@ -368,6 +369,10 @@ export async function POST(req: Request) {
         }
       }
     }
+
+    // O2: un tema "a reforzar" sale con 3 aciertos seguidos en ese tema del
+    // programa. Nunca lanza: no puede tumbar el guardado del intento.
+    await resolverPorAciertos(userId)
 
     debugLog('[v0] Save completed successfully')
     return NextResponse.json({

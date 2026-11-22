@@ -4,6 +4,9 @@ import { Cargando } from '@/components/sistema/cargando'
 
 
 import { useEffect, useState } from 'react'
+import { Boton } from '@/components/sistema/boton'
+import { pedirJson } from '@/lib/pedir-json'
+import { A_REFORZAR } from '@/lib/textos'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -30,6 +33,7 @@ interface StudentTopic {
 }
 
 interface StudentTip {
+  id: number
   topicName: string
   misconceptionType: string
   tip: string
@@ -53,6 +57,24 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
   const [topics, setTopics] = useState<StudentTopic[]>([])
   const [tips, setTips] = useState<StudentTip[]>([])
   const [error, setError] = useState<string | null>(null)
+  // O2: el docente marca un tema como superado (o lo devuelve a reforzar).
+  const [marcando, setMarcando] = useState<number | null>(null)
+
+  async function marcar(tip: StudentTip, superado: boolean) {
+    if (!student) return
+    setMarcando(tip.id)
+    const respuesta = await pedirJson(`/api/teacher/classrooms/${classroomId}/students/${encodeURIComponent(student.userId)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ misconceptionId: tip.id, superado }),
+    })
+    setMarcando(null)
+    if ('error' in respuesta) {
+      setError(respuesta.error)
+      return
+    }
+    setTips((prev) => prev.map((t) => (t.id === tip.id ? { ...t, resolved: superado } : t)))
+  }
 
   useEffect(() => {
     if (!student) return
@@ -187,12 +209,23 @@ export function ClassroomStudentDialog({ classroomId, student, onOpenChange }: C
                 </h3>
                 <ul className="space-y-2">
                   {tips.map((tip, index) => (
-                    <li key={index} className="text-sm border-l-2 pl-3 py-0.5">
+                    <li key={tip.id ?? index} className="text-sm border-l-2 pl-3 py-0.5">
                       <p className="font-medium">
                         {tip.topicName}
                         <span className="text-xs text-muted-foreground font-normal"> · {tip.misconceptionType}</span>
+                        {tip.resolved && <span className="text-xs font-semibold text-logrado"> · {A_REFORZAR.superado}</span>}
                       </p>
                       <p className="text-muted-foreground leading-snug">{tip.tip}</p>
+                      {typeof tip.id === 'number' && (
+                        <Boton
+                          variante="secundario"
+                          className="mt-1 min-h-8 px-2 text-xs"
+                          disabled={marcando === tip.id}
+                          onClick={() => void marcar(tip, !tip.resolved)}
+                        >
+                          {tip.resolved ? A_REFORZAR.volverAReforzar : A_REFORZAR.marcarSuperado}
+                        </Boton>
+                      )}
                     </li>
                   ))}
                 </ul>
