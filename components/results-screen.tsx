@@ -4,6 +4,7 @@ import { formatearNumero } from '@/lib/numeros'
 import { RACHA, RESULTADOS } from '@/lib/textos'
 import { textoDeRacha } from '@/lib/racha'
 import { Cargando } from '@/components/sistema/cargando'
+import { useBarraDeAccion } from '@/hooks/use-barra-de-accion'
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
@@ -41,6 +42,8 @@ function coloresDelSistema(): string[] {
 }
 
 export function ResultsScreen() {
+  // P6: la barra de abajo publica su alto para que "Reportar" se apoye encima.
+  const refDeLaBarra = useBarraDeAccion()
   const { currentQuiz, userProgress, resetQuiz, setActiveView, startQuiz } = useAppStore()
   const { answers, questions, config } = currentQuiz
   const [showCorrect, setShowCorrect] = useState(false)
@@ -623,6 +626,7 @@ export function ResultsScreen() {
           barra para ponerse arriba y no encima (components/feedback-button.tsx). */}
       <div
         data-quiz-action-bar=""
+        ref={refDeLaBarra}
         className="fixed bottom-0 left-0 right-0 z-20 border-t-2 border-border bg-card/95 px-4 pt-3 pb-[calc(1rem+env(safe-area-inset-bottom))]"
       >
         <div className="max-w-md mx-auto space-y-2.5">

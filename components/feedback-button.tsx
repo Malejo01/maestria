@@ -38,8 +38,8 @@ interface ReportContext {
  * Alto que le suponemos a la barra de acción del quiz mientras no la medimos:
  * 88px = `p-4` arriba y abajo + un botón `h-14`. Es el caso del alumno, el más
  * común, y funciona como piso para que el botón no aparezca encima de
- * "Siguiente" ni siquiera en el primer frame, antes de que el ResizeObserver
- * entregue la primera medición.
+ * "Siguiente" ni siquiera en el primer frame, antes de que la barra publique
+ * su alto (`--alto-barra-de-accion`, hooks/use-barra-de-accion.ts).
  */
 const QUIZ_ACTION_BAR_FALLBACK_PX = 88
 
@@ -110,30 +110,10 @@ export function FeedbackButton() {
   // progreso + contador) y el label que se despliega en hover le empujaría la
   // barra de progreso en cada pasada del mouse; y el panel tendría que abrirse
   // hacia abajo, perdiendo el `origin-bottom-right` con el que está animado.
-  const [quizBarHeight, setQuizBarHeight] = useState(QUIZ_ACTION_BAR_FALLBACK_PX)
-
-  useEffect(() => {
-    if (!tieneBarraDeAcciones) return
-
-    // El atributo lo pone `components/quiz-engine.tsx`. QuizEngine y este botón
-    // se renderizan en el mismo commit (los dos leen `activeView` del store),
-    // así que cuando corre este efecto la barra ya está en el DOM; si no está,
-    // nos quedamos con el fallback, que es el caso del alumno.
-    const bar = document.querySelector<HTMLElement>('[data-quiz-action-bar]')
-    if (!bar) return
-
-    // offsetHeight y no `contentRect`: el padding inferior de la barra lleva el
-    // env(safe-area-inset-bottom), y contentRect lo dejaría afuera justo en los
-    // teléfonos donde ese margen importa.
-    const measure = () => setQuizBarHeight(bar.offsetHeight)
-    measure()
-
-    const observer = new ResizeObserver(measure)
-    observer.observe(bar)
-    return () => observer.disconnect()
-    // `activeView` en las dependencias: al pasar del cuestionario a resultados
-    // la barra es OTRO elemento, y hay que volver a buscarlo.
-  }, [tieneBarraDeAcciones, activeView])
+  // P6: el alto lo publica la barra misma (hooks/use-barra-de-accion.ts) en
+  // `--alto-barra-de-accion`. Antes se buscaba con querySelector al cambiar de
+  // vista, y en la última pregunta (la barra se vuelve a montar) quedaba
+  // midiendo un elemento viejo: el botón tapaba "Ver resultados".
 
   // `--feedback-bottom` es la distancia del botón al borde inferior. Es una
   // variable y no un `bottom` suelto porque la leen dos cosas: la posición del
@@ -141,7 +121,7 @@ export function FeedbackButton() {
   // escaparse por arriba de la pantalla. Fuera del quiz la definen las clases
   // (con su breakpoint sm:); acá sólo la pisamos mientras dura el quiz.
   const quizOffsetStyle = tieneBarraDeAcciones
-    ? ({ '--feedback-bottom': `calc(${quizBarHeight}px + 0.75rem)` } as React.CSSProperties)
+    ? ({ '--feedback-bottom': `calc(var(--alto-barra-de-accion, ${QUIZ_ACTION_BAR_FALLBACK_PX}px) + 0.75rem)` } as React.CSSProperties)
     : undefined
 
   const close = useCallback(() => {
