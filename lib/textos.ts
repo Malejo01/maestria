@@ -1406,7 +1406,7 @@ export const PLAN = {
         ? `Te ${dias <= 1 ? 'queda 1 día' : `quedan ${dias} días`} de prueba.`
         : `Tu plan termina ${dias <= 1 ? 'mañana' : `en ${dias} días`}.`,
     /** H7: lo que pasa después depende de cuántos alumnos tiene. */
-    despuesGratis: (cupo: number) => `Después seguís gratis con hasta ${cupo} alumnos.`,
+    despuesGratis: (cupo: number) => `Después seguís gratis con hasta ${cupo} alumnos particulares y un curso.`,
     despuesPlan: (alumnos: number, esPrueba: boolean) =>
       `Después, con ${alumnos} alumnos, ${esPrueba ? 'necesitás un plan' : 'necesitás renovarlo'}.`,
     mirarPrecios: 'Mirá los precios.',
@@ -1451,7 +1451,7 @@ export const PRECIOS = {
   titulo: 'Precios',
   frase: 'Pagás una clase por cada cinco alumnos que seguís.',
   bajada: (dias: number, cupoPrueba: number, cupoGratis: number) =>
-    `Empezás con ${dias} días gratis, con hasta ${cupoPrueba} alumnos. Después seguís gratis con hasta ${cupoGratis}, o elegís un plan.`,
+    `Empezás con ${dias} días gratis, con hasta ${cupoPrueba} alumnos. Después seguís gratis con hasta ${cupoGratis} alumnos particulares y un curso, o elegís un plan.`,
   empezar: (dias: number) => `Probar ${dias} días gratis`,
   /** H5: lo que no se paga va arriba, aparte de la tabla. */
   sinPagar: 'Sin pagar',
@@ -1476,6 +1476,33 @@ export const PRECIOS = {
     `Si tu plan vence no se borra nada. Con ${cupoGratis} alumnos o menos seguís gratis; con más, seguís viendo todo y tus alumnos siguen respondiendo las tareas que ya les mandaste.`,
     'Precios en pesos argentinos.',
   ],
+  // ─── Ronda T · B3: dos caminos ──────────────────────────────────────────────
+  comoDasClases: '¿Cómo das clases?',
+  caminos: {
+    particular: { titulo: 'Clases particulares', detalle: 'Seguís a cada alumno: su ficha, su diagnóstico, sus tareas.' },
+    aula: { titulo: 'Cursos en un instituto o escuela', detalle: 'Seguís al curso: tareas y diagnósticos para todos.' },
+  },
+  elegiUnCamino: 'Elegí cómo das clases y te mostramos los planes que te sirven.',
+  tuPlan: 'Tu plan',
+  gratisCaminoDetalle: (particulares: number, porCurso: number) =>
+    `Hasta ${particulares} alumnos particulares y 1 curso de hasta ${porCurso}, para siempre.`,
+  gratisSinExtras: 'Sin informe para imprimir ni exportación a Moodle.',
+  paseTemporada: 'Pase temporada de mesas',
+  paseTemporadaDetalle: 'Los 90 días antes de las mesas, pagados de una vez.',
+  porAlumnoPorMes: (monto: string) => `Son ${monto} por alumno por mes.`,
+  aulaTitulo: 'Plan Aula',
+  aulaCurso: (porCurso: number) => `Un curso de hasta ${porCurso} alumnos`,
+  aulaCursoDetalle: 'Tareas y diagnósticos del curso, el informe para imprimir y la exportación a Moodle. 60 cuestionarios cada 30 días.',
+  aulaAdicional: 'Cada curso adicional',
+  aulaSinIndividual: 'Sin fichas ni diagnósticos de cada alumno: eso es del plan Particular.',
+  porMesCorto: 'por mes',
+  institucionTitulo: 'Institución',
+  institucionDetalle: 'Varios docentes y cursos de un instituto o una escuela, a medida.',
+  hablemos: 'Hablemos',
+  hablemosMensaje: 'Hola, quiero hablar del plan Institución de MaestrIA.',
+  porQueTitulo: '¿Por qué un curso sale menos que 5 alumnos particulares?',
+  porQueTexto:
+    'Por lo mismo que vos cobrás distinto una clase particular y una hora en un curso. En el plan Particular seguís a cada alumno como persona: su ficha, su diagnóstico, sus tareas, lo que le falta antes de su examen. En el plan Aula seguís al curso: tareas y diagnósticos para todos, y el informe del grupo. Si das particulares y cursos, podés tener los dos.',
 } as const
 
 /** M1: el cuestionario a medio hacer y el guardado del resultado. */

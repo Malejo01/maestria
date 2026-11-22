@@ -3,6 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen, within } from '@testing-library/react'
 import PreciosPage, { generateMetadata } from './page'
 
+const { getViewer, resumenDelPlan } = vi.hoisted(() => ({ getViewer: vi.fn(), resumenDelPlan: vi.fn() }))
+vi.mock('@/lib/auth-session', () => ({ getViewer }))
+vi.mock('@/lib/planes-server', () => ({ resumenDelPlan }))
+
+/** B3: la página es asíncrona y tiene dos caminos; estos tests miran el Particular. */
+const particular = async () => render(await PreciosPage({ searchParams: Promise.resolve({ camino: 'particular' }) }))
+
 /**
  * H5: la prueba y el gratis van arriba, aparte; la tabla tiene sólo los
  * niveles pagos; donde hay link de pago el monto es un botón.
@@ -17,6 +24,7 @@ const VARIABLES = {
 
 beforeEach(() => {
   for (const [clave, valor] of Object.entries(VARIABLES)) vi.stubEnv(clave, valor)
+  getViewer.mockResolvedValue(null)
 })
 afterEach(() => {
   cleanup()
@@ -24,25 +32,25 @@ afterEach(() => {
 })
 
 describe('/precios', () => {
-  it('la bajada nueva, con los números del plan', () => {
-    render(<PreciosPage />)
+  it('la bajada nueva, con los números del plan', async () => {
+    await particular()
     expect(
-      screen.getByText('Empezás con 30 días gratis, con hasta 10 alumnos. Después seguís gratis con hasta 2, o elegís un plan.'),
+      screen.getByText('Empezás con 30 días gratis, con hasta 10 alumnos. Después seguís gratis con hasta 2 alumnos particulares y un curso, o elegís un plan.'),
     ).toBeTruthy()
-    expect(generateMetadata().description).toMatch(/Después seguís gratis con hasta 2/)
+    expect(generateMetadata().description).toMatch(/Después seguís gratis con hasta 2 alumnos particulares y un curso/)
   })
 
-  it('gratis y prueba van arriba, como tarjetas propias', () => {
-    render(<PreciosPage />)
+  it('gratis y prueba van arriba, como tarjetas propias', async () => {
+    await particular()
     const arriba = screen.getByRole('list', { name: 'Sin pagar' })
     expect(within(arriba).getByText('Gratis')).toBeTruthy()
-    expect(within(arriba).getByText('Hasta 2 alumnos, para siempre.')).toBeTruthy()
+    expect(within(arriba).getByText('Hasta 2 alumnos particulares y 1 curso de hasta 35, para siempre.')).toBeTruthy()
     expect(within(arriba).getByText('Prueba')).toBeTruthy()
     expect(within(arriba).getByText('30 días con hasta 10 alumnos, todo incluido. Sin tarjeta.')).toBeTruthy()
   })
 
-  it('la tabla y las tarjetas de celular tienen sólo los niveles pagos', () => {
-    render(<PreciosPage />)
+  it('la tabla y las tarjetas de celular tienen sólo los niveles pagos', async () => {
+    await particular()
     const tabla = screen.getByRole('table')
     expect(within(tabla).queryByText('Prueba')).toBeNull()
     expect(within(tabla).queryByText(/Gratis/)).toBeNull()
@@ -52,8 +60,8 @@ describe('/precios', () => {
     expect(within(celular).queryByText('Prueba')).toBeNull()
   })
 
-  it('el pase de 1 bloque, que tiene link, es un botón al pago; el resto, texto', () => {
-    render(<PreciosPage />)
+  it('el pase de 1 bloque, que tiene link, es un botón al pago; el resto, texto', async () => {
+    await particular()
     const links = screen.getAllByRole('link', { name: /Pagar el pase de 90 días de 1 bloque/ })
     // Uno en la tabla y otro en la tarjeta de celular.
     expect(links).toHaveLength(2)
@@ -62,14 +70,56 @@ describe('/precios', () => {
     expect(screen.queryAllByRole('link', { name: /de 2 bloques/ })).toHaveLength(0)
   })
 
-  it('sin links cargados no aparece ningún botón de pago', () => {
+  it('sin links cargados no aparece ningún botón de pago', async () => {
     vi.stubEnv('MAESTRIA_LINK_PASE_1', '')
-    render(<PreciosPage />)
+    await particular()
     expect(screen.queryAllByRole('link', { name: /^Pagar/ })).toHaveLength(0)
   })
 
-  it('la letra chica dice que los gratis no se suman a un plan', () => {
-    render(<PreciosPage />)
+  it('la letra chica dice que los gratis no se suman a un plan', async () => {
+    await particular()
     expect(screen.getByText('Los 2 alumnos gratis no se suman a un plan: 1 bloque son 5 alumnos en total.')).toBeTruthy()
+  })
+})
+
+describe('/precios · B3: dos caminos', () => {
+  it('sin elegir: la pregunta y los dos botones, sin planes todavía', async () => {
+    render(await PreciosPage({ searchParams: Promise.resolve({}) }))
+    const nav = screen.getByRole('navigation', { name: '¿Cómo das clases?' })
+    expect(within(nav).getByRole('link', { name: /Clases particulares/ }).getAttribute('href')).toBe('/precios?camino=particular')
+    expect(within(nav).getByRole('link', { name: /Cursos en un instituto o escuela/ }).getAttribute('href')).toBe('/precios?camino=aula')
+    expect(screen.queryByRole('table')).toBeNull()
+  })
+
+  it('camino Aula: el curso, el adicional y la Institución, con precios de las variables', async () => {
+    vi.stubEnv('MAESTRIA_PRECIO_AULA_CURSO', '15000')
+    vi.stubEnv('MAESTRIA_PRECIO_AULA_CURSO_ADICIONAL', '10000')
+    vi.stubEnv('MAESTRIA_WHATSAPP_CONTACTO', '+54 9 11 1234 5678')
+    render(await PreciosPage({ searchParams: Promise.resolve({ camino: 'aula' }) }))
+    expect(screen.getByText('Un curso de hasta 35 alumnos')).toBeTruthy()
+    expect(screen.getAllByText(/15\.000/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/10\.000/).length).toBeGreaterThan(0)
+    expect(screen.getByRole('link', { name: /Hablemos/ }).getAttribute('href')).toMatch(/^https:\/\/wa\.me\/5491112345678\?text=/)
+    expect(screen.queryByRole('table')).toBeNull()
+  })
+
+  it('camino Particular: el pase se llama "Pase temporada de mesas", con el costo por alumno por mes', async () => {
+    await particular()
+    expect(screen.getByRole('heading', { name: 'Pase temporada de mesas' })).toBeTruthy()
+    expect(screen.getByText(/por alumno por mes/)).toBeTruthy()
+  })
+
+  it('el porqué, plegado, en los dos caminos', async () => {
+    render(await PreciosPage({ searchParams: Promise.resolve({ camino: 'aula' }) }))
+    expect(screen.getByText('¿Por qué un curso sale menos que 5 alumnos particulares?')).toBeTruthy()
+  })
+
+  it('con sesión de docente Aula, arranca en Aula y marca "Tu plan"', async () => {
+    vi.stubEnv('MAESTRIA_PRECIO_AULA_CURSO', '15000')
+    getViewer.mockResolvedValue({ id: 'd', role: 'DOCENTE', isGuest: false, email: 'd@x' })
+    resumenDelPlan.mockResolvedValue({ estado: 'activo', tipo: 'aula' })
+    render(await PreciosPage({ searchParams: Promise.resolve({}) }))
+    expect(screen.getByRole('link', { name: /Cursos en un instituto/ }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByText('Tu plan')).toBeTruthy()
   })
 })

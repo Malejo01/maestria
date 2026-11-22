@@ -133,7 +133,7 @@ describe('EstadoDelPlan', () => {
   it('H7, prueba con 4 días y 2 alumnos: después sigue gratis, sin vender nada', () => {
     render(<EstadoDelPlan datos={{ plan: { ...base, nivel: 0, cupo: 10, alumnos: 2, diasRestantes: 4 }, renovar: null }} />)
     expect(screen.getByText('Te quedan 4 días de prueba.')).toBeTruthy()
-    expect(screen.getByText('Después seguís gratis con hasta 2 alumnos.')).toBeTruthy()
+    expect(screen.getByText('Después seguís gratis con hasta 2 alumnos particulares y un curso.')).toBeTruthy()
     expect(screen.queryByRole('link')).toBeNull()
     expect(screen.queryByRole('button', { name: PLAN.vencimiento.verPlanes })).toBeNull()
   })
