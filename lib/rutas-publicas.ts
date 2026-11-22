@@ -23,6 +23,8 @@ export const RUTAS_PUBLICAS = [
   '/api/quiz/grade-short-answer',
   '/api/quiz/revancha',   // Se dispara desde la pantalla de resultados
   '/api/feedback',        // Reportar un problema (el invitado también reporta)
+  '/api/avisos',          // P3: la campanita del alumno (el invitado también la tiene)
+  '/reportes',            // P3: "Tu reporte se resolvió" (también para el invitado)
   '/monitoring',          // Túnel de Sentry (tunnelRoute en next.config.mjs)
 ] as const
 

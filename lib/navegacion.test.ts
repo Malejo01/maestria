@@ -11,11 +11,11 @@ const etiquetas = (quien: Parameters<typeof resolverCaparazon>[0], pathname: str
 
 describe('resolverCaparazon — cada quien ve su navegación y nada más', () => {
   it('el visitante no tiene navegación', () => {
-    expect(resolverCaparazon(visitante, '/aulas')).toEqual({ contexto: 'visitante', entradas: [], vistaPrevia: false })
+    expect(resolverCaparazon(visitante, '/aulas')).toEqual({ contexto: 'visitante', entradas: [], vistaPrevia: false, campanita: null })
   })
 
   it('el invitado ve su grupo y nada más: sin pestañas, aunque su rol sea ALUMNO', () => {
-    expect(resolverCaparazon(invitado, '/aulas')).toEqual({ contexto: 'invitado', entradas: [], vistaPrevia: false })
+    expect(resolverCaparazon(invitado, '/aulas')).toEqual({ contexto: 'invitado', entradas: [], vistaPrevia: false, campanita: 'alumno' })
   })
 
   it('el alumno ve Mis tareas, Practicar y Mi progreso', () => {
@@ -110,5 +110,27 @@ describe('inicioDe — a dónde va cada quien desde la raíz', () => {
 
   it('una cuenta sin rol se queda en la raíz, que le muestra la bienvenida', () => {
     expect(inicioDe({ rol: null, esInvitado: false })).toBeNull()
+  })
+})
+
+describe('P3 · qué campanita va en la barra', () => {
+  const alumno = { rol: 'ALUMNO' as const, esInvitado: false }
+  const docente = { rol: 'DOCENTE' as const, esInvitado: false }
+  const invitado = { rol: null, esInvitado: true }
+
+  it('el alumno y el invitado tienen la suya, en todas sus pantallas', () => {
+    for (const ruta of ['/aulas', '/practicar', '/history', '/reportes/3']) {
+      expect(resolverCaparazon(alumno, ruta).campanita).toBe('alumno')
+      expect(resolverCaparazon(invitado, ruta).campanita).toBe('alumno')
+    }
+  })
+
+  it('el docente, la suya; en la vista de alumno, ninguna', () => {
+    expect(resolverCaparazon(docente, '/teacher').campanita).toBe('docente')
+    expect(resolverCaparazon(docente, '/aulas')).toMatchObject({ vistaPrevia: true, campanita: null })
+  })
+
+  it('el visitante no tiene campanita', () => {
+    expect(resolverCaparazon(null, '/').campanita).toBeNull()
   })
 })

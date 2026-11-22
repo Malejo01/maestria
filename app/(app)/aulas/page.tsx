@@ -3,7 +3,8 @@
 import { Cargando } from '@/components/sistema/cargando'
 
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 import { Boton } from '@/components/sistema/boton'
@@ -77,6 +78,7 @@ export default function MisAulasPage() {
   useEffect(() => {
     load()
   }, [load])
+
 
   /**
    * K4: la tarea se rinde en el cuestionario que se abre encima de esta
@@ -243,6 +245,9 @@ export default function MisAulasPage() {
 
       {!isLoading && !loadError && (
         <section aria-label={T.titulo} className="flex flex-col gap-3">
+          <Suspense fallback={null}>
+            <IrALaTarea listo={!isLoading} />
+          </Suspense>
           {tareas.length === 0 ? (
             <div className="rounded-lg border border-borde bg-superficie-tarjeta p-6">
               <h2 className="titulo-m text-texto">{classrooms.length === 0 ? T.sinGrupo.titulo : T.sinTareas.titulo}</h2>
@@ -261,6 +266,7 @@ export default function MisAulasPage() {
                   principal={assignment.id === primeraDisponible}
                   abriendo={startingAssignmentId === assignment.id}
                   alEmpezar={() => handleStartAssignment(assignment.id, classroom)}
+                  ancla={`tarea-${assignment.id}`}
                 />
               ))}
             </ul>
@@ -359,4 +365,22 @@ export default function MisAulasPage() {
       </section>
     </div>
   )
+}
+
+/**
+ * P3: un aviso de la campanita trae `?tarea=12`. Las tareas llegan después del
+ * primer pintado, así que se busca la tarjeta cuando terminan de cargar (y
+ * cada vez que cambia el parámetro), se la lleva a la vista y se la destaca.
+ */
+function IrALaTarea({ listo }: { listo: boolean }) {
+  const tarea = useSearchParams().get('tarea')
+  useEffect(() => {
+    if (!listo || !tarea) return
+    const tarjeta = document.getElementById(`tarea-${tarea}`)
+    if (!tarjeta) return
+    document.querySelectorAll('[data-destacada]').forEach((el) => el.removeAttribute('data-destacada'))
+    tarjeta.setAttribute('data-destacada', '')
+    tarjeta.scrollIntoView({ block: 'center' })
+  }, [listo, tarea])
+  return null
 }

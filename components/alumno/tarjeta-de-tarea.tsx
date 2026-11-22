@@ -25,6 +25,7 @@ export function TarjetaDeTarea({
   principal,
   abriendo,
   alEmpezar,
+  ancla,
 }: {
   assignment: Pick<
     StudentAssignment,
@@ -36,10 +37,15 @@ export function TarjetaDeTarea({
   principal: boolean
   abriendo: boolean
   alEmpezar: () => void
+  /** P3: el id del elemento, para que un aviso de la campanita lleve a esta tarea (`/aulas?tarea=12`). */
+  ancla?: string
 }) {
   const disponible = assignment.state === 'disponible'
   return (
-    <li className="flex flex-col gap-3 rounded-lg border border-borde bg-superficie-tarjeta p-4 sm:flex-row sm:items-center">
+    <li
+      id={ancla}
+      className="flex scroll-mt-24 flex-col gap-3 rounded-lg border border-borde bg-superficie-tarjeta p-4 data-[destacada]:border-accion data-[destacada]:ring-2 data-[destacada]:ring-accion-tenue-borde sm:flex-row sm:items-center"
+    >
       <div className="min-w-0 flex-1">
         <h2 className="cuerpo text-texto">{assignment.title}</h2>
         <p className="nota text-texto-suave">

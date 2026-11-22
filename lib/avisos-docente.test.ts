@@ -81,11 +81,37 @@ describe('avisosDelDocente', () => {
   it('todo filtrado por el docente', async () => {
     await avisosDelDocente('irina')
     const deDatos = consultas.filter((c) => !c.texto.includes('avisos_docente_visto_el'))
+    expect(deDatos.length).toBeGreaterThan(0)
     expect(deDatos.every((c) => c.valores.includes('irina'))).toBe(true)
   })
 
-  it('sin la 034 (o sin la 029): los avisos sin "no leídos", sin error', async () => {
+  it('sin la 035 lee la 034', async () => {
     responder = (t) => {
+      if (t.includes('avisos_lectura')) throw Object.assign(new Error('x'), { code: '42P01' })
+      if (t.includes('avisos_docente_visto_el')) return [{ v: '2026-11-22T00:00:00Z' }]
+      return []
+    }
+    const r = await avisosDelDocente('irina')
+    expect([r.vistoEl, r.puedeMarcar]).toEqual(['2026-11-22T00:00:00.000Z', true])
+    consultas.length = 0
+    await marcarAvisosVistos('irina')
+    expect(consultas.map((c) => c.texto.includes('avisos_lectura') ? 'tabla' : c.texto.includes('avisos_docente_visto_el') ? 'columna' : '?')).toEqual(['tabla', 'columna'])
+  })
+
+  it('con la 035, lee y escribe avisos_lectura', async () => {
+    responder = (t) => (t.includes('avisos_lectura') && t.includes('SELECT') ? [{ visto_el: '2026-11-21T00:00:00Z' }] : [])
+    const r = await avisosDelDocente('irina')
+    expect(r.vistoEl).toBe('2026-11-21T00:00:00.000Z')
+    consultas.length = 0
+    await marcarAvisosVistos('irina')
+    expect(consultas).toHaveLength(1)
+    expect(consultas[0].texto).toContain('INSERT INTO avisos_lectura')
+    expect(consultas[0].valores).toContain('irina')
+  })
+
+  it('sin la 035 ni la 034 (o sin la 029): los avisos sin "no leídos", sin error', async () => {
+    responder = (t) => {
+      if (t.includes('avisos_lectura')) throw Object.assign(new Error('x'), { code: '42P01' })
       if (t.includes('avisos_docente_visto_el') || t.includes('feedback_reports')) throw Object.assign(new Error('x'), { code: '42703' })
       if (t.includes('quiz_attempts')) return [{ grupo_id: 4, grupo: 'G', tarea: 'T', dia: '2026-11-22', alumnos: 2, ultimo: '2026-11-22T01:00:00Z' }]
       return []

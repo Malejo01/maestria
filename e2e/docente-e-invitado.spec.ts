@@ -5,7 +5,8 @@ import { DOCENTE, entrarComo, marca, responderUna, simularGeneracion } from './a
  * Recorridos 1 y 2, en serie porque el segundo usa lo que arma el primero:
  *   1. el docente crea una materia (del plan oficial), un grupo y una tarea
  *      (con la IA simulada) y la manda al grupo;
- *   2. un invitado entra por el código del grupo, con su nombre, y hace la tarea.
+ *   2. un invitado entra por el código del grupo, con su nombre, ve "Tarea
+ *      nueva" en su campanita (P3), y hace la tarea.
  *
  * Deja en staging una materia, un grupo, una tarea y un invitado "E2E · …".
  */
@@ -91,6 +92,15 @@ test('2 · un invitado entra por código y hace la tarea', async ({ browser }) =
   await page.getByRole('button', { name: /Entrar/ }).first().click()
   await page.waitForURL(/\/aulas/)
   invitadoId = ((await (await page.request.get('/api/student/viewer')).json()) as { id: string }).id
+
+  // P3: la campanita del invitado avisa la tarea que le mandó el docente, y
+  // el aviso lleva a esa tarea.
+  await page.getByRole('button', { name: /^Avisos/ }).click()
+  const aviso = page.locator('[data-aviso="tareaNueva"]').filter({ hasText: GRUPO })
+  await expect(aviso).toContainText('Tarea nueva')
+  await aviso.getByRole('link').click()
+  await expect(page).toHaveURL(/\/aulas\?tarea=\d+$/)
+  await expect(page.locator('[data-destacada]')).toContainText(MATERIA)
 
   const tarjeta = page.getByRole('listitem').filter({ hasText: MATERIA }).first()
   await tarjeta.getByRole('button', { name: 'Empezar tarea' }).click()

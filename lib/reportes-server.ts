@@ -350,3 +350,39 @@ export async function reportesDelGrupo(docenteId: string, grupoId: number): Prom
     throw error
   }
 }
+
+export interface ReportePropio {
+  id: number
+  descripcion: string
+  reportadoEl: string
+  cuestionario: string | null
+  resueltoEl: string | null
+  respuesta: string | null
+  respondidoPor: string | null
+}
+
+/**
+ * P3: un reporte de ESTE usuario, para la página a la que lleva "Tu reporte se
+ * resolvió". `null` si no existe o es de otro: la página responde 404 (no se
+ * confirma que exista un reporte ajeno). Sin la 030, sin respuesta.
+ */
+export async function reportePropio(userId: string, id: number): Promise<ReportePropio | null> {
+  const filas = (await sql`
+    SELECT f.id, f.description, f.created_at, to_jsonb(f) AS crudo, q.title AS cuestionario
+    FROM feedback_reports f
+    LEFT JOIN teacher_quizzes q ON q.id = (to_jsonb(f) ->> 'teacher_quiz_id')::int
+    WHERE f.id = ${id} AND f.user_id = ${userId}
+  `) as { id: number; description: string; created_at: string | Date; crudo: Record<string, unknown>; cuestionario: string | null }[]
+  const f = filas[0]
+  if (!f) return null
+  const texto = (v: unknown) => (typeof v === 'string' && v.trim() ? v : null)
+  return {
+    id: Number(f.id),
+    descripcion: f.description,
+    reportadoEl: new Date(f.created_at).toISOString(),
+    cuestionario: f.cuestionario ?? null,
+    resueltoEl: texto(f.crudo.resuelto_el) ? new Date(String(f.crudo.resuelto_el)).toISOString() : null,
+    respuesta: texto(f.crudo.respuesta),
+    respondidoPor: texto(f.crudo.respondido_por),
+  }
+}
