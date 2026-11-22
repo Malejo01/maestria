@@ -11,7 +11,7 @@ Trabajo en loop sin supervisión, desde las 00:40 (hora de Argentina). Una rama 
 | O1 · Pruebas de punta a punta (Playwright) | hecho | [#76](https://github.com/Malejo01/maestria/pull/76) | Los 6 recorridos en verde contra `npm run dev:staging` (7 pruebas + limpieza, 2,1 min) | US$0 (IA simulada) |
 | O2 · Cerrar el ciclo de "A reforzar" (migración 031) | hecho | [#77](https://github.com/Malejo01/maestria/pull/77) | Tests de la regla con nombres reales de temas, del servidor y de permisos; simulación sobre staging; el docente marcó un tema desde la ficha; "Ya lo dominás" de Sofía; `npm run e2e` en verde | US$0 |
 | O3 · La práctica del grupo usa la materia del grupo | hecho | [#78](https://github.com/Malejo01/maestria/pull/78) | Tests de los parámetros, los ejemplos por carrera y la persona de didáctica; 3 + 3 prácticas con IA real antes/después; `npm run e2e` en verde | US$0,025 |
-| O4 · Textos viejos del alumno y la racha en la base (migración 032) | hecho | (este PR) | Tests de la regla, el servidor (válvula) y la migración desde el navegador; en staging Sofía hizo una tarea: racha migrada y anotada; capturas a 390; `npm run e2e` en verde | US$0 |
+| O4 · Textos viejos del alumno y la racha en la base (migración 032) | hecho | [#79](https://github.com/Malejo01/maestria/pull/79) | Tests de la regla, el servidor (válvula) y la migración desde el navegador; en staging Sofía hizo una tarea: racha migrada y anotada; capturas a 390; `npm run e2e` en verde | US$0 |
 
 **Gasto de IA acumulado de la noche:** US$0,029 (medido en `ai_usage_log` de staging: 18 llamadas, US$0,0285; más ~US$0,0005 del dry-run de N2, que no pasa por el registro) (tope: US$10; a los US$8 se pasa a modelos simulados).
 
