@@ -4,6 +4,8 @@ import { guardAiCall } from '@/lib/ai-guard'
 import { captureAiSchemaFailure, captureFileParsingFailure, captureRouteFailure } from '@/lib/observability'
 import { z } from 'zod'
 import { generateObject } from 'ai'
+import { AREA_IDS, CARACTERES, PERFILES } from '@/lib/areas'
+import { completarAreaDelPrograma } from '@/lib/area-del-programa'
 import { TIPO_DE_PROGRESO, leerNivelSugerido, type EventoDeLectura } from '@/lib/wizard-temario'
 import { google } from '@ai-sdk/google'
 import { sql } from '@/lib/db'
@@ -42,8 +44,13 @@ const parsedProgramSchema = z.object({
           name: z.string().min(1),
         })
       ).min(1),
+      // Ronda T · A2: si la unidad se evalúa con cálculos o con conceptos.
+      caracter: z.enum(CARACTERES).nullable().optional(),
     })
   ).min(1),
+  // Ronda T · A2: el área de la materia, en la misma llamada (sin costo extra).
+  area: z.enum(AREA_IDS).nullable().optional(),
+  areaConfianza: z.number().min(0).max(1).nullable().optional(),
   // Opcionales y sólo si el documento los dice de forma explícita. Son una
   // sugerencia para que el docente confirme (lib/wizard-temario.ts).
   nivel: z.string().nullable().optional(),
@@ -241,6 +248,7 @@ function normalizeUnits(parsed: ParsedProgram) {
     const separada = separarTituloDeUnidad(unit.name, unit.topics.map((topic) => topic.name))
     return {
       id: `tp-u-${unitIndex + 1}`,
+      ...(unit.caracter ? { caracter: unit.caracter } : {}),
       // I3: "1" → "Unidad 1"; "UNIDAD I: LÓGICA" → "Unidad I: Lógica". El resto, tal cual.
       name: normalizarNombreDeUnidad(separada.nombre),
       topics: separada.temas.map((name, topicIndex) => ({
@@ -267,6 +275,11 @@ Si hay conflicto entre secciones, prioriza la seccion de contenidos.
 No inventes unidades ni temas que no aparezcan en el documento.
 
 ${REGLAS_DE_TEMAS}
+
+Aparte, el area de conocimiento de la materia, para generar preguntas a su medida:
+- "area": una sola de estas: ${AREA_IDS.map((id) => `"${id}" (${PERFILES[id].nombre})`).join(', ')}. Decidila por el nombre de la materia y sus contenidos, no por la carrera: "Antropologia Cultural en Psicologia" es "sociales". Una didactica especifica ("Matematica y su Didactica") es "educacion".
+- "areaConfianza": de 0 a 1, cuan seguro estas.
+- en cada unidad, "caracter": "cuantitativo" si sus temas se evaluan con calculos o problemas numericos, "conceptual" si con conceptos, casos o analisis, "mixto" si con las dos cosas. En una didactica, una unidad de numeros o geometria es "cuantitativo" y una de ensenanza es "conceptual".
 
 Aparte: si el documento dice de forma explicita el nivel educativo (Primario, Secundario o Superior) y el año o grado de la materia, devolvelos en "nivel" y "grado". Si no lo dice, dejalos en null. No los deduzcas por la dificultad de los contenidos.`
 }
@@ -441,7 +454,17 @@ ${clippedText}`,
       console.error('No se pudo persistir temporalmente el archivo del programa', uploadError)
     }
 
-    const normalizedUnits = normalizeUnits(parsedProgram)
+    // Ronda T · A2: el área. La de la IA si vino segura; si no, la inferida
+    // por palabras clave con el nombre del archivo y las unidades.
+    const conArea = completarAreaDelPrograma({
+      materia: file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' '),
+      perfil:
+        extractionMethod === 'ai' && parsedProgram.area
+          ? { area: parsedProgram.area, areaConfianza: parsedProgram.areaConfianza ?? 0.5, areaOrigen: 'ia' as const }
+          : {},
+      unidades: normalizeUnits(parsedProgram),
+    })
+    const normalizedUnits = conArea.unidades
     const quality = estimateConfidence(parsedProgram, extractionMethod)
 
     return {
@@ -458,6 +481,9 @@ ${clippedText}`,
         unitCount: quality.unitCount,
         topicCount: quality.topicCount,
       },
+      area: conArea.perfil.area,
+      areaConfianza: conArea.perfil.areaConfianza,
+      areaOrigen: conArea.perfil.areaOrigen,
       // Sólo si salió de la IA: el heurístico no lee nivel ni año.
       nivelSugerido:
         extractionMethod === 'ai' ? leerNivelSugerido({ nivel: parsedProgram.nivel, grado: parsedProgram.grado }) : null,

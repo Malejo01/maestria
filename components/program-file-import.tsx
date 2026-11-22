@@ -23,11 +23,19 @@ import {
   mensajeDePesoExcedido,
 } from '@/lib/lectura-programa'
 import type { ProgramUnit } from '@/lib/types'
+import { esAreaId, esCaracter, type AreaId } from '@/lib/areas'
 
 export interface ProgramSourceMeta {
   sourceFileName: string
   sourceMimeType: string
   sourceFileSizeBytes: number
+}
+
+/** Ronda T · A2: el área detectada, como la guarda `pedagogy_profile`. */
+export interface AreaSugerida {
+  area: AreaId
+  areaConfianza: number
+  areaOrigen: 'ia' | 'inferida'
 }
 
 interface ProgramFileImportProps {
@@ -41,6 +49,8 @@ interface ProgramFileImportProps {
   onSourceMetaChange?: (meta: ProgramSourceMeta | null) => void
   /** El nivel y el año que el archivo dice de forma explícita, si los dice. */
   onNivelSugerido?: (sugerido: NivelSugerido | null) => void
+  /** Ronda T · A2: el área que se detectó al leer el programa. */
+  onAreaSugerida?: (sugerida: AreaSugerida) => void
   /**
    * I4: los otros dos caminos del wizard. Cuando el archivo no se puede leer,
    * se ofrecen ahí mismo como botones: un error no es un callejón sin salida.
@@ -60,6 +70,8 @@ function sanitizeSuggestedUnits(input: unknown): ProgramUnit[] {
       return {
         id: String(raw?.id || `import-u-${unitIndex + 1}`),
         name: String(raw?.name || '').trim(),
+        // Ronda T · A2: el carácter detectado de la unidad.
+        ...(esCaracter(raw?.caracter) ? { caracter: raw.caracter } : {}),
         topics: topics
           .map((topic, topicIndex) => ({
             id: String(topic?.id || `import-u-${unitIndex + 1}-t-${topicIndex + 1}`),
@@ -84,6 +96,7 @@ export function ProgramFileImport({
   onUnitsSuggested,
   onSourceMetaChange,
   onNivelSugerido,
+  onAreaSugerida,
   alternativas,
   disabled = false,
 }: ProgramFileImportProps) {
@@ -285,6 +298,13 @@ export function ProgramFileImport({
       }
 
       onNivelSugerido?.(leerNivelSugerido(data.nivelSugerido))
+      if (esAreaId(data.area)) {
+        onAreaSugerida?.({
+          area: data.area,
+          areaConfianza: typeof data.areaConfianza === 'number' ? data.areaConfianza : 0.5,
+          areaOrigen: data.areaOrigen === 'inferida' ? 'inferida' : 'ia',
+        })
+      }
       setPasos((previos) => [
         ...previos,
         T.listo(Number(data?.summary?.unitCount || 0), Number(data?.summary?.topicCount || 0)),

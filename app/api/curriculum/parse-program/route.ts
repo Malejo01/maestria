@@ -10,6 +10,8 @@
  */
 import { NextResponse } from 'next/server'
 import { generateObject } from 'ai'
+import { AREA_IDS, CARACTERES } from '@/lib/areas'
+import { completarAreaDelPrograma } from '@/lib/area-del-programa'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 import { auth } from '@/auth'
@@ -28,8 +30,13 @@ const parsedSchema = z.object({
     z.object({
       name: z.string().min(1),
       topics: z.array(z.object({ name: z.string().min(1) })).min(1),
+      // Ronda T · A2: cálculos o conceptos.
+      caracter: z.enum(CARACTERES).nullable().optional(),
     })
   ).min(1),
+  // Ronda T · A2: el área, en la misma llamada.
+  area: z.enum(AREA_IDS).nullable().optional(),
+  areaConfianza: z.number().min(0).max(1).nullable().optional(),
 })
 
 // ── Text extraction helpers ───────────────────────────────────────────────────
@@ -163,6 +170,7 @@ export async function POST(req: Request) {
         prompt: `Extrae las Unidades y sus Temas del siguiente programa de materia.
 Normaliza ejes, bloques o módulos como "Unidad".
 No inventes contenido que no esté en el documento.
+Además: "area" (una de ${AREA_IDS.join(', ')}; por el nombre de la materia y sus contenidos, no por la carrera), "areaConfianza" de 0 a 1, y en cada unidad "caracter": "cuantitativo" (se evalúa con cálculos), "conceptual" (conceptos, casos, análisis) o "mixto".
 
 PROGRAMA:
 ${text.slice(0, 20000)}`,
@@ -184,17 +192,29 @@ ${text.slice(0, 20000)}`,
     }
 
     // Normalize IDs for frontend use
-    const units = parsed.units.map((unit, ui) => ({
-      id: `u-${ui + 1}`,
-      name: unit.name,
-      topics: unit.topics.map((topic, ti) => ({
-        id: `u-${ui + 1}-t-${ti + 1}`,
-        name: topic.name,
+    const conArea = completarAreaDelPrograma({
+      materia: file.name.replace(/\.[a-z0-9]+$/i, '').replace(/[_-]+/g, ' '),
+      perfil:
+        method === 'ai' && parsed.area
+          ? { area: parsed.area, areaConfianza: parsed.areaConfianza ?? 0.5, areaOrigen: 'ia' as const }
+          : {},
+      unidades: parsed.units.map((unit, ui) => ({
+        id: `u-${ui + 1}`,
+        name: unit.name,
+        ...(unit.caracter ? { caracter: unit.caracter } : {}),
+        topics: unit.topics.map((topic, ti) => ({
+          id: `u-${ui + 1}-t-${ti + 1}`,
+          name: topic.name,
+        })),
       })),
-    }))
+    })
+    const units = conArea.unidades
 
     return NextResponse.json({
       units,
+      area: conArea.perfil.area,
+      areaConfianza: conArea.perfil.areaConfianza,
+      areaOrigen: conArea.perfil.areaOrigen,
       extractionMethod: method,
       topicCount: units.reduce((s, u) => s + u.topics.length, 0),
     })

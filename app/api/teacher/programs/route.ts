@@ -1,6 +1,7 @@
 ﻿import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
+import { completarAreaDelPrograma } from '@/lib/area-del-programa'
 import { upsertTeacherSubject } from '@/lib/subjects'
 import { DEFAULT_JURISDICTION } from '@/lib/curriculum-config'
 import { resolveGradoForNivel } from '@/lib/grado-server'
@@ -92,7 +93,20 @@ export async function GET(req: Request) {
       return matchesName && matchesLevel && matchesDegree && matchesDate
     })
 
-    return NextResponse.json({ programs: filteredPrograms })
+    // Ronda T · A2: en la lista, el área se completa en memoria (se guarda al
+    // abrir o editar el programa: GET y PATCH de /api/teacher/programs/[id]).
+    const conArea = filteredPrograms.map((program: Record<string, unknown>) => {
+      const perfil = (program.pedagogy_profile || {}) as PedagogyProfile
+      const completo = completarAreaDelPrograma({
+        materia: String(program.subject_name || ''),
+        carrera: perfil.degree,
+        perfil,
+        unidades: Array.isArray(program.units) ? (program.units as ProgramUnit[]) : [],
+      })
+      return completo.cambio ? { ...program, pedagogy_profile: completo.perfil, units: completo.unidades } : program
+    })
+
+    return NextResponse.json({ programs: conArea })
   } catch (error) {
     return NextResponse.json(
       { error: 'No se pudieron obtener los programas', details: error instanceof Error ? error.message : String(error) },
@@ -147,7 +161,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Falta al menos una unidad' }, { status: 400 })
     }
 
-    const resolvedProfile = withDerivedPedagogyProfile(pedagogyProfile, nivel, grado)
+    // Ronda T · A2: el área y el carácter de cada unidad, siempre completos.
+    const conArea = completarAreaDelPrograma({
+      materia: subjectName,
+      carrera: pedagogyProfile?.degree,
+      perfil: withDerivedPedagogyProfile(pedagogyProfile, nivel, grado),
+      unidades: units,
+    })
+    const resolvedProfile = conArea.perfil
+    const unitsConCaracter = conArea.unidades
 
     const requiredPedagogy = [
       resolvedProfile?.level,
@@ -188,7 +210,7 @@ export async function POST(req: Request) {
         ${iconName},
         ${colorName},
         ${JSON.stringify(resolvedProfile)},
-        ${JSON.stringify(units)},
+        ${JSON.stringify(unitsConCaracter)},
         ${sourceFileName},
         ${sourceMimeType},
         ${sourceFileSizeBytes},

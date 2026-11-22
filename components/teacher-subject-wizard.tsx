@@ -29,7 +29,7 @@ import { DEFAULT_JURISDICTION } from '@/lib/curriculum-config'
 import { NOMBRE_DE_ICONO, SUBJECT_ICON_OPTIONS } from '@/lib/subject-appearance'
 import { SUBJECT_ICON_COMPONENTS } from '@/lib/subject-icons'
 import { Boton } from '@/components/sistema/boton'
-import { ProgramFileImport, type ProgramSourceMeta } from '@/components/program-file-import'
+import { ProgramFileImport, type AreaSugerida, type ProgramSourceMeta } from '@/components/program-file-import'
 import { PASO, gradoAPrecargar, ordenDePasos, pasoVecino, puedeLlegarA, type NivelSugerido, type PasoId } from '@/lib/wizard-temario'
 import { WIZARD_TEMARIO, contar } from '@/lib/textos'
 import type {
@@ -352,6 +352,12 @@ export function TeacherSubjectWizard({
     [isEditing],
   )
 
+  // Ronda T · A2: el área que se detectó al leer el programa. Lo que el
+  // docente eligió a mano no se pisa.
+  const recibirArea = useCallback((sugerida: AreaSugerida) => {
+    setPedagogy((prev) => (prev.areaOrigen === 'manual' ? prev : { ...prev, ...sugerida }))
+  }, [])
+
   useEffect(() => {
     if (!sugerido || grado || nivel !== sugerido.nivel || isLoadingGrades) return
     const elegido = gradoAPrecargar(sugerido.grado, grades)
@@ -515,6 +521,7 @@ export function TeacherSubjectWizard({
     const rekeyed = suggested.map((unit) => ({
       id: nextId('u'),
       name: unit.name,
+      ...(unit.caracter ? { caracter: unit.caracter } : {}),
       topics: unit.topics
         .filter((topic) => !addedTopicKeys.has(normalizeTopicKey(topic.name)))
         .map((topic) => ({ id: nextId('t'), name: topic.name, origin: 'custom' as const })),
@@ -584,6 +591,9 @@ export function TeacherSubjectWizard({
       .map((unit) => ({
         id: unit.id,
         name: unit.name.trim(),
+        // Ronda T: el carácter de la unidad (detectado o elegido a mano).
+        ...(unit.caracter ? { caracter: unit.caracter } : {}),
+        ...(unit.caracterManual ? { caracterManual: unit.caracterManual } : {}),
         topics: unit.topics
           .map((topic) => ({ ...topic, name: topic.name.trim() }))
           .filter((topic) => topic.name.length > 0),
@@ -1022,6 +1032,7 @@ export function TeacherSubjectWizard({
                   onUnitsSuggested={mergeSuggestedUnits}
                   onSourceMetaChange={setSourceMeta}
                   onNivelSugerido={recibirSugerencia}
+                  onAreaSugerida={recibirArea}
                   alternativas={{ escribirlo: escribirloYo, planOficial: irAlPlanOficial }}
                 />
               </div>

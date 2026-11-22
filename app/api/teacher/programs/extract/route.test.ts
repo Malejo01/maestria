@@ -238,3 +238,33 @@ describe('/api/teacher/programs/extract — O11: título y temas en la misma lí
     ])
   })
 })
+
+describe('/api/teacher/programs/extract — A2: el área en la misma llamada', () => {
+  it('pide el área y el carácter de cada unidad en el mismo esquema, sin otra llamada', async () => {
+    generateObject.mockResolvedValue({
+      object: {
+        units: [
+          { name: 'Unidad 1: Cultura', topics: [{ name: 'Etnocentrismo' }], caracter: 'conceptual' },
+          { name: 'Unidad 2: Parentesco', topics: [{ name: 'Linajes' }], caracter: 'conceptual' },
+        ],
+        area: 'sociales',
+        areaConfianza: 0.9,
+      },
+      usage: { inputTokens: 1, outputTokens: 1 },
+    })
+    const cuerpo = await (await POST(pedido('programa.jpg', 'image/jpeg', PNG))).json()
+    expect(generateObject).toHaveBeenCalledTimes(1)
+    const instrucciones = generateObject.mock.calls[0][0].messages[0].content[0].text as string
+    expect(instrucciones).toMatch(/"area"/)
+    expect(instrucciones).toMatch(/"caracter"/)
+    expect(cuerpo).toMatchObject({ area: 'sociales', areaConfianza: 0.9, areaOrigen: 'ia' })
+    expect(cuerpo.units.map((u: { caracter: string }) => u.caracter)).toEqual(['conceptual', 'conceptual'])
+  })
+
+  it('si la IA no dice el área, se infiere (del nombre del archivo y las unidades)', async () => {
+    generateObject.mockResolvedValue({ object: ESTRUCTURA, usage: { inputTokens: 1, outputTokens: 1 } })
+    const cuerpo = await (await POST(pedido('Algebra-y-Geometria-Analitica.jpg', 'image/jpeg', PNG))).json()
+    expect(cuerpo).toMatchObject({ area: 'matematica', areaOrigen: 'inferida' })
+    expect(cuerpo.units.every((u: { caracter: string }) => u.caracter === 'cuantitativo')).toBe(true)
+  })
+})
