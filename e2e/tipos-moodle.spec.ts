@@ -305,3 +305,45 @@ test('F8 · el docente elige un tipo de "Más tipos (como en Moodle)" y la gener
   // Y la pregunta de emparejamiento se responde como tal.
   await expect(page.getByText('Elegí la pareja de cada uno.')).toBeVisible({ timeout: 30_000 })
 })
+
+test('U1 · si un tipo pedido no se puede, el docente ve por qué', async ({ page }, info) => {
+  test.setTimeout(120_000)
+  await entrarComo(page, DOCENTE)
+  await page.route('**/api/generate-quiz', async (ruta) => {
+    const pedido = ruta.request().postDataJSON() as { questionCount?: number }
+    const cantidad = Number(pedido?.questionCount) || 5
+    await ruta.fulfill({
+      json: {
+        questions: Array.from({ length: cantidad }, (_, i) => ({
+          id: `m${i + 1}`,
+          type: 'matching',
+          topic: 't1',
+          topicName: 'Tema',
+          question: `Uní cada concepto con su definición (${i + 1}).`,
+          pairs: [
+            { left: 'Clima', right: 'Condiciones de largo plazo' },
+            { left: 'Tiempo', right: 'Condiciones de un momento' },
+            { left: 'Relieve', right: 'Formas de la superficie' },
+          ],
+          explanation: '',
+        })),
+        avisosDeTipos: [{ tipo: 'calculated', motivo: 'sin-calculos' }],
+      },
+    })
+  })
+  await page.goto('/teacher?seccion=materias')
+  await page.getByRole('button', { name: 'Crear cuestionario' }).first().click()
+  await page.getByRole('button', { name: /Unidad 1/ }).first().click()
+  await page.getByRole('button', { name: /^Generar cuestionario/ }).click()
+  await page.getByRole('button', { name: /Más tipos \(como en Moodle\)/ }).click()
+  await page.getByRole('button', { name: /Emparejamiento/ }).click()
+  await page.getByRole('button', { name: /Calculada/ }).click()
+  await page.getByRole('button', { name: /^(Examen práctico|Práctico:)/ }).click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Realizar' }).click()
+  const aviso = page.getByText('No armamos preguntas de tipo calculada porque esta unidad no tiene cálculos.').first()
+  await expect(aviso).toBeVisible({ timeout: 30_000 })
+  await page.screenshot({ path: `docs/capturas/ronda-u/u1/aviso-${info.project.name}-1280.png` })
+  await page.setViewportSize({ width: 390, height: 800 })
+  await expect(aviso).toBeVisible()
+  await page.screenshot({ path: `docs/capturas/ronda-u/u1/aviso-${info.project.name}-390.png` })
+})

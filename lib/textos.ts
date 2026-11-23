@@ -1957,3 +1957,15 @@ export const DISTINTIVO_DEL_PLAN = {
   pasateAUnPlan: 'Pasate a un plan',
   cupoEtiqueta: 'Cupo del plan',
 } as const
+
+/**
+ * Ronda U · U1 — Los tipos pedidos que no salieron, con el porqué. El nombre
+ * del tipo va en minúscula dentro de la frase ("de tipo calculada").
+ */
+export const TIPOS_PEDIDOS = {
+  titulo: 'No salieron todos los tipos que pediste',
+  sinCalculos: (tipo: string) => `No armamos preguntas de tipo ${tipo.toLowerCase()} porque esta unidad no tiene cálculos.`,
+  noSalio: (tipo: string) => `No pudimos armar preguntas de tipo ${tipo.toLowerCase()} esta vez. Probá de nuevo o cambiá una a mano.`,
+  noEntra: (tipos: string[]) =>
+    `Pediste más tipos que preguntas: quedaron afuera ${tipos.map((t) => t.toLowerCase()).join(', ')}. Sumá preguntas para que entren todos.`,
+} as const

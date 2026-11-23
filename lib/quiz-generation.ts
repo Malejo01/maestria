@@ -52,6 +52,15 @@ import {
 } from '@/lib/area-para-generar'
 import { areaParaGenerar } from '@/lib/area-para-generar-server'
 import { MOTIVO_DE_AREA, problemaDeArea } from '@/lib/validar-area'
+import {
+  completarTipos,
+  planDeTipos,
+  sinTiposDeCalculo,
+  tiposFaltantes,
+  TIPOS_CON_CALCULO,
+  unirAvisos,
+  type AvisoDeTipo,
+} from '@/lib/tipos-garantizados'
 
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -939,6 +948,13 @@ export interface QuizRequestParams {
    * `numeric` en lo conceptual.
    */
   tiposPorDefecto?: boolean
+  /**
+   * Ronda U · U1: los tipos que esta request tiene que garantizar (al menos
+   * una pregunta de cada uno). El mixto que arma el navegador pide cada mitad
+   * por separado y reparte los tipos entre las dos (`repartirEntreMitades`);
+   * sin esto, se garantizan los `explicitQuestionTypes`.
+   */
+  tiposAGarantizar?: QuestionType[]
 }
 
 export type ResolveQuizRequestResult =
@@ -972,6 +988,7 @@ export function resolveQuizRequest(body: unknown): ResolveQuizRequestResult {
     carrera: rawCarrera,
     difficulty: rawDifficulty,
     questionTypes: rawQuestionTypes,
+    tiposAGarantizar: rawTiposAGarantizar,
   } = (body ?? {}) as {
     // subject, topics y mode van NO opcionales a propósito, y es una deuda
     // hecha visible: el código de abajo los usa sin chequear y `QuizRequestParams`
@@ -992,6 +1009,7 @@ export function resolveQuizRequest(body: unknown): ResolveQuizRequestResult {
     carrera?: unknown
     difficulty?: string
     questionTypes?: unknown
+    tiposAGarantizar?: unknown
   }
 
   const parsedQuestionCount = Number(rawQuestionCount)
@@ -1054,6 +1072,13 @@ export function resolveQuizRequest(body: unknown): ResolveQuizRequestResult {
       difficulty,
       explicitQuestionTypes,
       ...(teacherProgramIdDe(body) ? { teacherProgramId: teacherProgramIdDe(body) } : {}),
+      ...(Array.isArray(rawTiposAGarantizar)
+        ? {
+            tiposAGarantizar: rawTiposAGarantizar.filter(
+              (t: unknown): t is QuestionType => QUESTION_TYPE_VALUES.includes(t as QuestionType) && explicitQuestionTypes.includes(t as QuestionType),
+            ),
+          }
+        : {}),
     },
   }
 }
@@ -1091,7 +1116,12 @@ function resolveQuestionTypes(
 }
 
 export type GenerateQuizResult =
-  | { ok: true; questions: GeneratedQuestion[] }
+  /**
+   * `avisosDeTipos` (U1): los tipos pedidos que no salieron, con el porqué
+   * (una calculada en una unidad conceptual, por ejemplo). La interfaz los
+   * muestra; el cuestionario igual se arma.
+   */
+  | { ok: true; questions: GeneratedQuestion[]; avisosDeTipos?: AvisoDeTipo[] }
   /** No se juntó variedad suficiente. La ruta lo traduce a un 409. */
   | { ok: false; reason: 'insufficient_variety'; message: string }
 
@@ -1125,6 +1155,7 @@ export async function generateQuiz(
     perfilAlumnos,
     evitar,
     tiposPorDefecto,
+    tiposAGarantizar,
   } = params
 
   const topicsText = topics.map((t: { id: string; name: string }) => `- ${t.name}`).join('\n')
@@ -1184,10 +1215,15 @@ export async function generateQuiz(
 
   // Sin tipos pedidos: los de la mezcla (programa de cátedra o área). `numeric`
   // sólo si alguna unidad es cuantitativa o si una persona la tildó a mano.
-  const finalQuestionTypes = tiposPermitidos(
-    resolveQuestionTypes(explicitQuestionTypes, mezclaBase(modoDeLaTanda === 'teorico' ? 'teorico' : 'practico')),
+  // U1: tampoco `calculated` si todas las unidades son conceptuales (A1): no
+  // se fuerza, se avisa.
+  const finalQuestionTypes = sinTiposDeCalculo(
+    tiposPermitidos(
+      resolveQuestionTypes(explicitQuestionTypes, mezclaBase(modoDeLaTanda === 'teorico' ? 'teorico' : 'practico')),
+      areaCtx.caracteres,
+      tiposPorDefecto ? [] : explicitQuestionTypes,
+    ),
     areaCtx.caracteres,
-    tiposPorDefecto ? [] : explicitQuestionTypes,
   )
 
   // La mezcla se recorta a los tipos que finalmente se van a usar y se
@@ -1368,6 +1404,58 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     }
   }
 
+  /**
+   * U1 · Al menos una de cada tipo pedido. Si al juntar falta alguno, se pide
+   * una tanda chica sólo de los que faltan (una sola) y cada pregunta nueva
+   * reemplaza a una de un tipo que sobra. Lo que no se pudo, va en los avisos.
+   */
+  const pedidosAMano = tiposPorDefecto ? [] : (tiposAGarantizar ?? explicitQuestionTypes)
+  const garantizarTipos = async (preguntas: any[], tiposDeLaTanda: QuestionType[]) => {
+    const plan = planDeTipos(pedidosAMano.filter((t) => tiposDeLaTanda.includes(t)), tiposDeLaTanda, preguntas.length)
+    // La calculada pedida en una unidad conceptual no se fuerza (A1): se avisa.
+    const avisos: AvisoDeTipo[] = [
+      ...(!tiposPorDefecto && explicitQuestionTypes.includes('calculated') && !finalQuestionTypes.includes('calculated')
+        ? [{ tipo: 'calculated' as QuestionType, motivo: 'sin-calculos' as const }]
+        : []),
+      ...plan.avisos,
+    ]
+    let actuales = preguntas
+    if (plan.garantizar.length > 1) {
+      // Una sola tanda extra: es chica (sólo los que faltan) y casi siempre alcanza.
+      for (let intento = 0; intento < 1 && tiposFaltantes(plan.garantizar, actuales).length > 0; intento++) {
+        const faltan = tiposFaltantes(plan.garantizar, actuales)
+        console.log('[generate-quiz] Faltan tipos pedidos, se pide una tanda sólo de esos:', faltan.join(', '))
+        const tanda = await generateQuizBatch({
+          subject,
+          curriculum,
+          modeDescription: descripcionDelModo(areaCtx, faltan.some((t) => TIPOS_CON_CALCULO.includes(t)) ? 'practico' : modoDeLaTanda),
+          topicsText,
+          questionCount: faltan.length,
+          previousNote: buildPreviousNote(),
+          pedagogyNote,
+          specialistRole,
+          difficulty,
+          nivel,
+          grado,
+          contextoProfesional,
+          perfilAlumnos,
+          contenido,
+          questionTypes: faltan,
+          area: areaCtx.area,
+          seccionArea,
+          notacion,
+          sinCalculo,
+          onUsage,
+        })
+        const nuevas = tanda.filter((q: any) => faltan.includes(q.type) && !shouldDrop(q, faltan))
+        actuales = completarTipos(actuales, nuevas, plan.garantizar).preguntas
+      }
+      for (const tipo of tiposFaltantes(plan.garantizar, actuales)) avisos.push({ tipo, motivo: 'no-salio' })
+    }
+    return { preguntas: actuales, avisos: unirAvisos(avisos) }
+  }
+  const conAvisos = (avisos: AvisoDeTipo[]) => (avisos.length > 0 ? { avisosDeTipos: avisos } : {})
+
   if (mode === 'mixto') {
     const teoricoCount = Math.ceil(questionCount / 2)
     const practicoCount = Math.floor(questionCount / 2)
@@ -1454,8 +1542,13 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
       }
     }
 
-    const mixedQuestions = interleaveQuestions(teoricoCollected, practicoCollected, questionCount)
-    return { ok: true, questions: mixedQuestions.map((q, idx) => shuffleAndRenumber(anclarTema(q, topics ?? []), `q${idx + 1}`)) }
+    const mezcladas = interleaveQuestions(teoricoCollected, practicoCollected, questionCount)
+    const { preguntas: mixedQuestions, avisos } = await garantizarTipos(mezcladas, finalQuestionTypes)
+    return {
+      ok: true,
+      questions: mixedQuestions.map((q, idx) => shuffleAndRenumber(anclarTema(q, topics ?? []), `q${idx + 1}`)),
+      ...conAvisos(avisos),
+    }
   }
 
   const juntando = juntarConTope(questionCount, batchQuestionTypes)
@@ -1508,6 +1601,12 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     }
   }
 
+  const { preguntas: conTodosLosTipos, avisos } = await garantizarTipos(collectedQuestions, batchQuestionTypes)
+
   // O14: el tema de cada pregunta, anclado a los pedidos (ver anclarTema).
-  return { ok: true, questions: collectedQuestions.map((q, idx) => shuffleAndRenumber(anclarTema(q, topics ?? []), `q${idx + 1}`)) }
+  return {
+    ok: true,
+    questions: conTodosLosTipos.map((q, idx) => shuffleAndRenumber(anclarTema(q, topics ?? []), `q${idx + 1}`)),
+    ...conAvisos(avisos),
+  }
 }

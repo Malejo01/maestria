@@ -103,7 +103,8 @@ export async function POST(req: Request) {
 
     await guard.finish(sumUsage(...usageParts))
     if (autodidacta) await registrarUso(autodidacta.userId, autodidacta.programId, autodidacta.tipo)
-    return Response.json({ questions: result.questions })
+    // U1: los tipos pedidos que no salieron, con el porqué (la interfaz avisa).
+    return Response.json({ questions: result.questions, ...(result.avisosDeTipos ? { avisosDeTipos: result.avisosDeTipos } : {}) })
   } catch (error) {
     // La fila queda en 'error' y sigue contando: si Gemini alcanzó a responder
     // antes de romperse, ese consumo ya se facturó.

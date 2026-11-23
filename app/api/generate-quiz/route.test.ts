@@ -526,6 +526,8 @@ describe('POST — alcance de temas y tipos por modo (aula del profesorado, 30/0
     generateObject
       .mockResolvedValueOnce({ object: { questions: [conceptual, ...questions(2, 41)] }, usage: {} })
       .mockResolvedValueOnce({ object: { questions: questions(3, 42) }, usage: {} })
+      // U1: la numérica pedida no quedó; se pide una tanda sólo de numéricas, que acá no trae nada.
+      .mockResolvedValueOnce({ object: { questions: [] }, usage: {} })
 
     const response = await POST(request({ questionTypes: ['multiple_choice', 'numeric'] }))
     const body = await response.json()
@@ -533,7 +535,9 @@ describe('POST — alcance de temas y tipos por modo (aula del profesorado, 30/0
     expect(response.status).toBe(200)
     expect(body.questions).toHaveLength(3)
     expect(body.questions.map((q: { question: string }) => q.question)).not.toContain(conceptual.question)
-    expect(generateObject).toHaveBeenCalledTimes(2)
+    expect(generateObject).toHaveBeenCalledTimes(3)
+    expect(generateObject.mock.calls[2][0].schemaDescription).toMatch(/\(numeric\)\.$/)
+    expect(body.avisosDeTipos).toEqual([{ tipo: 'numeric', motivo: 'no-salio' }])
   })
 })
 

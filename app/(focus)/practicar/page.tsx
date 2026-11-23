@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { AUTODIDACTA } from '@/lib/textos'
+import { AUTODIDACTA, TIPOS_PEDIDOS } from '@/lib/textos'
+import { avisosVigentes, frasesDeAvisos, leerAvisos } from '@/lib/tipos-garantizados'
+import { ETIQUETA_DE_TIPO } from '@/lib/tipos-moodle'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useAppStore } from '@/lib/store'
@@ -86,6 +88,9 @@ export default function PracticarPage() {
     if (!Array.isArray(data.questions) || data.questions.length === 0) {
       throw new Error('La IA no pudo estructurar preguntas válidas para los temas seleccionados.')
     }
+    // U1: los tipos pedidos que no salieron, con el porqué.
+    const frases = frasesDeAvisos(avisosVigentes(leerAvisos(data), data.questions), (t) => ETIQUETA_DE_TIPO[t], TIPOS_PEDIDOS)
+    if (frases.length > 0) toast({ title: TIPOS_PEDIDOS.titulo, description: frases.join(' ') })
     return data.questions as Question[]
   }
 
