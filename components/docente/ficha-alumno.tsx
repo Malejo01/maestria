@@ -11,6 +11,7 @@ import { ArrowLeft, UserMinus } from 'lucide-react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { CargaFallida } from '@/components/carga-fallida'
 import { Boton } from '@/components/sistema/boton'
+import { CompartirInforme } from '@/components/docente/compartir-informe'
 import { ConfirmarQuitar } from '@/components/docente/quitar-alumnos'
 import { FichaPedagogica } from '@/components/docente/ficha-pedagogica'
 import { SeccionDiagnostico } from '@/components/docente/seccion-diagnostico'
@@ -134,9 +135,13 @@ export function FichaAlumno({ userId }: { userId: string }) {
           </p>
           {pedagogica && !pedagogica.disponible && <EditarContexto userId={ficha.userId} inicial={ficha.contexto} />}
         </div>
-        <Boton className="shrink-0" asChild>
-          <Link href={`/teacher?seccion=tareas&armar=1${materiaId ? `&materia=${materiaId}` : ''}`}>{T.asignar}</Link>
-        </Boton>
+        <div className="flex shrink-0 flex-col gap-2 sm:items-end">
+          <Boton className="shrink-0" asChild>
+            <Link href={`/teacher?seccion=tareas&armar=1${materiaId ? `&materia=${materiaId}` : ''}`}>{T.asignar}</Link>
+          </Boton>
+          {/* V4: el informe para el alumno y la familia. */}
+          <CompartirInforme userId={ficha.userId} nombre={ficha.nombre} />
+        </div>
       </header>
 
       <SeccionDiagnostico destino={{ alumno: ficha.userId }} nombre={ficha.nombre} alMarcarTemas={() => setVersionFicha((v) => v + 1)} />
