@@ -11,6 +11,7 @@ import { MultipleResponseInput } from './multiple-response-input'
 import { MatchingInput } from './matching-input'
 import { OrderingInput } from './ordering-input'
 import { GapsInput } from './gaps-input'
+import { MissingWordInput } from './missing-word-input'
 import { cantidadDeHuecos, ordenInicial } from '@/lib/tipos-moodle'
 
 export type AnswerSelection =
@@ -27,6 +28,8 @@ export type AnswerSelection =
   | { type: 'ordering'; value: number[] }
   // F5: lo puesto en cada hueco (índice en `choices`).
   | { type: 'gapselect' | 'ddwtos'; value: (number | null)[] }
+  // F6: la opción elegida.
+  | { type: 'missing_word'; value: number | null }
 
 export function emptySelectionFor(question: Question): AnswerSelection {
   switch (question.type) {
@@ -47,6 +50,8 @@ export function emptySelectionFor(question: Question): AnswerSelection {
     case 'gapselect':
     case 'ddwtos':
       return { type: question.type, value: Array.from({ length: cantidadDeHuecos(question.text) }, () => null) }
+    case 'missing_word':
+      return { type: 'missing_word', value: null }
   }
 }
 
@@ -164,6 +169,18 @@ export function AnswerInput({
         submitted={submitted}
         disabled={disabled}
         onChange={(value) => onChange({ type: question.type, value })}
+      />
+    )
+  }
+
+  if (question.type === 'missing_word' && selection.type === 'missing_word') {
+    return (
+      <MissingWordInput
+        question={question}
+        selected={selection.value}
+        submitted={submitted}
+        disabled={disabled}
+        onSelect={(value) => onChange({ type: 'missing_word', value })}
       />
     )
   }

@@ -183,3 +183,39 @@ test('F5 · huecos: seleccionar en cada hueco y arrastrar desde el banco, guarda
       ['h2', 'ddwtos', false, [0, 3, 2]],
     ])
 })
+
+test('F6 · la palabra faltante: lo elegido aparece en la oración y se guarda con su tipo', async ({ page }) => {
+  test.setTimeout(120_000)
+  await entrarComo(page, ALUMNA)
+  const sql = await practicarCon(page, [
+    {
+      id: 'p1',
+      type: 'missing_word',
+      topic: 't1',
+      topicName: 'Cultura',
+      question: 'Elegí la palabra que falta.',
+      text: 'Juzgar otras culturas con los valores propios se llama [[1]].',
+      options: ['etnocentrismo', 'relativismo', 'evolucionismo', 'difusionismo'],
+      correctAnswer: 0,
+      explanation: 'Es etnocentrismo.',
+    },
+  ])
+  const oracion = page.locator('[data-oracion-con-hueco]')
+  await expect(oracion).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('radio', { name: /etnocentrismo/ }).click()
+  await expect(oracion).toContainText('se llama etnocentrismo')
+  await verificarYSeguir(page)
+  await expect(page.getByText('1 de 1 correctas')).toBeVisible({ timeout: 30_000 })
+
+  await expect
+    .poll(async () => {
+      const [fila] = (await sql`
+        SELECT a.question_type, a.is_correct FROM quiz_answers a
+        JOIN quiz_attempts t ON t.id = a.quiz_attempt_id
+        WHERE t.user_id = 'stg-demo-sofia' AND a.question_id = 'p1'
+        ORDER BY a.id DESC LIMIT 1
+      `) as { question_type: string; is_correct: boolean }[]
+      return fila ? [fila.question_type, fila.is_correct] : null
+    }, { timeout: 30_000 })
+    .toEqual(['missing_word', true])
+})

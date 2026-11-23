@@ -108,6 +108,17 @@ export const PREGUNTAS_DE_MUESTRA: Question[] = [
     choices: ['etnocentrismo', 'relativismo', 'términos', 'evolucionismo', 'rasgos'],
     explanation: 'Etnocentrismo y relativismo cultural.',
   },
+  // F6 · la palabra faltante
+  {
+    ...comun,
+    id: 'm10',
+    type: 'missing_word',
+    question: 'Elegí la palabra que falta.',
+    text: 'Cuando la cantidad demandada casi no cambia ante una suba del precio, la demanda es [[1]].',
+    options: ['inelástica', 'elástica', 'unitaria', 'perfectamente elástica'],
+    correctAnswer: 0,
+    explanation: 'Si la cantidad casi no responde al precio, la demanda es inelástica.',
+  },
 ]
 
 export function cuestionarioDeMuestra(): TeacherQuiz {

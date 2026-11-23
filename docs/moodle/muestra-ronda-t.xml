@@ -141,4 +141,21 @@
     <dragbox><text>evolucionismo</text><group>1</group></dragbox>
     <dragbox><text>rasgos</text><group>1</group></dragbox>
   </question>
+  <question type="multichoice">
+    <name><text>10. Elegí la palabra que falta.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Elegí la palabra que falta.</p><p>Cuando la cantidad demandada casi no cambia ante una suba del precio, la demanda es _____.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Si la cantidad casi no responde al precio, la demanda es inelástica.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>0</showstandardinstruction>
+    <answer fraction="100" format="html"><text><![CDATA[<p>inelástica</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>elástica</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>unitaria</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>perfectamente elástica</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
 </quiz>

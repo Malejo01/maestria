@@ -1780,6 +1780,9 @@ export const TIPOS_MOODLE_TEXTOS = {
     editorTexto: 'Texto — los huecos como [[1]], [[2]], [[3]]…',
     editorPalabras: 'Palabras — primero la de cada hueco, en orden; después las de más. Una por línea',
   },
+  palabraFaltante: {
+    editorTexto: 'Oración — el hueco como [[1]]',
+  },
 } as const
 
 /** Ronda T · F1: exportar a Moodle, en XML o en GIFT. */

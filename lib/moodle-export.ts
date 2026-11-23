@@ -223,6 +223,14 @@ function buildQuestionBlock(question: Question, index: number): string {
       const feedback = buildFeedback(question)
       return `::${questionTitle}::${questionText} {\n${pares.join('\n')}${feedback ? `\n${feedback}` : ''}\n}`
     }
+    case 'missing_word': {
+      // F6: el "missing word" de GIFT: las opciones van entre llaves, en el
+      // lugar del hueco ("Antes {=correcta ~otra} después.").
+      const [antes, ...resto] = question.text.split('[[1]]')
+      const opciones = question.options.map((o, i) => `${i === question.correctAnswer ? '=' : '~'}${escapeGiftText(o)}`).join(' ')
+      const consigna = question.question.trim() ? `${escapeGiftText(question.question)}\n` : ''
+      return `::${questionTitle}::${consigna}${escapeGiftText(antes ?? '')} {${opciones}${buildFeedback(question)}} ${escapeGiftText(resto.join(''))}`.trimEnd()
+    }
     case 'gapselect':
     case 'ddwtos': {
       // F5: GIFT no tiene huecos múltiples. El texto va con "(1) ___" y cada

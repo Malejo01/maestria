@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  palabraFaltanteValida,
   cantidadDeHuecos,
   corregirHuecos,
   huecosValidos,
@@ -247,5 +248,47 @@ describe('F5 · huecos (seleccionar y arrastrar)', () => {
     }
     expect(respuestaEnTexto(respuesta, 'selected')).toBe('Si sube el [precio], baja la [oferta] demandada; la curva de [___] tiene pendiente negativa.')
     expect(payloadDeRespuesta(respuesta)).toMatchObject({ tipo: 'ddwtos', selectedChoices: [0, 3, null] })
+  })
+})
+
+describe('F6 · la palabra faltante', () => {
+  const FALTA = {
+    id: 'q5',
+    type: 'missing_word' as const,
+    topic: 't',
+    topicName: 'Cultura',
+    question: 'Elegí la palabra que falta.',
+    text: 'Juzgar otras culturas con los valores propios se llama [[1]].',
+    options: ['etnocentrismo', 'relativismo', 'evolucionismo', 'difusionismo'],
+    correctAnswer: 0,
+    explanation: '',
+  }
+
+  it('sirve con un solo hueco [[1]], 3 a 5 opciones distintas y la correcta entre ellas', () => {
+    expect(palabraFaltanteValida(FALTA)).toBe(true)
+    expect(palabraFaltanteValida({ ...FALTA, text: 'Sin hueco.' })).toBe(false)
+    expect(palabraFaltanteValida({ ...FALTA, text: 'Dos [[1]] huecos [[2]].' })).toBe(false)
+    expect(palabraFaltanteValida({ ...FALTA, options: ['a', 'b'] })).toBe(false)
+    expect(palabraFaltanteValida({ ...FALTA, correctAnswer: 7 })).toBe(false)
+    expect(palabraFaltanteValida({ ...FALTA, options: ['a', 'b', 'A'] })).toBe(false)
+  })
+
+  it('en texto: la oración con la palabra entre corchetes', () => {
+    expect(correctaEnTexto(FALTA)).toBe('Juzgar otras culturas con los valores propios se llama [etnocentrismo].')
+    const respuesta: Answer = {
+      type: 'missing_word',
+      questionId: 'q5',
+      questionText: FALTA.question,
+      isCorrect: false,
+      topic: 't',
+      topicName: 'Cultura',
+      explanation: '',
+      text: FALTA.text,
+      options: FALTA.options,
+      selectedAnswer: 1,
+      correctAnswer: 0,
+    }
+    expect(respuestaEnTexto(respuesta, 'selected')).toBe('Juzgar otras culturas con los valores propios se llama [relativismo].')
+    expect(payloadDeRespuesta(respuesta)).toMatchObject({ tipo: 'missing_word', selectedAnswer: 1, correctAnswer: 0 })
   })
 })
