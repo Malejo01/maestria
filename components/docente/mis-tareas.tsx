@@ -3,7 +3,7 @@
 import { tareaDesdeFila } from '@/lib/tarea-docente'
 import { pedirJson } from '@/lib/pedir-json'
 import { DUPLICAR_TAREA } from '@/lib/textos'
-import { BANCO } from '@/lib/textos'
+import { BANCO, IMPORTAR_MOODLE } from '@/lib/textos'
 import Link from 'next/link'
 import { ComoFunciona } from '@/components/sistema/como-funciona'
 import { ExportarMoodle } from '@/components/docente/exportar-moodle'
@@ -119,6 +119,10 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
           {/* W1: el banco de preguntas. */}
           <Boton variante="secundario" asChild>
             <Link href="/teacher/banco">{BANCO.abrir}</Link>
+          </Boton>
+          {/* W3: traer preguntas de Moodle. */}
+          <Boton variante="secundario" asChild>
+            <Link href="/teacher/importar">{IMPORTAR_MOODLE.abrir}</Link>
           </Boton>
         </div>
       )}

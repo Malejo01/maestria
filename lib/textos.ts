@@ -2156,3 +2156,29 @@ export const DUPLICAR_TAREA = {
   duplicando: 'Duplicando…',
   noSePudo: 'No se pudo duplicar la tarea. Probá de nuevo.',
 } as const
+
+/** Ronda W · W3: importar preguntas desde Moodle. */
+export const IMPORTAR_MOODLE = {
+  abrir: 'Importar de Moodle',
+  titulo: 'Importar preguntas de Moodle',
+  detalle: 'Subí un archivo GIFT o Moodle XML exportado de tu banco de Moodle. Te mostramos qué se puede traer y qué no, y por qué. Lo que importes queda como un cuestionario nuevo y en tu banco de preguntas.',
+  materia: 'Materia',
+  elegirMateria: 'Elegí la materia',
+  archivo: 'Archivo (.gift, .txt o .xml)',
+  leyendo: 'Leyendo el archivo…',
+  formato: { gift: 'GIFT', xml: 'Moodle XML' },
+  resumen: (n: number, salteadas: number, formato: string) =>
+    `${formato}: ${n === 1 ? '1 pregunta se puede importar' : `${n} preguntas se pueden importar`}${salteadas ? `; ${salteadas === 1 ? '1 no' : `${salteadas} no`}` : ''}.`,
+  seImportan: 'Se importan',
+  noSeImportan: 'No se importan',
+  tituloDelCuestionario: 'Nombre del cuestionario',
+  tituloPorDefecto: (categoria: string | null) => `Importadas de Moodle${categoria ? ` · ${categoria}` : ''}`,
+  guardar: (n: number) => (n === 1 ? 'Importar 1 pregunta' : `Importar ${n} preguntas`),
+  guardando: 'Importando…',
+  listo: 'Listo: quedaron en Mis tareas y en tu banco de preguntas.',
+  verTareas: 'Ir a Mis tareas',
+  verBanco: 'Ver el banco',
+  vacio: 'El archivo no tiene preguntas que se puedan importar.',
+  noSePudo: 'No se pudo guardar. Probá de nuevo.',
+  otroArchivo: 'Elegir otro archivo',
+} as const
