@@ -778,6 +778,23 @@ function VistaDePregunta({ question }: { question: Question }) {
         </ul>
       )}
 
+      {question.type === 'matching' && (
+        <ul className="space-y-1">
+          {question.pairs.map((par, i) => (
+            <li key={i} className="flex flex-wrap items-start gap-2 rounded-md bg-logrado/10 px-2 py-1">
+              <LaTeXRenderer content={par.left} />
+              <span aria-hidden="true">→</span>
+              <strong>{par.right}</strong>
+            </li>
+          ))}
+          {(question.distractors ?? []).length > 0 && (
+            <li className="px-2 text-xs text-muted-foreground">
+              {TIPOS_MOODLE_TEXTOS.emparejamiento.distractores}: {(question.distractors ?? []).join(' · ')}
+            </li>
+          )}
+        </ul>
+      )}
+
       {question.type === 'true_false' && (
         <p className="text-sm">
           Correcta: <strong>{question.correctAnswer ? 'Verdadero' : 'Falso'}</strong>
@@ -880,6 +897,43 @@ function EditorDePregunta({
             ))}
           </div>
         </Campo>
+      )}
+
+      {question.type === 'matching' && (
+        <>
+          <Campo label={TIPOS_MOODLE_TEXTOS.emparejamiento.editor}>
+            <div className="space-y-2">
+              {question.pairs.map((par, i) => (
+                <div key={i} className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                  <Input
+                    value={par.left}
+                    aria-label={TIPOS_MOODLE_TEXTOS.emparejamiento.izquierda(i + 1)}
+                    onChange={(e) => {
+                      const pairs = question.pairs.map((p, j) => (j === i ? { ...p, left: e.target.value } : p))
+                      onChange({ pairs } as Partial<Question>)
+                    }}
+                  />
+                  <span aria-hidden="true">→</span>
+                  <Input
+                    value={par.right}
+                    aria-label={TIPOS_MOODLE_TEXTOS.emparejamiento.derecha(i + 1)}
+                    onChange={(e) => {
+                      const pairs = question.pairs.map((p, j) => (j === i ? { ...p, right: e.target.value } : p))
+                      onChange({ pairs } as Partial<Question>)
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </Campo>
+          <Campo label={TIPOS_MOODLE_TEXTOS.emparejamiento.distractoresEditor}>
+            <Textarea
+              rows={2}
+              value={(question.distractors ?? []).join('\n')}
+              onChange={(e) => onChange({ distractors: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) } as Partial<Question>)}
+            />
+          </Campo>
+        </>
       )}
 
       {question.type === 'true_false' && (

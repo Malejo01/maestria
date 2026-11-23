@@ -1747,6 +1747,17 @@ export const TIPOS_MOODLE_TEXTOS = {
     falto: 'Era correcta y no la marcaste.',
     editor: 'Opciones — marcá todas las correctas',
   },
+  emparejamiento: {
+    consigna: 'Elegí la pareja de cada uno.',
+    elegir: 'Elegí…',
+    pareja: (izquierda: string) => `Pareja de: ${izquierda.slice(0, 80)}`,
+    correcta: (derecha: string) => `Correcta: ${derecha}`,
+    editor: 'Pares — cada uno con su pareja',
+    izquierda: (n: number) => `Elemento ${n}`,
+    derecha: (n: number) => `Pareja del elemento ${n}`,
+    distractores: 'Respuestas de más',
+    distractoresEditor: 'Respuestas de más (opcional) — una por línea',
+  },
 } as const
 
 /** Ronda T · F1: exportar a Moodle, en XML o en GIFT. */

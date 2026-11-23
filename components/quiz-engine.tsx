@@ -1,6 +1,6 @@
 'use client'
 
-import { corregirVariasCorrectas } from '@/lib/tipos-moodle'
+import { corregirEmparejamiento, corregirVariasCorrectas, tipoParaAtajos } from '@/lib/tipos-moodle'
 import { useCuentaRegresiva, formatearTiempo } from '@/hooks/use-cuenta-regresiva'
 import { SIMULACRO } from '@/lib/textos'
 import { revanchaPermitida } from '@/lib/revancha'
@@ -290,6 +290,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     if (question.type === 'multiple_response' && selection.type === 'multiple_response') {
       return { ...base, type: 'multiple_response', options: question.options, selectedAnswers: selection.value, correctAnswers: question.correctAnswers }
     }
+    if (question.type === 'matching' && selection.type === 'matching') {
+      return { ...base, type: 'matching', pairs: question.pairs, selectedRights: selection.value }
+    }
     throw new Error('Selection type does not match question type')
   }, [])
 
@@ -443,6 +446,16 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       return
     }
 
+    // F3: emparejamiento, todo o nada.
+    if (currentQuestion.type === 'matching' && selection.type === 'matching') {
+      if (selection.value.some((v) => v === null)) return
+      const isCorrect = corregirEmparejamiento(currentQuestion.pairs, selection.value)
+      setAnswerState(prev => ({ ...prev, submitted: true, isCorrect }))
+      answerQuestion(buildAnswer(currentQuestion, selection, isCorrect))
+      avanzarSinDevolucion()
+      return
+    }
+
     if (currentQuestion.type === 'short_answer' && selection.type === 'short_answer') {
       if (selection.value.trim().length === 0) return
       await gradeShortAnswer(currentQuestion, selection)
@@ -500,6 +513,8 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
         return selection.value.trim().length > 0
       case 'multiple_response':
         return selection.value.length > 0
+      case 'matching':
+        return selection.value.every((v) => v !== null)
     }
   })()
 
@@ -587,7 +602,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
   useAtajosDeCuestionario({
     activo: esEscritorio,
     estado: {
-      tipoDePregunta: currentQuestion.type === 'multiple_response' ? 'short_answer' : currentQuestion.type,
+      tipoDePregunta: tipoParaAtajos(currentQuestion.type),
       cantidadDeOpciones: currentQuestion.type === 'multiple_choice' ? currentQuestion.options.length : 2,
       hayRespuesta: isAnswerReady && !isGradingShortAnswer,
       enviada: answerState.submitted,

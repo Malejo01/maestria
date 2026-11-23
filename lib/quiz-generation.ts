@@ -112,12 +112,21 @@ const multipleResponseQuestionSchema = z.object({
   correctAnswers: z.array(z.number()),
 })
 
+// Ronda T · F3: emparejamiento (Moodle matching).
+const matchingQuestionSchema = z.object({
+  ...baseQuestionFields,
+  type: z.literal('matching'),
+  pairs: z.array(z.object({ left: z.string(), right: z.string() })),
+  distractors: z.array(z.string()).optional(),
+})
+
 const questionSchema = z.discriminatedUnion('type', [
   multipleChoiceQuestionSchema,
   shortAnswerQuestionSchema,
   trueFalseQuestionSchema,
   numericQuestionSchema,
   multipleResponseQuestionSchema,
+  matchingQuestionSchema,
 ])
 
 export const quizSchema = z.object({
@@ -142,7 +151,7 @@ export const quizSchema = z.object({
  */
 export type GeneratedQuestion = z.infer<typeof quizSchema>['questions'][number]
 
-export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response'] as const
+export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching'] as const
 export type QuestionType = (typeof QUESTION_TYPE_VALUES)[number]
 
 const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
@@ -175,6 +184,12 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - correctAnswers: array con los índices 0-based de TODAS las correctas: entre 2 y 3 (nunca 1, nunca todas)
 - question: tiene que decir que hay más de una correcta ("Marcá todas las que correspondan", "¿Cuáles de estas…?").
 - Cada opción se juzga sola: correcta o incorrecta, sin "todas las anteriores" ni "ninguna de las anteriores".`,
+  matching: `TIPO "matching" (emparejamiento):
+- type: "matching"
+- pairs: array de 4 a 5 objetos { "left": string, "right": string }. Cada "left" va con UN solo "right", y ningún "right" sirve para dos "left".
+- distractors: array OPCIONAL de 1 o 2 strings: respuestas de más que NO van con ningún "left" (del mismo tipo que los "right", para que no se descarten solas).
+- question: la consigna ("Uní cada concepto con su definición", "Relacioná cada autor con su teoría").
+- Los "right" son CORTOS (hasta 8 palabras), en texto plano, SIN LaTeX ni símbolos $: en Moodle se eligen de una lista.`,
 }
 
 function buildTypeInstructions(
@@ -629,6 +644,8 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
                 return Array.isArray(q.acceptedAnswers) && q.acceptedAnswers.length > 0
               case 'multiple_response':
                 return Array.isArray(q.options) && q.options.length > 1 && Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0
+              case 'matching':
+                return Array.isArray(q.pairs) && q.pairs.length > 0
               default:
                 return false
             }

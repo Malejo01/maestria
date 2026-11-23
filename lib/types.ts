@@ -36,7 +36,7 @@ export interface Topic {
  * generate-quiz, one new case in components/quiz-answer-inputs, one new case
  * in lib/moodle-export.ts's GIFT builder — no other file needs to change.
  */
-export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response'
+export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching'
 
 /**
  * De dónde salió el texto de esta pregunta.
@@ -131,7 +131,19 @@ export interface MultipleResponseQuestion extends BaseQuestion {
   correctAnswers: number[]
 }
 
-export type Question = MultipleChoiceQuestion | ShortAnswerQuestion | TrueFalseQuestion | NumericQuestion | MultipleResponseQuestion
+/**
+ * Ronda T · F3: emparejamiento (Moodle `matching`). A cada elemento de la
+ * izquierda le corresponde uno de la derecha; los distractores son respuestas
+ * de más, que no van con ninguno. Todo o nada.
+ */
+export interface MatchingQuestion extends BaseQuestion {
+  type: 'matching'
+  pairs: { left: string; right: string }[]
+  /** Respuestas de más (opcional). */
+  distractors?: string[]
+}
+
+export type Question = MultipleChoiceQuestion | ShortAnswerQuestion | TrueFalseQuestion | NumericQuestion | MultipleResponseQuestion | MatchingQuestion
 
 export interface QuizConfig {
   subject: string
@@ -253,7 +265,14 @@ export interface MultipleResponseAnswer extends BaseAnswer {
   correctAnswers: number[]
 }
 
-export type Answer = MultipleChoiceAnswer | ShortAnswerAnswer | TrueFalseAnswer | NumericAnswer | MultipleResponseAnswer
+export interface MatchingAnswer extends BaseAnswer {
+  type: 'matching'
+  pairs: { left: string; right: string }[]
+  /** Lo elegido para cada elemento de la izquierda, en el mismo orden (null: sin elegir). */
+  selectedRights: (string | null)[]
+}
+
+export type Answer = MultipleChoiceAnswer | ShortAnswerAnswer | TrueFalseAnswer | NumericAnswer | MultipleResponseAnswer | MatchingAnswer
 
 export interface QuizResult {
   /**

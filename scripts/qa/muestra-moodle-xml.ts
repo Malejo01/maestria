@@ -65,6 +65,21 @@ export const PREGUNTAS_DE_MUESTRA: Question[] = [
     correctAnswers: [0, 2, 4],
     explanation: 'La cultura se aprende, se comparte y es simbólica.',
   },
+  // F3 · emparejamiento
+  {
+    ...comun,
+    id: 'm6',
+    type: 'matching',
+    question: 'Uní cada autor con su concepto.',
+    pairs: [
+      { left: 'Clifford Geertz', right: 'Descripción densa' },
+      { left: 'Claude Lévi-Strauss', right: 'Estructuralismo' },
+      { left: 'Bronisław Malinowski', right: 'Observación participante' },
+      { left: 'Franz Boas', right: 'Particularismo histórico' },
+    ],
+    distractors: ['Evolucionismo unilineal'],
+    explanation: 'Cada autor con el concepto que lo identifica.',
+  },
 ]
 
 export function cuestionarioDeMuestra(): TeacherQuiz {

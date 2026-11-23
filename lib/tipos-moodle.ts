@@ -1,4 +1,4 @@
-import type { Answer, MultipleResponseQuestion, Question, QuestionType } from '@/lib/types'
+import type { Answer, MatchingQuestion, MultipleResponseQuestion, Question, QuestionType } from '@/lib/types'
 
 /**
  * Ronda T · F2 a F7 — Los tipos de pregunta "como en Moodle", en un solo
@@ -9,11 +9,16 @@ import type { Answer, MultipleResponseQuestion, Question, QuestionType } from '@
  * respuesta corta) siguen donde estaban; estos se suman acá para que cada
  * tipo nuevo toque este archivo, su componente de respuesta y la exportación.
  */
-export const TIPOS_MOODLE = ['multiple_response'] as const satisfies readonly QuestionType[]
+export const TIPOS_MOODLE = ['multiple_response', 'matching'] as const satisfies readonly QuestionType[]
 export type TipoMoodle = (typeof TIPOS_MOODLE)[number]
 
 export function esTipoMoodle(tipo: unknown): tipo is TipoMoodle {
   return (TIPOS_MOODLE as readonly string[]).includes(String(tipo))
+}
+
+/** Para los atajos de teclado: los tipos como en Moodle no tienen atajos propios. */
+export function tipoParaAtajos(tipo: QuestionType): 'multiple_choice' | 'true_false' | 'numeric' | 'short_answer' {
+  return esTipoMoodle(tipo) ? 'short_answer' : (tipo as 'multiple_choice' | 'true_false' | 'numeric' | 'short_answer')
 }
 
 export const ETIQUETA_DE_TIPO: Record<QuestionType, string> = {
@@ -22,6 +27,7 @@ export const ETIQUETA_DE_TIPO: Record<QuestionType, string> = {
   numeric: 'Numérica',
   short_answer: 'Respuesta corta',
   multiple_response: 'Varias correctas',
+  matching: 'Emparejamiento',
 }
 
 const letra = (i: number) => String.fromCharCode(65 + i)
@@ -69,6 +75,51 @@ export function fraccionesVariasCorrectas(cantidad: number, correctas: readonly 
   return Array.from({ length: cantidad }, (_, i) => (set.has(i) ? positivo : negativo))
 }
 
+// ─── F3 · Emparejamiento ────────────────────────────────────────────────────
+
+const normal = (t: string | null | undefined) => (t ?? '').replace(/\s+/g, ' ').trim()
+
+/** Todo o nada: cada elemento de la izquierda con su pareja. */
+export function corregirEmparejamiento(pares: readonly { right: string }[], elegidas: readonly (string | null)[]): boolean {
+  return pares.length > 0 && pares.every((p, i) => normal(elegidas[i]) === normal(p.right))
+}
+
+/** Las respuestas que se ofrecen: las de los pares (sin repetir) y los distractores. */
+export function respuestasDelEmparejamiento(q: Pick<MatchingQuestion, 'pairs' | 'distractors'>): string[] {
+  return [...new Set([...q.pairs.map((p) => normal(p.right)), ...(q.distractors ?? []).map(normal)].filter(Boolean))]
+}
+
+/**
+ * Un emparejamiento que sirve: de 3 a 8 pares con los dos lados escritos, sin
+ * repetir la izquierda ni la derecha (dos izquierdas con la misma respuesta
+ * no se pueden distinguir), y los distractores distintos de las respuestas.
+ * Moodle además exige al menos tres respuestas.
+ */
+export function emparejamientoValido(q: Pick<MatchingQuestion, 'pairs' | 'distractors'>): boolean {
+  if (!Array.isArray(q.pairs) || q.pairs.length < 3 || q.pairs.length > 8) return false
+  if (!q.pairs.every((p) => normal(p?.left) && normal(p?.right))) return false
+  const izq = new Set(q.pairs.map((p) => normal(p.left).toLowerCase()))
+  const der = new Set(q.pairs.map((p) => normal(p.right).toLowerCase()))
+  if (izq.size !== q.pairs.length || der.size !== q.pairs.length) return false
+  return (q.distractors ?? []).every((d) => normal(d) && !der.has(normal(d).toLowerCase()))
+}
+
+/**
+ * Un orden barajado y fijo para una pregunta (el mismo en cada render y en
+ * cada recarga): se siembra con su id.
+ */
+export function barajarFijo<T>(items: readonly T[], semilla: string): T[] {
+  let h = 2166136261
+  for (const c of semilla) h = Math.imul(h ^ c.charCodeAt(0), 16777619)
+  const salida = [...items]
+  for (let i = salida.length - 1; i > 0; i--) {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0
+    const j = h % (i + 1)
+    ;[salida[i], salida[j]] = [salida[j], salida[i]]
+  }
+  return salida
+}
+
 // ─── En texto ───────────────────────────────────────────────────────────────
 
 /** La respuesta correcta de una pregunta de tipo Moodle, en texto. null si no es de estos tipos. */
@@ -76,6 +127,8 @@ export function correctaEnTexto(q: Question): string | null {
   switch (q.type) {
     case 'multiple_response':
       return opcionesEnTexto(q.options, q.correctAnswers)
+    case 'matching':
+      return q.pairs.map((p) => `${p.left} → ${p.right}`).join(' · ')
     default:
       return null
   }
@@ -86,6 +139,8 @@ export function respuestaEnTexto(a: Answer, cual: 'selected' | 'correct'): strin
   switch (a.type) {
     case 'multiple_response':
       return opcionesEnTexto(a.options, cual === 'selected' ? a.selectedAnswers : a.correctAnswers)
+    case 'matching':
+      return a.pairs.map((p, i) => `${p.left} → ${cual === 'selected' ? (a.selectedRights[i] ?? '—') : p.right}`).join(' · ')
     default:
       return null
   }
@@ -105,6 +160,8 @@ export function payloadDeRespuesta(a: Answer): Record<string, unknown> | null {
   switch (a.type) {
     case 'multiple_response':
       return { tipo: a.type, options: a.options, selectedAnswers: a.selectedAnswers, correctAnswers: a.correctAnswers, ...texto }
+    case 'matching':
+      return { tipo: a.type, pairs: a.pairs, selectedRights: a.selectedRights, ...texto }
   }
   return null
 }
@@ -134,6 +191,8 @@ export function problemaDeTipoMoodle(q: Record<string, unknown>): string | null 
       return Array.isArray(q.options) && Array.isArray(q.correctAnswers) && variasCorrectasValida(q as unknown as MultipleResponseQuestion)
         ? null
         : 'varias correctas sin entre 2 y n-1 correctas'
+    case 'matching':
+      return emparejamientoValido(q as unknown as MatchingQuestion) ? null : 'emparejamiento sin 3 a 8 pares distintos'
     default:
       return null
   }

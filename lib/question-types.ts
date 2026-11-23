@@ -1,4 +1,4 @@
-import { CheckSquare, Hash, ListChecks, PenLine, ToggleLeft, type LucideIcon } from 'lucide-react'
+import { ArrowRightLeft, CheckSquare, Hash, ListChecks, PenLine, ToggleLeft, type LucideIcon } from 'lucide-react'
 import type { QuestionType } from '@/lib/types'
 
 export interface QuestionTypeOption {
@@ -45,6 +45,12 @@ export const QUESTION_TYPE_OPTIONS: QuestionTypeOption[] = [
     label: 'Varias correctas',
     description: 'Opción múltiple con más de una correcta.',
     Icon: ListChecks,
+  },
+  {
+    value: 'matching',
+    label: 'Emparejamiento',
+    description: 'Unir cada elemento con su pareja.',
+    Icon: ArrowRightLeft,
   },
 ]
 

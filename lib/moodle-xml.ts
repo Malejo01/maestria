@@ -130,6 +130,19 @@ function preguntaXml(question: Question, index: number): string {
         ...question.options.map((opcion, i) => respuestaHtml(fracciones[i], opcion)),
       ])
     }
+    case 'matching': {
+      // F3: cada par es un subquestion (el texto en HTML, la respuesta en texto
+      // plano: Moodle la muestra en una lista); un distractor es un subquestion
+      // sin texto.
+      const par = (izquierda: string, derecha: string) =>
+        `<subquestion format="html"><text>${izquierda ? cdata(`<p>${textoHtml(izquierda)}</p>`) : ''}</text><answer><text>${escaparXml(derecha)}</text></answer></subquestion>`
+      return pregunta('matching', [
+        comun,
+        '<shuffleanswers>true</shuffleanswers>',
+        ...question.pairs.map((p) => par(p.left, p.right)),
+        ...(question.distractors ?? []).map((d) => par('', d)),
+      ])
+    }
     case 'short_answer': {
       if (question.acceptedAnswers.length === 0) {
         throw new Error(`La pregunta ${index + 1} no tiene respuestas aceptadas validas.`)

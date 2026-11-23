@@ -76,4 +76,19 @@
     <answer fraction="-50" format="html"><text><![CDATA[<p>Es individual</p>]]></text><feedback format="html"><text></text></feedback></answer>
     <answer fraction="33.33333" format="html"><text><![CDATA[<p>Es simbólica</p>]]></text><feedback format="html"><text></text></feedback></answer>
   </question>
+  <question type="matching">
+    <name><text>6. Uní cada autor con su concepto.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Uní cada autor con su concepto.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Cada autor con el concepto que lo identifica.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>true</shuffleanswers>
+    <subquestion format="html"><text><![CDATA[<p>Clifford Geertz</p>]]></text><answer><text>Descripción densa</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Claude Lévi-Strauss</p>]]></text><answer><text>Estructuralismo</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Bronisław Malinowski</p>]]></text><answer><text>Observación participante</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Franz Boas</p>]]></text><answer><text>Particularismo histórico</text></answer></subquestion>
+    <subquestion format="html"><text></text><answer><text>Evolucionismo unilineal</text></answer></subquestion>
+  </question>
 </quiz>

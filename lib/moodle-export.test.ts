@@ -385,3 +385,30 @@ describe('Ronda T · F2: varias correctas en GIFT', () => {
     expect(gift).toContain('::Q1::¿Cuáles son pares? {\n~%50%2\n~%-50%3\n~%50%4\n~%-50%5\n####Los pares.\n}')
   })
 })
+
+describe('Ronda T · F3: emparejamiento en GIFT', () => {
+  it('cada par como =izquierda -> derecha (GIFT no lleva distractores)', () => {
+    const gift = convertQuizToGift(
+      makeQuiz({
+        questions: [
+          {
+            id: 'q1',
+            type: 'matching',
+            topic: 't',
+            topicName: 'T',
+            question: 'Uní cada autor con su concepto.',
+            pairs: [
+              { left: 'Geertz', right: 'Descripción densa' },
+              { left: 'Lévi-Strauss', right: 'Estructuralismo' },
+              { left: 'Malinowski', right: 'Observación participante' },
+            ],
+            distractors: ['Evolucionismo'],
+            explanation: '',
+          },
+        ],
+      }),
+    )
+    expect(gift).toContain('::Q1::Uní cada autor con su concepto. {\n=Geertz -> Descripción densa\n=Lévi-Strauss -> Estructuralismo\n=Malinowski -> Observación participante\n}')
+    expect(gift).not.toContain('Evolucionismo')
+  })
+})

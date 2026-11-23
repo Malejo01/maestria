@@ -209,6 +209,12 @@ function buildQuestionBlock(question: Question, index: number): string {
       const feedback = buildFeedback(question)
       return `::${questionTitle}::${questionText} {\n${opciones.join('\n')}${feedback ? `\n${feedback}` : ''}\n}`
     }
+    case 'matching': {
+      // F3: GIFT no tiene distractores en el emparejamiento: van sólo los pares.
+      const pares = question.pairs.map((p) => `=${escapeGiftText(p.left)} -> ${escapeGiftText(p.right)}`)
+      const feedback = buildFeedback(question)
+      return `::${questionTitle}::${questionText} {\n${pares.join('\n')}${feedback ? `\n${feedback}` : ''}\n}`
+    }
     case 'short_answer': {
       if (question.acceptedAnswers.length === 0) {
         throw new Error(`La pregunta ${index + 1} no tiene respuestas aceptadas validas.`)
