@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { accesoALaMateria, diasHastaElExamen, estadoPorTema, paseHastaPara, paseVigente, planHastaElExamen, preguntasDelDiagnostico, puedeGenerar, resultadoPorTema } from './autodidacta'
+import { accesoALaMateria, diasHastaElExamen, fechaDeExamenValida, paseAlCambiarLaFecha, estadoPorTema, paseHastaPara, paseVigente, planHastaElExamen, preguntasDelDiagnostico, puedeGenerar, resultadoPorTema } from './autodidacta'
 
 const HOY = new Date('2027-02-01T15:00:00-03:00')
 
@@ -109,5 +109,55 @@ describe('E2 · el pase por materia', () => {
     const vencido = accesoALaMateria({ paseHasta: '2027-01-20', usos: { practica: 9 }, hoy: HOY })
     expect(vencido.pase).toBeNull()
     expect(puedeGenerar(vencido, 'practica')).toBe(false)
+  })
+})
+
+describe('paseAlCambiarLaFecha (U2)', () => {
+  // 23/11 a las 12 en Argentina.
+  const hoy = new Date('2026-11-23T15:00:00Z')
+
+  it('corre el pase para adelante: fecha nueva + 7 días', () => {
+    expect(paseAlCambiarLaFecha({ paseHasta: '2026-12-17', corridoEl: null, fechaNueva: '2026-12-20', hoy })).toEqual({
+      paseHasta: '2026-12-27',
+      resultado: 'corrido',
+    })
+  })
+
+  it('nunca lo acorta: si la fecha nueva es antes, queda como estaba y la vez no se gasta', () => {
+    expect(paseAlCambiarLaFecha({ paseHasta: '2026-12-17', corridoEl: null, fechaNueva: '2026-12-01', hoy })).toEqual({
+      paseHasta: '2026-12-17',
+      resultado: 'no-acorta',
+    })
+    // Con la misma fecha, igual.
+    expect(paseAlCambiarLaFecha({ paseHasta: '2026-12-17', corridoEl: null, fechaNueva: '2026-12-10', hoy }).resultado).toBe('no-acorta')
+  })
+
+  it('una sola vez por pase: el segundo cambio no lo mueve', () => {
+    expect(
+      paseAlCambiarLaFecha({ paseHasta: '2026-12-27', corridoEl: '2026-11-23T15:00:00Z', fechaNueva: '2027-01-15', hoy }),
+    ).toEqual({ paseHasta: '2026-12-27', resultado: 'ya-corrido' })
+  })
+
+  it('sin pase vigente no hay nada que correr', () => {
+    expect(paseAlCambiarLaFecha({ paseHasta: null, corridoEl: null, fechaNueva: '2026-12-20', hoy }).resultado).toBe('sin-pase')
+    expect(paseAlCambiarLaFecha({ paseHasta: '2026-11-20', corridoEl: null, fechaNueva: '2026-12-20', hoy })).toEqual({
+      paseHasta: '2026-11-20',
+      resultado: 'sin-pase',
+    })
+  })
+})
+
+describe('fechaDeExamenValida (U2)', () => {
+  const hoy = new Date('2026-11-23T15:00:00Z')
+  it('acepta de hoy en adelante, hasta dos años', () => {
+    expect(fechaDeExamenValida('2026-11-23', hoy)).toBe(true)
+    expect(fechaDeExamenValida('2027-03-01', hoy)).toBe(true)
+  })
+  it('rechaza el pasado, fechas que no existen, formatos raros y lo muy lejano', () => {
+    expect(fechaDeExamenValida('2026-11-22', hoy)).toBe(false)
+    expect(fechaDeExamenValida('2026-02-30', hoy)).toBe(false)
+    expect(fechaDeExamenValida('23/12/2026', hoy)).toBe(false)
+    expect(fechaDeExamenValida('2029-01-01', hoy)).toBe(false)
+    expect(fechaDeExamenValida(null, hoy)).toBe(false)
   })
 })

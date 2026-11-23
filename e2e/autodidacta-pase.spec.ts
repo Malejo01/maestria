@@ -96,3 +96,40 @@ test('pase por materia: lo gratis, lo que pide el pase y el pase pagado', async 
   await page.getByRole('button', { name: 'Empezar' }).click()
   await expect(page.getByRole('timer')).toBeVisible()
 })
+
+test('U2 · cambiar la fecha del examen corre el pase una sola vez y nunca lo acorta', async ({ page }, info) => {
+  test.setTimeout(120_000)
+  await entrarComo(page, ALUMNA)
+  const dia = (dias: number) => new Date(Date.now() + dias * 86_400_000).toISOString().slice(0, 10)
+  const enTexto = (fecha: string) => new Date(`${fecha}T12:00:00`).toLocaleDateString('es-AR')
+  const nombre = `E2E · Fecha ${marca()}`
+  const creada = await page.request.post('/api/autodidacta/materias', { data: { nombre, fechaExamen: dia(10), unidades: UNIDADES } })
+  expect(creada.ok()).toBe(true)
+  const materia = Number((await creada.json()).id)
+  // El pase pagado, como lo dejaría el webhook: examen + 7.
+  const sql = await sqlDeStaging()
+  await sql`UPDATE teacher_programs SET pase_hasta = ${dia(17)}::date, pase_corrido_el = NULL WHERE id = ${materia} AND user_id = ${SOFIA_ID}`
+
+  await page.goto(`/autodidacta/${materia}`)
+  await expect(page.getByRole('heading', { name: nombre })).toBeVisible({ timeout: 30_000 })
+
+  const cambiar = async (fecha: string) => {
+    await page.getByRole('button', { name: 'Cambiar la fecha' }).click()
+    await page.getByLabel('Fecha nueva del examen').fill(fecha)
+    await page.getByRole('button', { name: 'Guardar' }).click()
+  }
+
+  // Para adelante: el pase se corre a la fecha nueva + 7.
+  await cambiar(dia(20))
+  await expect(page.getByText(`Tu pase se corrió con la fecha: ahora vale hasta el ${enTexto(dia(27))}.`)).toBeVisible()
+  await expect(page.getByText(`Tenés el pase de esta materia hasta el ${enTexto(dia(27))}.`)).toBeVisible({ timeout: 30_000 })
+  await page.screenshot({ path: `docs/capturas/ronda-u/u2/pase-corrido-${info.project.name}-1280.png` })
+  await page.setViewportSize({ width: 390, height: 800 })
+  await page.screenshot({ path: `docs/capturas/ronda-u/u2/pase-corrido-${info.project.name}-390.png` })
+  await page.setViewportSize({ width: 1280, height: 800 })
+
+  // Una sola vez: el segundo cambio no lo mueve.
+  await cambiar(dia(40))
+  await expect(page.getByText(`El pase ya se corrió una vez con la fecha del examen: sigue hasta el ${enTexto(dia(27))}.`)).toBeVisible()
+  await expect(page.getByText(`Examen el ${enTexto(dia(40))}`)).toBeVisible({ timeout: 30_000 })
+})

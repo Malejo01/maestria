@@ -1,6 +1,6 @@
 # MaestrIA — Roadmap
 
-Documento vivo. Última actualización: **22 de noviembre de 2026**.
+Documento vivo. Última actualización: **23 de noviembre de 2026**.
 
 ## Tesis de producto
 
@@ -404,6 +404,15 @@ Después de leer 16 programas reales de seis institutos (en `C:\Programacion\Mat
 - [x] **Tanda I, los 16 en producción** (deploy `a8f3d57`, con todo I1–I5). Con la sesión de docente de Mauro en su Chrome, cada archivo mandado a `/api/teacher/programs/extract` desde una página del sitio, sin crear materias: **16 de 16 dan 200 por IA**, entre 1,7 y 6,9 s. 01: 5 u/44 t · 02: 5/42 · 03: 7/32 · 04: 7/36 · 05: 5/48 · 06: 4/30 · 07: 4/37 · 08: 4/40 · 09: 3/35 · 10: 4/12 ("Unidad 1"…) · 11: 4/18 ("Unidad 1"…) · 12: 1/5 · 13: 3/36 · 14: 5/47 · **15 (escaneo): 4/41 en 4,8 s** · **16 (foto): 4/10 en 2,0 s**. Ningún tema pasa de 89 caracteres. Cada subida deja su copia temporal de 24 h en `teacher_program_uploads`.
 
 ---
+
+## 🌙 Cadena nocturna U → Y (23/11/2026)
+
+Cinco rondas seguidas (U, V, W, X, Y), mismas reglas que la ronda T: una rama `ronda-<letra>/<id>-<slug>` por ítem desde `main`, merge en verde, migraciones desde la **043** sólo en staging (producción tiene hasta la 036; la 037 a la 042 de la ronda T las corre Mauro), y nada puede depender de la 037–042 sin su válvula. IA: U US$5, V US$1, W US$2, X US$3, Y US$4; tope global US$12. Un informe por ronda en `docs/informes/ronda-<letra>-2026-11-23.md` y el general en `docs/informes/cadena-u-y-2026-11-23.md`.
+
+### Ronda U — cerrar la ronda T y la calidad de los tipos nuevos
+
+- [x] **U1 · Al menos una pregunta de cada tipo pedido** (PR [#129](https://github.com/Malejo01/maestria/pull/129), rama `ronda-u/u1-tipos-garantizados`). [lib/tipos-garantizados.ts](../lib/tipos-garantizados.ts), puro: si al juntar falta un tipo tildado, `generateQuiz` pide **una** tanda chica sólo de los que faltan y cada pregunta nueva reemplaza a una de un tipo que sobra; la calculada en una unidad conceptual no se pide y se avisa ("No armamos preguntas de tipo calculada porque esta unidad no tiene cálculos"), también `no-salio` y `no-entra`. El mixto del navegador reparte los tipos entre las mitades (`tiposAGarantizar`). Sólo con tipos elegidos por una persona: el diagnóstico y los pedidos de un tipo no suman llamadas.
+- [x] **U2 · El pase autodidacta se corre con la fecha del examen** (rama `ronda-u/u2-pase-con-la-fecha`, **migración 043**). El alumno ya puede cambiar la fecha del examen (*Cambiar la fecha* en su materia, `PATCH /api/autodidacta/[id]`). Con el pase vigente, `paseAlCambiarLaFecha` lo corre a la fecha nueva + 7 **una sola vez por pase** (`teacher_programs.pase_corrido_el`, que vuelve a NULL con un pase nuevo) y **nunca lo acorta** (un intento de acortar no gasta la vez). Válvula: sin la 043 la fecha cambia y el pase no se corre.
 
 ## 🧭 Ronda T — áreas de conocimiento, planes, pagos, autodidacta y tipos de Moodle (22/11/2026, desde las 16:10)
 

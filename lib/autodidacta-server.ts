@@ -4,7 +4,10 @@ import { normalizeUnits } from '@/lib/teacher-programs'
 import {
   accesoALaMateria,
   estadoPorTema,
+  paseAlCambiarLaFecha,
   paseHastaPara,
+  paseVigente,
+  type CorrimientoDelPase,
   planHastaElExamen,
   type Acceso,
   type ResultadoDeTema,
@@ -231,7 +234,52 @@ export async function acreditarPase(userId: string, programId: number, ahora = n
     WHERE id = ${programId} AND user_id = ${userId} AND personal = TRUE
     RETURNING id
   `) as unknown[]
-  return filas.length > 0
+  if (filas.length === 0) return false
+  // U2: un pase nuevo se puede correr otra vez (sin la 043, no hay nada que limpiar).
+  try {
+    await sql`UPDATE teacher_programs SET pase_corrido_el = NULL WHERE id = ${programId} AND user_id = ${userId}`
+  } catch (error) {
+    if (!faltaLaMigracion(error)) throw error
+  }
+  return true
+}
+
+/**
+ * Ronda U · U2 — Cambia la fecha del examen de la materia personal. Con el pase
+ * vigente, lo corre a la fecha nueva + 7 días una sola vez por pase y nunca lo
+ * acorta (`paseAlCambiarLaFecha`). null si la materia no es de esa persona.
+ *
+ * Válvula: sin la 043 (`pase_corrido_el`), la fecha se cambia igual y el pase
+ * no se corre: no se puede saber si ya se corrió.
+ */
+export async function cambiarFechaDeExamen(
+  userId: string,
+  programId: number,
+  fechaNueva: string,
+  ahora = new Date(),
+): Promise<{ fechaExamen: string; pase: string | null; resultado: CorrimientoDelPase } | null> {
+  const [f] = (await sql`
+    SELECT to_jsonb(teacher_programs) ->> 'pase_hasta' AS pase_hasta,
+           to_jsonb(teacher_programs) ->> 'pase_corrido_el' AS pase_corrido_el,
+           (to_jsonb(teacher_programs) ? 'pase_corrido_el') AS con_043
+    FROM teacher_programs
+    WHERE id = ${programId} AND user_id = ${userId} AND personal = TRUE AND status = 'active'
+  `) as Record<string, unknown>[]
+  if (!f) return null
+  await sql`UPDATE teacher_programs SET fecha_examen = ${fechaNueva}::date, updated_at = NOW() WHERE id = ${programId} AND user_id = ${userId}`
+  const paseHasta = (f.pase_hasta as string | null) ?? null
+  const calculo = paseAlCambiarLaFecha({ paseHasta, corridoEl: f.pase_corrido_el as string | null, fechaNueva, hoy: ahora })
+  if (calculo.resultado === 'corrido' && f.con_043 === true) {
+    const corridas = (await sql`
+      UPDATE teacher_programs SET pase_hasta = ${calculo.paseHasta}::date, pase_corrido_el = NOW(), updated_at = NOW()
+      WHERE id = ${programId} AND user_id = ${userId} AND pase_corrido_el IS NULL
+      RETURNING id
+    `) as unknown[]
+    if (corridas.length > 0) return { fechaExamen: fechaNueva, pase: calculo.paseHasta, resultado: 'corrido' }
+  }
+  // Sin la 043 no se corre (lo conservador): se informa como ya corrido.
+  const resultado: CorrimientoDelPase = calculo.resultado === 'corrido' ? 'ya-corrido' : calculo.resultado
+  return { fechaExamen: fechaNueva, pase: paseHasta && paseVigente(paseHasta, ahora) ? paseHasta.slice(0, 10) : null, resultado }
 }
 
 /** Guarda el resultado de un diagnóstico, una práctica o un simulacro. false si la materia no es suya. */
