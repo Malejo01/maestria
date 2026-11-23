@@ -3,7 +3,8 @@ import { DISTINTIVO_DEL_PLAN } from '@/lib/textos'
 import { notFound } from 'next/navigation'
 import { getAdminViewer } from '@/lib/auth-session'
 import { listarDocentes } from '@/lib/admin/docentes-server'
-import { ADMIN } from '@/lib/textos'
+import { ADMIN, ORIGEN } from '@/lib/textos'
+import { NOMBRE_DEL_CANAL } from '@/lib/origen'
 import { cn } from '@/lib/utils'
 import { CLASE_DEL_PLAN } from '@/lib/admin/portada'
 
@@ -50,7 +51,7 @@ export default async function DocentesAdminPage() {
                   </div>
                   <p className={cn('nota shrink-0 font-semibold', CLASE_DEL_PLAN[d.plan])}>{T.estado[d.plan]}</p>
                 </div>
-                <dl className="nota mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-texto-suave sm:grid-cols-5">
+                <dl className="nota mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-texto-suave sm:grid-cols-6">
                   <div>
                     <dt className="inline">{T.columnas.alta}: </dt>
                     <dd className="inline text-texto">{fecha(d.altaEl)}</dd>
@@ -66,6 +67,10 @@ export default async function DocentesAdminPage() {
                   <div>
                     <dt className="inline">{T.columnas.alumnos}: </dt>
                     <dd className="inline tabular-nums text-texto">{d.alumnos}</dd>
+                  </div>
+                  <div>
+                    <dt className="inline">{ORIGEN.canal}: </dt>
+                    <dd className="inline text-texto">{d.origen ? NOMBRE_DEL_CANAL[d.origen] : ORIGEN.sinDato}</dd>
                   </div>
                   <div className="col-span-2 sm:col-span-1">
                     <dt className="inline">{T.columnas.ultima}: </dt>

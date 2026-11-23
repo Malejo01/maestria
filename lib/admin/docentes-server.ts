@@ -1,3 +1,4 @@
+import { esCanal, type Canal } from '@/lib/origen'
 import { sql } from '@/lib/db'
 import { isAdminEmail } from '@/lib/ai-rate-limit'
 import { estadoDe } from '@/lib/admin/portada'
@@ -22,6 +23,8 @@ export interface DocenteEnLista {
   ultimaActividad: string | null
   /** B2: docente fundadora (la marca del admin). */
   fundadora: boolean
+  /** V1: el canal del link con el que llegó (null: sin dato). */
+  origen: Canal | null
 }
 
 const iso = (v: string | Date | null | undefined) => (v ? new Date(v).toISOString() : null)
@@ -37,6 +40,7 @@ export async function listarDocentes(ahora = new Date()): Promise<DocenteEnLista
       to_jsonb(u) ->> 'plan_vence_el' AS plan_vence_el,
       to_jsonb(u) ->> 'prueba_iniciada_el' AS prueba_iniciada_el,
       to_jsonb(u) ->> 'fundadora_desde' AS fundadora_desde,
+      to_jsonb(u) ->> 'origen' AS origen,
       (SELECT COUNT(*) FROM teacher_programs p WHERE p.user_id = u.id AND p.status = 'active' AND COALESCE((to_jsonb(p) ->> 'personal')::boolean, false) = false)::int AS materias,
       (SELECT COUNT(*) FROM classrooms c WHERE c.teacher_id = u.id AND c.status = 'open')::int AS grupos,
       (SELECT COUNT(DISTINCT m.user_id) FROM classroom_members m JOIN classrooms c ON c.id = m.classroom_id
@@ -60,6 +64,7 @@ export async function listarDocentes(ahora = new Date()): Promise<DocenteEnLista
     plan_vence_el: string | null
     prueba_iniciada_el: string | null
     fundadora_desde: string | null
+    origen: string | null
     materias: number
     grupos: number
     alumnos: number
@@ -87,6 +92,7 @@ export async function listarDocentes(ahora = new Date()): Promise<DocenteEnLista
     alumnos: Number(f.alumnos ?? 0),
     ultimaActividad: iso(f.ultima),
     fundadora: Boolean(f.fundadora_desde),
+    origen: esCanal(f.origen) ? f.origen : null,
   }))
 }
 

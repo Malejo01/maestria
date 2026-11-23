@@ -2,6 +2,7 @@ import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 import { isAdminEmail } from '@/lib/ai-rate-limit'
 import { esRutaPublica } from '@/lib/rutas-publicas'
+import { COOKIE_DE_ORIGEN, cookieAGuardar, DIAS_DE_LA_COOKIE } from '@/lib/origen'
 
 // Routes that do NOT require a NextAuth session live in lib/rutas-publicas.ts.
 //
@@ -17,7 +18,21 @@ import { esRutaPublica } from '@/lib/rutas-publicas'
 // con curl podía quemar la cuota. Si agregás un endpoint de IA acá, cableá el
 // guard en el handler o volvés a abrir ese agujero.
 
-export default auth((req) => {
+/**
+ * V1: la primera visita con `?origen=` o `?ref=` deja la cookie (30 días) en
+ * la respuesta que sea. Nunca pisa una anterior.
+ */
+function conOrigen(req: Parameters<Parameters<typeof auth>[0]>[0], res: NextResponse): NextResponse {
+  const valor = cookieAGuardar(req.cookies.get(COOKIE_DE_ORIGEN)?.value, req.nextUrl.searchParams, new Date())
+  if (valor) {
+    res.cookies.set(COOKIE_DE_ORIGEN, valor, { maxAge: DIAS_DE_LA_COOKIE * 86_400, httpOnly: true, sameSite: 'lax', secure: req.nextUrl.protocol === 'https:', path: '/' })
+  }
+  return res
+}
+
+export default auth((req) => conOrigen(req, decidir(req)))
+
+function decidir(req: Parameters<Parameters<typeof auth>[0]>[0]): NextResponse {
   const { nextUrl, auth: session } = req
   const isAuthenticated = !!session
 
@@ -65,7 +80,7 @@ export default auth((req) => {
   }
 
   return NextResponse.next()
-})
+}
 
 export const config = {
   matcher: [
