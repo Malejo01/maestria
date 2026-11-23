@@ -17,7 +17,9 @@ import { exportarParaMoodle, type FormatoMoodle } from '@/lib/moodle-xml'
 import type { ProgramUnit, Question, QuestionType, QuizActionMode, SubjectColorName, SubjectIconName, TeacherQuiz } from '@/lib/types'
 import { DEFAULT_QUESTION_TYPES } from '@/lib/question-types'
 import { useToast } from '@/hooks/use-toast'
-import { contar } from '@/lib/textos'
+import { contar, TIPOS_PEDIDOS } from '@/lib/textos'
+import { avisosVigentes, frasesDeAvisos, leerAvisos, repartirEntreMitades, type AvisoDeTipo } from '@/lib/tipos-garantizados'
+import { ETIQUETA_DE_TIPO } from '@/lib/tipos-moodle'
 import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
 import { DialogoDeLimite } from '@/components/docente/pantalla-de-limite'
 
@@ -94,6 +96,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
   // el mismo turno, sin esperar el render.
   const [bloqueoPlan, setBloqueoPlan] = useState<CuerpoDeBloqueo | null>(null)
   const bloqueoRef = useRef<CuerpoDeBloqueo | null>(null)
+  const avisosDeTiposRef = useRef<AvisoDeTipo[]>([])
   
   const colors = colorConfig[subject.id as keyof typeof colorConfig] || colorConfig.algebra
   // Ronda T · A4: el área de la materia (la guardada; si no hay, inferida del nombre).
@@ -183,7 +186,11 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
     return Number(createData.program.id)
   }
 
-  const generateQuestionsByMode = async (mode: 'teorico' | 'practico' | 'mixto', questionCount: number): Promise<Question[] | null> => {
+  const generateQuestionsByMode = async (
+    mode: 'teorico' | 'practico' | 'mixto',
+    questionCount: number,
+    tiposAGarantizar?: QuestionType[],
+  ): Promise<Question[] | null> => {
     if (selectedTopics.length === 0) return null
 
     // O3: en un grupo, nivel, año y carrera salen del programa del grupo.
@@ -213,6 +220,8 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
           mode,
           questionCount,
           ...(practica.questionTypes ? { questionTypes: practica.questionTypes } : {}),
+          // U1: en el mixto, cada mitad garantiza su parte de los tipos pedidos.
+          ...(practica.questionTypes && tiposAGarantizar ? { tiposAGarantizar } : {}),
           pedagogyContext,
           previousQuestionIds: getUsedQuestionIds(),
           // J3: para que el servidor sume lo pedagógico de las fichas del grupo.
@@ -230,6 +239,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
       }
 
       if (Array.isArray(data.questions) && data.questions.length === questionCount) {
+        avisosDeTiposRef.current.push(...leerAvisos(data))
         return data.questions as Question[]
       }
 
@@ -245,9 +255,11 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
     const teoricoCount = Math.ceil(questionCount / 2)
     const practicoCount = Math.floor(questionCount / 2)
 
+    // U1: los tipos tildados se reparten entre las dos mitades (los de cálculo, a la práctica).
+    const reparto = repartirEntreMitades(selectedQuestionTypes, teoricoCount, practicoCount)
     const [teoricoQuestions, practicoQuestions] = await Promise.all([
-      generateQuestionsByMode('teorico', teoricoCount),
-      generateQuestionsByMode('practico', practicoCount),
+      generateQuestionsByMode('teorico', teoricoCount, reparto.teorico),
+      generateQuestionsByMode('practico', practicoCount, reparto.practico),
     ])
 
     if (!teoricoQuestions || !practicoQuestions) {
@@ -380,6 +392,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
     setIsLoading(true)
     setShowActionDialog(false)
     bloqueoRef.current = null
+    avisosDeTiposRef.current = []
     if (useLoadingScreen) {
       setActiveView('loading')
     }
@@ -397,6 +410,10 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
         }
         return
       }
+
+      // U1: los tipos pedidos que no salieron, con el porqué.
+      const frases = frasesDeAvisos(avisosVigentes(avisosDeTiposRef.current, generatedQuestions), (t) => ETIQUETA_DE_TIPO[t], TIPOS_PEDIDOS)
+      if (frases.length > 0) toast({ title: TIPOS_PEDIDOS.titulo, description: frases.join(' ') })
 
       if (action === 'realizar') {
         startQuiz(
