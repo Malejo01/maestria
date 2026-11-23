@@ -37,7 +37,8 @@ export async function leerMiembros(teacherId: string): Promise<MiembroCrudo[]> {
     SELECT m.user_id, m.display_name, m.contexto, m.joined_at,
            c.id AS grupo_id, c.name AS grupo_nombre,
            p.id AS materia_id, p.subject_name,
-           u.is_guest
+           u.is_guest,
+           COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) AS ejemplo
     FROM classroom_members m
     JOIN classrooms c ON c.id = m.classroom_id
     JOIN teacher_programs p ON p.id = c.teacher_program_id
@@ -59,8 +60,12 @@ export async function leerMiembros(teacherId: string): Promise<MiembroCrudo[]> {
     materiaId: Number(fila.materia_id),
     esInvitadoSinCuenta: Boolean(fila.is_guest),
     seSumoEl: new Date(fila.joined_at as string).toISOString(),
+    ejemplo: fila.ejemplo === true,
   }))
 }
+
+/** V2: los alumnos ficticios de un grupo de ejemplo no ocupan lugar en el plan. */
+const sinEjemplo = (miembros: MiembroCrudo[]) => miembros.filter((m) => !m.ejemplo)
 
 /**
  * Las membresías quitadas (J1) de los grupos abiertos del docente. Lee
@@ -166,7 +171,7 @@ export async function contarAlumnosDelDocente(teacherId: string): Promise<number
     leerInvitaciones(teacherId),
     leerQuitadosCrudos(teacherId),
   ])
-  return contarLugares(miembros, invitaciones, quitados)
+  return contarLugares(sinEjemplo(miembros), invitaciones, quitados)
 }
 
 /** Ronda T · B1: el total de siempre y los lugares por tipo (particulares y cursos). */
@@ -178,8 +183,8 @@ export async function lugaresDelDocente(
     leerInvitaciones(teacherId),
     leerQuitadosCrudos(teacherId),
   ])
-  const { particulares, cursos, porGrupo } = lugaresPorTipo(miembros, invitaciones, quitados)
-  return { total: contarLugares(miembros, invitaciones, quitados), porTipo: { particulares, cursos }, porGrupo }
+  const { particulares, cursos, porGrupo } = lugaresPorTipo(sinEjemplo(miembros), invitaciones, quitados)
+  return { total: contarLugares(sinEjemplo(miembros), invitaciones, quitados), porTipo: { particulares, cursos }, porGrupo }
 }
 
 export interface MisAlumnos {

@@ -44,6 +44,8 @@ export async function leerOnboardingDocente(teacherId: string): Promise<Onboardi
       WHERE user_id = ${teacherId} AND status = 'active'
         -- E1: la materia personal (autodidacta) no cuenta como materia del docente.
         AND COALESCE((to_jsonb(teacher_programs) ->> 'personal')::boolean, false) = false
+        -- V2: la materia de ejemplo tampoco.
+        AND COALESCE((to_jsonb(teacher_programs) ->> 'ejemplo')::boolean, false) = false
       ORDER BY created_at ASC, id ASC
     ` as unknown as Promise<{ id: number; subject_name: string; units: unknown }[]>,
     sql`
@@ -58,7 +60,7 @@ export async function leerOnboardingDocente(teacherId: string): Promise<Onboardi
              (SELECT COUNT(*)::int FROM quiz_attempts att
                WHERE att.classroom_id = c.id AND att.assignment_id IS NOT NULL AND att.user_id <> ${teacherId}) AS intentos
       FROM classrooms c
-      WHERE c.teacher_id = ${teacherId} AND c.status = 'open'
+      WHERE c.teacher_id = ${teacherId} AND c.status = 'open' AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false
       ORDER BY c.created_at ASC, c.id ASC
     ` as unknown as Promise<
       {
@@ -73,7 +75,8 @@ export async function leerOnboardingDocente(teacherId: string): Promise<Onboardi
       }[]
     >,
     sql`
-      SELECT COUNT(*)::int AS total FROM teacher_quizzes WHERE user_id = ${teacherId}
+      SELECT COUNT(*)::int AS total FROM teacher_quizzes q WHERE q.user_id = ${teacherId}
+        AND NOT EXISTS (SELECT 1 FROM teacher_programs p WHERE p.id = q.teacher_program_id AND COALESCE((to_jsonb(p) ->> 'ejemplo')::boolean, false))
     ` as unknown as Promise<{ total: number }[]>,
   ])
 

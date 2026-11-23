@@ -41,10 +41,10 @@ export async function listarDocentes(ahora = new Date()): Promise<DocenteEnLista
       to_jsonb(u) ->> 'prueba_iniciada_el' AS prueba_iniciada_el,
       to_jsonb(u) ->> 'fundadora_desde' AS fundadora_desde,
       to_jsonb(u) ->> 'origen' AS origen,
-      (SELECT COUNT(*) FROM teacher_programs p WHERE p.user_id = u.id AND p.status = 'active' AND COALESCE((to_jsonb(p) ->> 'personal')::boolean, false) = false)::int AS materias,
-      (SELECT COUNT(*) FROM classrooms c WHERE c.teacher_id = u.id AND c.status = 'open')::int AS grupos,
+      (SELECT COUNT(*) FROM teacher_programs p WHERE p.user_id = u.id AND p.status = 'active' AND COALESCE((to_jsonb(p) ->> 'personal')::boolean, false) = false AND COALESCE((to_jsonb(p) ->> 'ejemplo')::boolean, false) = false)::int AS materias,
+      (SELECT COUNT(*) FROM classrooms c WHERE c.teacher_id = u.id AND c.status = 'open' AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false)::int AS grupos,
       (SELECT COUNT(DISTINCT m.user_id) FROM classroom_members m JOIN classrooms c ON c.id = m.classroom_id
-        WHERE c.teacher_id = u.id AND m.status = 'active' AND m.user_id <> u.id)::int AS alumnos,
+        WHERE c.teacher_id = u.id AND m.status = 'active' AND m.user_id <> u.id AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false)::int AS alumnos,
       GREATEST(
         (SELECT MAX(l.created_at) FROM ai_usage_log l WHERE l.user_id = u.id),
         (SELECT MAX(q.updated_at) FROM teacher_quizzes q WHERE q.user_id = u.id),

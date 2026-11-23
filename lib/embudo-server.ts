@@ -22,16 +22,16 @@ export async function embudoDeDocentes(ahora = new Date()): Promise<DocenteEnElE
       FROM quiz_attempts att
       JOIN classroom_assignments a ON a.id = att.assignment_id
       JOIN classrooms c ON c.id = a.classroom_id
-      WHERE att.user_id <> c.teacher_id
+      WHERE att.user_id <> c.teacher_id AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false
       GROUP BY c.teacher_id, att.user_id
     ),
     numerados AS (
       SELECT teacher_id, primero, ROW_NUMBER() OVER (PARTITION BY teacher_id ORDER BY primero) AS n FROM intentos
     )
     SELECT d.id, d.name, d.email, d.created_at AS registro,
-      (SELECT MIN(p.created_at) FROM teacher_programs p WHERE p.user_id = d.id AND COALESCE((to_jsonb(p) ->> 'personal')::boolean, false) = false) AS materia,
-      (SELECT MIN(c.created_at) FROM classrooms c WHERE c.teacher_id = d.id) AS grupo,
-      (SELECT MIN(a.created_at) FROM classroom_assignments a JOIN classrooms c ON c.id = a.classroom_id WHERE c.teacher_id = d.id) AS tarea,
+      (SELECT MIN(p.created_at) FROM teacher_programs p WHERE p.user_id = d.id AND COALESCE((to_jsonb(p) ->> 'personal')::boolean, false) = false AND COALESCE((to_jsonb(p) ->> 'ejemplo')::boolean, false) = false) AS materia,
+      (SELECT MIN(c.created_at) FROM classrooms c WHERE c.teacher_id = d.id AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false) AS grupo,
+      (SELECT MIN(a.created_at) FROM classroom_assignments a JOIN classrooms c ON c.id = a.classroom_id WHERE c.teacher_id = d.id AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false) AS tarea,
       (SELECT primero FROM numerados x WHERE x.teacher_id = d.id AND x.n = 1) AS primer_alumno,
       (SELECT primero FROM numerados x WHERE x.teacher_id = d.id AND x.n = 5) AS cinco_alumnos
     FROM docentes d

@@ -186,6 +186,8 @@ export interface MiembroCrudo {
   materiaId: number
   esInvitadoSinCuenta: boolean
   seSumoEl: string
+  /** V2: de un grupo de ejemplo (alumnos ficticios): no cuenta para el cupo. */
+  ejemplo?: boolean
 }
 
 export interface InvitacionCruda {

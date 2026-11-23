@@ -1999,3 +1999,26 @@ export const ORIGEN = {
   },
 } as const
 
+/** Ronda V · V2: la materia de ejemplo. */
+export const MATERIA_DE_EJEMPLO = {
+  probar: 'Probar con una materia de ejemplo',
+  titulo: 'Probá con una materia de ejemplo',
+  detalle: 'Elegí un área y en un momento tenés una materia con un grupo de alumnos ficticios que ya respondieron una tarea y un diagnóstico. Así ves la ficha, el diagnóstico y la planilla sin cargar nada. No cuenta para tu plan y la borrás con un botón.',
+  areas: {
+    matematica: 'Matemática',
+    economia: 'Economía',
+    antropologia: 'Antropología',
+    enfermeria: 'Enfermería',
+    derecho: 'Derecho',
+    didactica: 'Didáctica',
+  },
+  creando: 'Armando el ejemplo…',
+  noSePudo: 'No se pudo armar el ejemplo. Probá de nuevo.',
+  activo: (materia: string) => `Tenés la materia de ejemplo ${materia}. Los alumnos son ficticios: no cuentan para tu plan ni te avisan nada.`,
+  verGrupo: 'Ver el grupo de ejemplo',
+  borrar: 'Borrar el ejemplo',
+  borrando: 'Borrando…',
+  confirmar: '¿Borrar la materia de ejemplo? Se borran la materia, el grupo, los alumnos ficticios y sus respuestas. Lo tuyo no se toca.',
+  cancelar: 'Cancelar',
+  etiqueta: 'Ejemplo',
+} as const

@@ -13,6 +13,7 @@ import type { OnboardingDocente } from '@/lib/onboarding-docente-server'
 import { pedirJson } from '@/lib/pedir-json'
 import { ONBOARDING_DOCENTE as T } from '@/lib/textos'
 import { cn } from '@/lib/utils'
+import { ProbarConEjemplo } from '@/components/docente/materia-de-ejemplo'
 
 const CLAVE_CERRADO = 'maestria-onboarding-docente-cerrado'
 
@@ -161,6 +162,8 @@ export function HitosOnboarding({ onCrearMateria, onCargarTemario, onArmarTarea,
               {T.alumno.mientrasTanto}
             </button>
           )}
+          {/* V2: ver cómo queda antes de cargar nada. */}
+          {paso.id === 'materia' && <ProbarConEjemplo />}
         </div>
       </Aparecer>
 

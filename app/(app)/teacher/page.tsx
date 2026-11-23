@@ -1,5 +1,6 @@
 'use client'
 
+import { AvisoDeEjemplo } from '@/components/docente/materia-de-ejemplo'
 import Link from 'next/link'
 import { HitosOnboarding } from '@/components/docente/hitos-onboarding'
 import { MisAlumnos } from '@/components/docente/mis-alumnos'
@@ -65,6 +66,7 @@ export default function TeacherPage() {
       <AvisoDePrueba plan={planDatos?.plan} onArranco={recargarPlan} />
       <ContadorDelPlan datos={planDatos} />
       <EstadoDelPlan datos={planDatos} />
+      <AvisoDeEjemplo />
 
       <HitosOnboarding
         onCrearMateria={() => setShowOnboardingModal(true)}
