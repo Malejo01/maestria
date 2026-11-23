@@ -57,7 +57,7 @@ export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAv
              COUNT(DISTINCT att.user_id)::int AS alumnos, MAX(att.completed_at) AS ultimo
       FROM quiz_attempts att
       JOIN classroom_assignments a ON a.id = att.assignment_id
-      JOIN classrooms c ON c.id = a.classroom_id AND c.teacher_id = ${docenteId}
+      JOIN classrooms c ON c.id = a.classroom_id AND c.teacher_id = ${docenteId} AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false
       JOIN teacher_quizzes q ON q.id = a.teacher_quiz_id
       WHERE att.completed_at > NOW() - make_interval(days => ${DIAS})
         AND att.user_id <> ${docenteId}
@@ -68,7 +68,7 @@ export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAv
              to_char((m.joined_at AT TIME ZONE 'America/Argentina/Buenos_Aires')::date, 'YYYY-MM-DD') AS dia,
              COUNT(*)::int AS alumnos, MAX(m.joined_at) AS ultimo
       FROM classroom_members m
-      JOIN classrooms c ON c.id = m.classroom_id AND c.teacher_id = ${docenteId}
+      JOIN classrooms c ON c.id = m.classroom_id AND c.teacher_id = ${docenteId} AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false
       WHERE m.status = 'active' AND m.joined_at > NOW() - make_interval(days => ${DIAS})
       GROUP BY c.id, c.name, dia
     ` as unknown as Promise<{ grupo_id: number; grupo: string; dia: string; alumnos: number; ultimo: string | Date }[]>,

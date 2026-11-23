@@ -51,8 +51,8 @@ async function docentesActivosHoy(): Promise<number> {
     rastro AS (
       SELECT l.user_id AS id FROM ai_usage_log l, hoy WHERE l.created_at >= hoy.desde
       UNION SELECT q.user_id FROM teacher_quizzes q, hoy WHERE q.updated_at >= hoy.desde
-      UNION SELECT c.teacher_id FROM classroom_assignments a JOIN classrooms c ON c.id = a.classroom_id, hoy WHERE a.created_at >= hoy.desde
-      UNION SELECT c.teacher_id FROM quiz_attempts att JOIN classrooms c ON c.id = att.classroom_id, hoy WHERE att.completed_at >= hoy.desde
+      UNION SELECT c.teacher_id FROM classroom_assignments a JOIN classrooms c ON c.id = a.classroom_id, hoy WHERE a.created_at >= hoy.desde AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false
+      UNION SELECT c.teacher_id FROM quiz_attempts att JOIN classrooms c ON c.id = att.classroom_id, hoy WHERE att.completed_at >= hoy.desde AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false
     )
     SELECT COUNT(*)::int AS n
     FROM rastro r JOIN users u ON u.id = r.id
@@ -72,6 +72,8 @@ async function intentosDeHoy(): Promise<{ alumnos: number; intentos: number }> {
     FROM quiz_attempts att
     JOIN users u ON u.id = att.user_id, hoy
     WHERE att.completed_at >= hoy.desde
+      -- V2: los alumnos ficticios de la materia de ejemplo no cuentan.
+      AND COALESCE((to_jsonb(u) ->> 'ejemplo')::boolean, false) = false
   `) as { alumnos: number; intentos: number }[]
   return { alumnos: Number(filas[0]?.alumnos ?? 0), intentos: Number(filas[0]?.intentos ?? 0) }
 }
@@ -104,7 +106,7 @@ export async function planesCrudos(): Promise<(PlanCrudo & { id: string })[]> {
       to_jsonb(u) ->> 'plan_vence_el' AS plan_vence_el,
       to_jsonb(u) ->> 'prueba_iniciada_el' AS prueba_iniciada_el,
       (SELECT COUNT(DISTINCT m.user_id) FROM classroom_members m JOIN classrooms c ON c.id = m.classroom_id
-        WHERE c.teacher_id = u.id AND m.status = 'active' AND m.user_id <> u.id)::int AS alumnos
+        WHERE c.teacher_id = u.id AND m.status = 'active' AND m.user_id <> u.id AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false)::int AS alumnos
     FROM users u
     WHERE u.role = 'DOCENTE' AND COALESCE(u.is_guest, false) = false
   `) as { id: string; email: string | null; plan_nivel: string | null; plan_vence_el: string | null; prueba_iniciada_el: string | null; alumnos: number }[]

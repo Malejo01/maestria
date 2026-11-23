@@ -287,7 +287,7 @@ export async function bloqueoParaCrearGrupo(teacherId: string, email: string | n
   if (tipo !== 'aula' || estado !== 'activo') return null
   try {
     const filas = (await sql`
-      SELECT COUNT(*)::int AS total FROM classrooms WHERE teacher_id = ${teacherId} AND status = 'open'
+      SELECT COUNT(*)::int AS total FROM classrooms c WHERE teacher_id = ${teacherId} AND status = 'open' AND COALESCE((to_jsonb(c) ->> 'ejemplo')::boolean, false) = false
     `) as Fila[]
     if (puedeCrearCurso(tipo, estado, Number(filas[0]?.total ?? 0), datos.aulaCursos)) return null
   } catch (error) {
