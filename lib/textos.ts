@@ -2182,3 +2182,24 @@ export const IMPORTAR_MOODLE = {
   noSePudo: 'No se pudo guardar. Probá de nuevo.',
   otroArchivo: 'Elegir otro archivo',
 } as const
+
+/** Ronda W · W4: el examen impreso con temas A y B. */
+export const EXAMEN_IMPRESO = {
+  abrir: 'Imprimir temas A y B',
+  volver: 'Mis tareas',
+  imprimir: 'Imprimir',
+  ayuda: 'Se imprime el tema A, el tema B y, en una hoja aparte, las respuestas de los dos. Para guardarlo en PDF, elegí "Guardar como PDF" en la impresora.',
+  tema: (t: string) => `Tema ${t}`,
+  alumno: 'Nombre y apellido',
+  fecha: 'Fecha',
+  curso: 'Curso',
+  verdaderoFalso: 'Verdadero     Falso',
+  respuesta: 'Respuesta:',
+  unir: 'Escribí al lado de cada número la letra que le corresponde.',
+  ordenar: 'Escribí el número de orden en cada casillero.',
+  banco: 'Palabras:',
+  variasCorrectas: 'Puede haber más de una correcta.',
+  hojaDocente: 'Respuestas · para el docente',
+  noEntregar: 'No se entrega a los alumnos.',
+  noEncontrada: 'Esa tarea no existe o no es tuya.',
+} as const
