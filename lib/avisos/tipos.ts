@@ -22,6 +22,8 @@ export type TipoDeAviso =
   | 'reporte'
   // Docente (ronda T · C2): el pago desde la app se acreditó
   | 'pagoAcreditado'
+  // Docente (ronda V · V3): un docente que recomendó pagó, +30 días
+  | 'referidoPremio'
   // Alumno (P3)
   | 'tareaNueva'
   | 'vencePronto'
@@ -35,6 +37,7 @@ export const ESTILO_DEL_AVISO: Record<TipoDeAviso, { rol: RolDeAviso; icono: Ico
   alumnosNuevos: { rol: 'informacion', icono: 'personaMas' },
   reporte: { rol: 'atencion', icono: 'bandera' },
   pagoAcreditado: { rol: 'exito', icono: 'resuelto' },
+  referidoPremio: { rol: 'exito', icono: 'trofeo' },
   tareaNueva: { rol: 'informacion', icono: 'tareaNueva' },
   vencePronto: { rol: 'atencion', icono: 'reloj' },
   diagnosticoNuevo: { rol: 'informacion', icono: 'diagnostico' },

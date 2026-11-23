@@ -1,3 +1,4 @@
+import { codigoSugerido } from '@/lib/referidos-server'
 import Link from 'next/link'
 import { Logo } from '@/components/sistema/logo'
 import { Boton } from '@/components/sistema/boton'
@@ -38,7 +39,10 @@ export default async function PagarPage({ searchParams }: { searchParams: Promis
           </Boton>
         </div>
       ) : (
-        <ResumenDePago pedido={pedido} codigoInicial={typeof params.codigo === 'string' ? params.codigo : ''} />
+        <ResumenDePago
+          pedido={pedido}
+          codigoInicial={typeof params.codigo === 'string' ? params.codigo : esPase ? '' : ((await codigoSugerido(docente.id)) ?? '')}
+        />
       )}
     </div>
   )

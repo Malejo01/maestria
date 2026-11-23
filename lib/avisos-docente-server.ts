@@ -1,9 +1,10 @@
+import { premiosRecientes } from '@/lib/referidos-server'
 import { sql } from '@/lib/db'
 import { armarAvisos, type FilaDeAviso } from '@/lib/avisos-docente'
 import { leerLectura, marcarTodoLeido } from '@/lib/avisos/lectura-server'
 import { crearAviso, type RespuestaDeAvisos } from '@/lib/avisos/tipos'
 import { pagosAcreditadosDe } from '@/lib/pagos-server'
-import { PAGAR } from '@/lib/textos'
+import { PAGAR, REFERIDOS } from '@/lib/textos'
 
 /**
  * O10 · Los avisos del docente, de lo que ya está en la base, de las últimas
@@ -49,7 +50,7 @@ async function reportes(docenteId: string): Promise<FilaDeAviso[]> {
 }
 
 export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAvisos> {
-  const [leida, tareas, nuevos, reportados, pagos] = await Promise.all([
+  const [leida, tareas, nuevos, reportados, pagos, premios] = await Promise.all([
     leerLectura(docenteId, { esDocente: true }),
     sql`
       SELECT c.id AS grupo_id, c.name AS grupo, q.title AS tarea,
@@ -75,6 +76,8 @@ export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAv
     reportes(docenteId),
     // C2: los pagos acreditados (sin la 039, ninguno).
     pagosAcreditadosDe(docenteId).catch(() => []),
+    // V3: los premios por referidos (apagado o sin la 046, ninguno).
+    premiosRecientes(docenteId).catch(() => []),
   ])
 
   const filas: FilaDeAviso[] = [
@@ -89,7 +92,14 @@ export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAv
       leida,
     ),
   )
-  const avisos = [...armarAvisos(filas, leida), ...deLosPagos].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
+  const deLosReferidos = premios.map((p) =>
+    crearAviso(
+      'referidoPremio',
+      { clave: `referido-${p.id}`, titulo: REFERIDOS.aviso.titulo, detalle: REFERIDOS.aviso.detalle, href: '/teacher', fecha: p.premiadoEl },
+      leida,
+    ),
+  )
+  const avisos = [...armarAvisos(filas, leida), ...deLosPagos, ...deLosReferidos].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
   return { avisos, vistoEl: leida.vistoEl, puedeMarcar: leida.puedeMarcar }
 }
 
