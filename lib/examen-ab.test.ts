@@ -88,3 +88,11 @@ describe('el examen con temas A y B (W4)', () => {
     expect(preguntaEnTema(PREGUNTAS[1], 2, 's').papel.forma).toBe('verdadero_falso')
   })
 })
+
+describe('el ensayo en papel (W5)', () => {
+  it('sale con lo que se va a mirar y la rúbrica en la hoja del docente', () => {
+    const p = preguntaEnTema({ type: 'essay', question: 'Explicá la fotosíntesis.', rubrica: [{ criterio: 'Define' }, { criterio: 'Ejemplo' }, { criterio: 'Relaciona' }], explanation: '' }, 1, 's')
+    expect(p.papel).toEqual({ forma: 'ensayo', criterios: ['Define', 'Ejemplo', 'Relaciona'] })
+    expect(p.correcta).toContain('rúbrica')
+  })
+})

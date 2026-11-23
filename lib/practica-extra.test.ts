@@ -6,6 +6,7 @@ import {
   muestraLaPracticaExtra,
   resumenDePracticasExtra,
   TOPE_PRACTICAS_EXTRA,
+  tiposDeLaTarea,
 } from './practica-extra'
 
 /** P4 · "Practicar otra vez con preguntas nuevas" (puro). */
@@ -80,5 +81,12 @@ describe('Prácticas extra en el informe', () => {
   it('cantidad y promedio', () => {
     expect(resumenDePracticasExtra([])).toEqual({ cantidad: 0, promedio: null })
     expect(resumenDePracticasExtra([6, 7.5, 9])).toEqual({ cantidad: 3, promedio: 7.5 })
+  })
+})
+
+describe('W5 · la práctica extra no repite ensayos', () => {
+  it('saca el ensayo de los tipos de la tarea', () => {
+    expect(tiposDeLaTarea([{ type: 'essay' }, { type: 'true_false' }])).toEqual(['true_false'])
+    expect(tiposDeLaTarea([{ type: 'essay' }])).toEqual(['multiple_choice'])
   })
 })

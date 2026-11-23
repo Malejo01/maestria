@@ -4,7 +4,7 @@ import { resultadoPorTema } from '@/lib/autodidacta'
 import { AUTODIDACTA } from '@/lib/textos'
 import { revanchaPermitida } from '@/lib/revancha'
 import { formatearNumero } from '@/lib/numeros'
-import { RACHA, RESULTADOS } from '@/lib/textos'
+import { ENSAYO, RACHA, RESULTADOS } from '@/lib/textos'
 import { textoDeRacha } from '@/lib/racha'
 import { Cargando } from '@/components/sistema/cargando'
 import { useBarraDeAccion } from '@/hooks/use-barra-de-accion'
@@ -474,6 +474,12 @@ export function ResultsScreen() {
             <p className="text-sm text-texto font-medium">
               {Math.round(results.percentage)}% de aciertos
             </p>
+            {/* W5: las respuestas largas las corrige el docente; no cuentan hasta entonces. */}
+            {results.ungradedAnswers.some((a) => a.type === 'essay') && (
+              <p className="text-sm text-texto" data-en-correccion-resultados>
+                {ENSAYO.enCorreccionResultados(results.ungradedAnswers.filter((a) => a.type === 'essay').length)}
+              </p>
+            )}
           </div>
         </Card>
 
@@ -524,7 +530,7 @@ export function ResultsScreen() {
               <div className="w-12 h-12 rounded-2xl bg-destructive flex items-center justify-center mb-2">
                 <XCircle className="w-6 h-6 text-texto-sobre-accion" />
               </div>
-              <span className="text-3xl font-black text-destructive">{results.total - results.correct}</span>
+              <span className="text-3xl font-black text-destructive">{results.incorrectAnswers.length}</span>
               {/* P8: gris suave sobre el tinte de error no llegaba a 4,5:1. */}
               <span className="text-xs text-texto font-bold uppercase tracking-wide mt-1">Incorrectas</span>
               <div className="flex items-center gap-1 mt-2 text-destructive">

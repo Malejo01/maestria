@@ -2,7 +2,8 @@
 
 import { cantidadDeHuecos, correctaEnTexto, ETIQUETA_DE_TIPO } from '@/lib/tipos-moodle'
 import { calculadaValida, instanciarCalculada } from '@/lib/calculada'
-import { TIPOS_MOODLE_TEXTOS } from '@/lib/textos'
+import { ENSAYO, TIPOS_MOODLE_TEXTOS } from '@/lib/textos'
+import { limpiarRubrica, MAXIMO_CRITERIOS, MINIMO_CRITERIOS, rubricaValida } from '@/lib/ensayo'
 import { Cargando } from '@/components/sistema/cargando'
 
 
@@ -849,6 +850,17 @@ function VistaDePregunta({ question }: { question: Question }) {
         </p>
       )}
 
+      {question.type === 'essay' && (
+        <div className="space-y-1 text-sm">
+          <p className="font-semibold">{ENSAYO.rubrica.titulo}</p>
+          <ul className="list-disc space-y-0.5 pl-6">
+            {question.rubrica.map((c, i) => (
+              <li key={i}>{c.criterio}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {question.type === 'short_answer' && (
         <p className="text-sm">
           Acepta: <strong>{comaDecimal(question.acceptedAnswers.join(' · '))}</strong>
@@ -988,6 +1000,8 @@ function EditorDePregunta({
       )}
 
       {question.type === 'calculated' && <EditorDeCalculada question={question} onChange={onChange} />}
+
+      {question.type === 'essay' && <EditorDeRubrica question={question} onChange={onChange} />}
 
       {question.type === 'missing_word' && (
         <>
@@ -1131,6 +1145,56 @@ function EditorDePregunta({
  * valores y recalcula la correcta; uno que no cierra se muestra, sin tocar la
  * pregunta guardada hasta que se arregle.
  */
+/**
+ * W5: la rúbrica del ensayo, un criterio por renglón (de 3 a 5). La IA puede
+ * proponerlos a partir de la consigna; el docente los edita igual.
+ */
+function EditorDeRubrica({
+  question,
+  onChange,
+}: {
+  question: Extract<Question, { type: 'essay' }>
+  onChange: (cambios: Partial<Question>) => void
+}) {
+  const [texto, setTexto] = useState(question.rubrica.map((c) => c.criterio).join('\n'))
+  const [estado, setEstado] = useState<'quieto' | 'proponiendo' | 'error'>('quieto')
+  const criterios = limpiarRubrica(texto.split('\n'))
+  const fueraDeRango = criterios.length < MINIMO_CRITERIOS || criterios.length > MAXIMO_CRITERIOS
+
+  function aplicar(nuevo: string) {
+    setTexto(nuevo)
+    const rubrica = limpiarRubrica(nuevo.split('\n'))
+    if (rubricaValida(rubrica)) onChange({ rubrica } as Partial<Question>)
+  }
+
+  async function proponer() {
+    setEstado('proponiendo')
+    const r = await pedirJson<{ rubrica: { criterio: string }[] }>('/api/teacher/ensayos/rubrica', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ consigna: question.question, guia: question.explanation, materia: question.topicName }),
+    })
+    if ('error' in r) return setEstado('error')
+    setEstado('quieto')
+    aplicar(r.data.rubrica.map((c) => c.criterio).join('\n'))
+  }
+
+  return (
+    <div className="space-y-2">
+      <Campo label={ENSAYO.rubrica.titulo}>
+        <Textarea rows={5} value={texto} onChange={(e) => aplicar(e.target.value)} aria-describedby={`rubrica-ayuda-${question.id}`} />
+      </Campo>
+      <p id={`rubrica-ayuda-${question.id}`} className="text-xs text-muted-foreground">
+        {fueraDeRango ? ENSAYO.rubrica.faltan : ENSAYO.rubrica.ayuda}
+      </p>
+      <Button type="button" variant="outline" size="sm" onClick={proponer} disabled={estado === 'proponiendo'}>
+        {estado === 'proponiendo' ? ENSAYO.rubrica.proponiendo : ENSAYO.rubrica.proponer}
+      </Button>
+      {estado === 'error' && <p role="alert" className="text-xs">{ENSAYO.rubrica.noSePudo}</p>}
+    </div>
+  )
+}
+
 function EditorDeCalculada({
   question,
   onChange,

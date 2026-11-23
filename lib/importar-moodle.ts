@@ -19,6 +19,28 @@ import { leerXml, type NodoXml } from '@/lib/moodle-xml-validar'
 import { problemaDeTipoMoodle } from '@/lib/tipos-moodle'
 import { aleatorioConSemilla, instanciarCalculada } from '@/lib/calculada'
 import type { Question } from '@/lib/types'
+import { limpiarRubrica, MINIMO_CRITERIOS, type CriterioDeRubrica } from '@/lib/ensayo'
+
+/**
+ * W5: los criterios de la rúbrica de un ensayo importado. Salen de una lista
+ * HTML (`<li>`, como los escribe nuestro XML en graderinfo) o de un "Criterios:
+ * a; b; c" (como los escribe nuestro GIFT en la retroalimentación). Con menos
+ * de 3, el ensayo no se puede corregir con rúbrica y se saltea.
+ */
+export function criteriosDeEnsayo(...fuentes: string[]): CriterioDeRubrica[] {
+  for (const f of fuentes) {
+    if (!f) continue
+    const items = [...f.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/gi)].map((m) => htmlATexto(m[1]))
+    const enLinea = /criterios?\s*:\s*([\s\S]+)$/i.exec(items.length > 0 ? '' : htmlATexto(f))
+    const crudos = items.length > 0 ? items : enLinea ? enLinea[1].split(/[;\n]/) : []
+    const rubrica = limpiarRubrica(crudos)
+    if (rubrica.length >= MINIMO_CRITERIOS) return rubrica
+  }
+  return []
+}
+
+/** La guía sin el "Criterios: …" que ya pasó a la rúbrica. */
+const sinCriterios = (texto: string) => texto.replace(/\s*criterios?\s*:[\s\S]*$/i, '').trim()
 
 export interface PreguntaSalteada {
   /** "Q3", el nombre de la pregunta o su número. */
@@ -35,7 +57,7 @@ export interface ResultadoDeImportar {
 }
 
 export const MOTIVO_DE_SALTEO = {
-  ensayo: 'Es una respuesta larga (ensayo): todavía no se importa.',
+  ensayo: 'Es una respuesta larga (ensayo) sin al menos 3 criterios para corregirla (van en la retroalimentación o en la información para quien corrige).',
   cloze: 'Es una pregunta Cloze (respuestas incrustadas): no se importa.',
   descripcion: 'Es una descripción, sin respuestas.',
   desconocido: (tipo: string) => `El tipo «${tipo}» no se puede importar.`,
@@ -114,7 +136,11 @@ function preguntaGift(bloque: string, numero: number, tema: string): { pregunta?
   const r = opcionesMarcadas.trim()
   const base = { id: `q${numero}`, topic: 'importada', topicName: tema, explanation }
 
-  if (r === '') return { salteada: { donde, motivo: MOTIVO_DE_SALTEO.ensayo } }
+  if (r === '') {
+    const rubrica = criteriosDeEnsayo(explanation)
+    if (rubrica.length === 0) return { salteada: { donde, motivo: MOTIVO_DE_SALTEO.ensayo } }
+    return { pregunta: { ...base, explanation: sinCriterios(explanation), type: 'essay', question: antes, rubrica } as Question }
+  }
 
   // Verdadero o falso.
   const vf = r.match(/^(TRUE|FALSE|T|F)\b/i)
@@ -303,8 +329,11 @@ function preguntaXml(q: NodoXml, numero: number, tema: string): { pregunta?: Que
       if (!instanciada) return { salteada: { donde, motivo: MOTIVO_DE_SALTEO.malArmada('una calculada cuya fórmula no da un número') } }
       return { pregunta: instanciada as unknown as Question }
     }
-    case 'essay':
-      return { salteada: { donde, motivo: MOTIVO_DE_SALTEO.ensayo } }
+    case 'essay': {
+      const rubrica = criteriosDeEnsayo(textoDe(hijo(q, 'graderinfo')), textoDe(hijo(q, 'generalfeedback')))
+      if (rubrica.length === 0) return { salteada: { donde, motivo: MOTIVO_DE_SALTEO.ensayo } }
+      return { pregunta: { ...base, explanation: sinCriterios(explanation), type: 'essay', question: enunciado, rubrica } as Question }
+    }
     case 'multianswer':
       return { salteada: { donde, motivo: MOTIVO_DE_SALTEO.cloze } }
     case 'description':

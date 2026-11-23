@@ -102,6 +102,8 @@ export function tiposDeLaTarea(questions: unknown): QuestionType[] {
   const tipos = new Set<QuestionType>()
   for (const q of questions) {
     const tipo = (q as { type?: unknown })?.type
+    // W5: la práctica extra no tiene quién corrija un ensayo: ese tipo no se repite ahí.
+    if (tipo === 'essay') continue
     tipos.add(TIPOS.includes(tipo as QuestionType) ? (tipo as QuestionType) : 'multiple_choice')
   }
   return tipos.size > 0 ? [...tipos] : ['multiple_choice']

@@ -20,6 +20,8 @@ interface QuestionTypeSelectorProps {
    * grupo aparte. Sólo para el docente: son para llevar a Moodle.
    */
   conMasTipos?: boolean
+  /** W5: los de "Más tipos" que el perfil del área pone primero (el ensayo, en las conceptuales). */
+  sugeridos?: readonly QuestionType[]
 }
 
 /**
@@ -31,11 +33,13 @@ interface QuestionTypeSelectorProps {
  * F8: los cuatro de siempre a la vista; los de Moodle, en "Más tipos (como en
  * Moodle)", que se abre solo si ya hay alguno elegido.
  */
-export function QuestionTypeSelector({ value, onChange, disabled = false, className, conMasTipos = false }: QuestionTypeSelectorProps) {
+export function QuestionTypeSelector({ value, onChange, disabled = false, className, conMasTipos = false, sugeridos = [] }: QuestionTypeSelectorProps) {
   const sinMovimiento = useReducedMotion()
   const idDelGrupo = useId()
   const deSiempre = QUESTION_TYPE_OPTIONS.filter((o) => !esTipoMoodle(o.value))
-  const deMoodle = conMasTipos ? QUESTION_TYPE_OPTIONS.filter((o) => esTipoMoodle(o.value)) : []
+  const deMoodle = conMasTipos
+    ? QUESTION_TYPE_OPTIONS.filter((o) => esTipoMoodle(o.value)).sort((a, b) => Number(sugeridos.includes(b.value)) - Number(sugeridos.includes(a.value)))
+    : []
   const elegidosDeMoodle = value.filter(esTipoMoodle).length
   const [abierto, setAbierto] = useState(elegidosDeMoodle > 0)
 
@@ -69,6 +73,7 @@ export function QuestionTypeSelector({ value, onChange, disabled = false, classN
         <span className="min-w-0">
           <span className="block text-sm font-semibold leading-tight">{label}</span>
           <span className="block text-xs opacity-80 leading-snug">{description}</span>
+          {sugeridos.includes(type) && <span className="mt-1 block text-xs font-semibold text-texto">{T.masTipos.sugerido}</span>}
         </span>
       </button>
     )

@@ -227,6 +227,21 @@ function preguntaXml(question: Question, index: number): string {
       }
       return pregunta('shortanswer', [comun, '<usecase>0</usecase>', ...question.acceptedAnswers.map((a) => respuestaPlana(100, a))])
     }
+    case 'essay': {
+      // W5: el ensayo de Moodle, con un editor de texto. La rúbrica va en la
+      // información para quien corrige (graderinfo): no la ve el alumno.
+      const criterios = `<p>Criterios:</p><ul>${question.rubrica.map((c) => `<li>${textoHtml(c.criterio)}</li>`).join('')}</ul>`
+      return pregunta('essay', [
+        comun,
+        '<responseformat>editor</responseformat>',
+        '<responserequired>1</responserequired>',
+        '<responsefieldlines>15</responsefieldlines>',
+        '<attachments>0</attachments>',
+        '<attachmentsrequired>0</attachmentsrequired>',
+        `<graderinfo format="html"><text>${cdata(criterios)}</text></graderinfo>`,
+        '<responsetemplate format="html"><text></text></responsetemplate>',
+      ])
+    }
   }
 }
 

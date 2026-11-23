@@ -1,4 +1,4 @@
-import { ArrowRightLeft, ArrowUpDown, Calculator, CheckSquare, Hash, ListChecks, Move, PenLine, SpellCheck, TextCursorInput, ToggleLeft, type LucideIcon } from 'lucide-react'
+import { FileText, ArrowRightLeft, ArrowUpDown, Calculator, CheckSquare, Hash, ListChecks, Move, PenLine, SpellCheck, TextCursorInput, ToggleLeft, type LucideIcon } from 'lucide-react'
 import type { QuestionType } from '@/lib/types'
 
 export interface QuestionTypeOption {
@@ -81,6 +81,12 @@ export const QUESTION_TYPE_OPTIONS: QuestionTypeOption[] = [
     label: 'Calculada',
     description: 'Una cuenta con datos que cambian en cada alumno.',
     Icon: Calculator,
+  },
+  {
+    value: 'essay',
+    label: 'Respuesta larga (ensayo)',
+    description: 'El alumno desarrolla con sus palabras; la IA sugiere la corrección y vos la confirmás.',
+    Icon: FileText,
   },
 ]
 

@@ -122,3 +122,31 @@ describe('utilidades', () => {
     expect(htmlATexto('<p>A &amp; B</p><p>C &lt; D</p>')).toBe('A & B\nC < D')
   })
 })
+
+describe('W5: el ensayo va y vuelve con su rúbrica', () => {
+  const ensayo = {
+    id: 'q1',
+    type: 'essay',
+    question: 'Explicá con tus palabras qué es la fotosíntesis y por qué importa.',
+    rubrica: [{ criterio: 'Define el proceso' }, { criterio: 'Nombra lo que entra y lo que sale' }, { criterio: 'Da un ejemplo propio' }],
+    explanation: 'Luz, agua y dióxido de carbono; sale glucosa y oxígeno.',
+    topic: 't',
+    topicName: 'Tema',
+  } as unknown as Question
+  it('GIFT', () => {
+    const r = importarGift(convertQuizToGift(quiz([ensayo])))
+    expect(r.salteadas).toEqual([])
+    expect(r.preguntas[0]).toMatchObject({ type: 'essay', rubrica: (ensayo as { rubrica: unknown }).rubrica })
+    expect(r.preguntas[0].explanation).not.toMatch(/criterios/i)
+  })
+  it('Moodle XML', () => {
+    const r = importarMoodleXml(convertQuizToMoodleXml(quiz([ensayo])))
+    expect(r.salteadas).toEqual([])
+    expect(r.preguntas[0]).toMatchObject({ type: 'essay', question: ensayo.question, rubrica: (ensayo as { rubrica: unknown }).rubrica })
+  })
+  it('sin 3 criterios se saltea con el motivo', () => {
+    const r = importarGift('::E1:: Explicá la fotosíntesis con detalle. {####Criterios: define; ejemplo}')
+    expect(r.preguntas).toEqual([])
+    expect(r.salteadas[0].motivo).toContain('3 criterios')
+  })
+})

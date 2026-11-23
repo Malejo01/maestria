@@ -864,3 +864,12 @@ export function validadoresDe(area: AreaId | null | undefined, caracter: Caracte
   }
   return perfilDeArea(area).validadores.filter((v) => v !== 'sin_latex_ni_calculo')
 }
+
+/**
+ * Ronda W · W5 — Los tipos de "Más tipos" que el perfil del área pone primero.
+ * El ensayo, en las áreas conceptuales: es donde desarrollar con palabras
+ * propias mide algo que la opción múltiple no.
+ */
+export function tiposSugeridosDelArea(area: AreaId | null | undefined): QuestionType[] {
+  return perfilDeArea(area).caracter === 'conceptual' ? ['essay'] : []
+}
