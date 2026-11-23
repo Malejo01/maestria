@@ -11,10 +11,11 @@
  *   rachaEnRiesgo     tiene racha (O4) y hoy no practicó, después de las 18 h
  *   repasoDelDia      hay preguntas para repasar hoy (X2), una vez por día y
  *                     sólo si practicó en la última semana
+ *   novedad           una novedad de MaestrIA (Y3), una vez por novedad
  */
 import { diasDeCalendario, diaEnArgentina, ordenarAvisos } from '@/lib/avisos/armar'
 import { crearAviso, type Aviso, type Lectura } from '@/lib/avisos/tipos'
-import { AVISOS_ALUMNO as T, REPASO as TR } from '@/lib/textos'
+import { AVISOS_ALUMNO as T, NOVEDADES as TN, REPASO as TR } from '@/lib/textos'
 
 export const VENTANA_DIAS = 14
 export const HORAS_VENCE_PRONTO = 24
@@ -31,6 +32,7 @@ export type FilaDeAvisoAlumno =
   | { tipo: 'temaSuperado'; misconceptionId: number; tema: string; porDocente: boolean; superadoEl: string }
   | { tipo: 'racha'; racha: number; ultimaPractica: string | null }
   | { tipo: 'repaso'; cuantas: number; practicoEnLaSemana: boolean }
+  | { tipo: 'novedad'; slug: string; titulo: string; resumen: string; fecha: string }
 
 /** A una tarea de Mis tareas. Query y no `#`: la navegación de Next no avisa los cambios de `#`. */
 export const hrefDeTarea = (asignacionId: number) => `/aulas?tarea=${asignacionId}`
@@ -140,6 +142,12 @@ function avisoDe(f: FilaDeAvisoAlumno, lectura: Lectura, ahora: Date, esInvitado
         lectura,
       )
     }
+    case 'novedad':
+      return crearAviso(
+        'novedad',
+        { clave: `novedad|${f.slug}`, titulo: TN.aviso(f.titulo), detalle: f.resumen, href: `/novedades/${f.slug}`, fecha: f.fecha },
+        lectura,
+      )
     case 'repaso': {
       const desde = repasoDesde(f.cuantas, f.practicoEnLaSemana, ahora)
       // El invitado no tiene práctica libre: tampoco repaso.

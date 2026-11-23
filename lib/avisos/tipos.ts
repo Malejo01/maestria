@@ -13,7 +13,7 @@
 export type RolDeAviso = 'exito' | 'informacion' | 'atencion'
 
 /** Íconos de lucide, por nombre del sistema (el componente los resuelve). */
-export type IconoDeAviso = 'checkLista' | 'personaMas' | 'bandera' | 'tareaNueva' | 'reloj' | 'diagnostico' | 'resuelto' | 'trofeo' | 'llama' | 'repaso'
+export type IconoDeAviso = 'checkLista' | 'personaMas' | 'bandera' | 'tareaNueva' | 'reloj' | 'diagnostico' | 'resuelto' | 'trofeo' | 'llama' | 'repaso' | 'novedad'
 
 export type TipoDeAviso =
   // Docente (O10)
@@ -26,6 +26,8 @@ export type TipoDeAviso =
   | 'referidoPremio'
   // Admin (ronda Y · Y1): fallan muchas generaciones o hay un pago para revisar
   | 'alertaSistema'
+  // Docente y alumno (ronda Y · Y3): una novedad de MaestrIA
+  | 'novedad'
   // Alumno (P3)
   | 'tareaNueva'
   | 'vencePronto'
@@ -43,6 +45,7 @@ export const ESTILO_DEL_AVISO: Record<TipoDeAviso, { rol: RolDeAviso; icono: Ico
   pagoAcreditado: { rol: 'exito', icono: 'resuelto' },
   referidoPremio: { rol: 'exito', icono: 'trofeo' },
   alertaSistema: { rol: 'atencion', icono: 'bandera' },
+  novedad: { rol: 'informacion', icono: 'novedad' },
   tareaNueva: { rol: 'informacion', icono: 'tareaNueva' },
   vencePronto: { rol: 'atencion', icono: 'reloj' },
   diagnosticoNuevo: { rol: 'informacion', icono: 'diagnostico' },

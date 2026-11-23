@@ -35,6 +35,7 @@ export const RUTAS_PUBLICAS = [
   '/sin-conexion',        // X4: la página que muestra el service worker sin internet
   '/icono-pwa',           // X4: los íconos de la app instalada
   '/api/cron',            // Y2: el cron de Vercel (cada ruta exige su secreto)
+  '/novedades',           // Y3: lo nuevo de MaestrIA (sirve antes de registrarse)
 ] as const
 
 export function esRutaPublica(pathname: string): boolean {

@@ -9,6 +9,7 @@ import {
   Flag,
   Flame,
   RotateCcw,
+  Megaphone,
   ListChecks,
   ListTodo,
   Trophy,
@@ -32,6 +33,7 @@ const ICONO: Record<IconoDeAviso, LucideIcon> = {
   trofeo: Trophy,
   llama: Flame,
   repaso: RotateCcw,
+  novedad: Megaphone,
 }
 
 /** El tinte del círculo por rol semántico. Sólo tokens de app/tokens.css. */

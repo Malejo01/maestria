@@ -1,3 +1,5 @@
+import { fechaDeAviso, novedadesParaAvisar } from '@/lib/novedades'
+import { leerNovedades } from '@/lib/novedades-server'
 import { alertasActuales } from '@/lib/salud-server'
 import { premiosRecientes } from '@/lib/referidos-server'
 import { sql } from '@/lib/db'
@@ -5,7 +7,7 @@ import { armarAvisos, type FilaDeAviso } from '@/lib/avisos-docente'
 import { leerLectura, marcarTodoLeido } from '@/lib/avisos/lectura-server'
 import { crearAviso, type RespuestaDeAvisos } from '@/lib/avisos/tipos'
 import { pagosAcreditadosDe } from '@/lib/pagos-server'
-import { PAGAR, REFERIDOS, SALUD } from '@/lib/textos'
+import { NOVEDADES, PAGAR, REFERIDOS, SALUD } from '@/lib/textos'
 
 /**
  * O10 · Los avisos del docente, de lo que ya está en la base, de las últimas
@@ -51,7 +53,7 @@ async function reportes(docenteId: string): Promise<FilaDeAviso[]> {
 }
 
 export async function avisosDelDocente(docenteId: string, { esAdmin = false }: { esAdmin?: boolean } = {}): Promise<RespuestaDeAvisos> {
-  const [leida, tareas, nuevos, reportados, pagos, premios, alertas] = await Promise.all([
+  const [leida, tareas, nuevos, reportados, pagos, premios, alertas, novedades] = await Promise.all([
     leerLectura(docenteId, { esDocente: true }),
     sql`
       SELECT c.id AS grupo_id, c.name AS grupo, q.title AS tarea,
@@ -81,6 +83,8 @@ export async function avisosDelDocente(docenteId: string, { esAdmin = false }: {
     premiosRecientes(docenteId).catch(() => []),
     // Y1: al admin, las alertas del sistema (si fallan, la campanita sigue sin ellas).
     esAdmin ? alertasActuales().catch(() => []) : Promise.resolve([]),
+    // Y3: las novedades de MaestrIA.
+    leerNovedades(),
   ])
 
   const filas: FilaDeAviso[] = [
@@ -111,7 +115,10 @@ export async function avisosDelDocente(docenteId: string, { esAdmin = false }: {
       leida,
     ),
   )
-  const avisos = [...armarAvisos(filas, leida), ...deLosPagos, ...deLosReferidos, ...delSistema].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
+  const deLasNovedades = novedadesParaAvisar(novedades, 'docente', new Date()).map((n) =>
+    crearAviso('novedad', { clave: `novedad|${n.slug}`, titulo: NOVEDADES.aviso(n.titulo), detalle: n.resumen, href: `/novedades/${n.slug}`, fecha: fechaDeAviso(n) }, leida),
+  )
+  const avisos = [...armarAvisos(filas, leida), ...deLosPagos, ...deLosReferidos, ...delSistema, ...deLasNovedades].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
   return { avisos, vistoEl: leida.vistoEl, puedeMarcar: leida.puedeMarcar }
 }
 
