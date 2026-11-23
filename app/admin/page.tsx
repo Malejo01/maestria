@@ -8,6 +8,7 @@ import { SECCIONES_ADMIN, type SeccionAdmin } from '@/lib/admin/secciones'
 import { ADMIN } from '@/lib/textos'
 import { LinksPorCanal } from '@/components/admin/links-por-canal'
 import { urlDelSitio } from '@/lib/sitio'
+import { alertasActuales } from '@/lib/salud-server'
 
 /**
  * P1 · /admin: la portada del panel. Arriba, cuatro números del día; abajo,
@@ -33,7 +34,7 @@ export default async function AdminPage() {
   const admin = await getAdminViewer()
   if (!admin) notFound()
 
-  const { hoy, tarjetas } = await leerPortada()
+  const [{ hoy, tarjetas }, alertas] = await Promise.all([leerPortada(), alertasActuales().catch(() => null)])
 
   const dato: Record<Exclude<SeccionAdmin, 'inicio'>, string> = {
     reportes: tarjetas.reportesNuevos === null ? ADMIN.sinDato : ADMIN.tarjetas.reportes(tarjetas.reportesNuevos),
@@ -46,6 +47,8 @@ export default async function AdminPage() {
     docentes: tarjetas.docentes === null ? ADMIN.sinDato : ADMIN.tarjetas.docentes(tarjetas.docentes),
     // C1: los códigos no tienen un número del día.
     codigos: ADMIN.tarjetas.codigos,
+    // Y1: cuántas alertas hay ahora.
+    salud: alertas === null ? ADMIN.sinDato : ADMIN.tarjetas.salud(alertas.length),
   }
 
   return (

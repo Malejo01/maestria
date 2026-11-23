@@ -369,3 +369,20 @@ export async function failAiUsage(usageId: number | null): Promise<void> {
     console.error('[ai-usage] no se pudo marcar la fila como fallida', error)
   }
 }
+
+/**
+ * Y1 (ronda Y): en la fila de una generación, cuántas preguntas devolvió el
+ * modelo y cuántas descartaron los validadores. Sin la 049 (42703) no hace
+ * nada: es un dato para /admin/salud, nunca motivo para que falle la generación.
+ */
+export async function anotarGeneracion(usageId: number | null, cuentas: { crudas: number; descartadas: number }): Promise<void> {
+  if (usageId == null) return
+  try {
+    await sql`
+      UPDATE ai_usage_log SET preguntas_crudas = ${cuentas.crudas}, preguntas_descartadas = ${cuentas.descartadas}
+      WHERE id = ${usageId}
+    `
+  } catch (error) {
+    if ((error as { code?: string })?.code !== '42703') console.error('[ai-usage] no se pudo anotar la generación', error)
+  }
+}

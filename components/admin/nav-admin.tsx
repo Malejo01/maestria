@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ArrowLeft, CreditCard, Filter, Gauge, Inbox, LayoutDashboard, TicketPercent, Users, type LucideIcon } from 'lucide-react'
+import { Activity, ArrowLeft, CreditCard, Filter, Gauge, Inbox, LayoutDashboard, TicketPercent, Users, type LucideIcon } from 'lucide-react'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { Logo } from '@/components/sistema/logo'
 import { SECCIONES_ADMIN, seccionActiva, type SeccionAdmin } from '@/lib/admin/secciones'
@@ -17,6 +17,7 @@ const ICONO: Record<SeccionAdmin, LucideIcon> = {
   planes: CreditCard,
   codigos: TicketPercent,
   docentes: Users,
+  salud: Activity,
 }
 
 /**

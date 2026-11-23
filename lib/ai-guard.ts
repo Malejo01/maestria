@@ -29,6 +29,7 @@ import {
 } from '@/lib/ai-rate-limit'
 import {
   dailyBudgetUsd,
+  anotarGeneracion,
   failAiUsage,
   finishAiUsage,
   guestDailyBudgetUsd,
@@ -51,6 +52,8 @@ export interface AiGuardGranted {
   finish: (usage?: AiSdkUsage | null) => Promise<void>
   /** Marca el intento como fallido; la fila igual cuenta contra el límite. */
   fail: () => Promise<void>
+  /** Y1: cuántas preguntas devolvió el modelo y cuántas descartaron los validadores (sin la 049, nada). */
+  anotarGeneracion?: (cuentas: { crudas: number; descartadas: number }) => Promise<void>
 }
 
 export type AiGuardResult = AiGuardGranted | { ok: false; response: Response }
@@ -238,6 +241,9 @@ export async function guardAiCall(options: GuardAiCallOptions): Promise<AiGuardR
     },
     fail: async () => {
       await failAiUsage(usageId)
+    },
+    anotarGeneracion: async (cuentas) => {
+      await anotarGeneracion(usageId, cuentas)
     },
   }
 }

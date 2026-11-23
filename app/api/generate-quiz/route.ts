@@ -91,8 +91,20 @@ export async function POST(req: Request) {
     usageParts.push(usage)
   }
 
+  // Y1: cuántas preguntas devolvió el modelo y cuántas descartaron los validadores.
+  const cuentas = { crudas: 0, descartadas: 0 }
+  const observar = {
+    tanda: (ps: readonly unknown[]) => {
+      cuentas.crudas += ps.length
+    },
+    descarte: () => {
+      cuentas.descartadas++
+    },
+  }
+
   try {
-    const result = await generateQuiz(params, collectUsage)
+    const result = await generateQuiz(params, collectUsage, observar)
+    await guard.anotarGeneracion?.(cuentas)
 
     if (!result.ok) {
       // Los tokens ya se gastaron aunque el resultado no sirva: se cierra la
@@ -161,8 +173,17 @@ async function generarPracticaExtra(practicaExtraId: number) {
   })
   if (!guard.ok) return guard.response
   const usageParts: (AiSdkUsage | undefined)[] = []
+  const cuentas = { crudas: 0, descartadas: 0 }
   try {
-    const result = await generateQuiz(params, (usage) => usageParts.push(usage))
+    const result = await generateQuiz(params, (usage) => usageParts.push(usage), {
+      tanda: (ps) => {
+        cuentas.crudas += ps.length
+      },
+      descarte: () => {
+        cuentas.descartadas++
+      },
+    })
+    await guard.anotarGeneracion?.(cuentas)
     await guard.finish(sumUsage(...usageParts))
     if (!result.ok) return Response.json({ questions: [], error: result.message }, { status: 409 })
     return Response.json({ questions: result.questions })
