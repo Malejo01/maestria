@@ -145,6 +145,38 @@ export function paseHastaPara(fechaExamen: string | null, hoy: Date): string {
   return new Date(Date.parse(`${examen}T00:00:00Z`) + DIAS_DE_GRACIA_DEL_PASE * MS_POR_DIA).toISOString().slice(0, 10)
 }
 
+/**
+ * Ronda U · U2 — Qué pasa con el pase cuando el alumno cambia la fecha del
+ * examen. Con el pase vigente, se corre a la fecha nueva + 7 días, **una sola
+ * vez por pase**, y **nunca se acorta**: si la fecha nueva lo dejaría más
+ * corto (o igual), queda como estaba y la vez no se gasta.
+ */
+export type CorrimientoDelPase = 'corrido' | 'sin-pase' | 'ya-corrido' | 'no-acorta'
+
+export function paseAlCambiarLaFecha(params: {
+  paseHasta: string | null | undefined
+  /** Cuándo se corrió este pase, si ya se corrió. */
+  corridoEl: string | null | undefined
+  fechaNueva: string
+  hoy: Date
+}): { paseHasta: string | null; resultado: CorrimientoDelPase } {
+  const actual = params.paseHasta ? String(params.paseHasta).slice(0, 10) : null
+  if (!actual || !paseVigente(actual, params.hoy)) return { paseHasta: actual, resultado: 'sin-pase' }
+  if (params.corridoEl) return { paseHasta: actual, resultado: 'ya-corrido' }
+  const nuevo = paseHastaPara(params.fechaNueva, params.hoy)
+  if (nuevo <= actual) return { paseHasta: actual, resultado: 'no-acorta' }
+  return { paseHasta: nuevo, resultado: 'corrido' }
+}
+
+/** Una fecha de examen válida: AAAA-MM-DD, real, de hoy en adelante y a menos de dos años. */
+export function fechaDeExamenValida(fecha: unknown, hoy: Date): fecha is string {
+  if (typeof fecha !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return false
+  const ms = Date.parse(`${fecha}T00:00:00Z`)
+  if (Number.isNaN(ms) || new Date(ms).toISOString().slice(0, 10) !== fecha) return false
+  const hoyAr = diaArgentino(hoy)
+  return fecha >= hoyAr && ms - Date.parse(`${hoyAr}T00:00:00Z`) <= 730 * MS_POR_DIA
+}
+
 /** El pase vale hasta ese día inclusive (en Argentina). */
 export function paseVigente(paseHasta: string | null | undefined, hoy: Date): boolean {
   return Boolean(paseHasta) && diaArgentino(hoy) <= String(paseHasta).slice(0, 10)

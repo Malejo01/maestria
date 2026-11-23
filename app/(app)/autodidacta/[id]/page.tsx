@@ -14,6 +14,7 @@ import { formatearPesos } from '@/lib/planes'
 import type { MateriaConPlan } from '@/lib/autodidacta-server'
 import type { Question, QuizConfig } from '@/lib/types'
 import { AUTODIDACTA as T } from '@/lib/textos'
+import { CambiarFechaDelExamen } from '@/components/alumno/cambiar-fecha-del-examen'
 
 /**
  * Ronda T · E1 — Una materia personal: el diagnóstico inicial, lo que ya sabe
@@ -27,6 +28,7 @@ export default function MateriaAutodidactaPage() {
   const [materia, setMateria] = useState<MateriaConPlan | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [generando, setGenerando] = useState(false)
+  const [version, setVersion] = useState(0)
 
   useEffect(() => {
     let vigente = true
@@ -38,7 +40,7 @@ export default function MateriaAutodidactaPage() {
     return () => {
       vigente = false
     }
-  }, [id])
+  }, [id, version])
 
   if (error) return <p className="cuerpo-s text-flojo">{error}</p>
   if (!materia) return <Cargando />
@@ -106,6 +108,12 @@ export default function MateriaAutodidactaPage() {
             {T.examenEl(new Date(`${materia.fechaExamen}T12:00:00`).toLocaleDateString('es-AR'))} · {T.faltan(Math.max(0, dias))}
           </p>
         )}
+        <CambiarFechaDelExamen
+          materiaId={materia.id}
+          fechaExamen={materia.fechaExamen}
+          // U2: el plan hasta el examen cambia con la fecha: se vuelve a leer.
+          onCambio={() => setVersion((v) => v + 1)}
+        />
       </header>
 
       {/* E2: el pase por materia, o lo gratis que queda. */}

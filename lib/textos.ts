@@ -1728,6 +1728,18 @@ export const AUTODIDACTA = {
   sacarPase: (precio: string) => `Sacar el pase (${precio})`,
   sacarPaseSinPrecio: 'Sacar el pase',
   conPaseSimulacros: 'Los simulacros vienen con el pase.',
+  /** U2: cambiar la fecha del examen (el pase se corre una vez). */
+  cambiarFecha: 'Cambiar la fecha',
+  fechaNueva: 'Fecha nueva del examen',
+  guardarFecha: 'Guardar',
+  guardandoFecha: 'Guardando…',
+  cancelar: 'Cancelar',
+  fechaInvalida: 'Elegí una fecha de hoy en adelante.',
+  fechaCambiada: 'Listo, cambiamos la fecha del examen.',
+  paseCorrido: (hasta: string) => `Tu pase se corrió con la fecha: ahora vale hasta el ${hasta}.`,
+  paseYaCorrido: (hasta: string) => `El pase ya se corrió una vez con la fecha del examen: sigue hasta el ${hasta}.`,
+  paseNoAcorta: (hasta: string) => `Tu pase sigue hasta el ${hasta}: nunca se acorta.`,
+  avisoDelPase: 'Si tenés el pase, se corre con la fecha nueva una sola vez y nunca se acorta.',
 } as const
 
 /** Ronda T · E1: el simulacro cronometrado. */
