@@ -94,3 +94,24 @@ export async function sqlDeStaging() {
   if (env?.environment !== 'staging') throw new Error('Sólo contra una base marcada staging')
   return sql
 }
+
+/**
+ * Ronda X: capturas a 360, 390 y 1280 px, en claro y oscuro, sin recargar
+ * (el modo oscuro es `data-theme="oscuro"` en <html>, lib/tema.ts). Sirve para
+ * una pantalla con estado que se perdería al recargar.
+ */
+export async function capturarSinRecargar(page: Page, carpeta: string, nombre: string) {
+  for (const modo of ['claro', 'oscuro'] as const) {
+    await page.evaluate((m) => {
+      if (m === 'oscuro') document.documentElement.dataset.theme = 'oscuro'
+      else delete document.documentElement.dataset.theme
+    }, modo)
+    for (const ancho of [360, 390, 1280]) {
+      await page.setViewportSize({ width: ancho, height: 800 })
+      await page.waitForTimeout(250)
+      await page.screenshot({ path: `${carpeta}/${nombre}-${ancho}-${modo}.png` })
+    }
+  }
+  await page.evaluate(() => delete document.documentElement.dataset.theme)
+  await page.setViewportSize({ width: 1280, height: 800 })
+}
