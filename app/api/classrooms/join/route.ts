@@ -1,3 +1,4 @@
+import { registrarOrigen } from '@/lib/origen-server'
 import { NextResponse } from 'next/server'
 import { sql } from '@/lib/db'
 import { getViewer } from '@/lib/auth-session'
@@ -229,6 +230,8 @@ export async function POST(req: Request) {
       INSERT INTO users (id, email, name, role, is_onboarded, is_guest, created_at, updated_at)
       VALUES (${guestId}, NULL, ${nombreDelInvitado}, 'ALUMNO', true, true, NOW(), NOW())
     `
+    // V1: el canal del link de su primera visita, si vino de uno.
+    await registrarOrigen(guestId)
 
     await sql`
       INSERT INTO classroom_members (classroom_id, user_id, display_name, is_verified, status, joined_at, updated_at)

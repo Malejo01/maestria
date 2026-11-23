@@ -1,3 +1,4 @@
+import { registrarOrigen } from '@/lib/origen-server'
 import NextAuth, { type DefaultSession } from 'next-auth'
 import Google from 'next-auth/providers/google'
 import Credentials from 'next-auth/providers/credentials'
@@ -89,7 +90,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         // Upsert user — first login creates the row; subsequent logins update
         // mutable fields (name, image) but never overwrite role or is_onboarded.
-        await sql`
+        const [fila] = (await sql`
           INSERT INTO users (id, email, name, image, created_at, updated_at)
           VALUES (
             ${userId},
@@ -105,7 +106,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             name       = EXCLUDED.name,
             image      = EXCLUDED.image,
             updated_at = NOW()
-        `
+          RETURNING (xmax = 0) AS nuevo
+        `) as { nuevo?: boolean }[]
+
+        // V1: si se acaba de registrar, el canal del link de su primera visita.
+        if (fila?.nuevo) await registrarOrigen(userId)
 
         // Upsert OAuth account link (needed for provider tracking)
         await sql`

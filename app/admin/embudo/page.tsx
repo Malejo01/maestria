@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation'
 import { getAdminViewer } from '@/lib/auth-session'
 import { conteoPorPaso, PASOS, type DocenteEnElEmbudo } from '@/lib/embudo'
 import { embudoDeDocentes } from '@/lib/embudo-server'
+import { personasConOrigen } from '@/lib/origen-server'
+import { NOMBRE_DEL_CANAL, porcentaje, resumenPorCanal } from '@/lib/origen'
+import { ORIGEN } from '@/lib/textos'
 import { EMBUDO as T } from '@/lib/textos'
 import { cn } from '@/lib/utils'
 
@@ -30,7 +33,10 @@ export default async function EmbudoAdminPage() {
   const admin = await getAdminViewer()
   if (!admin) notFound()
 
-  const docentes = await embudoDeDocentes()
+  const [docentes, personas] = await Promise.all([embudoDeDocentes(), personasConOrigen().catch(() => [])])
+  // V1: por canal, con el paso del embudo de cada docente (la conversión).
+  const indice = new Map(docentes.map((d) => [d.id, d.indice]))
+  const porCanal = resumenPorCanal(personas.map((p) => ({ ...p, pasoDelEmbudo: indice.get((p as { id?: string }).id ?? '') })))
   const trabados = docentes.filter((d) => d.trabado)
   const resto = docentes.filter((d) => !d.trabado)
   const conteo = conteoPorPaso(docentes)
@@ -65,6 +71,43 @@ export default async function EmbudoAdminPage() {
               <p className="cuerpo-s px-4 py-3 text-texto-suave">{T.sinTrabados}</p>
             ) : (
               <ul>{trabados.map((d) => <Fila key={d.id} d={d} />)}</ul>
+            )}
+          </section>
+
+          <section aria-labelledby="embudo-por-canal" className="space-y-2 rounded-lg border border-borde bg-superficie-tarjeta p-4" data-por-canal>
+            <h2 id="embudo-por-canal" className="cuerpo font-bold text-texto">{ORIGEN.porCanal}</h2>
+            <p className="nota text-texto-suave">{ORIGEN.porCanalDetalle}</p>
+            {porCanal.length === 0 ? (
+              <p className="cuerpo-s text-texto-suave">{ORIGEN.vacio}</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[32rem] text-left">
+                  <thead>
+                    <tr className="nota text-texto-suave">
+                      <th scope="col" className="py-2 pr-3 font-semibold">{ORIGEN.columnas.canal}</th>
+                      <th scope="col" className="py-2 pr-3 text-right font-semibold">{ORIGEN.columnas.docentes}</th>
+                      <th scope="col" className="py-2 pr-3 text-right font-semibold">{ORIGEN.columnas.conTarea}</th>
+                      <th scope="col" className="py-2 pr-3 text-right font-semibold">{ORIGEN.columnas.conAlumnos}</th>
+                      <th scope="col" className="py-2 text-right font-semibold">{ORIGEN.columnas.alumnos}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {porCanal.map((f) => (
+                      <tr key={f.canal} className="cuerpo-s border-t border-borde text-texto">
+                        <th scope="row" className="py-2 pr-3 font-semibold">{f.canal === 'sin-dato' ? ORIGEN.sinDato : NOMBRE_DEL_CANAL[f.canal]}</th>
+                        <td className="py-2 pr-3 text-right tabular-nums">{f.docentes}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">
+                          {f.conTarea} <span className="nota text-texto-suave">({porcentaje(f.conTarea, f.docentes)})</span>
+                        </td>
+                        <td className="py-2 pr-3 text-right tabular-nums">
+                          {f.conAlumnos} <span className="nota text-texto-suave">({porcentaje(f.conAlumnos, f.docentes)})</span>
+                        </td>
+                        <td className="py-2 text-right tabular-nums">{f.alumnos}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
 

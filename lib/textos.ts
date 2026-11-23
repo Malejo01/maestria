@@ -1981,3 +1981,21 @@ export const TIPOS_PEDIDOS = {
   noEntra: (tipos: string[]) =>
     `Pediste más tipos que preguntas: quedaron afuera ${tipos.map((t) => t.toLowerCase()).join(', ')}. Sumá preguntas para que entren todos.`,
 } as const
+
+/** Ronda V · V1: de qué canal llegó cada persona. */
+export const ORIGEN = {
+  porCanal: 'Por canal',
+  porCanalDetalle: 'De qué link llegó cada persona (la primera visita). Los que se registraron sin link, o antes de que existiera, van en "sin dato".',
+  columnas: { canal: 'Canal', docentes: 'Docentes', alumnos: 'Alumnos', conTarea: 'Mandaron una tarea', conAlumnos: 'Con alumnos' },
+  sinDato: 'Sin dato',
+  vacio: 'Todavía no hay nadie registrado.',
+  canal: 'Canal',
+  links: {
+    titulo: 'Links para difundir',
+    detalle: 'Un link por canal. Quien entra por ahí queda anotado con ese canal cuando se registra (30 días). Si es la recomendación de un docente, sumale su código.',
+    ref: 'Código de referido (opcional)',
+    copiar: 'Copiar',
+    copiado: 'Copiado',
+  },
+} as const
+

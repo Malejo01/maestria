@@ -6,6 +6,8 @@ import { getAdminViewer } from '@/lib/auth-session'
 import { leerPortada } from '@/lib/admin/portada-server'
 import { SECCIONES_ADMIN, type SeccionAdmin } from '@/lib/admin/secciones'
 import { ADMIN } from '@/lib/textos'
+import { LinksPorCanal } from '@/components/admin/links-por-canal'
+import { urlDelSitio } from '@/lib/sitio'
 
 /**
  * P1 · /admin: la portada del panel. Arriba, cuatro números del día; abajo,
@@ -81,6 +83,9 @@ export default async function AdminPage() {
           </li>
         ))}
       </ul>
+
+      {/* V1: los links de difusión, uno por canal. */}
+      <LinksPorCanal base={urlDelSitio()} />
     </main>
   )
 }
