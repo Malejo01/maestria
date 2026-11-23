@@ -3,7 +3,9 @@
 import { Cargando } from '@/components/sistema/cargando'
 
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { tiposSugeridosDelArea } from '@/lib/areas'
+import { inferirArea } from '@/lib/inferir-area'
 import { useSession } from 'next-auth/react'
 import {
   ChevronRight,
@@ -136,6 +138,8 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
   // precargado sale de la lista, en el propio la escribe el alumno.
   const [careers, setCareers] = useState<string[]>([])
   const [carrera, setCarrera] = useState('')
+  // W5: el ensayo va primero en "Más tipos" si la materia es de un área conceptual.
+  const tiposSugeridos = useMemo(() => (materia ? tiposSugeridosDelArea(inferirArea(materia, carrera).area) : []), [materia, carrera])
   /**
    * Cuál de los dos caminos de Superior se tomó. No se deduce de otro estado a
    * propósito: `materia` y `carrera` terminan con valor en ambos, así que
@@ -956,6 +960,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
                 <label className="block text-sm font-semibold text-foreground mb-3">Tipos de pregunta</label>
                 <QuestionTypeSelector
                   conMasTipos={isDocente}
+                  sugeridos={tiposSugeridos}
                   value={questionTypes}
                   onChange={(next) => {
                     setQuestionTypesTouched(true)

@@ -105,7 +105,7 @@ export function entradaActiva(
   if (contexto === 'docente') {
     if (!esRutaDocente(pathname)) return null
     // W1: el banco y la revisión de una tarea cuelgan de "Mis tareas".
-    if (pathname === '/teacher/banco' || pathname === '/teacher/importar' || pathname.startsWith('/teacher/tareas/')) return 'tareas'
+    if (pathname === '/teacher/banco' || pathname === '/teacher/importar' || pathname === '/teacher/correcciones' || pathname.startsWith('/teacher/tareas/')) return 'tareas'
     // /teacher/diagnostico cuelga de "Mis alumnos": es lo más cerca que está.
     if (pathname !== '/teacher') return 'alumnos'
     return esSeccionDocente(seccion) ? seccion : SECCION_DOCENTE_POR_DEFECTO

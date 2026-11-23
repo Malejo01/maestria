@@ -6,7 +6,7 @@ import { LaTeXRenderer } from '@/components/latex-renderer'
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import type { PreguntaDelExamen, Tema } from '@/lib/examen-ab'
-import { EXAMEN_IMPRESO as T } from '@/lib/textos'
+import { ENSAYO, EXAMEN_IMPRESO as T } from '@/lib/textos'
 
 const LETRAS = 'ABCDEFGHIJ'
 
@@ -78,6 +78,22 @@ function Pregunta({ p }: { p: PreguntaDelExamen }) {
             <p className="mt-2">
               <span className="font-semibold">{T.banco}</span> {papel.banco.join(' · ')}
             </p>
+          </>
+        )}
+        {papel.forma === 'ensayo' && (
+          <>
+            {papel.criterios.length > 0 && (
+              <div className="nota text-texto-suave">
+                <p>{ENSAYO.loQueSeEspera}</p>
+                <ul className="list-disc pl-5">
+                  {papel.criterios.map((c, i) => (
+                    <li key={i}>{c}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <p className="nota mt-1 text-texto-suave">{T.respuesta}</p>
+            <div aria-hidden="true" className="mt-1 h-64 rounded-sm border border-borde-fuerte" />
           </>
         )}
         {papel.forma === 'desarrollo' && (

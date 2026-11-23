@@ -12,6 +12,7 @@ import { MatchingInput } from './matching-input'
 import { OrderingInput } from './ordering-input'
 import { GapsInput } from './gaps-input'
 import { MissingWordInput } from './missing-word-input'
+import { EssayInput } from './essay-input'
 import { margenAbsoluto } from '@/lib/calculada'
 import { cantidadDeHuecos, ordenInicial } from '@/lib/tipos-moodle'
 
@@ -33,6 +34,8 @@ export type AnswerSelection =
   | { type: 'missing_word'; value: number | null }
   // F7: el número (y el texto) que escribió.
   | { type: 'calculated'; value: number | null; texto?: string }
+  // W5: el texto del ensayo.
+  | { type: 'essay'; value: string }
 
 export function emptySelectionFor(question: Question): AnswerSelection {
   switch (question.type) {
@@ -57,6 +60,8 @@ export function emptySelectionFor(question: Question): AnswerSelection {
       return { type: 'missing_word', value: null }
     case 'calculated':
       return { type: 'calculated', value: null }
+    case 'essay':
+      return { type: 'essay', value: '' }
   }
 }
 
@@ -214,6 +219,12 @@ export function AnswerInput({
         isCorrect={isCorrect}
         onChange={(value) => onChange({ type: 'short_answer', value })}
       />
+    )
+  }
+
+  if (question.type === 'essay' && selection.type === 'essay') {
+    return (
+      <EssayInput question={question} value={selection.value} submitted={submitted} disabled={disabled} onChange={(value) => onChange({ type: 'essay', value })} />
     )
   }
 

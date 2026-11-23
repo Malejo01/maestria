@@ -1,3 +1,4 @@
+import { ensayoValido } from '@/lib/ensayo'
 import type { Answer, GapsQuestion, MatchingQuestion, MissingWordQuestion, MultipleResponseQuestion, OrderingQuestion, Question, QuestionType } from '@/lib/types'
 import { calculadaValida } from '@/lib/calculada'
 import { formatearNumero } from '@/lib/numeros'
@@ -11,7 +12,8 @@ import { formatearNumero } from '@/lib/numeros'
  * respuesta corta) siguen donde estaban; estos se suman acá para que cada
  * tipo nuevo toque este archivo, su componente de respuesta y la exportación.
  */
-export const TIPOS_MOODLE = ['multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos', 'missing_word', 'calculated'] as const satisfies readonly QuestionType[]
+// W5: el ensayo va con estos ("Más tipos", sólo el docente) aunque Moodle lo tenga desde siempre.
+export const TIPOS_MOODLE = ['multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos', 'missing_word', 'calculated', 'essay'] as const satisfies readonly QuestionType[]
 export type TipoMoodle = (typeof TIPOS_MOODLE)[number]
 
 export function esTipoMoodle(tipo: unknown): tipo is TipoMoodle {
@@ -35,6 +37,7 @@ export const ETIQUETA_DE_TIPO: Record<QuestionType, string> = {
   ddwtos: 'Arrastrar al texto',
   missing_word: 'Palabra faltante',
   calculated: 'Calculada',
+  essay: 'Respuesta larga (ensayo)',
 }
 
 const letra = (i: number) => String.fromCharCode(65 + i)
@@ -235,6 +238,9 @@ export function correctaEnTexto(q: Question): string | null {
       return textoLleno(q.text, q.options, [q.correctAnswer])
     case 'calculated':
       return formatearNumero(q.correctAnswer)
+    case 'essay':
+      // W5: no hay una correcta: lo que se corrige es la rúbrica.
+      return `Se corrige con la rúbrica: ${q.rubrica.map((c) => c.criterio).join(' · ')}`
     default:
       return null
   }
@@ -256,6 +262,8 @@ export function respuestaEnTexto(a: Answer, cual: 'selected' | 'correct'): strin
       return textoLleno(a.text, a.options, [cual === 'selected' ? a.selectedAnswer : a.correctAnswer])
     case 'calculated':
       return cual === 'selected' ? (a.selectedText?.trim() || formatearNumero(a.selectedValue)) : formatearNumero(a.correctAnswer)
+    case 'essay':
+      return cual === 'selected' ? a.selectedText : `Se corrige con la rúbrica: ${a.rubrica.map((c) => c.criterio).join(' · ')}`
     default:
       return null
   }
@@ -294,6 +302,9 @@ export function payloadDeRespuesta(a: Answer): Record<string, unknown> | null {
         selectedValue: Number.isFinite(a.selectedValue) ? a.selectedValue : null,
         ...texto,
       }
+    case 'essay':
+      // W5: queda pendiente del docente; la corrección se suma acá al confirmarla.
+      return { tipo: a.type, rubrica: a.rubrica, estadoDeCorreccion: 'pendiente', ...texto }
   }
   return null
 }
@@ -334,6 +345,8 @@ export function problemaDeTipoMoodle(q: Record<string, unknown>): string | null 
       return palabraFaltanteValida(q as unknown as MissingWordQuestion) ? null : 'palabra faltante sin un hueco y 3 a 5 opciones'
     case 'calculated':
       return calculadaValida(q as Parameters<typeof calculadaValida>[0]) ? null : 'calculada con comodines o fórmula que no cierran'
+    case 'essay':
+      return ensayoValido(q) ? null : 'ensayo sin consigna o sin 3 a 5 criterios'
     default:
       return null
   }

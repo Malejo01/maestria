@@ -165,6 +165,13 @@ const calculatedQuestionSchema = z.object({
   correctAnswer: z.number().optional(),
 })
 
+// Ronda W · W5: respuesta larga (ensayo), con su rúbrica de 3 a 5 criterios.
+const essayQuestionSchema = z.object({
+  ...baseQuestionFields,
+  type: z.literal('essay'),
+  rubrica: z.array(z.object({ criterio: z.string() })),
+})
+
 const questionSchema = z.discriminatedUnion('type', [
   multipleChoiceQuestionSchema,
   shortAnswerQuestionSchema,
@@ -177,6 +184,7 @@ const questionSchema = z.discriminatedUnion('type', [
   ddwtosQuestionSchema,
   missingWordQuestionSchema,
   calculatedQuestionSchema,
+  essayQuestionSchema,
 ])
 
 export const quizSchema = z.object({
@@ -201,7 +209,7 @@ export const quizSchema = z.object({
  */
 export type GeneratedQuestion = z.infer<typeof quizSchema>['questions'][number]
 
-export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos', 'missing_word', 'calculated'] as const
+export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos', 'missing_word', 'calculated', 'essay'] as const
 export type QuestionType = (typeof QUESTION_TYPE_VALUES)[number]
 
 /** F5: lo mismo para seleccionar y para arrastrar. */
@@ -274,6 +282,11 @@ ${CAMPOS_DE_HUECOS}`,
 - El enunciado, sin LaTeX ni signos $ (los comodines entre llaves ya son la notación de Moodle).
 - NO pongas valores ni la respuesta: los números los sortea el sistema y la respuesta sale de la fórmula. Nunca "si a = 2 y b = 5" en el enunciado.
 - Ejemplo completo: { "type": "calculated", "question": "Una empresa compra mercaderías por {m} pesos y paga el {x} % al contado. ¿Cuánto queda a pagar?", "formula": "{m} * (1 - {x} / 100)", "variables": [{ "name": "m", "min": 50000, "max": 300000, "decimals": 0 }, { "name": "x", "min": 10, "max": 60, "decimals": 0 }], "tolerance": 0.01 }`,
+  essay: `TIPO "essay" (respuesta larga, la corrige el docente con una rúbrica):
+- type: "essay"
+- question: una consigna abierta que pide desarrollar con palabras propias (explicar, analizar un caso, comparar, argumentar), respondible en 1 o 2 párrafos. Nunca una cuenta ni algo que se conteste con una palabra.
+- rubrica: array de 3 a 5 objetos { "criterio": string }: lo que tiene que tener una buena respuesta, cada uno observable y distinto ("Define el concepto con sus palabras", "Da un ejemplo propio", "Relaciona el caso con el concepto").
+- explanation: los puntos clave que tendría una respuesta completa (lo lee el docente al corregir).`,
 }
 
 function buildTypeInstructions(
@@ -745,6 +758,8 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
                 return typeof q.text === 'string' && Array.isArray(q.options) && typeof q.correctAnswer === 'number'
               case 'calculated':
                 return typeof q.formula === 'string' && Array.isArray(q.variables)
+              case 'essay':
+                return Array.isArray(q.rubrica)
               default:
                 return false
             }

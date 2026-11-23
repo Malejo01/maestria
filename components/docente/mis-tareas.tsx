@@ -1,5 +1,6 @@
 'use client'
 
+import { AbrirCorrecciones } from '@/components/docente/correcciones'
 import { tareaDesdeFila } from '@/lib/tarea-docente'
 import { pedirJson } from '@/lib/pedir-json'
 import { DUPLICAR_TAREA } from '@/lib/textos'
@@ -124,6 +125,8 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
           <Boton variante="secundario" asChild>
             <Link href="/teacher/importar">{IMPORTAR_MOODLE.abrir}</Link>
           </Boton>
+          {/* W5: los ensayos que esperan corrección. */}
+          <AbrirCorrecciones />
         </div>
       )}
 

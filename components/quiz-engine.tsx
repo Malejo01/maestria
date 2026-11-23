@@ -1,5 +1,7 @@
 'use client'
 
+import { limpiarRespuesta } from '@/lib/ensayo'
+import { ENSAYO } from '@/lib/textos'
 import { corregirCalculada } from '@/lib/calculada'
 import { cantidadDeHuecos, corregirEmparejamiento, corregirHuecos, corregirOrden, corregirVariasCorrectas, tipoParaAtajos } from '@/lib/tipos-moodle'
 import { useCuentaRegresiva, formatearTiempo } from '@/hooks/use-cuenta-regresiva'
@@ -315,6 +317,10 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     if (question.type === 'missing_word' && selection.type === 'missing_word') {
       return { ...base, type: 'missing_word', text: question.text, options: question.options, selectedAnswer: selection.value ?? -1, correctAnswer: question.correctAnswer }
     }
+    // W5: el ensayo no se corrige acá: queda sin calificar hasta que el docente confirme.
+    if (question.type === 'essay' && selection.type === 'essay') {
+      return { ...base, isCorrect: false, gradingStatus: 'ungraded', type: 'essay', selectedText: limpiarRespuesta(selection.value), rubrica: question.rubrica }
+    }
     throw new Error('Selection type does not match question type')
   }, [])
 
@@ -521,6 +527,15 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       if (selection.value.trim().length === 0) return
       await gradeShortAnswer(currentQuestion, selection)
       avanzarSinDevolucion()
+      return
+    }
+
+    // W5: el ensayo queda "En corrección": lo corrige el docente.
+    if (currentQuestion.type === 'essay' && selection.type === 'essay') {
+      if (selection.value.trim().length === 0) return
+      setAnswerState(prev => ({ ...prev, submitted: true, isCorrect: null }))
+      answerQuestion(buildAnswer(currentQuestion, selection, false, 'ungraded'))
+      avanzarSinDevolucion()
     }
   }, [answerState.selection, currentQuestion, answerQuestion, isEditingQuestion, buildAnswer, gradeShortAnswer, avanzarSinDevolucion])
 
@@ -571,6 +586,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       case 'numeric':
         return selection.value !== null
       case 'short_answer':
+      case 'essay':
         return selection.value.trim().length > 0
       case 'multiple_response':
         return selection.value.length > 0
@@ -589,7 +605,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
   })()
 
   const handleExplainError = useCallback(async () => {
-    if (!currentAnswer || currentQuestion.type === 'short_answer') return
+    if (!currentAnswer || currentQuestion.type === 'short_answer' || currentQuestion.type === 'essay') return
     setModalInitialMode('explain')
 
     if (detailedExplanation) {
@@ -884,7 +900,14 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
               Va ANTES del panel de incorrecta y es un estado propio: ni verde ni
               rojo. `isCorrect === null` con `submitted` en true significa que la
               corrección no pudo correr, no que el alumno se haya equivocado. */}
-          {answerState.submitted && answerState.isCorrect === null && (
+          {answerState.submitted && answerState.isCorrect === null && currentQuestion.type === 'essay' && (
+            <Card className="p-4 sm:p-5 border-2 border-borde bg-superficie-suave space-y-2 max-w-full min-w-0" data-en-correccion>
+              <h3 className="font-bold text-texto text-lg">{ENSAYO.enCorreccion}</h3>
+              <p className="text-sm text-texto-suave leading-relaxed">{ENSAYO.enCorreccionDetalle}</p>
+            </Card>
+          )}
+
+          {answerState.submitted && answerState.isCorrect === null && currentQuestion.type !== 'essay' && (
             <Card className="p-4 sm:p-5 border-2 border-flojo/40 bg-flojo-fondo/60 fade-in-50 slide-in-from-bottom-4 space-y-4 max-w-full overflow-hidden min-w-0">
               <div className="flex items-start gap-3 min-w-0 max-w-full overflow-hidden">
                 <div className="w-10 h-10 rounded-xl bg-flojo flex items-center justify-center shrink-0">
@@ -947,7 +970,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                   {/* Acciones directas post-error — Revancha y "Explicar con IA" están
                       disponibles para multiple_choice/true_false/numeric; short_answer
                       ya recibió feedback de IA en la corrección misma. */}
-                  {currentQuestion.type !== 'short_answer' && (
+                  {currentQuestion.type !== 'short_answer' && currentQuestion.type !== 'essay' && (
                     <div className="pt-2 flex flex-col sm:flex-row gap-2.5 w-full min-w-0 max-w-full">
                       {currentQuestion.type === 'multiple_choice' && conRevancha && (
                         <Button
@@ -1067,7 +1090,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
                 </Button>
               )}
 
-              {currentQuestion.type !== 'short_answer' && (
+              {currentQuestion.type !== 'short_answer' && currentQuestion.type !== 'essay' && (
                 <Button
                   variant="outline"
                   onClick={handleExplainError}

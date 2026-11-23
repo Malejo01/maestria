@@ -25,6 +25,8 @@ export type FormaEnPapel =
   | { forma: 'ordenar'; pasos: string[] }
   | { forma: 'huecos'; texto: string; banco: string[] }
   | { forma: 'desarrollo' }
+  /** W5: el ensayo, con más lugar y lo que se va a mirar (como en la app). */
+  | { forma: 'ensayo'; criterios: string[] }
 
 export interface PreguntaDelExamen {
   numero: number
@@ -117,6 +119,13 @@ export function preguntaEnTema(cruda: Record<string, unknown>, numero: number, s
         correcta: huecos.map((n) => `(${n}) ${choices[n - 1] ?? ''}`).join(' · '),
       }
     }
+    case 'essay':
+      return {
+        numero,
+        enunciado,
+        papel: { forma: 'ensayo', criterios: ((q.rubrica as { criterio: string }[]) ?? []).map((c) => c.criterio) },
+        correcta: correctaDeJ7,
+      }
     default:
       return { numero, enunciado, papel: { forma: 'desarrollo' }, correcta: correctaDeJ7 }
   }

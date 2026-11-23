@@ -176,6 +176,13 @@ function buildQuestionBlock(question: Question, index: number): string {
   const questionText = escapeGiftText(question.question)
 
   switch (question.type) {
+    case 'essay': {
+      // W5: el ensayo de GIFT es `{}`. Los criterios de la rúbrica van en la
+      // retroalimentación general, para que el docente los vea en Moodle.
+      const criterios = question.rubrica.map((c) => c.criterio).join('; ')
+      const guia = [question.explanation.trim(), criterios ? `Criterios: ${criterios}` : ''].filter(Boolean).join(' ')
+      return `::${questionTitle}::${questionText} {${guia ? `####${escapeGiftText(guia)}` : ''}}`
+    }
     case 'multiple_choice':
       return buildMultipleChoiceBlock(questionTitle, questionText, question, index)
     case 'true_false':

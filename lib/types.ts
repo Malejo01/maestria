@@ -36,7 +36,7 @@ export interface Topic {
  * generate-quiz, one new case in components/quiz-answer-inputs, one new case
  * in lib/moodle-export.ts's GIFT builder — no other file needs to change.
  */
-export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching' | 'ordering' | 'gapselect' | 'ddwtos' | 'missing_word' | 'calculated'
+export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching' | 'ordering' | 'gapselect' | 'ddwtos' | 'missing_word' | 'calculated' | 'essay'
 
 /**
  * De dónde salió el texto de esta pregunta.
@@ -199,6 +199,16 @@ export interface OrderingQuestion extends BaseQuestion {
   items: string[]
 }
 
+/**
+ * Ronda W · W5: respuesta larga (ensayo). El único tipo que no se corrige
+ * solo: la IA sugiere, con la rúbrica (3 a 5 criterios), y el docente
+ * confirma. Mientras tanto, el alumno ve "En corrección" (lib/ensayo.ts).
+ */
+export interface EssayQuestion extends BaseQuestion {
+  type: 'essay'
+  rubrica: { criterio: string }[]
+}
+
 export type Question =
   | MultipleChoiceQuestion
   | ShortAnswerQuestion
@@ -210,6 +220,7 @@ export type Question =
   | GapsQuestion
   | MissingWordQuestion
   | CalculatedQuestion
+  | EssayQuestion
 
 export interface QuizConfig {
   subject: string
@@ -373,6 +384,13 @@ export interface OrderingAnswer extends BaseAnswer {
   selectedOrder: number[]
 }
 
+/** W5: el texto del alumno. Queda sin calificar hasta que el docente confirme la corrección. */
+export interface EssayAnswer extends BaseAnswer {
+  type: 'essay'
+  selectedText: string
+  rubrica: { criterio: string }[]
+}
+
 export type Answer =
   | MultipleChoiceAnswer
   | ShortAnswerAnswer
@@ -384,6 +402,7 @@ export type Answer =
   | GapsAnswer
   | MissingWordAnswer
   | CalculatedAnswer
+  | EssayAnswer
 
 export interface QuizResult {
   /**

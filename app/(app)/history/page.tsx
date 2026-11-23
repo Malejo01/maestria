@@ -1,5 +1,6 @@
 'use client'
 
+import { EnsayoEnHistorial, esEnsayoGuardado } from '@/components/alumno/ensayo-en-historial'
 import { respuestaGuardadaEnTexto } from '@/lib/tipos-moodle'
 import { Cargando } from '@/components/sistema/cargando'
 
@@ -585,6 +586,7 @@ function HistoryPageContent() {
                           {/* Card header row */}
                           <div
                             className="p-4 cursor-pointer select-none"
+                            data-intento={attempt.id}
                             onClick={() => handleExpandAttempt(attempt.id)}
                           >
                             <div className="flex items-start justify-between gap-3">
@@ -645,7 +647,10 @@ function HistoryPageContent() {
                                   <Cargando className="w-5 h-5 text-primary" />
                                 </div>
                               ) : attemptDetails[attempt.id] ? (
-                                attemptDetails[attempt.id].map((answer, i) => (
+                                attemptDetails[attempt.id].map((answer, i) => esEnsayoGuardado(answer.question_type, answer.answer_payload) ? (
+                                  // W5: el ensayo, en corrección o con la devolución del docente.
+                                  <EnsayoEnHistorial key={answer.id} numero={i + 1} consigna={answer.question_text} payload={answer.answer_payload ?? {}} />
+                                ) : (
                                   <div
                                     key={answer.id}
                                     className={cn(
