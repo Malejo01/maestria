@@ -228,3 +228,11 @@ describe('buildQuestionMixInstruction', () => {
     expect(buildQuestionMixInstruction(undefined, 20)).toBe('')
   })
 })
+
+describe('restrictQuestionTypeMix con los tipos como en Moodle (U4)', () => {
+  it('los tipos de Moodle pedidos entran con el peso mínimo, no se pierden', () => {
+    const mezcla = restrictQuestionTypeMix({ multiple_choice: 60, true_false: 40 }, ['gapselect', 'ddwtos', 'matching', 'calculated', 'true_false'])
+    expect(Object.keys(mezcla ?? {}).sort()).toEqual(['calculated', 'ddwtos', 'gapselect', 'matching', 'true_false'])
+    expect(mezcla?.matching).toBe(40)
+  })
+})

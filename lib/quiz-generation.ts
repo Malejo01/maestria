@@ -15,7 +15,7 @@
  */
 import { instanciarCalculada } from '@/lib/calculada'
 import { problemaDeTipoMoodle } from '@/lib/tipos-moodle'
-import { MOTIVO_DE_CALIDAD, problemaDeCalidad } from '@/lib/validar-tipos-moodle'
+import { MOTIVO_DE_CALIDAD, problemaDeCalidad, type ProblemaDeCalidad } from '@/lib/validar-tipos-moodle'
 import { generateObject, generateText, type RepairTextFunction } from 'ai'
 import { anclarTema } from '@/lib/a-reforzar'
 import { seccionEvitar, type PreguntaAEvitar } from '@/lib/valoraciones'
@@ -25,7 +25,7 @@ import { buildEducationSystemPrompt, type ContextoProfesionalCarrera } from '@/l
 import type { PerfilAlumnos } from '@/lib/perfil-alumnos'
 import { captureAiSchemaFailure, captureRouteFailure } from '@/lib/observability'
 import type { AiSdkUsage } from '@/lib/ai-usage'
-import { normalizeQuestionText, numericSignature } from '@/lib/question-dedup'
+import { contenidoParaComparar, normalizeQuestionText, numericSignature } from '@/lib/question-dedup'
 import { normalizarFraccionGenerada } from '@/lib/fraccion'
 import { pideMasDeUnValor } from '@/lib/consigna-multiple'
 import { corregirTipoDePregunta, MOTIVO_DE_PROBLEMA } from '@/lib/validar-tipo-de-pregunta'
@@ -206,8 +206,8 @@ export type QuestionType = (typeof QUESTION_TYPE_VALUES)[number]
 
 /** F5: lo mismo para seleccionar y para arrastrar. */
 const CAMPOS_DE_HUECOS = `- question: la consigna corta ("Completá el texto con las palabras que faltan.").
-- text: un párrafo de 2 a 4 oraciones con 3 a 5 huecos escritos [[1]], [[2]], [[3]]… en orden, cada uno UNA sola vez, en lugar de una palabra o expresión corta que se deduce del tema.
-- choices: array de strings que EMPIEZA con la palabra correcta de cada hueco, en orden ([[1]] → choices[0], [[2]] → choices[1]…), y SIGUE con 2 o 3 distractores del mismo tipo (que no encajen en ningún hueco). Todas distintas, cortas, sin LaTeX.
+- text: un párrafo de 2 a 4 oraciones con 3 a 5 huecos escritos [[1]], [[2]], [[3]]… en orden, cada uno UNA sola vez, en lugar de una palabra o expresión corta que se deduce del tema. NUNCA menos de 3 huecos ni más de 5, y ningún número salteado.
+- choices: array de strings que EMPIEZA con la palabra correcta de cada hueco, en orden ([[1]] → choices[0], [[2]] → choices[1]…), y SIGUE con 2 o 3 distractores del mismo tipo (que no encajen en ningún hueco). Todas distintas, cortas, sin LaTeX. En total, la cantidad de huecos más 2 o 3.
 - Cada hueco tiene UNA sola palabra posible entre las opciones.`
 
 const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
@@ -253,8 +253,10 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - Tiene que haber UN SOLO orden correcto y sin ambigüedades: etapas, pasos de un procedimiento, fechas, de menor a mayor. Nada de "por importancia".
 - Cada elemento es corto (hasta 12 palabras) y distinto de los otros.`,
   gapselect: `TIPO "gapselect" (seleccionar la palabra de cada hueco):
+- type: "gapselect"
 ${CAMPOS_DE_HUECOS}`,
   ddwtos: `TIPO "ddwtos" (arrastrar palabras al texto):
+- type: "ddwtos" (escrito así: es un tipo distinto de "gapselect", con los mismos campos)
 ${CAMPOS_DE_HUECOS}`,
   missing_word: `TIPO "missing_word" (la palabra que falta):
 - type: "missing_word"
@@ -267,8 +269,11 @@ ${CAMPOS_DE_HUECOS}`,
 - question: el enunciado con 1 a 3 comodines entre llaves en lugar de los datos ("Un bien cuesta {p} pesos y sube un {x} %. ¿Cuánto cuesta ahora?"). Cada comodín aparece en el enunciado.
 - formula: la cuenta con esos comodines, en la sintaxis de Moodle: números con punto, + - * /, paréntesis y las funciones pow(a, b), sqrt(), abs(), round(x, d), min(), max(), pi(). NUNCA "^" (para potencias, pow). Ej: "{p} * (1 + {x} / 100)".
 - variables: array con un objeto por comodín { "name": "p", "min": 100, "max": 500, "decimals": 0 }: rangos razonables para el tema, que nunca den división por cero ni raíz de negativo.
-- tolerance: number, la tolerancia relativa (0.01 = 1 %).
-- NO pongas valores ni la respuesta: los números los sortea el sistema y la respuesta sale de la fórmula.`,
+- tolerance: number, SIEMPRE: la tolerancia relativa (0.01 = 1 %).
+- Al menos un comodín: NUNCA escribas los datos que cambian como números fijos. Cada comodín del enunciado está en la fórmula y en variables, y al revés.
+- El enunciado, sin LaTeX ni signos $ (los comodines entre llaves ya son la notación de Moodle).
+- NO pongas valores ni la respuesta: los números los sortea el sistema y la respuesta sale de la fórmula. Nunca "si a = 2 y b = 5" en el enunciado.
+- Ejemplo completo: { "type": "calculated", "question": "Una empresa compra mercaderías por {m} pesos y paga el {x} % al contado. ¿Cuánto queda a pagar?", "formula": "{m} * (1 - {x} / 100)", "variables": [{ "name": "m", "min": 50000, "max": 300000, "decimals": 0 }, { "name": "x", "min": 10, "max": 60, "decimals": 0 }], "tolerance": 0.01 }`,
 }
 
 function buildTypeInstructions(
@@ -1116,6 +1121,27 @@ function resolveQuestionTypes(
   return suggested.length > 0 ? suggested : ['multiple_choice']
 }
 
+/**
+ * Ronda U · U4 — Para medir (y para la salud del sistema, Y1): cada tanda que
+ * devuelve el modelo, tal cual, y cada pregunta descartada con su motivo.
+ * Nunca cambia lo que se genera.
+ */
+export interface ObservadorDeGeneracion {
+  tanda?: (preguntas: readonly Record<string, unknown>[]) => void
+  descarte?: (pregunta: Record<string, unknown>, motivo: MotivoDeDescarte) => void
+}
+
+/** Por qué se descartó una pregunta al generar. */
+export type MotivoDeDescarte =
+  | 'tipo-no-pedido'
+  | `forma:${string}`
+  | `calidad:${ProblemaDeCalidad}`
+  | `area:${string}`
+  | 'tipo-incoherente'
+  | 'numerica-conceptual'
+  | 'mas-de-un-valor'
+  | 'repetida'
+
 export type GenerateQuizResult =
   /**
    * `avisosDeTipos` (U1): los tipos pedidos que no salieron, con el porqué
@@ -1136,7 +1162,8 @@ export type GenerateQuizResult =
  */
 export async function generateQuiz(
   params: QuizRequestParams,
-  onUsage?: (usage: AiSdkUsage | undefined) => void
+  onUsage?: (usage: AiSdkUsage | undefined) => void,
+  observar?: ObservadorDeGeneracion,
 ): Promise<GenerateQuizResult> {
   const {
     subject,
@@ -1297,17 +1324,24 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     question: { question: string; topic?: string; topicName?: string; type?: string; acceptedAnswers?: unknown },
     tiposDeLaTanda: QuestionType[] = finalQuestionTypes,
   ): boolean => {
+    const descartar = (motivo: MotivoDeDescarte) => {
+      observar?.descarte?.(question as Record<string, unknown>, motivo)
+      return true
+    }
+    // U4: la calculada sin tolerancia (el modelo la omite seguido) va con el 1 % de siempre.
+    const conTolerancia = question as { type?: string; tolerance?: unknown }
+    if (conTolerancia.type === 'calculated' && !(Number(conTolerancia.tolerance) > 0)) conTolerancia.tolerance = 0.01
     // Decisión 2 de la tanda P: un tipo que no se pidió se descarta y el bucle
     // pide otra pregunta (completa la cantidad).
     if (!tiposDeLaTanda.includes(question.type as QuestionType)) {
       console.log(`[generate-quiz] Dropped (tipo no pedido: ${question.type}):`, question.question)
-      return true
+      return descartar('tipo-no-pedido')
     }
     // Ronda T · F2 a F7: un tipo como en Moodle mal armado (varias correctas con una sola) se descarta.
     const deTipo = problemaDeTipoMoodle(question as Record<string, unknown>)
     if (deTipo) {
       console.log(`[generate-quiz] Dropped (${deTipo}):`, question.question)
-      return true
+      return descartar(`forma:${deTipo}`)
     }
     // U3: que sirva, no sólo que se pueda mostrar (pares que no se confunden,
     // un orden único, distractores que no son la misma palabra, una calculada
@@ -1315,7 +1349,7 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     const deCalidad = problemaDeCalidad(question as Record<string, unknown>)
     if (deCalidad) {
       console.log(`[generate-quiz] Dropped (${MOTIVO_DE_CALIDAD[deCalidad]}):`, question.question)
-      return true
+      return descartar(`calidad:${deCalidad}`)
     }
     // Ronda T · A5: en una unidad conceptual, ni LaTeX, ni numérica, ni cuentas.
     // Salvo una numérica que una persona tildó a mano (A1 la permite): ahí
@@ -1324,7 +1358,7 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
       question.type === 'numeric' && numericaAMano ? null : problemaDeArea(question, caracterDeLaPregunta(areaCtx, question.topicName))
     if (deArea) {
       console.log(`[generate-quiz] Dropped (${MOTIVO_DE_AREA[deArea]}):`, question.question)
-      return true
+      return descartar(`area:${deArea}`)
     }
     // M2: el tipo tiene que encajar con la consigna. Lo que se arregla sin IA
     // (un sí/no en orden sujeto-verbo, "el valor" de una inecuación) se
@@ -1334,7 +1368,7 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     const correccion = corregirTipoDePregunta(question)
     if (correccion.accion === 'regenerar') {
       console.log(`[generate-quiz] Dropped (tipo incoherente: ${MOTIVO_DE_PROBLEMA[correccion.problema]}):`, question.question)
-      return true
+      return descartar('tipo-incoherente')
     }
     if (correccion.accion === 'reescrita') {
       if (correccion.problema === 'inecuacion-formas') {
@@ -1347,27 +1381,29 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     }
     if (isConceptualNumericQuestion(question)) {
       console.log('[generate-quiz] Dropped a numeric question that asks for words:', question.question)
-      return true
+      return descartar('numerica-conceptual')
     }
     // K3: un solo casillero y una consigna que pide dos resultados. Se descarta
     // y el bucle pide otra, igual que la de arriba.
     if (pideMasDeUnValor(question)) {
       console.log('[generate-quiz] Dropped a question that asks for more than one value:', question.question)
-      return true
+      return descartar('mas-de-un-valor')
     }
 
-    const fingerprint = normalizeQuestionText(question.question)
-    if (!fingerprint || previousQuestionFingerprints.has(fingerprint)) return true
+    // U4: con el texto de los huecos, los pares o los pasos (la consigna de esos tipos es genérica).
+    const contenido = contenidoParaComparar(question)
+    const fingerprint = normalizeQuestionText(contenido)
+    if (!fingerprint || previousQuestionFingerprints.has(fingerprint)) return descartar('repetida')
 
     const signature = numericSignature(question)
     if (signature && runSignatures.has(signature)) {
       console.log('[generate-quiz] Dropped a re-dressed duplicate:', question.question)
-      return true
+      return descartar('repetida')
     }
 
     previousQuestionFingerprints.add(fingerprint)
     if (signature) runSignatures.add(signature)
-    askedTexts.push(question.question)
+    askedTexts.push(contenido)
     return false
   }
 
@@ -1376,6 +1412,13 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     : ''
 
   const collectedQuestions = []
+
+  /** U4: la tanda del modelo, tal cual, para quien observa; después se filtra como siempre. */
+  const pedirTanda = async (p: Parameters<typeof generateQuizBatch>[0]) => {
+    const tanda = await generateQuizBatch(p)
+    observar?.tanda?.(tanda as Record<string, unknown>[])
+    return tanda
+  }
 
   /**
    * Ronda T · A1/A4: con más de un tipo, ninguno pasa de la mitad. Lo que
@@ -1434,7 +1477,7 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
       for (let intento = 0; intento < 1 && tiposFaltantes(plan.garantizar, actuales).length > 0; intento++) {
         const faltan = tiposFaltantes(plan.garantizar, actuales)
         console.log('[generate-quiz] Faltan tipos pedidos, se pide una tanda sólo de esos:', faltan.join(', '))
-        const tanda = await generateQuizBatch({
+        const tanda = await pedirTanda({
           subject,
           curriculum,
           modeDescription: descripcionDelModo(areaCtx, faltan.some((t) => TIPOS_CON_CALCULO.includes(t)) ? 'practico' : modoDeLaTanda),
@@ -1475,7 +1518,7 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
 
     for (let attempt = 0; attempt < 3 && (teorico.falta(attempt) || practico.falta(attempt)); attempt++) {
       if (teorico.falta(attempt)) {
-        const teoricoBatch = await generateQuizBatch({
+        const teoricoBatch = await pedirTanda({
           subject,
           curriculum,
           modeDescription: descripcionDelModo(areaCtx, 'teorico'),
@@ -1507,7 +1550,7 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
       }
 
       if (practico.falta(attempt)) {
-        const practicoBatch = await generateQuizBatch({
+        const practicoBatch = await pedirTanda({
           subject,
           curriculum,
           modeDescription: descripcionDelModo(areaCtx, 'practico'),
@@ -1562,7 +1605,7 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
 
   const juntando = juntarConTope(questionCount, batchQuestionTypes)
   for (let attempt = 0; attempt < 3 && juntando.falta(attempt); attempt++) {
-    const generatedQuestions = await generateQuizBatch({
+    const generatedQuestions = await pedirTanda({
       subject,
       curriculum,
       modeDescription,
