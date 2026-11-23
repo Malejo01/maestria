@@ -120,6 +120,13 @@ const matchingQuestionSchema = z.object({
   distractors: z.array(z.string()).optional(),
 })
 
+// Ronda T · F4: ordenamiento (Moodle ordering). `items` en el orden correcto.
+const orderingQuestionSchema = z.object({
+  ...baseQuestionFields,
+  type: z.literal('ordering'),
+  items: z.array(z.string()),
+})
+
 const questionSchema = z.discriminatedUnion('type', [
   multipleChoiceQuestionSchema,
   shortAnswerQuestionSchema,
@@ -127,6 +134,7 @@ const questionSchema = z.discriminatedUnion('type', [
   numericQuestionSchema,
   multipleResponseQuestionSchema,
   matchingQuestionSchema,
+  orderingQuestionSchema,
 ])
 
 export const quizSchema = z.object({
@@ -151,7 +159,7 @@ export const quizSchema = z.object({
  */
 export type GeneratedQuestion = z.infer<typeof quizSchema>['questions'][number]
 
-export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching'] as const
+export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching', 'ordering'] as const
 export type QuestionType = (typeof QUESTION_TYPE_VALUES)[number]
 
 const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
@@ -190,6 +198,12 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - distractors: array OPCIONAL de 1 o 2 strings: respuestas de más que NO van con ningún "left" (del mismo tipo que los "right", para que no se descarten solas).
 - question: la consigna ("Uní cada concepto con su definición", "Relacioná cada autor con su teoría").
 - Los "right" son CORTOS (hasta 8 palabras), en texto plano, SIN LaTeX ni símbolos $: en Moodle se eligen de una lista.`,
+  ordering: `TIPO "ordering" (ordenamiento):
+- type: "ordering"
+- items: array de 4 a 6 strings EN EL ORDEN CORRECTO (el sistema los baraja después).
+- question: dice el criterio del orden ("Ordená de la más antigua a la más reciente", "Ordená los pasos del método").
+- Tiene que haber UN SOLO orden correcto y sin ambigüedades: etapas, pasos de un procedimiento, fechas, de menor a mayor. Nada de "por importancia".
+- Cada elemento es corto (hasta 12 palabras) y distinto de los otros.`,
 }
 
 function buildTypeInstructions(
@@ -646,6 +660,8 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
                 return Array.isArray(q.options) && q.options.length > 1 && Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0
               case 'matching':
                 return Array.isArray(q.pairs) && q.pairs.length > 0
+              case 'ordering':
+                return Array.isArray(q.items) && q.items.length > 1
               default:
                 return false
             }

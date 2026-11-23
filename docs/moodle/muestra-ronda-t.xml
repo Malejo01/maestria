@@ -91,4 +91,24 @@
     <subquestion format="html"><text><![CDATA[<p>Franz Boas</p>]]></text><answer><text>Particularismo histórico</text></answer></subquestion>
     <subquestion format="html"><text></text><answer><text>Evolucionismo unilineal</text></answer></subquestion>
   </question>
+  <question type="ordering">
+    <name><text>7. Ordená los pasos del trabajo de campo etnográfico.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Ordená los pasos del trabajo de campo etnográfico.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Del problema a la escritura.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <layouttype>VERTICAL</layouttype>
+    <selecttype>ALL</selecttype>
+    <selectcount>0</selectcount>
+    <gradingtype>ABSOLUTE_POSITION</gradingtype>
+    <showgrading>SHOW</showgrading>
+    <numberingstyle>none</numberingstyle>
+    <answer fraction="1.0000000" format="html"><text><![CDATA[<p>Elegir el problema</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="2.0000000" format="html"><text><![CDATA[<p>Entrar al campo</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="3.0000000" format="html"><text><![CDATA[<p>Observar y registrar</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="4.0000000" format="html"><text><![CDATA[<p>Analizar los registros</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="5.0000000" format="html"><text><![CDATA[<p>Escribir la etnografía</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
 </quiz>

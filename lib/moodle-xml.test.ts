@@ -32,6 +32,7 @@ const PREGUNTAS: Question[] = [
     distractors: ['Evolucionismo'],
     explanation: '',
   },
+  { ...base, id: 'q8', type: 'ordering', question: 'Ordená de la más antigua a la más reciente.', items: ['Paleolítico', 'Neolítico', 'Edad de los metales'], explanation: '' },
 ]
 
 function quiz(questions: Question[] = PREGUNTAS): TeacherQuiz {
@@ -65,7 +66,9 @@ describe('F1 · convertQuizToMoodleXml', () => {
 
   it('cada tipo va con el suyo de Moodle', () => {
     const tipos = [...xml.matchAll(/<question type="(\w+)">/g)].map((m) => m[1])
-    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice', 'matching'])
+    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice', 'matching', 'ordering'])
+    // F4: cada elemento en el orden correcto, con su lugar como fracción.
+    expect(xml).toContain('<answer fraction="2.0000000" format="html"><text><![CDATA[<p>Neolítico</p>]]></text>')
     // F3: cada par un subquestion; el distractor, uno sin texto; la respuesta en texto plano escapado.
     expect(xml.match(/<subquestion format="html">/g)).toHaveLength(4)
     expect(xml).toContain('<p>Geertz &amp; la cultura</p>')

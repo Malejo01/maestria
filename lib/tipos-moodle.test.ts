@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  corregirOrden,
+  moverEnOrden,
+  ordenInicial,
+  ordenamientoValido,
   barajarFijo,
   corregirEmparejamiento,
   emparejamientoValido,
@@ -132,5 +136,55 @@ describe('F3 · emparejamiento', () => {
     }
     expect(respuestaEnTexto(respuesta, 'selected')).toBe('Geertz → Descripción densa · Lévi-Strauss → Evolucionismo · Malinowski → —')
     expect(payloadDeRespuesta(respuesta)).toMatchObject({ tipo: 'matching', selectedRights: ['Descripción densa', 'Evolucionismo', null] })
+  })
+})
+
+describe('F4 · ordenamiento', () => {
+  const ORDENAR = { id: 'q3', items: ['Recolección', 'Agricultura', 'Industria', 'Servicios'] }
+
+  it('todo o nada: el orden exacto', () => {
+    expect(corregirOrden([0, 1, 2, 3])).toBe(true)
+    expect(corregirOrden([1, 0, 2, 3])).toBe(false)
+    expect(corregirOrden([])).toBe(false)
+  })
+
+  it('subir y bajar cambian de lugar con el vecino; en los bordes no hacen nada', () => {
+    expect(moverEnOrden([2, 0, 1], 1, -1)).toEqual([0, 2, 1])
+    expect(moverEnOrden([2, 0, 1], 1, 1)).toEqual([2, 1, 0])
+    expect(moverEnOrden([2, 0, 1], 0, -1)).toEqual([2, 0, 1])
+    expect(moverEnOrden([2, 0, 1], 2, 1)).toEqual([2, 0, 1])
+  })
+
+  it('arranca barajado, siempre igual para la pregunta, y nunca ya ordenado', () => {
+    const a = ordenInicial(ORDENAR)
+    expect(ordenInicial(ORDENAR)).toEqual(a)
+    expect([...a].sort()).toEqual([0, 1, 2, 3])
+    for (const id of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']) {
+      expect(corregirOrden(ordenInicial({ id, items: ['x', 'y', 'z'] }))).toBe(false)
+    }
+  })
+
+  it('sirve con 3 a 8 elementos escritos y distintos', () => {
+    expect(ordenamientoValido(ORDENAR)).toBe(true)
+    expect(ordenamientoValido({ items: ['a', 'b'] })).toBe(false)
+    expect(ordenamientoValido({ items: ['a', 'b', 'A'] })).toBe(false)
+    expect(ordenamientoValido({ items: ['a', '', 'c'] })).toBe(false)
+  })
+
+  it('en texto y en el payload', () => {
+    const respuesta: Answer = {
+      type: 'ordering',
+      questionId: 'q3',
+      questionText: 'Ordená',
+      isCorrect: false,
+      topic: 't',
+      topicName: 'Etapas',
+      explanation: '',
+      items: ORDENAR.items,
+      selectedOrder: [1, 0, 2, 3],
+    }
+    expect(respuestaEnTexto(respuesta, 'selected')).toBe('1. Agricultura · 2. Recolección · 3. Industria · 4. Servicios')
+    expect(respuestaEnTexto(respuesta, 'correct')).toBe('1. Recolección · 2. Agricultura · 3. Industria · 4. Servicios')
+    expect(payloadDeRespuesta(respuesta)).toMatchObject({ tipo: 'ordering', selectedOrder: [1, 0, 2, 3] })
   })
 })

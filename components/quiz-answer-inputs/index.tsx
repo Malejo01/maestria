@@ -9,6 +9,8 @@ import { TrueFalseInput } from './true-false-input'
 import { NumericInput } from './numeric-input'
 import { MultipleResponseInput } from './multiple-response-input'
 import { MatchingInput } from './matching-input'
+import { OrderingInput } from './ordering-input'
+import { ordenInicial } from '@/lib/tipos-moodle'
 
 export type AnswerSelection =
   | { type: 'multiple_choice'; value: number | null }
@@ -20,6 +22,8 @@ export type AnswerSelection =
   | { type: 'multiple_response'; value: number[] }
   // F3: lo elegido para cada elemento de la izquierda.
   | { type: 'matching'; value: (string | null)[] }
+  // F4: los índices de los elementos, en el orden en que están.
+  | { type: 'ordering'; value: number[] }
 
 export function emptySelectionFor(question: Question): AnswerSelection {
   switch (question.type) {
@@ -35,6 +39,8 @@ export function emptySelectionFor(question: Question): AnswerSelection {
       return { type: 'multiple_response', value: [] }
     case 'matching':
       return { type: 'matching', value: question.pairs.map(() => null) }
+    case 'ordering':
+      return { type: 'ordering', value: ordenInicial(question) }
   }
 }
 
@@ -128,6 +134,18 @@ export function AnswerInput({
         submitted={submitted}
         disabled={disabled}
         onChange={(value) => onChange({ type: 'matching', value })}
+      />
+    )
+  }
+
+  if (question.type === 'ordering' && selection.type === 'ordering') {
+    return (
+      <OrderingInput
+        question={question}
+        orden={selection.value}
+        submitted={submitted}
+        disabled={disabled}
+        onChange={(value) => onChange({ type: 'ordering', value })}
       />
     )
   }

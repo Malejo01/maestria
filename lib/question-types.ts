@@ -1,4 +1,4 @@
-import { ArrowRightLeft, CheckSquare, Hash, ListChecks, PenLine, ToggleLeft, type LucideIcon } from 'lucide-react'
+import { ArrowRightLeft, ArrowUpDown, CheckSquare, Hash, ListChecks, PenLine, ToggleLeft, type LucideIcon } from 'lucide-react'
 import type { QuestionType } from '@/lib/types'
 
 export interface QuestionTypeOption {
@@ -51,6 +51,12 @@ export const QUESTION_TYPE_OPTIONS: QuestionTypeOption[] = [
     label: 'Emparejamiento',
     description: 'Unir cada elemento con su pareja.',
     Icon: ArrowRightLeft,
+  },
+  {
+    value: 'ordering',
+    label: 'Ordenamiento',
+    description: 'Poner los elementos en orden.',
+    Icon: ArrowUpDown,
   },
 ]
 
