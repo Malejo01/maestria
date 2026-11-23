@@ -2022,3 +2022,23 @@ export const MATERIA_DE_EJEMPLO = {
   cancelar: 'Cancelar',
   etiqueta: 'Ejemplo',
 } as const
+
+/** Ronda V · V3: los referidos. */
+export const REFERIDOS = {
+  titulo: 'Recomendá MaestrIA',
+  detalle: 'Pasale tu link a otro docente. Si se registra con él y paga su primer plan, a vos te sumamos 30 días y a él le hacemos un 10 % de descuento en ese primer pago.',
+  tuCodigo: 'Tu código',
+  tuLink: 'Tu link',
+  copiar: 'Copiar el link',
+  copiado: 'Copiado',
+  compartir: 'Mandarlo por WhatsApp',
+  mensaje: (link: string) => `Estoy usando MaestrIA para armar las tareas y ver qué le falta a cada alumno. Si te registrás con este link, tenés 10 % de descuento en tu primer pago: ${link}`,
+  resumen: (registrados: number, pagaron: number, dias: number) =>
+    registrados === 0
+      ? 'Todavía nadie se registró con tu link.'
+      : `${registrados === 1 ? '1 docente se registró' : `${registrados} docentes se registraron`} con tu link; ${pagaron === 1 ? '1 pagó' : `${pagaron} pagaron`}. Ganaste ${dias} días.`,
+  aviso: {
+    titulo: 'Te sumamos 30 días',
+    detalle: 'Un docente que se registró con tu link pagó su plan.',
+  },
+} as const

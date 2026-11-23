@@ -1,4 +1,5 @@
 import { registrarOrigen } from '@/lib/origen-server'
+import { registrarReferido } from '@/lib/referidos-server'
 import NextAuth, { type DefaultSession } from 'next-auth'
 import Google from 'next-auth/providers/google'
 import Credentials from 'next-auth/providers/credentials'
@@ -110,7 +111,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         `) as { nuevo?: boolean }[]
 
         // V1: si se acaba de registrar, el canal del link de su primera visita.
-        if (fila?.nuevo) await registrarOrigen(userId)
+        if (fila?.nuevo) {
+          await registrarOrigen(userId)
+          // V3: si vino con el link de referido de otro docente, queda anotado.
+          await registrarReferido(userId)
+        }
 
         // Upsert OAuth account link (needed for provider tracking)
         await sql`

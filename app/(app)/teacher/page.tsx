@@ -1,5 +1,6 @@
 'use client'
 
+import { Recomendar } from '@/components/docente/recomendar'
 import { AvisoDeEjemplo } from '@/components/docente/materia-de-ejemplo'
 import Link from 'next/link'
 import { HitosOnboarding } from '@/components/docente/hitos-onboarding'
@@ -78,6 +79,7 @@ export default function TeacherPage() {
 
       <MisTareas panel={panel} />
       <MisMaterias panel={panel} />
+      <Recomendar />
 
         {teacherSection === 'aulas' && (
           <div className="space-y-4">

@@ -8,6 +8,7 @@ import { linkDeWhatsApp } from '@/lib/precios'
 import { armarCobro, estadoDelPago, nuevoVencimiento, queSePaga, type Cobro, type PedidoDePago } from '@/lib/pagos'
 import { consultarPago, crearPreferencia, esDePrueba, type Pedir } from '@/lib/mercadopago'
 import { captureRouteFailure } from '@/lib/observability'
+import { premiarReferidos, validarCodigoDeReferido } from '@/lib/referidos-server'
 import { PAGAR as T } from '@/lib/textos'
 
 /**
@@ -36,6 +37,9 @@ function conMateria(cobro: Cobro | null, materia: string | null | undefined): Co
 
 async function validar(userId: string, pedido: PedidoDePago, texto: string): Promise<ResultadoDelCodigo | null> {
   if (!texto.trim()) return null
+  // V3: el código de referido de otro docente vale como uno de C1 (10 % en el primer pago).
+  const deReferido = await validarCodigoDeReferido(texto, userId, queSePaga(pedido))
+  if (deReferido) return deReferido
   const encontrado = await buscarCodigo(texto, userId)
   return validarCodigo({
     codigo: encontrado?.codigo ?? null,
@@ -103,11 +107,12 @@ export async function iniciarCheckout(params: {
   const [fila] = (await sql`
     INSERT INTO pagos (user_id, plan, forma, cantidad, monto_lista, monto, codigo_id, codigo, detalle)
     VALUES (${params.userId}, ${cobro.pedido.plan}, ${cobro.pedido.forma}, ${cobro.pedido.cantidad}, ${cobro.montoLista}, ${cobro.monto},
-            ${resultado?.ok ? resultado.codigo.id : null}, ${resultado?.ok ? resultado.codigo.codigo : null},
+            ${resultado?.ok && resultado.codigo.id > 0 ? resultado.codigo.id : null}, ${resultado?.ok ? resultado.codigo.codigo : null},
             ${JSON.stringify({
               descripcion: cobro.descripcion,
               dias: cobro.dias,
               fundadora: resultado?.ok ? resultado.codigo.fundadora : false,
+              ...(resultado?.ok && resultado.codigo.id === 0 ? { referido: true } : {}),
               ...(cobro.pedido.materia ? { materia: cobro.pedido.materia } : {}),
             })})
     RETURNING id
@@ -185,6 +190,8 @@ async function acreditarDesdePago(fila: Record<string, unknown>): Promise<void> 
       tipo: plan === 'aula' ? 'aula' : 'particular',
       cursos: plan === 'aula' ? Number(fila.cantidad) : undefined,
     })
+    // V3: el premio del que lo trajo (y los que tenía pendientes quien pagó).
+    await premiarReferidos(userId, Number(fila.id))
   }
   // E2: el pase de alumno, a su materia personal (examen + 7).
   if (plan === 'pase_alumno') {
