@@ -15,6 +15,7 @@
 import { aleatorioConSemilla, instanciarCalculada } from '@/lib/calculada'
 import { preguntaImpresa } from '@/lib/diagnostico-impreso'
 import { partesDelTexto } from '@/lib/tipos-moodle'
+import { limpiarGrafico, type Grafico } from '@/lib/grafico'
 
 export type Tema = 'A' | 'B'
 
@@ -34,6 +35,8 @@ export interface PreguntaDelExamen {
   papel: FormaEnPapel
   /** Lo correcto, escrito: SÓLO en la hoja del docente. */
   correcta: string
+  /** X3: el gráfico de la función, igual en los dos temas. */
+  grafico?: Grafico
 }
 
 /** Baraja con semilla (Fisher–Yates). */
@@ -56,6 +59,12 @@ const letra = (i: number) => LETRAS[i] ?? String(i + 1)
  * papel. `semilla` distingue la tarea, el tema y la pregunta.
  */
 export function preguntaEnTema(cruda: Record<string, unknown>, numero: number, semilla: string): PreguntaDelExamen {
+  const grafico = cruda.grafico ? limpiarGrafico(cruda.grafico) : null
+  const p = preguntaEnTemaSinGrafico(cruda, numero, semilla)
+  return grafico ? { ...p, grafico } : p
+}
+
+function preguntaEnTemaSinGrafico(cruda: Record<string, unknown>, numero: number, semilla: string): PreguntaDelExamen {
   let q = { ...cruda }
   const tipo = String(q.type)
 

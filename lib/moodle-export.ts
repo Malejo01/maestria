@@ -1,3 +1,4 @@
+import { descripcionDelGrafico, limpiarGrafico } from '@/lib/grafico'
 import type { Question, TeacherQuiz } from '@/lib/types'
 import { margenAbsoluto } from '@/lib/calculada'
 import { TIPOS_MOODLE_TEXTOS } from '@/lib/textos'
@@ -173,7 +174,9 @@ function buildMultipleChoiceBlock(questionTitle: string, questionText: string, q
 
 function buildQuestionBlock(question: Question, index: number): string {
   const questionTitle = `Q${index + 1}`
-  const questionText = escapeGiftText(question.question)
+  // X3: GIFT no lleva imágenes: el gráfico va descripto en texto (el menú de exportar lo avisa).
+  const grafico = question.grafico ? limpiarGrafico(question.grafico) : null
+  const questionText = escapeGiftText(grafico ? `${question.question}\n[${descripcionDelGrafico(grafico)}]` : question.question)
 
   switch (question.type) {
     case 'essay': {

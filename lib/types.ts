@@ -1,3 +1,4 @@
+import type { Grafico } from '@/lib/grafico'
 import type { AreaId, Caracter } from './areas'
 // Types for MaestrIA Application
 
@@ -77,6 +78,8 @@ interface BaseQuestion {
    * siempre.
    */
   rejectionNote?: string
+  /** Ronda X · X3: el gráfico de una o más funciones (lib/grafico.ts). Opcional en cualquier tipo. */
+  grafico?: Grafico
 }
 
 export interface MultipleChoiceQuestion extends BaseQuestion {
