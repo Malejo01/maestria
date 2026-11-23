@@ -68,3 +68,38 @@ test('F2 · varias correctas: se marcan varias, se corrige todo o nada y se guar
     }, { timeout: 30_000 })
     .toEqual({ tipo: 'multiple_response', bien: false, elegidas: [1] })
 })
+
+test('F3 · emparejamiento: se elige la pareja de cada uno y se guarda con su tipo', async ({ page }) => {
+  test.setTimeout(120_000)
+  await entrarComo(page, ALUMNA)
+  const pares = [
+    { left: 'Geertz', right: 'Descripción densa' },
+    { left: 'Lévi-Strauss', right: 'Estructuralismo' },
+    { left: 'Malinowski', right: 'Observación participante' },
+  ]
+  const sql = await practicarCon(page, [
+    { id: 'e1', type: 'matching', topic: 't1', topicName: 'Autores', question: 'Uní cada autor con su concepto.', pairs: pares, distractors: ['Evolucionismo'], explanation: 'Cada autor con lo suyo.' },
+  ])
+  await expect(page.getByText('Elegí la pareja de cada uno.')).toBeVisible({ timeout: 30_000 })
+  // Sin elegir todas, no se puede verificar.
+  await page.getByRole('combobox', { name: 'Pareja de: Geertz' }).selectOption('Descripción densa')
+  await expect(page.getByRole('button', { name: /^Verificar/ })).toBeDisabled()
+  await page.getByRole('combobox', { name: 'Pareja de: Lévi-Strauss' }).selectOption('Evolucionismo')
+  await page.getByRole('combobox', { name: 'Pareja de: Malinowski' }).selectOption('Observación participante')
+  await page.getByRole('button', { name: /^Verificar/ }).click()
+  await expect(page.getByText('Correcta: Estructuralismo')).toBeVisible()
+  await page.getByRole('button', { name: /^(Siguiente|Ver resultados)$/ }).click()
+  await expect(page.getByText('0 de 1 correctas')).toBeVisible({ timeout: 30_000 })
+
+  await expect
+    .poll(async () => {
+      const [fila] = (await sql`
+        SELECT a.question_type, a.answer_payload FROM quiz_answers a
+        JOIN quiz_attempts t ON t.id = a.quiz_attempt_id
+        WHERE t.user_id = 'stg-demo-sofia' AND a.question_id = 'e1'
+        ORDER BY a.id DESC LIMIT 1
+      `) as { question_type: string; answer_payload: { selectedRights: string[] } }[]
+      return fila ? { tipo: fila.question_type, elegidas: fila.answer_payload.selectedRights } : null
+    }, { timeout: 30_000 })
+    .toEqual({ tipo: 'matching', elegidas: ['Descripción densa', 'Evolucionismo', 'Observación participante'] })
+})

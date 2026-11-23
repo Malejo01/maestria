@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  barajarFijo,
+  corregirEmparejamiento,
+  emparejamientoValido,
+  respuestasDelEmparejamiento,
   corregirVariasCorrectas,
   correctaEnTexto,
   fraccionesVariasCorrectas,
@@ -72,5 +76,61 @@ describe('F2 · varias correctas', () => {
     expect(respuestaGuardadaEnTexto('multiple_response', payload)).toEqual({ tipo: 'multiple_response', elegido: 'A) Se aprende · C) Se comparte', correcto: 'A) Se aprende · C) Se comparte · E) Es simbólica' })
     expect(respuestaGuardadaEnTexto('short_answer', payload)?.tipo).toBe('multiple_response')
     expect(respuestaGuardadaEnTexto('short_answer', { selectedText: 'x', acceptedAnswers: ['y'] })).toBeNull()
+  })
+})
+
+const EMPAREJAR: Extract<Question, { type: 'matching' }> = {
+  id: 'q2',
+  type: 'matching',
+  topic: 't',
+  topicName: 'Autores',
+  question: 'Uní cada autor con su concepto.',
+  pairs: [
+    { left: 'Geertz', right: 'Descripción densa' },
+    { left: 'Lévi-Strauss', right: 'Estructuralismo' },
+    { left: 'Malinowski', right: 'Observación participante' },
+  ],
+  distractors: ['Evolucionismo'],
+  explanation: '',
+}
+
+describe('F3 · emparejamiento', () => {
+  it('todo o nada, sin importar espacios de más', () => {
+    expect(corregirEmparejamiento(EMPAREJAR.pairs, ['Descripción densa', 'Estructuralismo', ' Observación  participante '])).toBe(true)
+    expect(corregirEmparejamiento(EMPAREJAR.pairs, ['Descripción densa', 'Observación participante', 'Estructuralismo'])).toBe(false)
+    expect(corregirEmparejamiento(EMPAREJAR.pairs, ['Descripción densa', 'Estructuralismo', null])).toBe(false)
+  })
+
+  it('sirve con 3 a 8 pares distintos y distractores que no son respuestas', () => {
+    expect(emparejamientoValido(EMPAREJAR)).toBe(true)
+    expect(emparejamientoValido({ pairs: EMPAREJAR.pairs.slice(0, 2) })).toBe(false)
+    expect(emparejamientoValido({ pairs: [...EMPAREJAR.pairs.slice(0, 2), { left: 'Boas', right: 'Estructuralismo' }] })).toBe(false)
+    expect(emparejamientoValido({ pairs: [...EMPAREJAR.pairs.slice(0, 2), { left: 'Geertz', right: 'Otra' }] })).toBe(false)
+    expect(emparejamientoValido({ pairs: EMPAREJAR.pairs, distractors: ['Estructuralismo'] })).toBe(false)
+    expect(emparejamientoValido({ pairs: [...EMPAREJAR.pairs.slice(0, 2), { left: 'Boas', right: '' }] })).toBe(false)
+  })
+
+  it('las respuestas que se ofrecen: las de los pares y los distractores, barajadas siempre igual', () => {
+    expect(respuestasDelEmparejamiento(EMPAREJAR).sort()).toEqual(['Descripción densa', 'Estructuralismo', 'Evolucionismo', 'Observación participante'])
+    const a = barajarFijo(respuestasDelEmparejamiento(EMPAREJAR), 'q2')
+    expect(barajarFijo(respuestasDelEmparejamiento(EMPAREJAR), 'q2')).toEqual(a)
+    expect([...a].sort()).toEqual(respuestasDelEmparejamiento(EMPAREJAR).sort())
+  })
+
+  it('en texto y en el payload', () => {
+    expect(correctaEnTexto(EMPAREJAR)).toBe('Geertz → Descripción densa · Lévi-Strauss → Estructuralismo · Malinowski → Observación participante')
+    const respuesta: Answer = {
+      type: 'matching',
+      questionId: 'q2',
+      questionText: EMPAREJAR.question,
+      isCorrect: false,
+      topic: 't',
+      topicName: 'Autores',
+      explanation: '',
+      pairs: EMPAREJAR.pairs,
+      selectedRights: ['Descripción densa', 'Evolucionismo', null],
+    }
+    expect(respuestaEnTexto(respuesta, 'selected')).toBe('Geertz → Descripción densa · Lévi-Strauss → Evolucionismo · Malinowski → —')
+    expect(payloadDeRespuesta(respuesta)).toMatchObject({ tipo: 'matching', selectedRights: ['Descripción densa', 'Evolucionismo', null] })
   })
 })

@@ -8,6 +8,7 @@ import { ShortAnswerInput } from './short-answer-input'
 import { TrueFalseInput } from './true-false-input'
 import { NumericInput } from './numeric-input'
 import { MultipleResponseInput } from './multiple-response-input'
+import { MatchingInput } from './matching-input'
 
 export type AnswerSelection =
   | { type: 'multiple_choice'; value: number | null }
@@ -17,6 +18,8 @@ export type AnswerSelection =
   | { type: 'numeric'; value: number | null; texto?: string }
   // F2: los índices marcados.
   | { type: 'multiple_response'; value: number[] }
+  // F3: lo elegido para cada elemento de la izquierda.
+  | { type: 'matching'; value: (string | null)[] }
 
 export function emptySelectionFor(question: Question): AnswerSelection {
   switch (question.type) {
@@ -30,6 +33,8 @@ export function emptySelectionFor(question: Question): AnswerSelection {
       return { type: 'numeric', value: null }
     case 'multiple_response':
       return { type: 'multiple_response', value: [] }
+    case 'matching':
+      return { type: 'matching', value: question.pairs.map(() => null) }
   }
 }
 
@@ -111,6 +116,18 @@ export function AnswerInput({
         submitted={submitted}
         disabled={disabled}
         onChange={(value) => onChange({ type: 'multiple_response', value })}
+      />
+    )
+  }
+
+  if (question.type === 'matching' && selection.type === 'matching') {
+    return (
+      <MatchingInput
+        question={question}
+        selected={selection.value}
+        submitted={submitted}
+        disabled={disabled}
+        onChange={(value) => onChange({ type: 'matching', value })}
       />
     )
   }

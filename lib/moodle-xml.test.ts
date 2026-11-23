@@ -19,6 +19,19 @@ const PREGUNTAS: Question[] = [
   { ...base, id: 'q4', type: 'numeric', question: '¿Cuánto es 11/12?', correctAnswer: 11 / 12, fraccion: { numerador: 11, denominador: 12 }, explanation: '' },
   { ...base, id: 'q5', type: 'short_answer', question: '¿Capital de Francia?', acceptedAnswers: ['París', 'Paris'], explanation: '' },
   { ...base, id: 'q6', type: 'multiple_response', question: '¿Cuáles son pares?', options: ['2', '3', '4', '5'], correctAnswers: [0, 2], explanation: '' },
+  {
+    ...base,
+    id: 'q7',
+    type: 'matching',
+    question: 'Uní cada autor con su concepto.',
+    pairs: [
+      { left: 'Geertz & la cultura', right: 'Descripción densa' },
+      { left: 'Lévi-Strauss', right: 'Estructuralismo' },
+      { left: 'Malinowski', right: 'Observación <participante>' },
+    ],
+    distractors: ['Evolucionismo'],
+    explanation: '',
+  },
 ]
 
 function quiz(questions: Question[] = PREGUNTAS): TeacherQuiz {
@@ -52,7 +65,12 @@ describe('F1 · convertQuizToMoodleXml', () => {
 
   it('cada tipo va con el suyo de Moodle', () => {
     const tipos = [...xml.matchAll(/<question type="(\w+)">/g)].map((m) => m[1])
-    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice'])
+    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice', 'matching'])
+    // F3: cada par un subquestion; el distractor, uno sin texto; la respuesta en texto plano escapado.
+    expect(xml.match(/<subquestion format="html">/g)).toHaveLength(4)
+    expect(xml).toContain('<p>Geertz &amp; la cultura</p>')
+    expect(xml).toContain('<answer><text>Observación &lt;participante&gt;</text></answer>')
+    expect(xml).toContain('<subquestion format="html"><text></text><answer><text>Evolucionismo</text></answer></subquestion>')
   })
 
   it('el texto va como HTML: "<" escapado, la matemática en \\( \\), los saltos como <br>, y "]]>" queda escapado adentro del CDATA', () => {
