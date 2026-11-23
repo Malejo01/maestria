@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="category">
+    <category><text>$course$/Antropologia Cultural G1 22 11 22 52 13/El concepto de cultura-Etnocentrismo y relativismo cultural-El trabajo de campo etnografico</text></category>
+  </question>
+  <question type="multichoice">
+    <name><text>1. Un grupo de turistas observa una ceremonia local y coment…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Un grupo de turistas observa una ceremonia local y comenta que es una forma primitiva de organización social porque no se ajusta a sus propios estándares de desarrollo. ¿Qué concepto antropológico describe mejor esta actitud?</p><p>La actitud descrita por los turistas, al evaluar prácticas ajenas bajo los parámetros de su propia cultura, se denomina _____.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>El etnocentrismo implica juzgar otras culturas desde la superioridad de la propia. Es fundamental identificar esta tendencia para superarla mediante la perspectiva antropológica.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>0</showstandardinstruction>
+    <answer fraction="100" format="html"><text><![CDATA[<p>Etnocentrismo</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>Enculturación</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>Relativismo cultural</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>Etnografía</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="matching">
+    <name><text>2. Un texto plantea que el investigador debe suspender sus j…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Un texto plantea que el investigador debe suspender sus juicios de valor para comprender las prácticas de una comunidad desde su propia lógica interna. ¿Qué concepto define esta postura?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>El relativismo cultural es la herramienta metodológica que permite al antropólogo comprender la cultura ajena sin imponer categorías externas. Es esencial para el trabajo de campo.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>true</shuffleanswers>
+    <subquestion format="html"><text><![CDATA[<p>Postura de valoración propia como superior</p>]]></text><answer><text>Etnocentrismo</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Comprensión desde la lógica interna ajena</p>]]></text><answer><text>Relativismo cultural</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Técnica de recolección de datos empíricos</p>]]></text><answer><text>Trabajo de campo</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Conjunto de saberes y modos de vida</p>]]></text><answer><text>Cultura</text></answer></subquestion>
+    <subquestion format="html"><text></text><answer><text>Evolucionismo lineal</text></answer></subquestion>
+  </question>
+  <question type="gapselect">
+    <name><text>3. Completá el texto con las palabras que faltan sobre el tr…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Completá el texto con las palabras que faltan sobre el trabajo de campo.</p><p>El [[1]] etnográfico es la piedra angular de la antropología, donde el investigador realiza una [[2]] prolongada para registrar las prácticas sociales mediante la [[3]] participante.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>El trabajo de campo etnográfico requiere una inmersión prolongada para captar la complejidad de la vida social. La observación participante es su técnica fundamental.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>1</shuffleanswers>
+    <selectoption><text>Trabajo de campo</text><group>1</group></selectoption>
+    <selectoption><text>Inmersión</text><group>1</group></selectoption>
+    <selectoption><text>Observación</text><group>1</group></selectoption>
+    <selectoption><text>Análisis</text><group>1</group></selectoption>
+    <selectoption><text>Entrevista</text><group>1</group></selectoption>
+    <selectoption><text>Etnocentrismo</text><group>1</group></selectoption>
+  </question>
+  <question type="multichoice">
+    <name><text>4. ¿Cuáles de estas características definen al concepto antr…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>¿Cuáles de estas características definen al concepto antropológico de cultura?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>La cultura no es biológica ni individual, sino un fenómeno social, aprendido y compartido. Es un sistema de significados que otorga sentido a la vida en sociedad.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>false</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>1</showstandardinstruction>
+    <answer fraction="-33.33333" format="html"><text><![CDATA[<p>Es una construcción estática e inmutable</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-33.33333" format="html"><text><![CDATA[<p>Es una característica exclusiva de las élites intelectuales</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-33.33333" format="html"><text><![CDATA[<p>Es un conjunto de rasgos biológicos heredados</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="50" format="html"><text><![CDATA[<p>Es un sistema de significados compartido socialmente</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="50" format="html"><text><![CDATA[<p>Es un proceso aprendido y transmitido generacionalmente</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="matching">
+    <name><text>5. Uní cada concepto con su descripción técnica correspondie…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Uní cada concepto con su descripción técnica correspondiente en el marco del análisis antropológico.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>El emparejamiento permite distinguir entre la observación participante, el etnocentrismo como sesgo cognitivo y el relativismo como herramienta metodológica. Es fundamental para el rigor en el trabajo de campo.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>true</shuffleanswers>
+    <subquestion format="html"><text><![CDATA[<p>Observación participante</p>]]></text><answer><text>Inmersión prolongada en la vida cotidiana</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Etnocentrismo</p>]]></text><answer><text>Juicio basado en valores propios</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Relativismo cultural</p>]]></text><answer><text>Comprensión desde la lógica interna</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Trabajo de campo</p>]]></text><answer><text>Producción de datos empíricos primarios</text></answer></subquestion>
+    <subquestion format="html"><text></text><answer><text>Análisis estadístico cuantitativo</text></answer></subquestion>
+    <subquestion format="html"><text></text><answer><text>Evolucionismo lineal unilineal</text></answer></subquestion>
+  </question>
+</quiz>
