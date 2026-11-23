@@ -10,6 +10,7 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { convertQuizToMoodleXml } from '../../lib/moodle-xml'
+import { aleatorioConSemilla, instanciarCalculada } from '../../lib/calculada'
 import { validarMoodleXml } from '../../lib/moodle-xml-validar'
 import type { Question, TeacherQuiz } from '../../lib/types'
 
@@ -119,6 +120,23 @@ export const PREGUNTAS_DE_MUESTRA: Question[] = [
     correctAnswer: 0,
     explanation: 'Si la cantidad casi no responde al precio, la demanda es inelástica.',
   },
+  // F7 · calculada (los valores, sorteados con semilla: el archivo sale siempre igual)
+  instanciarCalculada(
+    {
+      ...comun,
+      id: 'm11',
+      type: 'calculated' as const,
+      question: 'Un bien cuesta {p} pesos y su precio sube un {x} %. ¿Cuánto cuesta después de la suba?',
+      formula: '{p} * (1 + {x} / 100)',
+      variables: [
+        { name: 'p', min: 100, max: 900, decimals: 0 },
+        { name: 'x', min: 5, max: 25, decimals: 0 },
+      ],
+      tolerance: 0.01,
+      explanation: 'Se multiplica el precio por 1 más el porcentaje de suba.',
+    },
+    aleatorioConSemilla('muestra-m11'),
+  )!,
 ]
 
 export function cuestionarioDeMuestra(): TeacherQuiz {

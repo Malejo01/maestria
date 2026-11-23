@@ -937,3 +937,35 @@ describe('POST — Ronda T · F2: varias correctas', () => {
     }
   })
 })
+
+describe('POST — Ronda T · F7: la calculada', () => {
+  const calculada = (formula: string, caso: number) => ({
+    id: `c${caso}`,
+    type: 'calculated',
+    topic: 't1',
+    topicName: 'Álgebra',
+    question: `Caso ${caso}: un bien cuesta {p} pesos y sube un {x} %. ¿Cuánto cuesta ahora?`,
+    formula,
+    variables: [
+      { name: 'p', min: 100, max: 500, decimals: 0 },
+      { name: 'x', min: 5, max: 20, decimals: 0 },
+    ],
+    tolerance: 0.01,
+    explanation: 'Se multiplica por 1 más el porcentaje.',
+  })
+
+  it('sale con los valores sorteados en el enunciado y la correcta de la fórmula; una con "^" se descarta', async () => {
+    generateObject
+      .mockResolvedValueOnce({ object: { questions: [calculada('{p} * (1 + {x} / 100)', 1), calculada('{p} ^ 2', 2)] }, usage: {} })
+      .mockResolvedValueOnce({ object: { questions: [calculada('{p} + {p} * {x} / 100', 3)] }, usage: {} })
+    const res = await POST(request({ questionTypes: ['calculated'], questionCount: 2 }))
+    const { questions: salida } = (await res.json()) as { questions: { question: string; plantilla: string; valores: { p: number; x: number }; correctAnswer: number }[] }
+    expect(salida).toHaveLength(2)
+    expect(salida.some((q) => q.plantilla.startsWith('Caso 2'))).toBe(false)
+    for (const q of salida) {
+      expect(q.question).not.toContain('{p}')
+      expect(q.question).toContain(`cuesta ${q.valores.p} pesos`)
+      expect(q.correctAnswer).toBeCloseTo(q.valores.p * (1 + q.valores.x / 100))
+    }
+  })
+})

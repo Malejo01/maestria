@@ -452,3 +452,32 @@ describe('Ronda T · F6: la palabra faltante en GIFT', () => {
     expect(gift).toContain('::Q1::Elegí la palabra que falta.\nJuzgar con los valores propios se llama {~relativismo =etnocentrismo ~evolucionismo####Es etnocentrismo.} en antropología.')
   })
 })
+
+describe('Ronda T · F7: la calculada en GIFT', () => {
+  it('GIFT no tiene calculadas: va como numérica con los valores que tocaron y el margen', () => {
+    const gift = convertQuizToGift(
+      makeQuiz({
+        questions: [
+          {
+            id: 'q1',
+            type: 'calculated',
+            topic: 't',
+            topicName: 'T',
+            question: 'Cuesta 200 pesos y sube un 10 %. ¿Cuánto cuesta ahora?',
+            plantilla: 'Cuesta {p} pesos y sube un {x} %. ¿Cuánto cuesta ahora?',
+            formula: '{p} * (1 + {x} / 100)',
+            variables: [
+              { name: 'p', min: 100, max: 500, decimals: 0 },
+              { name: 'x', min: 5, max: 20, decimals: 0 },
+            ],
+            valores: { p: 200, x: 10 },
+            correctAnswer: 220,
+            tolerance: 0.01,
+            explanation: '',
+          },
+        ],
+      }),
+    )
+    expect(gift).toContain('::Q1::Cuesta 200 pesos y sube un 10 %. ¿Cuánto cuesta ahora? {#220:2.2}')
+  })
+})

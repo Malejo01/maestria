@@ -219,3 +219,45 @@ test('F6 · la palabra faltante: lo elegido aparece en la oración y se guarda c
     }, { timeout: 30_000 })
     .toEqual(['missing_word', true])
 })
+
+test('F7 · calculada: el alumno ve números (no comodines), responde con coma y se guarda con su tipo', async ({ page }) => {
+  test.setTimeout(120_000)
+  await entrarComo(page, ALUMNA)
+  // Como sale de la generación: ya con los valores sorteados.
+  const sql = await practicarCon(page, [
+    {
+      id: 'k1',
+      type: 'calculated',
+      topic: 't1',
+      topicName: 'Precios',
+      question: 'Un bien cuesta 250 pesos y sube un 12 %. ¿Cuánto cuesta ahora?',
+      plantilla: 'Un bien cuesta {p} pesos y sube un {x} %. ¿Cuánto cuesta ahora?',
+      formula: '{p} * (1 + {x} / 100)',
+      variables: [
+        { name: 'p', min: 100, max: 500, decimals: 0 },
+        { name: 'x', min: 5, max: 20, decimals: 0 },
+      ],
+      valores: { p: 250, x: 12 },
+      correctAnswer: 280,
+      tolerance: 0.01,
+      explanation: '250 × 1,12 = 280.',
+    },
+  ])
+  await expect(page.getByRole('heading', { name: /cuesta 250 pesos y sube un 12 %/ })).toBeVisible({ timeout: 30_000 })
+  // 279,5 está dentro del 1 %.
+  await page.getByRole('textbox').first().fill('279,5')
+  await verificarYSeguir(page)
+  await expect(page.getByText('1 de 1 correctas')).toBeVisible({ timeout: 30_000 })
+
+  await expect
+    .poll(async () => {
+      const [fila] = (await sql`
+        SELECT a.question_type, a.is_correct, a.answer_payload FROM quiz_answers a
+        JOIN quiz_attempts t ON t.id = a.quiz_attempt_id
+        WHERE t.user_id = 'stg-demo-sofia' AND a.question_id = 'k1'
+        ORDER BY a.id DESC LIMIT 1
+      `) as { question_type: string; is_correct: boolean; answer_payload: { selectedValue: number; correctAnswer: number } }[]
+      return fila ? [fila.question_type, fila.is_correct, fila.answer_payload.selectedValue, fila.answer_payload.correctAnswer] : null
+    }, { timeout: 30_000 })
+    .toEqual(['calculated', true, 279.5, 280])
+})

@@ -1,4 +1,5 @@
 import type { Question, TeacherQuiz } from '@/lib/types'
+import { valoresDelConjunto } from '@/lib/calculada'
 import { fraccionesVariasCorrectas } from '@/lib/tipos-moodle'
 import { slugifySubject as toSlug } from '@/lib/subject-slug'
 import { esFactorizacion, factorizar } from '@/lib/factorizacion'
@@ -156,6 +157,42 @@ function preguntaXml(question: Question, index: number): string {
         '<numberingstyle>none</numberingstyle>',
         ...question.items.map((item, i) => respuestaHtml(`${i + 1}.0000000`, item)),
       ])
+    case 'calculated': {
+      // F7: la plantilla con los comodines, la fórmula, la tolerancia relativa
+      // y un conjunto de 10 valores por comodín: cada alumno de Moodle recibe
+      // otros números.
+      const enunciado = `<questiontext format="html"><text>${cdata(`<p>${textoHtml(question.plantilla)}</p>`)}</text></questiontext>`
+      const definiciones = question.variables.map((v) => {
+        const valores = valoresDelConjunto(v, 10, question.id)
+        return [
+          '<dataset_definition>',
+          '<status><text>private</text></status>',
+          `<name><text>${escaparXml(v.name)}</text></name>`,
+          '<type>calculated</type>',
+          '<distribution><text>uniform</text></distribution>',
+          `<minimum><text>${v.min}</text></minimum>`,
+          `<maximum><text>${v.max}</text></maximum>`,
+          `<decimals><text>${v.decimals}</text></decimals>`,
+          '<itemcount>10</itemcount>',
+          `<dataset_items>${valores.map((x, i) => `<dataset_item><number>${i + 1}</number><value>${x}</value></dataset_item>`).join('')}</dataset_items>`,
+          '<number_of_items>10</number_of_items>',
+          '</dataset_definition>',
+        ].join('')
+      })
+      return pregunta('calculated', [
+        comun.replace(/<questiontext[\s\S]*?<\/questiontext>/, enunciado),
+        '<synchronize>0</synchronize>',
+        '<single>0</single>',
+        '<answernumbering>abc</answernumbering>',
+        '<shuffleanswers>0</shuffleanswers>',
+        `<answer fraction="100"><text>${escaparXml(question.formula)}</text><tolerance>${question.tolerance}</tolerance><tolerancetype>1</tolerancetype><correctanswerformat>1</correctanswerformat><correctanswerlength>2</correctanswerlength><feedback format="html"><text></text></feedback></answer>`,
+        '<unitgradingtype>0</unitgradingtype>',
+        '<unitpenalty>0.1000000</unitpenalty>',
+        '<showunits>3</showunits>',
+        '<unitsleft>0</unitsleft>',
+        `<dataset_definitions>${definiciones.join('')}</dataset_definitions>`,
+      ])
+    }
     case 'missing_word': {
       // F6: como lo importa Moodle desde GIFT: una opción múltiple con la
       // oración y el hueco como "_____".

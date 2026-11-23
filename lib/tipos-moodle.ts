@@ -1,4 +1,6 @@
 import type { Answer, GapsQuestion, MatchingQuestion, MissingWordQuestion, MultipleResponseQuestion, OrderingQuestion, Question, QuestionType } from '@/lib/types'
+import { calculadaValida } from '@/lib/calculada'
+import { formatearNumero } from '@/lib/numeros'
 
 /**
  * Ronda T · F2 a F7 — Los tipos de pregunta "como en Moodle", en un solo
@@ -9,7 +11,7 @@ import type { Answer, GapsQuestion, MatchingQuestion, MissingWordQuestion, Multi
  * respuesta corta) siguen donde estaban; estos se suman acá para que cada
  * tipo nuevo toque este archivo, su componente de respuesta y la exportación.
  */
-export const TIPOS_MOODLE = ['multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos', 'missing_word'] as const satisfies readonly QuestionType[]
+export const TIPOS_MOODLE = ['multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos', 'missing_word', 'calculated'] as const satisfies readonly QuestionType[]
 export type TipoMoodle = (typeof TIPOS_MOODLE)[number]
 
 export function esTipoMoodle(tipo: unknown): tipo is TipoMoodle {
@@ -32,6 +34,7 @@ export const ETIQUETA_DE_TIPO: Record<QuestionType, string> = {
   gapselect: 'Seleccionar la palabra',
   ddwtos: 'Arrastrar al texto',
   missing_word: 'Palabra faltante',
+  calculated: 'Calculada',
 }
 
 const letra = (i: number) => String.fromCharCode(65 + i)
@@ -230,6 +233,8 @@ export function correctaEnTexto(q: Question): string | null {
       return textoLleno(q.text, q.choices, q.choices.map((_, i) => i))
     case 'missing_word':
       return textoLleno(q.text, q.options, [q.correctAnswer])
+    case 'calculated':
+      return formatearNumero(q.correctAnswer)
     default:
       return null
   }
@@ -249,6 +254,8 @@ export function respuestaEnTexto(a: Answer, cual: 'selected' | 'correct'): strin
       return textoLleno(a.text, a.choices, cual === 'selected' ? a.selectedChoices : a.choices.map((_, i) => i))
     case 'missing_word':
       return textoLleno(a.text, a.options, [cual === 'selected' ? a.selectedAnswer : a.correctAnswer])
+    case 'calculated':
+      return cual === 'selected' ? (a.selectedText?.trim() || formatearNumero(a.selectedValue)) : formatearNumero(a.correctAnswer)
     default:
       return null
   }
@@ -277,6 +284,16 @@ export function payloadDeRespuesta(a: Answer): Record<string, unknown> | null {
       return { tipo: a.type, text: a.text, choices: a.choices, selectedChoices: a.selectedChoices, ...texto }
     case 'missing_word':
       return { tipo: a.type, text: a.text, options: a.options, selectedAnswer: a.selectedAnswer, correctAnswer: a.correctAnswer, ...texto }
+    case 'calculated':
+      return {
+        tipo: a.type,
+        formula: a.formula,
+        valores: a.valores,
+        correctAnswer: a.correctAnswer,
+        tolerance: a.tolerance,
+        selectedValue: Number.isFinite(a.selectedValue) ? a.selectedValue : null,
+        ...texto,
+      }
   }
   return null
 }
@@ -315,6 +332,8 @@ export function problemaDeTipoMoodle(q: Record<string, unknown>): string | null 
       return huecosValidos(q as unknown as GapsQuestion) ? null : 'huecos sin 3 a 6 numerados con su palabra'
     case 'missing_word':
       return palabraFaltanteValida(q as unknown as MissingWordQuestion) ? null : 'palabra faltante sin un hueco y 3 a 5 opciones'
+    case 'calculated':
+      return calculadaValida(q as Parameters<typeof calculadaValida>[0]) ? null : 'calculada con comodines o fórmula que no cierran'
     default:
       return null
   }
