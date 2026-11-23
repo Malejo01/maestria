@@ -2339,3 +2339,14 @@ export const SALUD = {
     detallePago: (docente: string, motivo: string) => `${docente}: ${motivo}.`,
   },
 } as const
+
+/** Ronda Y · Y3: las novedades de MaestrIA. */
+export const NOVEDADES = {
+  titulo: 'Novedades de MaestrIA',
+  detalle: 'Lo nuevo de la app, contado corto.',
+  vacio: 'Todavía no hay novedades.',
+  volver: 'Todas las novedades',
+  leer: 'Leer',
+  para: { todos: 'Para todos', docentes: 'Para docentes', alumnos: 'Para alumnos' },
+  aviso: (titulo: string) => `Novedades de MaestrIA: ${titulo}`,
+} as const

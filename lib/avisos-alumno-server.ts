@@ -1,3 +1,5 @@
+import { fechaDeAviso, novedadesParaAvisar } from '@/lib/novedades'
+import { leerNovedades } from '@/lib/novedades-server'
 import { repasoParaAvisar } from '@/lib/repaso-server'
 import { sql } from '@/lib/db'
 import { armarAvisosDelAlumno, HORAS_VENCE_PRONTO, VENTANA_DIAS, type FilaDeAvisoAlumno } from '@/lib/avisos-alumno'
@@ -143,6 +145,16 @@ async function racha(userId: string): Promise<FilaDeAvisoAlumno[]> {
   return filas.map((f) => ({ tipo: 'racha' as const, racha: Number(f.racha), ultimaPractica: iso(f.ultima) }))
 }
 
+async function novedadesDelAlumno(ahora: Date): Promise<FilaDeAvisoAlumno[]> {
+  return novedadesParaAvisar(await leerNovedades(), 'alumno', ahora).map((n) => ({
+    tipo: 'novedad' as const,
+    slug: n.slug,
+    titulo: n.titulo,
+    resumen: n.resumen,
+    fecha: fechaDeAviso(n),
+  }))
+}
+
 async function repaso(userId: string, ahora: Date): Promise<FilaDeAvisoAlumno[]> {
   // El repaso es un empujón: si falla, la campanita sigue sin él.
   try {
@@ -163,6 +175,8 @@ export async function avisosDelAlumno(userId: string, { esInvitado }: { esInvita
     conValvula(() => racha(userId)),
     // X2: el repaso del día (el invitado no tiene).
     esInvitado ? Promise.resolve([]) : conValvula(() => repaso(userId, ahora)),
+    // Y3: las novedades de MaestrIA (de content/novedades; si no se pueden leer, ninguna).
+    novedadesDelAlumno(ahora),
   ])
   return {
     avisos: armarAvisosDelAlumno(fuentes.flat(), lectura, ahora, { esInvitado }),

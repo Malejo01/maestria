@@ -110,3 +110,16 @@ describe('X2 · el repaso del día', () => {
     expect(armarAvisosDelAlumno([{ tipo: 'repaso', cuantas: 3, practicoEnLaSemana: true }], lectura, tarde, { esInvitado: true })).toHaveLength(0)
   })
 })
+
+describe('Y3 · la novedad', () => {
+  it('una por novedad, con su link', async () => {
+    const { armarAvisosDelAlumno } = await import('./avisos-alumno')
+    const lectura = { vistoEl: null, leidas: new Set<string>(), puedeMarcar: true } as never
+    const [aviso] = armarAvisosDelAlumno(
+      [{ tipo: 'novedad', slug: 'lo-nuevo-de-noviembre', titulo: 'Lo nuevo de noviembre', resumen: 'Más tipos.', fecha: '2026-11-23T12:00:00.000Z' }],
+      lectura,
+      new Date('2026-11-23T15:00:00Z'),
+    )
+    expect(aviso).toMatchObject({ tipo: 'novedad', clave: 'novedad|lo-nuevo-de-noviembre', titulo: 'Novedades de MaestrIA: Lo nuevo de noviembre', href: '/novedades/lo-nuevo-de-noviembre' })
+  })
+})

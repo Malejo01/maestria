@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const { consultas } = vi.hoisted(() => ({ consultas: [] as { texto: string; valores: unknown[] }[] }))
 let responder: (texto: string) => unknown = () => []
 
+// Y3: las novedades salen de archivos y de la fecha de hoy; acá, ninguna.
+vi.mock('@/lib/novedades-server', () => ({ leerNovedades: async () => [] }))
 vi.mock('@/lib/db', () => ({
   sql: (strings: TemplateStringsArray, ...valores: unknown[]) => {
     const texto = strings.join('?').replace(/\s+/g, ' ')
