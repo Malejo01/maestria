@@ -36,6 +36,22 @@ const PREGUNTAS: Question[] = [
   { ...base, id: 'q9', type: 'gapselect', question: 'Completá el texto.', text: 'Si sube el [[1]], baja la [[2]] demandada; la curva de [[3]] baja.', choices: ['precio', 'cantidad', 'demanda', 'oferta'], explanation: '' },
   { ...base, id: 'q10', type: 'ddwtos', question: 'Arrastrá las palabras.', text: 'El [[1]] es el [[2]] de la [[3]].', choices: ['etnocentrismo', 'opuesto', 'relatividad', 'origen'], explanation: '' },
   { ...base, id: 'q11', type: 'missing_word', question: 'Elegí la palabra que falta.', text: 'Eso se llama [[1]].', options: ['etnocentrismo', 'relativismo', 'evolucionismo'], correctAnswer: 0, explanation: '' },
+  {
+    ...base,
+    id: 'q12',
+    type: 'calculated',
+    question: 'Cuesta 200 pesos y sube un 10 %.',
+    plantilla: 'Cuesta {p} pesos y sube un {x} %.',
+    formula: '{p} * (1 + {x} / 100)',
+    variables: [
+      { name: 'p', min: 100, max: 500, decimals: 0 },
+      { name: 'x', min: 5, max: 20, decimals: 0 },
+    ],
+    valores: { p: 200, x: 10 },
+    correctAnswer: 220,
+    tolerance: 0.01,
+    explanation: '',
+  },
 ]
 
 function quiz(questions: Question[] = PREGUNTAS): TeacherQuiz {
@@ -69,7 +85,11 @@ describe('F1 · convertQuizToMoodleXml', () => {
 
   it('cada tipo va con el suyo de Moodle', () => {
     const tipos = [...xml.matchAll(/<question type="(\w+)">/g)].map((m) => m[1])
-    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice', 'matching', 'ordering', 'gapselect', 'ddwtos', 'multichoice'])
+    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice', 'matching', 'ordering', 'gapselect', 'ddwtos', 'multichoice', 'calculated'])
+    // F7: la plantilla (no los valores), la fórmula, la tolerancia relativa y 10 valores por comodín.
+    expect(xml).toContain('<p>Cuesta {p} pesos y sube un {x} %.</p>')
+    expect(xml).toContain('<answer fraction="100"><text>{p} * (1 + {x} / 100)</text><tolerance>0.01</tolerance><tolerancetype>1</tolerancetype>')
+    expect(xml.match(/<dataset_item>/g)).toHaveLength(20)
     // F6: la palabra faltante como opción múltiple, con el hueco "_____".
     expect(xml).toContain('<p>Elegí la palabra que falta.</p><p>Eso se llama _____.</p>')
     // F5: la consigna y el texto con [[n]] en el enunciado; las palabras como selectoption / dragbox.

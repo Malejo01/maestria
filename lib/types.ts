@@ -36,7 +36,7 @@ export interface Topic {
  * generate-quiz, one new case in components/quiz-answer-inputs, one new case
  * in lib/moodle-export.ts's GIFT builder — no other file needs to change.
  */
-export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching' | 'ordering' | 'gapselect' | 'ddwtos' | 'missing_word'
+export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching' | 'ordering' | 'gapselect' | 'ddwtos' | 'missing_word' | 'calculated'
 
 /**
  * De dónde salió el texto de esta pregunta.
@@ -169,6 +169,30 @@ export interface MissingWordQuestion extends BaseQuestion {
   correctAnswer: number
 }
 
+/** Ronda T · F7: un comodín de la calculada y su rango. */
+export interface CalculatedVariable {
+  name: string
+  min: number
+  max: number
+  decimals: number
+}
+
+/**
+ * Ronda T · F7: calculada (Moodle `calculated`). `plantilla` lleva los
+ * comodines {a}, {b}…; `question` es la misma con los valores sorteados al
+ * generarla (lo que lee el alumno), y `correctAnswer` sale de `formula` con
+ * esos valores (lib/calculada.ts). `tolerance` es relativa (0.01 = 1 %).
+ */
+export interface CalculatedQuestion extends BaseQuestion {
+  type: 'calculated'
+  plantilla: string
+  formula: string
+  variables: CalculatedVariable[]
+  valores: Record<string, number>
+  correctAnswer: number
+  tolerance: number
+}
+
 /** Ronda T · F4: ordenamiento (Moodle `ordering`). `items` va en el orden correcto. Todo o nada. */
 export interface OrderingQuestion extends BaseQuestion {
   type: 'ordering'
@@ -185,6 +209,7 @@ export type Question =
   | OrderingQuestion
   | GapsQuestion
   | MissingWordQuestion
+  | CalculatedQuestion
 
 export interface QuizConfig {
   subject: string
@@ -329,6 +354,17 @@ export interface MissingWordAnswer extends BaseAnswer {
   correctAnswer: number
 }
 
+export interface CalculatedAnswer extends BaseAnswer {
+  type: 'calculated'
+  formula: string
+  valores: Record<string, number>
+  correctAnswer: number
+  tolerance: number
+  selectedValue: number
+  /** Lo que escribió el alumno. */
+  selectedText?: string
+}
+
 export interface OrderingAnswer extends BaseAnswer {
   type: 'ordering'
   /** En el orden correcto. */
@@ -347,6 +383,7 @@ export type Answer =
   | OrderingAnswer
   | GapsAnswer
   | MissingWordAnswer
+  | CalculatedAnswer
 
 export interface QuizResult {
   /**

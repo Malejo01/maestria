@@ -1,5 +1,6 @@
 'use client'
 
+import { corregirCalculada } from '@/lib/calculada'
 import { cantidadDeHuecos, corregirEmparejamiento, corregirHuecos, corregirOrden, corregirVariasCorrectas, tipoParaAtajos } from '@/lib/tipos-moodle'
 import { useCuentaRegresiva, formatearTiempo } from '@/hooks/use-cuenta-regresiva'
 import { SIMULACRO } from '@/lib/textos'
@@ -299,6 +300,18 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     if ((question.type === 'gapselect' || question.type === 'ddwtos') && (selection.type === 'gapselect' || selection.type === 'ddwtos')) {
       return { ...base, type: question.type, text: question.text, choices: question.choices, selectedChoices: selection.value }
     }
+    if (question.type === 'calculated' && selection.type === 'calculated') {
+      return {
+        ...base,
+        type: 'calculated',
+        formula: question.formula,
+        valores: question.valores,
+        correctAnswer: question.correctAnswer,
+        tolerance: question.tolerance,
+        selectedValue: selection.value ?? NaN,
+        ...(selection.texto ? { selectedText: selection.texto } : {}),
+      }
+    }
     if (question.type === 'missing_word' && selection.type === 'missing_word') {
       return { ...base, type: 'missing_word', text: question.text, options: question.options, selectedAnswer: selection.value ?? -1, correctAnswer: question.correctAnswer }
     }
@@ -465,6 +478,16 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       return
     }
 
+    // F7: la calculada, con tolerancia relativa.
+    if (currentQuestion.type === 'calculated' && selection.type === 'calculated') {
+      if (selection.value === null) return
+      const isCorrect = corregirCalculada(currentQuestion.correctAnswer, currentQuestion.tolerance, selection.value)
+      setAnswerState(prev => ({ ...prev, submitted: true, isCorrect }))
+      answerQuestion(buildAnswer(currentQuestion, selection, isCorrect))
+      avanzarSinDevolucion()
+      return
+    }
+
     // F6: la palabra faltante, como una opción múltiple.
     if (currentQuestion.type === 'missing_word' && selection.type === 'missing_word') {
       if (selection.value === null) return
@@ -560,6 +583,7 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       case 'ddwtos':
         return selection.value.every((v) => v !== null)
       case 'missing_word':
+      case 'calculated':
         return selection.value !== null
     }
   })()

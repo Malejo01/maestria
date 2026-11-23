@@ -13,6 +13,7 @@
  * Si hay que elegir entre "más prolijo" y "idéntico", gana idéntico: los `any`
  * y las ramas tolerantes de abajo están tal como estaban.
  */
+import { instanciarCalculada } from '@/lib/calculada'
 import { problemaDeTipoMoodle } from '@/lib/tipos-moodle'
 import { generateObject, generateText, type RepairTextFunction } from 'ai'
 import { anclarTema } from '@/lib/a-reforzar'
@@ -141,6 +142,19 @@ const missingWordQuestionSchema = z.object({
   correctAnswer: z.number(),
 })
 
+// Ronda T · F7: calculada (Moodle calculated). `question` llega con los
+// comodines {a}, {b}; al final se sortean los valores (instanciarCalculada).
+const calculatedQuestionSchema = z.object({
+  ...baseQuestionFields,
+  type: z.literal('calculated'),
+  formula: z.string(),
+  variables: z.array(z.object({ name: z.string(), min: z.number(), max: z.number(), decimals: z.number() })),
+  tolerance: z.number().optional(),
+  plantilla: z.string().optional(),
+  valores: z.record(z.string(), z.number()).optional(),
+  correctAnswer: z.number().optional(),
+})
+
 const questionSchema = z.discriminatedUnion('type', [
   multipleChoiceQuestionSchema,
   shortAnswerQuestionSchema,
@@ -152,6 +166,7 @@ const questionSchema = z.discriminatedUnion('type', [
   gapselectQuestionSchema,
   ddwtosQuestionSchema,
   missingWordQuestionSchema,
+  calculatedQuestionSchema,
 ])
 
 export const quizSchema = z.object({
@@ -176,7 +191,7 @@ export const quizSchema = z.object({
  */
 export type GeneratedQuestion = z.infer<typeof quizSchema>['questions'][number]
 
-export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos', 'missing_word'] as const
+export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos', 'missing_word', 'calculated'] as const
 export type QuestionType = (typeof QUESTION_TYPE_VALUES)[number]
 
 /** F5: lo mismo para seleccionar y para arrastrar. */
@@ -237,6 +252,13 @@ ${CAMPOS_DE_HUECOS}`,
 - text: UNA oración con UN solo hueco escrito [[1]] en lugar de la palabra o expresión clave.
 - options: array de 4 strings cortos, sin LaTeX: la correcta y 3 que encajen en la gramática pero no en el sentido.
 - correctAnswer: number (índice 0-based de la correcta en options).`,
+  calculated: `TIPO "calculated" (calculada, con comodines):
+- type: "calculated"
+- question: el enunciado con 1 a 3 comodines entre llaves en lugar de los datos ("Un bien cuesta {p} pesos y sube un {x} %. ¿Cuánto cuesta ahora?"). Cada comodín aparece en el enunciado.
+- formula: la cuenta con esos comodines, en la sintaxis de Moodle: números con punto, + - * /, paréntesis y las funciones pow(a, b), sqrt(), abs(), round(x, d), min(), max(), pi(). NUNCA "^" (para potencias, pow). Ej: "{p} * (1 + {x} / 100)".
+- variables: array con un objeto por comodín { "name": "p", "min": 100, "max": 500, "decimals": 0 }: rangos razonables para el tema, que nunca den división por cero ni raíz de negativo.
+- tolerance: number, la tolerancia relativa (0.01 = 1 %).
+- NO pongas valores ni la respuesta: los números los sortea el sistema y la respuesta sale de la fórmula.`,
 }
 
 function buildTypeInstructions(
@@ -295,6 +317,12 @@ function shuffleInPlace<T>(arr: T[]): T[] {
  *  correctAnswers for multiple_response, F2) — every other type has no
  *  options array to shuffle, so it passes through as-is. */
 function shuffleAndRenumber(question: any, newId: string): any {
+  // F7: la calculada sortea sus valores acá (ya pasó por la validación) y
+  // queda con la plantilla, los valores y la correcta.
+  if (question.type === 'calculated') {
+    const instanciada = instanciarCalculada({ ...question, tolerance: question.tolerance ?? 0.01 })
+    return { ...(instanciada ?? question), id: newId }
+  }
   if (question.type === 'multiple_response') {
     const conIndice = question.options.map((text: string, index: number) => ({ text, index }))
     shuffleInPlace(conIndice)
@@ -700,6 +728,8 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
                 return typeof q.text === 'string' && Array.isArray(q.choices) && q.choices.length > 0
               case 'missing_word':
                 return typeof q.text === 'string' && Array.isArray(q.options) && typeof q.correctAnswer === 'number'
+              case 'calculated':
+                return typeof q.formula === 'string' && Array.isArray(q.variables)
               default:
                 return false
             }

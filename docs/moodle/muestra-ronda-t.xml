@@ -158,4 +158,23 @@
     <answer fraction="0" format="html"><text><![CDATA[<p>unitaria</p>]]></text><feedback format="html"><text></text></feedback></answer>
     <answer fraction="0" format="html"><text><![CDATA[<p>perfectamente elástica</p>]]></text><feedback format="html"><text></text></feedback></answer>
   </question>
+  <question type="calculated">
+    <name><text>11. Un bien cuesta 326 pesos y su precio sube un 16 %. ¿Cuánt…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Un bien cuesta {p} pesos y su precio sube un {x} %. ¿Cuánto cuesta después de la suba?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Se multiplica el precio por 1 más el porcentaje de suba.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <synchronize>0</synchronize>
+    <single>0</single>
+    <answernumbering>abc</answernumbering>
+    <shuffleanswers>0</shuffleanswers>
+    <answer fraction="100"><text>{p} * (1 + {x} / 100)</text><tolerance>0.01</tolerance><tolerancetype>1</tolerancetype><correctanswerformat>1</correctanswerformat><correctanswerlength>2</correctanswerlength><feedback format="html"><text></text></feedback></answer>
+    <unitgradingtype>0</unitgradingtype>
+    <unitpenalty>0.1000000</unitpenalty>
+    <showunits>3</showunits>
+    <unitsleft>0</unitsleft>
+    <dataset_definitions><dataset_definition><status><text>private</text></status><name><text>p</text></name><type>calculated</type><distribution><text>uniform</text></distribution><minimum><text>100</text></minimum><maximum><text>900</text></maximum><decimals><text>0</text></decimals><itemcount>10</itemcount><dataset_items><dataset_item><number>1</number><value>407</value></dataset_item><dataset_item><number>2</number><value>216</value></dataset_item><dataset_item><number>3</number><value>739</value></dataset_item><dataset_item><number>4</number><value>489</value></dataset_item><dataset_item><number>5</number><value>344</value></dataset_item><dataset_item><number>6</number><value>836</value></dataset_item><dataset_item><number>7</number><value>576</value></dataset_item><dataset_item><number>8</number><value>151</value></dataset_item><dataset_item><number>9</number><value>867</value></dataset_item><dataset_item><number>10</number><value>678</value></dataset_item></dataset_items><number_of_items>10</number_of_items></dataset_definition><dataset_definition><status><text>private</text></status><name><text>x</text></name><type>calculated</type><distribution><text>uniform</text></distribution><minimum><text>5</text></minimum><maximum><text>25</text></maximum><decimals><text>0</text></decimals><itemcount>10</itemcount><dataset_items><dataset_item><number>1</number><value>17</value></dataset_item><dataset_item><number>2</number><value>24</value></dataset_item><dataset_item><number>3</number><value>11</value></dataset_item><dataset_item><number>4</number><value>10</value></dataset_item><dataset_item><number>5</number><value>25</value></dataset_item><dataset_item><number>6</number><value>12</value></dataset_item><dataset_item><number>7</number><value>23</value></dataset_item><dataset_item><number>8</number><value>21</value></dataset_item><dataset_item><number>9</number><value>23</value></dataset_item><dataset_item><number>10</number><value>23</value></dataset_item></dataset_items><number_of_items>10</number_of_items></dataset_definition></dataset_definitions>
+  </question>
 </quiz>

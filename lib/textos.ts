@@ -1783,6 +1783,17 @@ export const TIPOS_MOODLE_TEXTOS = {
   palabraFaltante: {
     editorTexto: 'Oración — el hueco como [[1]]',
   },
+  calculada: {
+    correcta: 'Correcta con estos valores',
+    tolerancia: (t: number) => `se acepta ±${Math.round(t * 1000) / 10} %`,
+    plantilla: 'Plantilla',
+    formula: 'Fórmula',
+    editorPlantilla: 'Enunciado — los datos como {a}, {b}…',
+    editorFormula: 'Fórmula (como en Moodle: + - * / pow() sqrt()…)',
+    editorRango: (nombre: string) => `Rango de {${nombre}}: mínimo y máximo`,
+    noCierra: 'La fórmula o los comodines no cierran: revisalos. Mientras tanto, queda como estaba.',
+    otrosValores: 'Sortear otros valores',
+  },
 } as const
 
 /** Ronda T · F1: exportar a Moodle, en XML o en GIFT. */

@@ -12,6 +12,7 @@ import { MatchingInput } from './matching-input'
 import { OrderingInput } from './ordering-input'
 import { GapsInput } from './gaps-input'
 import { MissingWordInput } from './missing-word-input'
+import { margenAbsoluto } from '@/lib/calculada'
 import { cantidadDeHuecos, ordenInicial } from '@/lib/tipos-moodle'
 
 export type AnswerSelection =
@@ -30,6 +31,8 @@ export type AnswerSelection =
   | { type: 'gapselect' | 'ddwtos'; value: (number | null)[] }
   // F6: la opción elegida.
   | { type: 'missing_word'; value: number | null }
+  // F7: el número (y el texto) que escribió.
+  | { type: 'calculated'; value: number | null; texto?: string }
 
 export function emptySelectionFor(question: Question): AnswerSelection {
   switch (question.type) {
@@ -52,6 +55,8 @@ export function emptySelectionFor(question: Question): AnswerSelection {
       return { type: question.type, value: Array.from({ length: cantidadDeHuecos(question.text) }, () => null) }
     case 'missing_word':
       return { type: 'missing_word', value: null }
+    case 'calculated':
+      return { type: 'calculated', value: null }
   }
 }
 
@@ -181,6 +186,20 @@ export function AnswerInput({
         submitted={submitted}
         disabled={disabled}
         onSelect={(value) => onChange({ type: 'missing_word', value })}
+      />
+    )
+  }
+
+  // F7: la calculada se responde como una numérica (con coma, punto o fracción).
+  if (question.type === 'calculated' && selection.type === 'calculated') {
+    return (
+      <NumericInput
+        question={{ ...question, type: 'numeric', tolerance: margenAbsoluto(question.correctAnswer, question.tolerance) }}
+        value={selection.value}
+        submitted={submitted}
+        disabled={disabled}
+        isCorrect={isCorrect}
+        onChange={(value, texto) => onChange({ type: 'calculated', value, texto })}
       />
     )
   }

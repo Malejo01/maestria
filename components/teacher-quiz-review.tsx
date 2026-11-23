@@ -1,6 +1,7 @@
 'use client'
 
 import { cantidadDeHuecos, correctaEnTexto, ETIQUETA_DE_TIPO } from '@/lib/tipos-moodle'
+import { calculadaValida, instanciarCalculada } from '@/lib/calculada'
 import { TIPOS_MOODLE_TEXTOS } from '@/lib/textos'
 import { Cargando } from '@/components/sistema/cargando'
 
@@ -805,6 +806,18 @@ function VistaDePregunta({ question }: { question: Question }) {
         </ol>
       )}
 
+      {question.type === 'calculated' && (
+        <div className="space-y-1 text-sm">
+          <p>
+            {TIPOS_MOODLE_TEXTOS.calculada.correcta}: <strong>{correctaEnTexto(question)}</strong> ({TIPOS_MOODLE_TEXTOS.calculada.tolerancia(question.tolerance)})
+          </p>
+          <p className="px-2 text-xs text-muted-foreground">
+            {TIPOS_MOODLE_TEXTOS.calculada.plantilla}: {question.plantilla} · {TIPOS_MOODLE_TEXTOS.calculada.formula}: <code>{question.formula}</code> ·{' '}
+            {question.variables.map((v) => `{${v.name}} ${v.min}–${v.max}`).join(' · ')}
+          </p>
+        </div>
+      )}
+
       {question.type === 'missing_word' && (
         <div className="space-y-1">
           <p className="rounded-md bg-logrado/10 px-2 py-1">{correctaEnTexto(question)}</p>
@@ -974,6 +987,8 @@ function EditorDePregunta({
         </Campo>
       )}
 
+      {question.type === 'calculated' && <EditorDeCalculada question={question} onChange={onChange} />}
+
       {question.type === 'missing_word' && (
         <>
           <Campo label={TIPOS_MOODLE_TEXTOS.palabraFaltante.editorTexto}>
@@ -1106,6 +1121,75 @@ function EditorDePregunta({
           onChange={(e) => onChange({ explanation: e.target.value } as Partial<Question>)}
         />
       </Campo>
+    </div>
+  )
+}
+
+/**
+ * Ronda T · F7 — Editar una calculada: la plantilla, la fórmula y el rango de
+ * cada comodín. Cada cambio que cierra (lib/calculada.ts) vuelve a sortear los
+ * valores y recalcula la correcta; uno que no cierra se muestra, sin tocar la
+ * pregunta guardada hasta que se arregle.
+ */
+function EditorDeCalculada({
+  question,
+  onChange,
+}: {
+  question: Extract<Question, { type: 'calculated' }>
+  onChange: (cambios: Partial<Question>) => void
+}) {
+  const [borrador, setBorrador] = useState({ plantilla: question.plantilla, formula: question.formula, variables: question.variables })
+  const [noCierra, setNoCierra] = useState(false)
+
+  function aplicar(nuevo: typeof borrador) {
+    setBorrador(nuevo)
+    const candidata = { ...question, ...nuevo, question: nuevo.plantilla }
+    const instanciada = calculadaValida(candidata) ? instanciarCalculada(candidata) : null
+    setNoCierra(!instanciada)
+    if (instanciada) {
+      onChange({
+        plantilla: instanciada.plantilla,
+        formula: instanciada.formula,
+        variables: instanciada.variables,
+        valores: instanciada.valores,
+        correctAnswer: instanciada.correctAnswer,
+        question: instanciada.question,
+      } as Partial<Question>)
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <Campo label={TIPOS_MOODLE_TEXTOS.calculada.editorPlantilla}>
+        <Textarea rows={3} value={borrador.plantilla} onChange={(e) => aplicar({ ...borrador, plantilla: e.target.value })} />
+      </Campo>
+      <Campo label={TIPOS_MOODLE_TEXTOS.calculada.editorFormula}>
+        <Input value={borrador.formula} onChange={(e) => aplicar({ ...borrador, formula: e.target.value })} className="font-mono" />
+      </Campo>
+      {borrador.variables.map((v, i) => (
+        <Campo key={v.name} label={TIPOS_MOODLE_TEXTOS.calculada.editorRango(v.name)}>
+          <div className="grid grid-cols-2 gap-2">
+            {(['min', 'max'] as const).map((lado) => (
+              <CampoNumerico
+                key={lado}
+                valor={v[lado]}
+                onValor={(valor) => {
+                  if (valor === null) return
+                  aplicar({ ...borrador, variables: borrador.variables.map((x, j) => (j === i ? { ...x, [lado]: valor } : x)) })
+                }}
+              />
+            ))}
+          </div>
+        </Campo>
+      ))}
+      <Button type="button" size="sm" variant="outline" onClick={() => aplicar({ ...borrador })}>
+        {TIPOS_MOODLE_TEXTOS.calculada.otrosValores}
+      </Button>
+      {noCierra && (
+        <p role="alert" className="text-sm text-flojo">
+          {TIPOS_MOODLE_TEXTOS.calculada.noCierra}
+        </p>
+      )}
     </div>
   )
 }

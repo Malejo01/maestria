@@ -1,4 +1,5 @@
 import type { Question, TeacherQuiz } from '@/lib/types'
+import { margenAbsoluto } from '@/lib/calculada'
 import { TIPOS_MOODLE_TEXTOS } from '@/lib/textos'
 import { cantidadDeHuecos, fraccionesVariasCorrectas } from '@/lib/tipos-moodle'
 import { sanitizeSubjectSegment as sanitizePathSegment, slugifySubject as toSlug } from '@/lib/subject-slug'
@@ -222,6 +223,13 @@ function buildQuestionBlock(question: Question, index: number): string {
       const pares = question.items.map((item, i) => `=${escapeGiftText(TIPOS_MOODLE_TEXTOS.ordenamiento.lugar(i + 1))} -> ${escapeGiftText(item)}`)
       const feedback = buildFeedback(question)
       return `::${questionTitle}::${questionText} {\n${pares.join('\n')}${feedback ? `\n${feedback}` : ''}\n}`
+    }
+    case 'calculated': {
+      // F7: GIFT no tiene calculadas: va como numérica con los valores que
+      // tocaron y el margen de la tolerancia.
+      const margen = Number(margenAbsoluto(question.correctAnswer, question.tolerance).toPrecision(6))
+      const valor = Number(question.correctAnswer.toPrecision(10))
+      return `::${questionTitle}::${questionText} {#${valor}:${margen}${buildFeedback(question)}}`
     }
     case 'missing_word': {
       // F6: el "missing word" de GIFT: las opciones van entre llaves, en el
