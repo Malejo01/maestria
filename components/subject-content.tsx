@@ -20,6 +20,8 @@ import { useToast } from '@/hooks/use-toast'
 import { contar, TIPOS_PEDIDOS } from '@/lib/textos'
 import { avisosVigentes, frasesDeAvisos, leerAvisos, repartirEntreMitades, type AvisoDeTipo } from '@/lib/tipos-garantizados'
 import { ETIQUETA_DE_TIPO } from '@/lib/tipos-moodle'
+import { ElegirDelBanco } from '@/components/docente/banco-de-preguntas'
+import { cuantasGenerar, sumarDelBanco, type PreguntaDelBanco } from '@/lib/banco'
 import { leerBloqueo, type CuerpoDeBloqueo } from '@/lib/planes'
 import { DialogoDeLimite } from '@/components/docente/pantalla-de-limite'
 
@@ -97,6 +99,9 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
   const [bloqueoPlan, setBloqueoPlan] = useState<CuerpoDeBloqueo | null>(null)
   const bloqueoRef = useRef<CuerpoDeBloqueo | null>(null)
   const avisosDeTiposRef = useRef<AvisoDeTipo[]>([])
+  // W1: las preguntas elegidas del banco para la tarea que se está armando.
+  const [bancoElegidas, setBancoElegidas] = useState<Map<string, PreguntaDelBanco>>(new Map())
+  const delBancoRef = useRef<Record<string, unknown>[]>([])
   
   const colors = colorConfig[subject.id as keyof typeof colorConfig] || colorConfig.algebra
   // Ronda T · A4: el área de la materia (la guardada; si no hay, inferida del nombre).
@@ -192,6 +197,8 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
     tiposAGarantizar?: QuestionType[],
   ): Promise<Question[] | null> => {
     if (selectedTopics.length === 0) return null
+    // W1: si el banco ya llena esta parte, no se le pide nada a la IA.
+    if (questionCount <= 0) return []
 
     // O3: en un grupo, nivel, año y carrera salen del programa del grupo.
     const practica = parametrosDeLaPractica({
@@ -220,6 +227,10 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
           mode,
           questionCount,
           ...(practica.questionTypes ? { questionTypes: practica.questionTypes } : {}),
+          // W1: las del banco van en la tarea; la IA no las repite.
+          ...(delBancoRef.current.length > 0
+            ? { previousQuestions: delBancoRef.current.map((q) => ({ question: String(q.question ?? '') })) }
+            : {}),
           // U1: en el mixto, cada mitad garantiza su parte de los tipos pedidos.
           ...(practica.questionTypes && tiposAGarantizar ? { tiposAGarantizar } : {}),
           pedagogyContext,
@@ -398,9 +409,21 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
     }
 
     try {
-      const generatedQuestions = effectiveMode === 'mixto'
-        ? await generateMixedQuestions(effectiveQuestionCount)
-        : await generateQuestionsByMode(effectiveMode, effectiveQuestionCount)
+      // W1: las elegidas del banco van tal cual; la IA completa las que faltan.
+      const delBanco = [...bancoElegidas.values()].map((p) => p.pregunta).slice(0, effectiveQuestionCount)
+      delBancoRef.current = delBanco
+      const faltan = cuantasGenerar(effectiveQuestionCount, delBanco.length)
+      const generadas = faltan === 0
+        ? []
+        : effectiveMode === 'mixto'
+          ? await generateMixedQuestions(faltan)
+          : await generateQuestionsByMode(effectiveMode, faltan)
+      const generatedQuestions =
+        generadas === null || (faltan > 0 && generadas.length === 0)
+          ? null
+          : delBanco.length > 0
+            ? (sumarDelBanco(delBanco, generadas) as unknown as Question[])
+            : generadas
       if (!generatedQuestions || generatedQuestions.length === 0) {
         if (!bloqueoRef.current) {
           toast({ title: 'No se pudo generar el cuestionario', description: 'Intentá de nuevo.' })
@@ -702,7 +725,16 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
           de la barra inferior de navegación (que lo tapaba entero): se corre lo
           que mide esa barra, la misma variable que usa el botón de reportar. */}
       <div className="fixed bottom-[calc(var(--alto-barra-inferior,0px)+env(safe-area-inset-bottom))] left-0 right-0 p-4 bg-background/80 border-t-2 border-border/80 z-30 transition-all md:bottom-0">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto space-y-2">
+          {/* W1: sumar preguntas del banco (sólo el docente, con su materia). */}
+          {userProfile?.role === 'DOCENTE' && subject.source === 'teacher' && subject.programId && selectedTopics.length > 0 && (
+            <ElegirDelBanco
+              materiaId={Number(subject.programId)}
+              temas={selectedTopics.map((t) => t.name)}
+              elegidas={bancoElegidas}
+              onCambiar={setBancoElegidas}
+            />
+          )}
           <Button
             onClick={() => setShowModeDialog(true)}
             disabled={isLoading || selectedTopics.length === 0}
