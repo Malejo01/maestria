@@ -103,3 +103,37 @@ test('F3 · emparejamiento: se elige la pareja de cada uno y se guarda con su ti
     }, { timeout: 30_000 })
     .toEqual({ tipo: 'matching', elegidas: ['Descripción densa', 'Evolucionismo', 'Observación participante'] })
 })
+
+test('F4 · ordenamiento: se ordena con las flechas y se guarda con su tipo', async ({ page }) => {
+  test.setTimeout(120_000)
+  await entrarComo(page, ALUMNA)
+  const items = ['Paleolítico', 'Neolítico', 'Edad de los metales']
+  const sql = await practicarCon(page, [
+    { id: 'o1', type: 'ordering', topic: 't1', topicName: 'Etapas', question: 'Ordená de la más antigua a la más reciente.', items, explanation: 'Primero la piedra tallada, después la pulida, después los metales.' },
+  ])
+  await expect(page.getByText('Ordená con las flechas.')).toBeVisible({ timeout: 30_000 })
+  // Ordenarlo de verdad: mientras algún elemento no esté en su lugar, subirlo.
+  for (let vuelta = 0; vuelta < 6; vuelta++) {
+    const textos = await page.locator('[data-elemento-orden]').evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-elemento-orden'))))
+    const lugar = textos.findIndex((indice, i) => indice !== i)
+    if (lugar === -1) break
+    const queVa = textos.indexOf(lugar)
+    await page.getByRole('button', { name: `Subir: ${items[lugar]}` }).click()
+    expect(queVa).toBeGreaterThan(lugar)
+  }
+  await page.getByRole('button', { name: /^Verificar/ }).click()
+  await page.getByRole('button', { name: /^(Siguiente|Ver resultados)$/ }).click()
+  await expect(page.getByText('1 de 1 correctas')).toBeVisible({ timeout: 30_000 })
+
+  await expect
+    .poll(async () => {
+      const [fila] = (await sql`
+        SELECT a.question_type, a.is_correct, a.answer_payload FROM quiz_answers a
+        JOIN quiz_attempts t ON t.id = a.quiz_attempt_id
+        WHERE t.user_id = 'stg-demo-sofia' AND a.question_id = 'o1'
+        ORDER BY a.id DESC LIMIT 1
+      `) as { question_type: string; is_correct: boolean; answer_payload: { selectedOrder: number[] } }[]
+      return fila ? { tipo: fila.question_type, bien: fila.is_correct, orden: fila.answer_payload.selectedOrder } : null
+    }, { timeout: 30_000 })
+    .toEqual({ tipo: 'ordering', bien: true, orden: [0, 1, 2] })
+})

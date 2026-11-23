@@ -36,7 +36,7 @@ export interface Topic {
  * generate-quiz, one new case in components/quiz-answer-inputs, one new case
  * in lib/moodle-export.ts's GIFT builder — no other file needs to change.
  */
-export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching'
+export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching' | 'ordering'
 
 /**
  * De dónde salió el texto de esta pregunta.
@@ -143,7 +143,20 @@ export interface MatchingQuestion extends BaseQuestion {
   distractors?: string[]
 }
 
-export type Question = MultipleChoiceQuestion | ShortAnswerQuestion | TrueFalseQuestion | NumericQuestion | MultipleResponseQuestion | MatchingQuestion
+/** Ronda T · F4: ordenamiento (Moodle `ordering`). `items` va en el orden correcto. Todo o nada. */
+export interface OrderingQuestion extends BaseQuestion {
+  type: 'ordering'
+  items: string[]
+}
+
+export type Question =
+  | MultipleChoiceQuestion
+  | ShortAnswerQuestion
+  | TrueFalseQuestion
+  | NumericQuestion
+  | MultipleResponseQuestion
+  | MatchingQuestion
+  | OrderingQuestion
 
 export interface QuizConfig {
   subject: string
@@ -272,7 +285,22 @@ export interface MatchingAnswer extends BaseAnswer {
   selectedRights: (string | null)[]
 }
 
-export type Answer = MultipleChoiceAnswer | ShortAnswerAnswer | TrueFalseAnswer | NumericAnswer | MultipleResponseAnswer | MatchingAnswer
+export interface OrderingAnswer extends BaseAnswer {
+  type: 'ordering'
+  /** En el orden correcto. */
+  items: string[]
+  /** Los índices de `items` en el orden que dejó el alumno. */
+  selectedOrder: number[]
+}
+
+export type Answer =
+  | MultipleChoiceAnswer
+  | ShortAnswerAnswer
+  | TrueFalseAnswer
+  | NumericAnswer
+  | MultipleResponseAnswer
+  | MatchingAnswer
+  | OrderingAnswer
 
 export interface QuizResult {
   /**

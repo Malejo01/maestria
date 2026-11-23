@@ -412,3 +412,16 @@ describe('Ronda T · F3: emparejamiento en GIFT', () => {
     expect(gift).not.toContain('Evolucionismo')
   })
 })
+
+describe('Ronda T · F4: ordenamiento en GIFT', () => {
+  it('GIFT no tiene ordenamiento: va como emparejamiento de cada lugar con su elemento', () => {
+    const gift = convertQuizToGift(
+      makeQuiz({
+        questions: [
+          { id: 'q1', type: 'ordering', topic: 't', topicName: 'T', question: 'Ordená de la más antigua a la más reciente.', items: ['Paleolítico', 'Neolítico', 'Edad de los metales'], explanation: '' },
+        ],
+      }),
+    )
+    expect(gift).toContain('{\n=Lugar 1 -> Paleolítico\n=Lugar 2 -> Neolítico\n=Lugar 3 -> Edad de los metales\n}')
+  })
+})

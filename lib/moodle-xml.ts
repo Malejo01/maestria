@@ -143,6 +143,19 @@ function preguntaXml(question: Question, index: number): string {
         ...(question.distractors ?? []).map((d) => par('', d)),
       ])
     }
+    case 'ordering':
+      // F4: el tipo `ordering` de Moodle (estándar desde Moodle 4.4). Cada
+      // elemento va en el orden correcto: la fracción es su lugar.
+      return pregunta('ordering', [
+        comun,
+        '<layouttype>VERTICAL</layouttype>',
+        '<selecttype>ALL</selecttype>',
+        '<selectcount>0</selectcount>',
+        '<gradingtype>ABSOLUTE_POSITION</gradingtype>',
+        '<showgrading>SHOW</showgrading>',
+        '<numberingstyle>none</numberingstyle>',
+        ...question.items.map((item, i) => respuestaHtml(`${i + 1}.0000000`, item)),
+      ])
     case 'short_answer': {
       if (question.acceptedAnswers.length === 0) {
         throw new Error(`La pregunta ${index + 1} no tiene respuestas aceptadas validas.`)

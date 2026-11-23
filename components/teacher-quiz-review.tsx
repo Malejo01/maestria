@@ -795,6 +795,16 @@ function VistaDePregunta({ question }: { question: Question }) {
         </ul>
       )}
 
+      {question.type === 'ordering' && (
+        <ol className="list-decimal space-y-1 pl-6">
+          {question.items.map((item, i) => (
+            <li key={i}>
+              <LaTeXRenderer content={item} />
+            </li>
+          ))}
+        </ol>
+      )}
+
       {question.type === 'true_false' && (
         <p className="text-sm">
           Correcta: <strong>{question.correctAnswer ? 'Verdadero' : 'Falso'}</strong>
@@ -934,6 +944,16 @@ function EditorDePregunta({
             />
           </Campo>
         </>
+      )}
+
+      {question.type === 'ordering' && (
+        <Campo label={TIPOS_MOODLE_TEXTOS.ordenamiento.editor}>
+          <Textarea
+            rows={5}
+            value={question.items.join('\n')}
+            onChange={(e) => onChange({ items: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) } as Partial<Question>)}
+          />
+        </Campo>
       )}
 
       {question.type === 'true_false' && (

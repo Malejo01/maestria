@@ -1,4 +1,5 @@
 import type { Question, TeacherQuiz } from '@/lib/types'
+import { TIPOS_MOODLE_TEXTOS } from '@/lib/textos'
 import { fraccionesVariasCorrectas } from '@/lib/tipos-moodle'
 import { sanitizeSubjectSegment as sanitizePathSegment, slugifySubject as toSlug } from '@/lib/subject-slug'
 import { esFactorizacion, factorizar } from '@/lib/factorizacion'
@@ -212,6 +213,13 @@ function buildQuestionBlock(question: Question, index: number): string {
     case 'matching': {
       // F3: GIFT no tiene distractores en el emparejamiento: van sólo los pares.
       const pares = question.pairs.map((p) => `=${escapeGiftText(p.left)} -> ${escapeGiftText(p.right)}`)
+      const feedback = buildFeedback(question)
+      return `::${questionTitle}::${questionText} {\n${pares.join('\n')}${feedback ? `\n${feedback}` : ''}\n}`
+    }
+    case 'ordering': {
+      // F4: GIFT no tiene ordenamiento. Va como emparejamiento de cada lugar
+      // con su elemento ("Lugar 1 -> …"), que se corrige igual.
+      const pares = question.items.map((item, i) => `=${escapeGiftText(TIPOS_MOODLE_TEXTOS.ordenamiento.lugar(i + 1))} -> ${escapeGiftText(item)}`)
       const feedback = buildFeedback(question)
       return `::${questionTitle}::${questionText} {\n${pares.join('\n')}${feedback ? `\n${feedback}` : ''}\n}`
     }

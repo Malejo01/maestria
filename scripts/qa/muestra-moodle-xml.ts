@@ -80,6 +80,15 @@ export const PREGUNTAS_DE_MUESTRA: Question[] = [
     distractors: ['Evolucionismo unilineal'],
     explanation: 'Cada autor con el concepto que lo identifica.',
   },
+  // F4 · ordenamiento
+  {
+    ...comun,
+    id: 'm7',
+    type: 'ordering',
+    question: 'Ordená los pasos del trabajo de campo etnográfico.',
+    items: ['Elegir el problema', 'Entrar al campo', 'Observar y registrar', 'Analizar los registros', 'Escribir la etnografía'],
+    explanation: 'Del problema a la escritura.',
+  },
 ]
 
 export function cuestionarioDeMuestra(): TeacherQuiz {

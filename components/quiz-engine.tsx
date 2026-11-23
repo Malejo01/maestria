@@ -1,6 +1,6 @@
 'use client'
 
-import { corregirEmparejamiento, corregirVariasCorrectas, tipoParaAtajos } from '@/lib/tipos-moodle'
+import { corregirEmparejamiento, corregirOrden, corregirVariasCorrectas, tipoParaAtajos } from '@/lib/tipos-moodle'
 import { useCuentaRegresiva, formatearTiempo } from '@/hooks/use-cuenta-regresiva'
 import { SIMULACRO } from '@/lib/textos'
 import { revanchaPermitida } from '@/lib/revancha'
@@ -293,6 +293,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     if (question.type === 'matching' && selection.type === 'matching') {
       return { ...base, type: 'matching', pairs: question.pairs, selectedRights: selection.value }
     }
+    if (question.type === 'ordering' && selection.type === 'ordering') {
+      return { ...base, type: 'ordering', items: question.items, selectedOrder: selection.value }
+    }
     throw new Error('Selection type does not match question type')
   }, [])
 
@@ -456,6 +459,15 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       return
     }
 
+    // F4: ordenamiento, el orden exacto.
+    if (currentQuestion.type === 'ordering' && selection.type === 'ordering') {
+      const isCorrect = corregirOrden(selection.value)
+      setAnswerState(prev => ({ ...prev, submitted: true, isCorrect }))
+      answerQuestion(buildAnswer(currentQuestion, selection, isCorrect))
+      avanzarSinDevolucion()
+      return
+    }
+
     if (currentQuestion.type === 'short_answer' && selection.type === 'short_answer') {
       if (selection.value.trim().length === 0) return
       await gradeShortAnswer(currentQuestion, selection)
@@ -515,6 +527,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
         return selection.value.length > 0
       case 'matching':
         return selection.value.every((v) => v !== null)
+      // F4: el orden en que esté es una respuesta.
+      case 'ordering':
+        return true
     }
   })()
 

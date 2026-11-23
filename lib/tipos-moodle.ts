@@ -1,4 +1,4 @@
-import type { Answer, MatchingQuestion, MultipleResponseQuestion, Question, QuestionType } from '@/lib/types'
+import type { Answer, MatchingQuestion, MultipleResponseQuestion, OrderingQuestion, Question, QuestionType } from '@/lib/types'
 
 /**
  * Ronda T · F2 a F7 — Los tipos de pregunta "como en Moodle", en un solo
@@ -9,7 +9,7 @@ import type { Answer, MatchingQuestion, MultipleResponseQuestion, Question, Ques
  * respuesta corta) siguen donde estaban; estos se suman acá para que cada
  * tipo nuevo toque este archivo, su componente de respuesta y la exportación.
  */
-export const TIPOS_MOODLE = ['multiple_response', 'matching'] as const satisfies readonly QuestionType[]
+export const TIPOS_MOODLE = ['multiple_response', 'matching', 'ordering'] as const satisfies readonly QuestionType[]
 export type TipoMoodle = (typeof TIPOS_MOODLE)[number]
 
 export function esTipoMoodle(tipo: unknown): tipo is TipoMoodle {
@@ -28,6 +28,7 @@ export const ETIQUETA_DE_TIPO: Record<QuestionType, string> = {
   short_answer: 'Respuesta corta',
   multiple_response: 'Varias correctas',
   matching: 'Emparejamiento',
+  ordering: 'Ordenamiento',
 }
 
 const letra = (i: number) => String.fromCharCode(65 + i)
@@ -120,6 +121,36 @@ export function barajarFijo<T>(items: readonly T[], semilla: string): T[] {
   return salida
 }
 
+// ─── F4 · Ordenamiento ──────────────────────────────────────────────────────
+
+/** Todo o nada: el orden exacto. */
+export function corregirOrden(orden: readonly number[]): boolean {
+  return orden.length > 0 && orden.every((indice, lugar) => indice === lugar)
+}
+
+/** Mueve el elemento del lugar `lugar` un lugar para arriba (−1) o para abajo (+1). */
+export function moverEnOrden(orden: readonly number[], lugar: number, paso: -1 | 1): number[] {
+  const destino = lugar + paso
+  if (destino < 0 || destino >= orden.length) return [...orden]
+  const nuevo = [...orden]
+  ;[nuevo[lugar], nuevo[destino]] = [nuevo[destino], nuevo[lugar]]
+  return nuevo
+}
+
+/** El orden con que arranca: barajado siempre igual para la pregunta, y nunca ya ordenado. */
+export function ordenInicial(q: Pick<OrderingQuestion, 'id' | 'items'>): number[] {
+  const indices = q.items.map((_, i) => i)
+  const barajado = barajarFijo(indices, q.id)
+  return corregirOrden(barajado) && barajado.length > 1 ? [...barajado.slice(1), barajado[0]] : barajado
+}
+
+/** Un ordenamiento que sirve: de 3 a 8 elementos escritos y distintos. */
+export function ordenamientoValido(q: Pick<OrderingQuestion, 'items'>): boolean {
+  if (!Array.isArray(q.items) || q.items.length < 3 || q.items.length > 8) return false
+  const textos = q.items.map((t) => normal(t).toLowerCase())
+  return textos.every(Boolean) && new Set(textos).size === textos.length
+}
+
 // ─── En texto ───────────────────────────────────────────────────────────────
 
 /** La respuesta correcta de una pregunta de tipo Moodle, en texto. null si no es de estos tipos. */
@@ -129,6 +160,8 @@ export function correctaEnTexto(q: Question): string | null {
       return opcionesEnTexto(q.options, q.correctAnswers)
     case 'matching':
       return q.pairs.map((p) => `${p.left} → ${p.right}`).join(' · ')
+    case 'ordering':
+      return q.items.map((t, i) => `${i + 1}. ${t}`).join(' · ')
     default:
       return null
   }
@@ -141,6 +174,8 @@ export function respuestaEnTexto(a: Answer, cual: 'selected' | 'correct'): strin
       return opcionesEnTexto(a.options, cual === 'selected' ? a.selectedAnswers : a.correctAnswers)
     case 'matching':
       return a.pairs.map((p, i) => `${p.left} → ${cual === 'selected' ? (a.selectedRights[i] ?? '—') : p.right}`).join(' · ')
+    case 'ordering':
+      return (cual === 'selected' ? a.selectedOrder.map((i) => a.items[i] ?? '—') : a.items).map((t, i) => `${i + 1}. ${t}`).join(' · ')
     default:
       return null
   }
@@ -162,6 +197,8 @@ export function payloadDeRespuesta(a: Answer): Record<string, unknown> | null {
       return { tipo: a.type, options: a.options, selectedAnswers: a.selectedAnswers, correctAnswers: a.correctAnswers, ...texto }
     case 'matching':
       return { tipo: a.type, pairs: a.pairs, selectedRights: a.selectedRights, ...texto }
+    case 'ordering':
+      return { tipo: a.type, items: a.items, selectedOrder: a.selectedOrder, ...texto }
   }
   return null
 }
@@ -193,6 +230,8 @@ export function problemaDeTipoMoodle(q: Record<string, unknown>): string | null 
         : 'varias correctas sin entre 2 y n-1 correctas'
     case 'matching':
       return emparejamientoValido(q as unknown as MatchingQuestion) ? null : 'emparejamiento sin 3 a 8 pares distintos'
+    case 'ordering':
+      return ordenamientoValido(q as unknown as OrderingQuestion) ? null : 'ordenamiento sin 3 a 8 elementos distintos'
     default:
       return null
   }

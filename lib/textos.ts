@@ -1758,6 +1758,15 @@ export const TIPOS_MOODLE_TEXTOS = {
     distractores: 'Respuestas de más',
     distractoresEditor: 'Respuestas de más (opcional) — una por línea',
   },
+  ordenamiento: {
+    consigna: 'Ordená con las flechas.',
+    lista: 'Elementos para ordenar',
+    subir: (texto: string) => `Subir: ${texto.slice(0, 60)}`,
+    bajar: (texto: string) => `Bajar: ${texto.slice(0, 60)}`,
+    iba: (lugar: number, texto: string) => `En el lugar ${lugar} iba: ${texto}`,
+    editor: 'Elementos en el orden correcto — uno por línea',
+    lugar: (n: number) => `Lugar ${n}`,
+  },
 } as const
 
 /** Ronda T · F1: exportar a Moodle, en XML o en GIFT. */
