@@ -177,4 +177,348 @@
     <unitsleft>0</unitsleft>
     <dataset_definitions><dataset_definition><status><text>private</text></status><name><text>p</text></name><type>calculated</type><distribution><text>uniform</text></distribution><minimum><text>100</text></minimum><maximum><text>900</text></maximum><decimals><text>0</text></decimals><itemcount>10</itemcount><dataset_items><dataset_item><number>1</number><value>407</value></dataset_item><dataset_item><number>2</number><value>216</value></dataset_item><dataset_item><number>3</number><value>739</value></dataset_item><dataset_item><number>4</number><value>489</value></dataset_item><dataset_item><number>5</number><value>344</value></dataset_item><dataset_item><number>6</number><value>836</value></dataset_item><dataset_item><number>7</number><value>576</value></dataset_item><dataset_item><number>8</number><value>151</value></dataset_item><dataset_item><number>9</number><value>867</value></dataset_item><dataset_item><number>10</number><value>678</value></dataset_item></dataset_items><number_of_items>10</number_of_items></dataset_definition><dataset_definition><status><text>private</text></status><name><text>x</text></name><type>calculated</type><distribution><text>uniform</text></distribution><minimum><text>5</text></minimum><maximum><text>25</text></maximum><decimals><text>0</text></decimals><itemcount>10</itemcount><dataset_items><dataset_item><number>1</number><value>17</value></dataset_item><dataset_item><number>2</number><value>24</value></dataset_item><dataset_item><number>3</number><value>11</value></dataset_item><dataset_item><number>4</number><value>10</value></dataset_item><dataset_item><number>5</number><value>25</value></dataset_item><dataset_item><number>6</number><value>12</value></dataset_item><dataset_item><number>7</number><value>23</value></dataset_item><dataset_item><number>8</number><value>21</value></dataset_item><dataset_item><number>9</number><value>23</value></dataset_item><dataset_item><number>10</number><value>23</value></dataset_item></dataset_items><number_of_items>10</number_of_items></dataset_definition></dataset_definitions>
   </question>
+  <question type="category">
+    <category><text>$course$/Muestra MaestrIA/Con LaTeX</text></category>
+  </question>
+  <question type="multichoice">
+    <name><text>1. ¿Cuánto vale \frac{3}{4} + \frac{1}{8}?</text></name>
+    <questiontext format="html"><text><![CDATA[<p>¿Cuánto vale \(\frac{3}{4} + \frac{1}{8}\)?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>\(\frac{3}{4} = \frac{6}{8}\), y \(\frac{6}{8} + \frac{1}{8} = \frac{7}{8}\).</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>0</showstandardinstruction>
+    <answer fraction="100" format="html"><text><![CDATA[<p>\(\frac{7}{8}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>\(\frac{4}{12}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>\(\frac{1}{2}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>\(\frac{5}{8}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="truefalse">
+    <name><text>2. \sqrt{2} \in \mathbb{Q}</text></name>
+    <questiontext format="html"><text><![CDATA[<p>\(\sqrt{2} \in \mathbb{Q}\)</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>\(\sqrt{2}\) es irracional: no se escribe como \(\frac{p}{q}\).</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <answer fraction="0" format="moodle_auto_format"><text>true</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="100" format="moodle_auto_format"><text>false</text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="numerical">
+    <name><text>3. ¿Cuánto vale \sqrt{49} + \frac{1}{2}?</text></name>
+    <questiontext format="html"><text><![CDATA[<p>¿Cuánto vale \(\sqrt{49} + \frac{1}{2}\)?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>\(\sqrt{49} = 7\) y \(7 + \frac{1}{2} = 7{,}5\).</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <answer fraction="100" format="moodle_auto_format"><text>7.5</text><feedback format="html"><text></text></feedback><tolerance>0.01</tolerance></answer>
+    <unitgradingtype>0</unitgradingtype>
+    <unitpenalty>0.1000000</unitpenalty>
+    <showunits>3</showunits>
+    <unitsleft>0</unitsleft>
+  </question>
+  <question type="shortanswer">
+    <name><text>4. Si A = \{1, 2, 3\} y B = \{2, 3, 4\}, ¿cuántos elementos…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Si \(A = \{1, 2, 3\}\) y \(B = \{2, 3, 4\}\), ¿cuántos elementos tiene \(A \cap B\)? Escribilo con palabras.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>\(A \cap B = \{2, 3\}\): dos elementos.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <usecase>0</usecase>
+    <answer fraction="100" format="moodle_auto_format"><text>dos</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="100" format="moodle_auto_format"><text>2</text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="multichoice">
+    <name><text>5. ¿Cuáles pertenecen a \{x \in \mathbb{Z} : x^2 &lt; 5\}? Marc…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>¿Cuáles pertenecen a \(\{x \in \mathbb{Z} : x^2 &lt; 5\}\)? Marcá todas las que correspondan.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Los enteros con cuadrado menor que 5: \(-2, -1, 0, 1, 2\).</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>false</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>1</showstandardinstruction>
+    <answer fraction="33.33333" format="html"><text><![CDATA[<p>\(-2\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="33.33333" format="html"><text><![CDATA[<p>\(0\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-50" format="html"><text><![CDATA[<p>\(\sqrt{5}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="33.33333" format="html"><text><![CDATA[<p>\(2\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-50" format="html"><text><![CDATA[<p>\(3\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="matching">
+    <name><text>6. Uní cada expresión con su valor.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Uní cada expresión con su valor.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Cada expresión con lo que vale.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>true</shuffleanswers>
+    <subquestion format="html"><text><![CDATA[<p>\(\frac{1}{2}\)</p>]]></text><answer><text>$0{,}5$</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>\(\sqrt{9}\)</p>]]></text><answer><text>$3$</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>\(\{1, 2\} \cup \{3\}\)</p>]]></text><answer><text>$\{1, 2, 3\}$</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>\(\sqrt[3]{8}\)</p>]]></text><answer><text>$2$</text></answer></subquestion>
+    <subquestion format="html"><text></text><answer><text>$\emptyset$</text></answer></subquestion>
+  </question>
+  <question type="ordering">
+    <name><text>7. Ordená de menor a mayor.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Ordená de menor a mayor.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>\(0{,}33 &lt; 0{,}5 &lt; 1{,}41 &lt; 2{,}5\).</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <layouttype>VERTICAL</layouttype>
+    <selecttype>ALL</selecttype>
+    <selectcount>0</selectcount>
+    <gradingtype>ABSOLUTE_POSITION</gradingtype>
+    <showgrading>SHOW</showgrading>
+    <numberingstyle>none</numberingstyle>
+    <answer fraction="1.0000000" format="html"><text><![CDATA[<p>\(\frac{1}{3}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="2.0000000" format="html"><text><![CDATA[<p>\(\frac{1}{2}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="3.0000000" format="html"><text><![CDATA[<p>\(\sqrt{2}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="4.0000000" format="html"><text><![CDATA[<p>\(\frac{5}{2}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="gapselect">
+    <name><text>8. Completá con el valor que corresponde.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Completá con el valor que corresponde.</p><p>Si \(x = \frac{1}{2}\), entonces \(2x =\) [[1]], \(x^2 =\) [[2]] y \(\sqrt{x^2} =\) [[3]].</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>\(2 \cdot \frac{1}{2} = 1\), \(\left(\frac{1}{2}\right)^2 = \frac{1}{4}\) y \(\sqrt{\frac{1}{4}} = \frac{1}{2}\).</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>1</shuffleanswers>
+    <selectoption><text>$1$</text><group>1</group></selectoption>
+    <selectoption><text>$\frac{1}{4}$</text><group>1</group></selectoption>
+    <selectoption><text>$\frac{1}{2}$</text><group>1</group></selectoption>
+    <selectoption><text>$2$</text><group>1</group></selectoption>
+  </question>
+  <question type="ddwtos">
+    <name><text>9. Poné cada palabra en su hueco.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Poné cada palabra en su hueco.</p><p>En \(\{x \in \mathbb{R} : x &gt; 0\}\) los números son [[1]]; \(\sqrt{-1}\) no es un número [[2]]; \(\frac{0}{5}\) es [[3]].</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>El conjunto de los positivos, la unidad imaginaria y el cero.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>1</shuffleanswers>
+    <dragbox><text>positivos</text><group>1</group></dragbox>
+    <dragbox><text>real</text><group>1</group></dragbox>
+    <dragbox><text>cero</text><group>1</group></dragbox>
+    <dragbox><text>negativos</text><group>1</group></dragbox>
+    <dragbox><text>entero</text><group>1</group></dragbox>
+  </question>
+  <question type="multichoice">
+    <name><text>10. Elegí la fracción que falta.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Elegí la fracción que falta.</p><p>La fracción \(\frac{6}{8}\) simplificada es _____.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Se dividen numerador y denominador por 2.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>0</showstandardinstruction>
+    <answer fraction="100" format="html"><text><![CDATA[<p>\(\frac{3}{4}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>\(\frac{2}{3}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>\(\frac{6}{4}\)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="calculated">
+    <name><text>11. Un rectángulo mide 5 cm por 13 cm. ¿Cuánto mide su diagon…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Un rectángulo mide {a} cm por {b} cm. ¿Cuánto mide su diagonal, \(\sqrt{a^2 + b^2}\), en cm?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Por Pitágoras, \(d = \sqrt{a^2 + b^2}\).</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <synchronize>0</synchronize>
+    <single>0</single>
+    <answernumbering>abc</answernumbering>
+    <shuffleanswers>0</shuffleanswers>
+    <answer fraction="100"><text>sqrt({a} * {a} + {b} * {b})</text><tolerance>0.01</tolerance><tolerancetype>1</tolerancetype><correctanswerformat>1</correctanswerformat><correctanswerlength>2</correctanswerlength><feedback format="html"><text></text></feedback></answer>
+    <unitgradingtype>0</unitgradingtype>
+    <unitpenalty>0.1000000</unitpenalty>
+    <showunits>3</showunits>
+    <unitsleft>0</unitsleft>
+    <dataset_definitions><dataset_definition><status><text>private</text></status><name><text>a</text></name><type>calculated</type><distribution><text>uniform</text></distribution><minimum><text>3</text></minimum><maximum><text>12</text></maximum><decimals><text>0</text></decimals><itemcount>10</itemcount><dataset_items><dataset_item><number>1</number><value>5</value></dataset_item><dataset_item><number>2</number><value>8</value></dataset_item><dataset_item><number>3</number><value>9</value></dataset_item><dataset_item><number>4</number><value>10</value></dataset_item><dataset_item><number>5</number><value>4</value></dataset_item><dataset_item><number>6</number><value>6</value></dataset_item><dataset_item><number>7</number><value>8</value></dataset_item><dataset_item><number>8</number><value>7</value></dataset_item><dataset_item><number>9</number><value>11</value></dataset_item><dataset_item><number>10</number><value>11</value></dataset_item></dataset_items><number_of_items>10</number_of_items></dataset_definition><dataset_definition><status><text>private</text></status><name><text>b</text></name><type>calculated</type><distribution><text>uniform</text></distribution><minimum><text>4</text></minimum><maximum><text>15</text></maximum><decimals><text>0</text></decimals><itemcount>10</itemcount><dataset_items><dataset_item><number>1</number><value>10</value></dataset_item><dataset_item><number>2</number><value>5</value></dataset_item><dataset_item><number>3</number><value>5</value></dataset_item><dataset_item><number>4</number><value>14</value></dataset_item><dataset_item><number>5</number><value>6</value></dataset_item><dataset_item><number>6</number><value>12</value></dataset_item><dataset_item><number>7</number><value>13</value></dataset_item><dataset_item><number>8</number><value>10</value></dataset_item><dataset_item><number>9</number><value>7</value></dataset_item><dataset_item><number>10</number><value>8</value></dataset_item></dataset_items><number_of_items>10</number_of_items></dataset_definition></dataset_definitions>
+  </question>
+  <question type="category">
+    <category><text>$course$/Muestra MaestrIA/Caracteres dificiles</text></category>
+  </question>
+  <question type="multichoice">
+    <name><text>1. En C, ¿qué devuelve &quot;a &amp;&amp; b&quot; si a = 1 y b = 0?</text></name>
+    <questiontext format="html"><text><![CDATA[<p>En C, ¿qué devuelve &quot;a &amp;&amp; b&quot; si a = 1 y b = 0?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>&amp;&amp; es &quot;y&quot;: con b = 0, el resultado es 0.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>0</showstandardinstruction>
+    <answer fraction="100" format="html"><text><![CDATA[<p>0: falso</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>1: verdadero</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>a &lt; b &amp; b &gt; a</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>Depende de ~a</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="truefalse">
+    <name><text>2. En HTML, el carácter &lt; se escribe &amp;lt; y el &amp; se escribe…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>En HTML, el carácter &lt; se escribe &amp;lt; y el &amp; se escribe &amp;amp;.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Son las entidades de &quot;menor que&quot; y del ampersand.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <answer fraction="100" format="moodle_auto_format"><text>true</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="moodle_auto_format"><text>false</text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="numerical">
+    <name><text>3. Con a = 2 y b = 5 (a &lt; b), ¿cuánto vale &quot;a + b&quot;?</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Con a = 2 y b = 5 (a &lt; b), ¿cuánto vale &quot;a + b&quot;?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>2 + 5 = 7.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <answer fraction="100" format="moodle_auto_format"><text>7</text><feedback format="html"><text></text></feedback><tolerance>0</tolerance></answer>
+    <unitgradingtype>0</unitgradingtype>
+    <unitpenalty>0.1000000</unitpenalty>
+    <showunits>3</showunits>
+    <unitsleft>0</unitsleft>
+  </question>
+  <question type="shortanswer">
+    <name><text>4. ¿Qué operador significa &quot;distinto de&quot; en JavaScript? Escr…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>¿Qué operador significa &quot;distinto de&quot; en JavaScript? Escribilo tal cual.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>!= compara sin el tipo; !== también compara el tipo.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <usecase>0</usecase>
+    <answer fraction="100" format="moodle_auto_format"><text>!=</text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="100" format="moodle_auto_format"><text>!==</text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="multichoice">
+    <name><text>5. ¿Cuáles de estos símbolos tienen un uso especial en GIFT?…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>¿Cuáles de estos símbolos tienen un uso especial en GIFT? Marcá todas las que correspondan.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>~ = # : y las llaves se escapan con \ en GIFT.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>false</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>1</showstandardinstruction>
+    <answer fraction="25" format="html"><text><![CDATA[<p>~ (virgulilla)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="25" format="html"><text><![CDATA[<p>= (igual)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="25" format="html"><text><![CDATA[<p># (numeral)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-100" format="html"><text><![CDATA[<p>ñ (eñe)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="25" format="html"><text><![CDATA[<p>: (dos puntos)</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="matching">
+    <name><text>6. Uní cada texto con lo que es.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Uní cada texto con lo que es.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Cada texto con lo que representa.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>true</shuffleanswers>
+    <subquestion format="html"><text><![CDATA[<p>AT&amp;T</p>]]></text><answer><text>Una empresa &quot;Bell&quot;</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>#ética</p>]]></text><answer><text>Una etiqueta: tema</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>~/año</p>]]></text><answer><text>Una carpeta personal</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>x &lt;= 3</p>]]></text><answer><text>Una desigualdad</text></answer></subquestion>
+    <subquestion format="html"><text></text><answer><text>Una ecuación = 0</text></answer></subquestion>
+  </question>
+  <question type="ordering">
+    <name><text>7. Ordená los pasos para escribir una página HTML mínima.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Ordená los pasos para escribir una página HTML mínima.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Se abre, se escribe el cuerpo y se cierra.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <layouttype>VERTICAL</layouttype>
+    <selecttype>ALL</selecttype>
+    <selectcount>0</selectcount>
+    <gradingtype>ABSOLUTE_POSITION</gradingtype>
+    <showgrading>SHOW</showgrading>
+    <numberingstyle>none</numberingstyle>
+    <answer fraction="1.0000000" format="html"><text><![CDATA[<p>Abrir &lt;html&gt;</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="2.0000000" format="html"><text><![CDATA[<p>Escribir el &lt;body&gt; con &quot;Hola &amp; chau&quot;</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="3.0000000" format="html"><text><![CDATA[<p>Cerrar &lt;/html&gt;</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="gapselect">
+    <name><text>8. Completá con la entidad HTML que corresponde.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Completá con la entidad HTML que corresponde.</p><p>En HTML, &amp; se escribe [[1]], &lt; se escribe [[2]] y &quot; se escribe [[3]].</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>&amp;amp;, &amp;lt; y &amp;quot;.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>1</shuffleanswers>
+    <selectoption><text>&amp;amp;</text><group>1</group></selectoption>
+    <selectoption><text>&amp;lt;</text><group>1</group></selectoption>
+    <selectoption><text>&amp;quot;</text><group>1</group></selectoption>
+    <selectoption><text>&amp;gt;</text><group>1</group></selectoption>
+  </question>
+  <question type="ddwtos">
+    <name><text>9. Poné cada nombre en su símbolo.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Poné cada nombre en su símbolo.</p><p>El &quot;~&quot; se llama [[1]], el &quot;#&quot; se llama [[2]] y el &quot;:&quot; se llama [[3]].</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Virgulilla, numeral y dos puntos.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>1</shuffleanswers>
+    <dragbox><text>virgulilla</text><group>1</group></dragbox>
+    <dragbox><text>numeral</text><group>1</group></dragbox>
+    <dragbox><text>dos puntos</text><group>1</group></dragbox>
+    <dragbox><text>arroba</text><group>1</group></dragbox>
+  </question>
+  <question type="multichoice">
+    <name><text>10. Elegí el símbolo que falta.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Elegí el símbolo que falta.</p><p>En una planilla de cálculo, una fórmula empieza con _____.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Las fórmulas empiezan con &quot;=&quot;.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>true</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>0</showstandardinstruction>
+    <answer fraction="100" format="html"><text><![CDATA[<p>=</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>#</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="0" format="html"><text><![CDATA[<p>:</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="calculated">
+    <name><text>11. Un &quot;combo&quot; de 8 empanadas &amp; 1 gaseosas: cada empanada cue…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Un &quot;combo&quot; de {n} empanadas &amp; {g} gaseosas: cada empanada cuesta 1200 pesos y cada gaseosa, 1500. ¿Cuánto se paga en total?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Empanadas por su precio más gaseosas por el suyo.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <synchronize>0</synchronize>
+    <single>0</single>
+    <answernumbering>abc</answernumbering>
+    <shuffleanswers>0</shuffleanswers>
+    <answer fraction="100"><text>{n} * 1200 + {g} * 1500</text><tolerance>0.01</tolerance><tolerancetype>1</tolerancetype><correctanswerformat>1</correctanswerformat><correctanswerlength>2</correctanswerlength><feedback format="html"><text></text></feedback></answer>
+    <unitgradingtype>0</unitgradingtype>
+    <unitpenalty>0.1000000</unitpenalty>
+    <showunits>3</showunits>
+    <unitsleft>0</unitsleft>
+    <dataset_definitions><dataset_definition><status><text>private</text></status><name><text>n</text></name><type>calculated</type><distribution><text>uniform</text></distribution><minimum><text>2</text></minimum><maximum><text>12</text></maximum><decimals><text>0</text></decimals><itemcount>10</itemcount><dataset_items><dataset_item><number>1</number><value>12</value></dataset_item><dataset_item><number>2</number><value>11</value></dataset_item><dataset_item><number>3</number><value>5</value></dataset_item><dataset_item><number>4</number><value>9</value></dataset_item><dataset_item><number>5</number><value>12</value></dataset_item><dataset_item><number>6</number><value>7</value></dataset_item><dataset_item><number>7</number><value>4</value></dataset_item><dataset_item><number>8</number><value>3</value></dataset_item><dataset_item><number>9</number><value>4</value></dataset_item><dataset_item><number>10</number><value>11</value></dataset_item></dataset_items><number_of_items>10</number_of_items></dataset_definition><dataset_definition><status><text>private</text></status><name><text>g</text></name><type>calculated</type><distribution><text>uniform</text></distribution><minimum><text>1</text></minimum><maximum><text>4</text></maximum><decimals><text>0</text></decimals><itemcount>10</itemcount><dataset_items><dataset_item><number>1</number><value>2</value></dataset_item><dataset_item><number>2</number><value>3</value></dataset_item><dataset_item><number>3</number><value>3</value></dataset_item><dataset_item><number>4</number><value>4</value></dataset_item><dataset_item><number>5</number><value>2</value></dataset_item><dataset_item><number>6</number><value>3</value></dataset_item><dataset_item><number>7</number><value>2</value></dataset_item><dataset_item><number>8</number><value>2</value></dataset_item><dataset_item><number>9</number><value>1</value></dataset_item><dataset_item><number>10</number><value>3</value></dataset_item></dataset_items><number_of_items>10</number_of_items></dataset_definition></dataset_definitions>
+  </question>
 </quiz>

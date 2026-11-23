@@ -88,7 +88,10 @@ function validarPregunta(bloque: string, donde: string): ErrorDeGift[] {
     return errores
   }
   const despues = marcado.slice(fin + 1).trim()
-  if (despues) {
+  // U5: texto después de las llaves es el formato "palabra faltante" de GIFT
+  // ("Antes {=a ~b} después."), que Moodle acepta. Lo que rompe es la
+  // retroalimentación afuera (`} ####…`, lo del 20/11) o un bloque sin nada antes.
+  if (despues && (despues.startsWith('####') || !comoLlegaAMoodle(marcado.slice(0, inicio)).replace(/^::[^:]*::/, '').trim())) {
     errores.push({ donde, mensaje: `hay texto después de "}": Moodle lo muestra como enunciado («${comoLlegaAMoodle(despues).slice(0, 40)}»)` })
   }
 
@@ -96,8 +99,18 @@ function validarPregunta(bloque: string, donde: string): ErrorDeGift[] {
   const [opciones] = respuestas.split('####')
   // Un "~" sin escapar es una opción incorrecta: es opción múltiple.
   if (opciones.includes('~')) {
+    // F2/U5: varias correctas va sin "=", con pesos: ~%50%a ~%50%b ~%-100%c.
+    // Las positivas tienen que sumar 100.
+    const pesos = [...opciones.matchAll(/~%(-?\d+(?:\.\d+)?)%/g)].map((m) => Number(m[1]))
     const correctas = (opciones.match(/=/g) ?? []).length
-    if (correctas !== 1) errores.push({ donde, mensaje: `opción múltiple con ${correctas} respuestas correctas ("="); tiene que haber una` })
+    if (pesos.some((p) => p > 0)) {
+      const suma = pesos.filter((p) => p > 0).reduce((a, b) => a + b, 0)
+      if (correctas > 0 || Math.abs(suma - 100) > 0.01) {
+        errores.push({ donde, mensaje: `varias correctas con pesos positivos que suman ${suma} (tienen que sumar 100) o con "="` })
+      }
+    } else if (correctas !== 1) {
+      errores.push({ donde, mensaje: `opción múltiple con ${correctas} respuestas correctas ("="); tiene que haber una` })
+    }
   }
 
   const enunciado = comoLlegaAMoodle(marcado.slice(0, inicio))

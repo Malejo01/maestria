@@ -168,3 +168,16 @@ describe('el cuestionario de muestra se exporta con 0 errores', () => {
     expect(tramo.endsWith('palabra')).toBe(true)
   })
 })
+
+describe('U5 · lo que el validador marcaba de más', () => {
+  it('varias correctas con pesos que suman 100 es GIFT válido', () => {
+    expect(validarGift('::Q1::¿Cuáles? {\n~%50%a\n~%50%b\n~%-100%c\n}')).toEqual([])
+    expect(validarGift('::Q1::¿Cuáles? {\n~%50%a\n~%40%b\n~%-100%c\n}')[0]?.mensaje).toMatch(/suman 90/)
+  })
+  it('la palabra faltante lleva texto después de la llave', () => {
+    expect(validarGift('::Q1::La fórmula empieza con {=\\= ~\\#}.')).toEqual([])
+  })
+  it('la retroalimentación afuera de las llaves sigue siendo un error (lo del 20/11)', () => {
+    expect(validarGift('::Q1::¿Es así? {TRUE} ####porque sí')).not.toEqual([])
+  })
+})

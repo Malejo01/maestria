@@ -239,6 +239,21 @@ export function convertQuizToMoodleXml(quiz: TeacherQuiz): string {
   return ['<?xml version="1.0" encoding="UTF-8"?>', '<quiz>', categoria, ...quiz.questions.map(preguntaXml), '</quiz>', ''].join('\n')
 }
 
+/**
+ * Ronda U · U5 — Varios cuestionarios en un solo archivo Moodle XML: cada uno
+ * con su categoría (Moodle pone las preguntas que siguen a una categoría en
+ * esa categoría).
+ */
+export function unirMoodleXml(quizzes: readonly TeacherQuiz[]): string {
+  const cuerpos = quizzes.map((q) =>
+    convertQuizToMoodleXml(q)
+      .replace(/^<\?xml[^>]*>\n<quiz>\n/, '')
+      .replace(/<\/quiz>\n?$/, '')
+      .trimEnd(),
+  )
+  return ['<?xml version="1.0" encoding="UTF-8"?>', '<quiz>', ...cuerpos, '</quiz>', ''].join('\n')
+}
+
 export function buildMoodleXmlFileName(quiz: TeacherQuiz): string {
   const subjectSlug = toSlug(quiz.subjectName || quiz.title)
   const topicSlugs = extractTopicNames(quiz).map(toSlug).filter(Boolean)
