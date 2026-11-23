@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  cantidadDeHuecos,
+  corregirHuecos,
+  huecosValidos,
+  partesDelTexto,
   corregirOrden,
   moverEnOrden,
   ordenInicial,
@@ -186,5 +190,62 @@ describe('F4 · ordenamiento', () => {
     expect(respuestaEnTexto(respuesta, 'selected')).toBe('1. Agricultura · 2. Recolección · 3. Industria · 4. Servicios')
     expect(respuestaEnTexto(respuesta, 'correct')).toBe('1. Recolección · 2. Agricultura · 3. Industria · 4. Servicios')
     expect(payloadDeRespuesta(respuesta)).toMatchObject({ tipo: 'ordering', selectedOrder: [1, 0, 2, 3] })
+  })
+})
+
+describe('F5 · huecos (seleccionar y arrastrar)', () => {
+  const HUECOS = {
+    id: 'q4',
+    type: 'gapselect' as const,
+    topic: 't',
+    topicName: 'Mercado',
+    question: 'Completá el texto.',
+    text: 'Si sube el [[1]], baja la [[2]] demandada; la curva de [[3]] tiene pendiente negativa.',
+    choices: ['precio', 'cantidad', 'demanda', 'oferta', 'renta'],
+    explanation: '',
+  }
+
+  it('parte el texto en lo que se lee y los huecos', () => {
+    expect(partesDelTexto('A [[1]] b [[2]].')).toEqual([
+      { tipo: 'texto', texto: 'A ' },
+      { tipo: 'hueco', hueco: 1 },
+      { tipo: 'texto', texto: ' b ' },
+      { tipo: 'hueco', hueco: 2 },
+      { tipo: 'texto', texto: '.' },
+    ])
+    expect(cantidadDeHuecos(HUECOS.text)).toBe(3)
+  })
+
+  it('todo o nada: en cada hueco su palabra', () => {
+    expect(corregirHuecos([0, 1, 2], 3)).toBe(true)
+    expect(corregirHuecos([0, 2, 1], 3)).toBe(false)
+    expect(corregirHuecos([0, 1, null], 3)).toBe(false)
+  })
+
+  it('sirve con 3 a 6 huecos numerados 1..k, una palabra para cada uno, distractores y todo distinto', () => {
+    expect(huecosValidos(HUECOS)).toBe(true)
+    expect(huecosValidos({ text: 'A [[1]] b [[2]].', choices: ['x', 'y', 'z'] })).toBe(false)
+    expect(huecosValidos({ text: 'A [[1]] b [[3]] c [[4]].', choices: ['x', 'y', 'z', 'w'] })).toBe(false)
+    expect(huecosValidos({ text: 'A [[1]] b [[1]] c [[2]].', choices: ['x', 'y', 'z'] })).toBe(false)
+    expect(huecosValidos({ text: HUECOS.text, choices: ['precio', 'cantidad'] })).toBe(false)
+    expect(huecosValidos({ text: HUECOS.text, choices: ['precio', 'cantidad', 'Precio'] })).toBe(false)
+  })
+
+  it('en texto: lo de cada hueco entre corchetes', () => {
+    expect(correctaEnTexto(HUECOS)).toBe('Si sube el [precio], baja la [cantidad] demandada; la curva de [demanda] tiene pendiente negativa.')
+    const respuesta: Answer = {
+      type: 'ddwtos',
+      questionId: 'q4',
+      questionText: HUECOS.question,
+      isCorrect: false,
+      topic: 't',
+      topicName: 'Mercado',
+      explanation: '',
+      text: HUECOS.text,
+      choices: HUECOS.choices,
+      selectedChoices: [0, 3, null],
+    }
+    expect(respuestaEnTexto(respuesta, 'selected')).toBe('Si sube el [precio], baja la [oferta] demandada; la curva de [___] tiene pendiente negativa.')
+    expect(payloadDeRespuesta(respuesta)).toMatchObject({ tipo: 'ddwtos', selectedChoices: [0, 3, null] })
   })
 })

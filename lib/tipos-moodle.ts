@@ -1,4 +1,4 @@
-import type { Answer, MatchingQuestion, MultipleResponseQuestion, OrderingQuestion, Question, QuestionType } from '@/lib/types'
+import type { Answer, GapsQuestion, MatchingQuestion, MultipleResponseQuestion, OrderingQuestion, Question, QuestionType } from '@/lib/types'
 
 /**
  * Ronda T · F2 a F7 — Los tipos de pregunta "como en Moodle", en un solo
@@ -9,7 +9,7 @@ import type { Answer, MatchingQuestion, MultipleResponseQuestion, OrderingQuesti
  * respuesta corta) siguen donde estaban; estos se suman acá para que cada
  * tipo nuevo toque este archivo, su componente de respuesta y la exportación.
  */
-export const TIPOS_MOODLE = ['multiple_response', 'matching', 'ordering'] as const satisfies readonly QuestionType[]
+export const TIPOS_MOODLE = ['multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos'] as const satisfies readonly QuestionType[]
 export type TipoMoodle = (typeof TIPOS_MOODLE)[number]
 
 export function esTipoMoodle(tipo: unknown): tipo is TipoMoodle {
@@ -29,6 +29,8 @@ export const ETIQUETA_DE_TIPO: Record<QuestionType, string> = {
   multiple_response: 'Varias correctas',
   matching: 'Emparejamiento',
   ordering: 'Ordenamiento',
+  gapselect: 'Seleccionar la palabra',
+  ddwtos: 'Arrastrar al texto',
 }
 
 const letra = (i: number) => String.fromCharCode(65 + i)
@@ -151,6 +153,53 @@ export function ordenamientoValido(q: Pick<OrderingQuestion, 'items'>): boolean 
   return textos.every(Boolean) && new Set(textos).size === textos.length
 }
 
+// ─── F5 · Huecos (seleccionar / arrastrar) ──────────────────────────────────
+
+export type ParteDelTexto = { tipo: 'texto'; texto: string } | { tipo: 'hueco'; hueco: number }
+
+/** El texto partido en lo que se lee y los huecos [[n]]. */
+export function partesDelTexto(texto: string): ParteDelTexto[] {
+  const partes: ParteDelTexto[] = []
+  let desde = 0
+  for (const m of texto.matchAll(/\[\[(\d+)\]\]/g)) {
+    if (m.index! > desde) partes.push({ tipo: 'texto', texto: texto.slice(desde, m.index) })
+    partes.push({ tipo: 'hueco', hueco: Number(m[1]) })
+    desde = m.index! + m[0].length
+  }
+  if (desde < texto.length) partes.push({ tipo: 'texto', texto: texto.slice(desde) })
+  return partes
+}
+
+export const cantidadDeHuecos = (texto: string) => partesDelTexto(texto).filter((p) => p.tipo === 'hueco').length
+
+/** Todo o nada: en cada hueco i, la palabra i. */
+export function corregirHuecos(elegidas: readonly (number | null)[], huecos: number): boolean {
+  return huecos > 0 && elegidas.length >= huecos && Array.from({ length: huecos }, (_, i) => elegidas[i] === i).every(Boolean)
+}
+
+/**
+ * Unos huecos que sirven: de 3 a 6, numerados 1..k y cada uno una sola vez,
+ * con una palabra para cada uno, más 0 a 4 distractores, todas escritas y
+ * distintas (si no, no se sabe cuál es cuál).
+ */
+export function huecosValidos(q: Pick<GapsQuestion, 'text' | 'choices'>): boolean {
+  if (typeof q.text !== 'string' || !Array.isArray(q.choices)) return false
+  const numeros = partesDelTexto(q.text).flatMap((p) => (p.tipo === 'hueco' ? [p.hueco] : []))
+  const k = numeros.length
+  if (k < 3 || k > 6) return false
+  if ([...numeros].sort((a, b) => a - b).some((n, i) => n !== i + 1)) return false
+  if (q.choices.length < k || q.choices.length > k + 4) return false
+  const palabras = q.choices.map((c) => normal(c).toLowerCase())
+  return palabras.every(Boolean) && new Set(palabras).size === palabras.length
+}
+
+/** El texto con lo de cada hueco entre corchetes (o "___" si está vacío). */
+function textoLleno(texto: string, choices: readonly string[], puestas: readonly (number | null)[]): string {
+  return partesDelTexto(texto)
+    .map((p) => (p.tipo === 'texto' ? p.texto : (() => { const v = puestas[p.hueco - 1]; return v === null || v === undefined ? '[___]' : `[${choices[v] ?? '___'}]` })()))
+    .join('')
+}
+
 // ─── En texto ───────────────────────────────────────────────────────────────
 
 /** La respuesta correcta de una pregunta de tipo Moodle, en texto. null si no es de estos tipos. */
@@ -162,6 +211,9 @@ export function correctaEnTexto(q: Question): string | null {
       return q.pairs.map((p) => `${p.left} → ${p.right}`).join(' · ')
     case 'ordering':
       return q.items.map((t, i) => `${i + 1}. ${t}`).join(' · ')
+    case 'gapselect':
+    case 'ddwtos':
+      return textoLleno(q.text, q.choices, q.choices.map((_, i) => i))
     default:
       return null
   }
@@ -176,6 +228,9 @@ export function respuestaEnTexto(a: Answer, cual: 'selected' | 'correct'): strin
       return a.pairs.map((p, i) => `${p.left} → ${cual === 'selected' ? (a.selectedRights[i] ?? '—') : p.right}`).join(' · ')
     case 'ordering':
       return (cual === 'selected' ? a.selectedOrder.map((i) => a.items[i] ?? '—') : a.items).map((t, i) => `${i + 1}. ${t}`).join(' · ')
+    case 'gapselect':
+    case 'ddwtos':
+      return textoLleno(a.text, a.choices, cual === 'selected' ? a.selectedChoices : a.choices.map((_, i) => i))
     default:
       return null
   }
@@ -199,6 +254,9 @@ export function payloadDeRespuesta(a: Answer): Record<string, unknown> | null {
       return { tipo: a.type, pairs: a.pairs, selectedRights: a.selectedRights, ...texto }
     case 'ordering':
       return { tipo: a.type, items: a.items, selectedOrder: a.selectedOrder, ...texto }
+    case 'gapselect':
+    case 'ddwtos':
+      return { tipo: a.type, text: a.text, choices: a.choices, selectedChoices: a.selectedChoices, ...texto }
   }
   return null
 }
@@ -232,6 +290,9 @@ export function problemaDeTipoMoodle(q: Record<string, unknown>): string | null 
       return emparejamientoValido(q as unknown as MatchingQuestion) ? null : 'emparejamiento sin 3 a 8 pares distintos'
     case 'ordering':
       return ordenamientoValido(q as unknown as OrderingQuestion) ? null : 'ordenamiento sin 3 a 8 elementos distintos'
+    case 'gapselect':
+    case 'ddwtos':
+      return huecosValidos(q as unknown as GapsQuestion) ? null : 'huecos sin 3 a 6 numerados con su palabra'
     default:
       return null
   }

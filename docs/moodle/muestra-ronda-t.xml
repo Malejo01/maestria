@@ -111,4 +111,34 @@
     <answer fraction="4.0000000" format="html"><text><![CDATA[<p>Analizar los registros</p>]]></text><feedback format="html"><text></text></feedback></answer>
     <answer fraction="5.0000000" format="html"><text><![CDATA[<p>Escribir la etnografía</p>]]></text><feedback format="html"><text></text></feedback></answer>
   </question>
+  <question type="gapselect">
+    <name><text>8. Completá el texto con las palabras que faltan.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Completá el texto con las palabras que faltan.</p><p>Si sube el [[1]] de un bien, baja la [[2]] demandada: la curva de [[3]] tiene pendiente negativa.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Es la ley de la demanda.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>1</shuffleanswers>
+    <selectoption><text>precio</text><group>1</group></selectoption>
+    <selectoption><text>cantidad</text><group>1</group></selectoption>
+    <selectoption><text>demanda</text><group>1</group></selectoption>
+    <selectoption><text>oferta</text><group>1</group></selectoption>
+    <selectoption><text>renta</text><group>1</group></selectoption>
+  </question>
+  <question type="ddwtos">
+    <name><text>9. Poné cada palabra en su hueco.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Poné cada palabra en su hueco.</p><p>El [[1]] juzga otras culturas con los valores propios; el [[2]] cultural pide entenderlas en sus [[3]].</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Etnocentrismo y relativismo cultural.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>1</shuffleanswers>
+    <dragbox><text>etnocentrismo</text><group>1</group></dragbox>
+    <dragbox><text>relativismo</text><group>1</group></dragbox>
+    <dragbox><text>términos</text><group>1</group></dragbox>
+    <dragbox><text>evolucionismo</text><group>1</group></dragbox>
+    <dragbox><text>rasgos</text><group>1</group></dragbox>
+  </question>
 </quiz>

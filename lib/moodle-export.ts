@@ -1,6 +1,6 @@
 import type { Question, TeacherQuiz } from '@/lib/types'
 import { TIPOS_MOODLE_TEXTOS } from '@/lib/textos'
-import { fraccionesVariasCorrectas } from '@/lib/tipos-moodle'
+import { cantidadDeHuecos, fraccionesVariasCorrectas } from '@/lib/tipos-moodle'
 import { sanitizeSubjectSegment as sanitizePathSegment, slugifySubject as toSlug } from '@/lib/subject-slug'
 import { esFactorizacion, factorizar } from '@/lib/factorizacion'
 
@@ -222,6 +222,16 @@ function buildQuestionBlock(question: Question, index: number): string {
       const pares = question.items.map((item, i) => `=${escapeGiftText(TIPOS_MOODLE_TEXTOS.ordenamiento.lugar(i + 1))} -> ${escapeGiftText(item)}`)
       const feedback = buildFeedback(question)
       return `::${questionTitle}::${questionText} {\n${pares.join('\n')}${feedback ? `\n${feedback}` : ''}\n}`
+    }
+    case 'gapselect':
+    case 'ddwtos': {
+      // F5: GIFT no tiene huecos múltiples. El texto va con "(1) ___" y cada
+      // hueco como emparejamiento con su palabra (sin distractores).
+      const k = cantidadDeHuecos(question.text)
+      const conHuecos = escapeGiftText(`${question.question}\n${question.text.replace(/\[\[(\d+)\]\]/g, '($1) ___')}`)
+      const pares = question.choices.slice(0, k).map((c, i) => `=${escapeGiftText(TIPOS_MOODLE_TEXTOS.huecos.hueco(i + 1))} -> ${escapeGiftText(c)}`)
+      const feedback = buildFeedback(question)
+      return `::${questionTitle}::${conHuecos} {\n${pares.join('\n')}${feedback ? `\n${feedback}` : ''}\n}`
     }
     case 'short_answer': {
       if (question.acceptedAnswers.length === 0) {

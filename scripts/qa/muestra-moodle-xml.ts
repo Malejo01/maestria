@@ -89,6 +89,25 @@ export const PREGUNTAS_DE_MUESTRA: Question[] = [
     items: ['Elegir el problema', 'Entrar al campo', 'Observar y registrar', 'Analizar los registros', 'Escribir la etnografía'],
     explanation: 'Del problema a la escritura.',
   },
+  // F5 · seleccionar la palabra y arrastrar al texto
+  {
+    ...comun,
+    id: 'm8',
+    type: 'gapselect',
+    question: 'Completá el texto con las palabras que faltan.',
+    text: 'Si sube el [[1]] de un bien, baja la [[2]] demandada: la curva de [[3]] tiene pendiente negativa.',
+    choices: ['precio', 'cantidad', 'demanda', 'oferta', 'renta'],
+    explanation: 'Es la ley de la demanda.',
+  },
+  {
+    ...comun,
+    id: 'm9',
+    type: 'ddwtos',
+    question: 'Poné cada palabra en su hueco.',
+    text: 'El [[1]] juzga otras culturas con los valores propios; el [[2]] cultural pide entenderlas en sus [[3]].',
+    choices: ['etnocentrismo', 'relativismo', 'términos', 'evolucionismo', 'rasgos'],
+    explanation: 'Etnocentrismo y relativismo cultural.',
+  },
 ]
 
 export function cuestionarioDeMuestra(): TeacherQuiz {

@@ -1,4 +1,4 @@
-import { ArrowRightLeft, ArrowUpDown, CheckSquare, Hash, ListChecks, PenLine, ToggleLeft, type LucideIcon } from 'lucide-react'
+import { ArrowRightLeft, ArrowUpDown, CheckSquare, Hash, ListChecks, Move, PenLine, TextCursorInput, ToggleLeft, type LucideIcon } from 'lucide-react'
 import type { QuestionType } from '@/lib/types'
 
 export interface QuestionTypeOption {
@@ -57,6 +57,18 @@ export const QUESTION_TYPE_OPTIONS: QuestionTypeOption[] = [
     label: 'Ordenamiento',
     description: 'Poner los elementos en orden.',
     Icon: ArrowUpDown,
+  },
+  {
+    value: 'gapselect',
+    label: 'Seleccionar la palabra',
+    description: 'Un texto con huecos; en cada uno se elige la palabra.',
+    Icon: TextCursorInput,
+  },
+  {
+    value: 'ddwtos',
+    label: 'Arrastrar al texto',
+    description: 'Un texto con huecos y un banco de palabras para poner.',
+    Icon: Move,
   },
 ]
 

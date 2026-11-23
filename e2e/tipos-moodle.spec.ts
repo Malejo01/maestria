@@ -137,3 +137,49 @@ test('F4 · ordenamiento: se ordena con las flechas y se guarda con su tipo', as
     }, { timeout: 30_000 })
     .toEqual({ tipo: 'ordering', bien: true, orden: [0, 1, 2] })
 })
+
+test('F5 · huecos: seleccionar en cada hueco y arrastrar desde el banco, guardados con su tipo', async ({ page }) => {
+  test.setTimeout(120_000)
+  await entrarComo(page, ALUMNA)
+  const comun = { topic: 't1', topicName: 'Mercado', explanation: 'Ley de la demanda.' }
+  const texto = 'Si sube el [[1]], baja la [[2]] demandada; la curva de [[3]] tiene pendiente negativa.'
+  const choices = ['precio', 'cantidad', 'demanda', 'oferta']
+  const sql = await practicarCon(page, [
+    { ...comun, id: 'h1', type: 'gapselect', question: 'Completá el texto.', text: texto, choices },
+    { ...comun, id: 'h2', type: 'ddwtos', question: 'Poné cada palabra en su hueco.', text: texto, choices },
+  ])
+
+  // Seleccionar: bien.
+  await expect(page.getByText('Elegí la palabra de cada hueco.')).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('combobox', { name: 'Hueco 1' }).selectOption({ label: 'precio' })
+  await page.getByRole('combobox', { name: 'Hueco 2' }).selectOption({ label: 'cantidad' })
+  await expect(page.getByRole('button', { name: /^Verificar/ })).toBeDisabled()
+  await page.getByRole('combobox', { name: 'Hueco 3' }).selectOption({ label: 'demanda' })
+  await verificarYSeguir(page)
+
+  // Arrastrar (tocar la palabra y el hueco): uno mal.
+  await expect(page.getByText('Tocá una palabra y después el hueco donde va.')).toBeVisible()
+  for (const [palabra, hueco] of [['precio', 1], ['oferta', 2], ['demanda', 3]] as const) {
+    await page.getByRole('button', { name: palabra, exact: true }).click()
+    await page.getByRole('button', { name: `Hueco ${hueco}: vacío` }).click()
+  }
+  await page.getByRole('button', { name: /^Verificar/ }).click()
+  await expect(page.getByText('Correctas, en orden: precio · cantidad · demanda')).toBeVisible()
+  await page.getByRole('button', { name: /^(Siguiente|Ver resultados)$/ }).click()
+  await expect(page.getByText('1 de 2 correctas')).toBeVisible({ timeout: 30_000 })
+
+  await expect
+    .poll(async () => {
+      const filas = (await sql`
+        SELECT a.question_id, a.question_type, a.is_correct, a.answer_payload FROM quiz_answers a
+        JOIN quiz_attempts t ON t.id = a.quiz_attempt_id
+        WHERE t.user_id = 'stg-demo-sofia' AND a.question_id IN ('h1', 'h2')
+        ORDER BY a.id DESC LIMIT 2
+      `) as { question_id: string; question_type: string; is_correct: boolean; answer_payload: { selectedChoices: number[] } }[]
+      return filas.map((f) => [f.question_id, f.question_type, f.is_correct, f.answer_payload.selectedChoices]).sort()
+    }, { timeout: 30_000 })
+    .toEqual([
+      ['h1', 'gapselect', true, [0, 1, 2]],
+      ['h2', 'ddwtos', false, [0, 3, 2]],
+    ])
+})

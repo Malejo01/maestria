@@ -10,7 +10,8 @@ import { NumericInput } from './numeric-input'
 import { MultipleResponseInput } from './multiple-response-input'
 import { MatchingInput } from './matching-input'
 import { OrderingInput } from './ordering-input'
-import { ordenInicial } from '@/lib/tipos-moodle'
+import { GapsInput } from './gaps-input'
+import { cantidadDeHuecos, ordenInicial } from '@/lib/tipos-moodle'
 
 export type AnswerSelection =
   | { type: 'multiple_choice'; value: number | null }
@@ -24,6 +25,8 @@ export type AnswerSelection =
   | { type: 'matching'; value: (string | null)[] }
   // F4: los índices de los elementos, en el orden en que están.
   | { type: 'ordering'; value: number[] }
+  // F5: lo puesto en cada hueco (índice en `choices`).
+  | { type: 'gapselect' | 'ddwtos'; value: (number | null)[] }
 
 export function emptySelectionFor(question: Question): AnswerSelection {
   switch (question.type) {
@@ -41,6 +44,9 @@ export function emptySelectionFor(question: Question): AnswerSelection {
       return { type: 'matching', value: question.pairs.map(() => null) }
     case 'ordering':
       return { type: 'ordering', value: ordenInicial(question) }
+    case 'gapselect':
+    case 'ddwtos':
+      return { type: question.type, value: Array.from({ length: cantidadDeHuecos(question.text) }, () => null) }
   }
 }
 
@@ -146,6 +152,18 @@ export function AnswerInput({
         submitted={submitted}
         disabled={disabled}
         onChange={(value) => onChange({ type: 'ordering', value })}
+      />
+    )
+  }
+
+  if ((question.type === 'gapselect' || question.type === 'ddwtos') && (selection.type === 'gapselect' || selection.type === 'ddwtos')) {
+    return (
+      <GapsInput
+        question={question}
+        elegidas={selection.value}
+        submitted={submitted}
+        disabled={disabled}
+        onChange={(value) => onChange({ type: question.type, value })}
       />
     )
   }

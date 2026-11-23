@@ -127,6 +127,11 @@ const orderingQuestionSchema = z.object({
   items: z.array(z.string()),
 })
 
+// Ronda T · F5: completar los huecos (Moodle gapselect y ddwtos).
+const gapsFields = { text: z.string(), choices: z.array(z.string()) }
+const gapselectQuestionSchema = z.object({ ...baseQuestionFields, type: z.literal('gapselect'), ...gapsFields })
+const ddwtosQuestionSchema = z.object({ ...baseQuestionFields, type: z.literal('ddwtos'), ...gapsFields })
+
 const questionSchema = z.discriminatedUnion('type', [
   multipleChoiceQuestionSchema,
   shortAnswerQuestionSchema,
@@ -135,6 +140,8 @@ const questionSchema = z.discriminatedUnion('type', [
   multipleResponseQuestionSchema,
   matchingQuestionSchema,
   orderingQuestionSchema,
+  gapselectQuestionSchema,
+  ddwtosQuestionSchema,
 ])
 
 export const quizSchema = z.object({
@@ -159,8 +166,14 @@ export const quizSchema = z.object({
  */
 export type GeneratedQuestion = z.infer<typeof quizSchema>['questions'][number]
 
-export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching', 'ordering'] as const
+export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos'] as const
 export type QuestionType = (typeof QUESTION_TYPE_VALUES)[number]
+
+/** F5: lo mismo para seleccionar y para arrastrar. */
+const CAMPOS_DE_HUECOS = `- question: la consigna corta ("Completá el texto con las palabras que faltan.").
+- text: un párrafo de 2 a 4 oraciones con 3 a 5 huecos escritos [[1]], [[2]], [[3]]… en orden, cada uno UNA sola vez, en lugar de una palabra o expresión corta que se deduce del tema.
+- choices: array de strings que EMPIEZA con la palabra correcta de cada hueco, en orden ([[1]] → choices[0], [[2]] → choices[1]…), y SIGUE con 2 o 3 distractores del mismo tipo (que no encajen en ningún hueco). Todas distintas, cortas, sin LaTeX.
+- Cada hueco tiene UNA sola palabra posible entre las opciones.`
 
 const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
   multiple_choice: `TIPO "multiple_choice":
@@ -204,6 +217,10 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - question: dice el criterio del orden ("Ordená de la más antigua a la más reciente", "Ordená los pasos del método").
 - Tiene que haber UN SOLO orden correcto y sin ambigüedades: etapas, pasos de un procedimiento, fechas, de menor a mayor. Nada de "por importancia".
 - Cada elemento es corto (hasta 12 palabras) y distinto de los otros.`,
+  gapselect: `TIPO "gapselect" (seleccionar la palabra de cada hueco):
+${CAMPOS_DE_HUECOS}`,
+  ddwtos: `TIPO "ddwtos" (arrastrar palabras al texto):
+${CAMPOS_DE_HUECOS}`,
 }
 
 function buildTypeInstructions(
@@ -662,6 +679,9 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
                 return Array.isArray(q.pairs) && q.pairs.length > 0
               case 'ordering':
                 return Array.isArray(q.items) && q.items.length > 1
+              case 'gapselect':
+              case 'ddwtos':
+                return typeof q.text === 'string' && Array.isArray(q.choices) && q.choices.length > 0
               default:
                 return false
             }

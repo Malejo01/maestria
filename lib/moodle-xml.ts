@@ -156,6 +156,18 @@ function preguntaXml(question: Question, index: number): string {
         '<numberingstyle>none</numberingstyle>',
         ...question.items.map((item, i) => respuestaHtml(`${i + 1}.0000000`, item)),
       ])
+    case 'gapselect':
+    case 'ddwtos': {
+      // F5: el enunciado lleva la consigna y el texto con [[n]]; las palabras,
+      // en el mismo orden (la de cada hueco primero), todas del grupo 1.
+      const enunciado = `<questiontext format="html"><text>${cdata(`<p>${textoHtml(question.question)}</p><p>${textoHtml(question.text)}</p>`)}</text></questiontext>`
+      const etiqueta = question.type === 'gapselect' ? 'selectoption' : 'dragbox'
+      return pregunta(question.type, [
+        comun.replace(/<questiontext[\s\S]*?<\/questiontext>/, enunciado),
+        '<shuffleanswers>1</shuffleanswers>',
+        ...question.choices.map((c) => `<${etiqueta}><text>${escaparXml(c)}</text><group>1</group></${etiqueta}>`),
+      ])
+    }
     case 'short_answer': {
       if (question.acceptedAnswers.length === 0) {
         throw new Error(`La pregunta ${index + 1} no tiene respuestas aceptadas validas.`)

@@ -36,7 +36,7 @@ export interface Topic {
  * generate-quiz, one new case in components/quiz-answer-inputs, one new case
  * in lib/moodle-export.ts's GIFT builder — no other file needs to change.
  */
-export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching' | 'ordering'
+export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching' | 'ordering' | 'gapselect' | 'ddwtos'
 
 /**
  * De dónde salió el texto de esta pregunta.
@@ -143,6 +143,21 @@ export interface MatchingQuestion extends BaseQuestion {
   distractors?: string[]
 }
 
+/**
+ * Ronda T · F5: completar los huecos de un texto. `gapselect` (Moodle
+ * "seleccionar la palabra faltante"): una lista en cada hueco; `ddwtos`
+ * (Moodle "arrastrar y soltar en el texto"): un banco de palabras.
+ *
+ * `question` es la consigna; `text` lleva los huecos [[1]], [[2]]…, cada uno
+ * una sola vez; `choices` empieza con la palabra correcta de cada hueco, en
+ * orden ([[1]] → choices[0]), y sigue con los distractores. Todo o nada.
+ */
+export interface GapsQuestion extends BaseQuestion {
+  type: 'gapselect' | 'ddwtos'
+  text: string
+  choices: string[]
+}
+
 /** Ronda T · F4: ordenamiento (Moodle `ordering`). `items` va en el orden correcto. Todo o nada. */
 export interface OrderingQuestion extends BaseQuestion {
   type: 'ordering'
@@ -157,6 +172,7 @@ export type Question =
   | MultipleResponseQuestion
   | MatchingQuestion
   | OrderingQuestion
+  | GapsQuestion
 
 export interface QuizConfig {
   subject: string
@@ -285,6 +301,14 @@ export interface MatchingAnswer extends BaseAnswer {
   selectedRights: (string | null)[]
 }
 
+export interface GapsAnswer extends BaseAnswer {
+  type: 'gapselect' | 'ddwtos'
+  text: string
+  choices: string[]
+  /** Lo puesto en cada hueco: el índice en `choices` (null: vacío). */
+  selectedChoices: (number | null)[]
+}
+
 export interface OrderingAnswer extends BaseAnswer {
   type: 'ordering'
   /** En el orden correcto. */
@@ -301,6 +325,7 @@ export type Answer =
   | MultipleResponseAnswer
   | MatchingAnswer
   | OrderingAnswer
+  | GapsAnswer
 
 export interface QuizResult {
   /**
