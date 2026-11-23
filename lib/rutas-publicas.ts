@@ -31,6 +31,7 @@ export const RUTAS_PUBLICAS = [
   '/sitemap.xml',         // V5: para los buscadores
   '/robots.txt',
   '/opengraph-image',     // V5: la imagen para compartir el link
+  '/ayuda',               // V6: el centro de ayuda (sirve antes de registrarse)
 ] as const
 
 export function esRutaPublica(pathname: string): boolean {

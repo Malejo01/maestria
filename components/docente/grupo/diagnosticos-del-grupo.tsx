@@ -1,5 +1,6 @@
 'use client'
 
+import { ComoFunciona } from '@/components/sistema/como-funciona'
 import { useCallback, useEffect, useState } from 'react'
 import { AccionesDeCuestionario } from '@/components/docente/acciones-de-cuestionario'
 import { pedirJson } from '@/lib/pedir-json'
@@ -34,6 +35,7 @@ const fechaCorta = (iso: string) => new Date(iso).toLocaleDateString('es-AR', { 
 export function DiagnosticosDelGrupo({ grupoId, diagnosticos }: { grupoId: number; diagnosticos: DiagnosticoDelGrupo[] }) {
   return (
     <section className="flex flex-col gap-6 rounded-lg border border-borde bg-superficie-tarjeta p-4">
+      <ComoFunciona guia="diagnostico" className="self-end" />
       {diagnosticos.length === 0 ? (
         <p className="cuerpo-s text-texto-suave">{PAGINA_DEL_GRUPO.diagnosticos.vacio}</p>
       ) : (
