@@ -1,3 +1,4 @@
+import { repasoParaAvisar } from '@/lib/repaso-server'
 import { sql } from '@/lib/db'
 import { armarAvisosDelAlumno, HORAS_VENCE_PRONTO, VENTANA_DIAS, type FilaDeAvisoAlumno } from '@/lib/avisos-alumno'
 import { leerLectura, marcarTodoLeido } from '@/lib/avisos/lectura-server'
@@ -142,6 +143,17 @@ async function racha(userId: string): Promise<FilaDeAvisoAlumno[]> {
   return filas.map((f) => ({ tipo: 'racha' as const, racha: Number(f.racha), ultimaPractica: iso(f.ultima) }))
 }
 
+async function repaso(userId: string, ahora: Date): Promise<FilaDeAvisoAlumno[]> {
+  // El repaso es un empujón: si falla, la campanita sigue sin él.
+  try {
+    const { cuantas, practicoEnLaSemana } = await repasoParaAvisar(userId, ahora)
+    return [{ tipo: 'repaso', cuantas, practicoEnLaSemana }]
+  } catch (error) {
+    console.error('[avisos] repaso:', error)
+    return []
+  }
+}
+
 export async function avisosDelAlumno(userId: string, { esInvitado }: { esInvitado: boolean }, ahora = new Date()): Promise<RespuestaDeAvisos> {
   const [lectura, ...fuentes] = await Promise.all([
     leerLectura(userId, { esDocente: false }),
@@ -149,6 +161,8 @@ export async function avisosDelAlumno(userId: string, { esInvitado }: { esInvita
     conValvula(() => reportesResueltos(userId)),
     conValvula(() => temasSuperados(userId)),
     conValvula(() => racha(userId)),
+    // X2: el repaso del día (el invitado no tiene).
+    esInvitado ? Promise.resolve([]) : conValvula(() => repaso(userId, ahora)),
   ])
   return {
     avisos: armarAvisosDelAlumno(fuentes.flat(), lectura, ahora, { esInvitado }),

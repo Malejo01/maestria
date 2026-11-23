@@ -93,3 +93,20 @@ describe('racha en riesgo', () => {
     expect(armarAvisosDelAlumno([fila], LEER, aLas('19:00'), { esInvitado: true })[0].href).toBe('/aulas')
   })
 })
+
+describe('X2 · el repaso del día', () => {
+  it('desde las 9 h, una vez por día, sólo si practicó en la semana y hay algo', async () => {
+    const { armarAvisosDelAlumno, repasoDesde } = await import('./avisos-alumno')
+    const lectura = { vistoEl: null, leidas: new Set<string>(), puedeMarcar: true } as never
+    const temprano = new Date('2026-11-23T11:00:00Z') // 8 h en Argentina
+    const tarde = new Date('2026-11-23T15:00:00Z')
+    expect(repasoDesde(3, true, temprano)).toBeNull()
+    expect(repasoDesde(3, true, tarde)).toBe('2026-11-23T12:00:00.000Z')
+    expect(repasoDesde(0, true, tarde)).toBeNull()
+    expect(repasoDesde(3, false, tarde)).toBeNull()
+    const [aviso] = armarAvisosDelAlumno([{ tipo: 'repaso', cuantas: 3, practicoEnLaSemana: true }], lectura, tarde)
+    expect(aviso).toMatchObject({ tipo: 'repasoDelDia', titulo: 'Tenés 3 preguntas para repasar hoy', href: '/aulas' })
+    expect(aviso.clave).toBe('repasoDelDia|2026-11-23')
+    expect(armarAvisosDelAlumno([{ tipo: 'repaso', cuantas: 3, practicoEnLaSemana: true }], lectura, tarde, { esInvitado: true })).toHaveLength(0)
+  })
+})

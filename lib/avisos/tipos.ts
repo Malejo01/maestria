@@ -13,7 +13,7 @@
 export type RolDeAviso = 'exito' | 'informacion' | 'atencion'
 
 /** Íconos de lucide, por nombre del sistema (el componente los resuelve). */
-export type IconoDeAviso = 'checkLista' | 'personaMas' | 'bandera' | 'tareaNueva' | 'reloj' | 'diagnostico' | 'resuelto' | 'trofeo' | 'llama'
+export type IconoDeAviso = 'checkLista' | 'personaMas' | 'bandera' | 'tareaNueva' | 'reloj' | 'diagnostico' | 'resuelto' | 'trofeo' | 'llama' | 'repaso'
 
 export type TipoDeAviso =
   // Docente (O10)
@@ -31,6 +31,8 @@ export type TipoDeAviso =
   | 'reporteResuelto'
   | 'temaSuperado'
   | 'rachaEnRiesgo'
+  // Alumno (ronda X · X2): hay preguntas para repasar hoy
+  | 'repasoDelDia'
 
 export const ESTILO_DEL_AVISO: Record<TipoDeAviso, { rol: RolDeAviso; icono: IconoDeAviso }> = {
   tareaTerminada: { rol: 'exito', icono: 'checkLista' },
@@ -44,6 +46,7 @@ export const ESTILO_DEL_AVISO: Record<TipoDeAviso, { rol: RolDeAviso; icono: Ico
   reporteResuelto: { rol: 'exito', icono: 'resuelto' },
   temaSuperado: { rol: 'exito', icono: 'trofeo' },
   rachaEnRiesgo: { rol: 'atencion', icono: 'llama' },
+  repasoDelDia: { rol: 'informacion', icono: 'repaso' },
 }
 
 interface AvisoBase<T extends TipoDeAviso> {

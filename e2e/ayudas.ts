@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 /**
  * Ayudas de las pruebas de punta a punta (O1). Usuarios de staging:
@@ -100,7 +100,7 @@ export async function sqlDeStaging() {
  * (el modo oscuro es `data-theme="oscuro"` en <html>, lib/tema.ts). Sirve para
  * una pantalla con estado que se perdería al recargar.
  */
-export async function capturarSinRecargar(page: Page, carpeta: string, nombre: string) {
+export async function capturarSinRecargar(page: Page, carpeta: string, nombre: string, enfocar?: Locator) {
   for (const modo of ['claro', 'oscuro'] as const) {
     await page.evaluate((m) => {
       if (m === 'oscuro') document.documentElement.dataset.theme = 'oscuro'
@@ -109,6 +109,7 @@ export async function capturarSinRecargar(page: Page, carpeta: string, nombre: s
     for (const ancho of [360, 390, 1280]) {
       await page.setViewportSize({ width: ancho, height: 800 })
       await page.waitForTimeout(250)
+      if (enfocar) await enfocar.evaluate((el) => el.scrollIntoView({ block: 'center' }))
       await page.screenshot({ path: `${carpeta}/${nombre}-${ancho}-${modo}.png` })
     }
   }

@@ -9,10 +9,12 @@
  *   reporteResuelto   lo de N1: su reporte se resolvió
  *   temaSuperado      un tema de "A reforzar" pasó a "Ya lo dominás" (O2)
  *   rachaEnRiesgo     tiene racha (O4) y hoy no practicó, después de las 18 h
+ *   repasoDelDia      hay preguntas para repasar hoy (X2), una vez por día y
+ *                     sólo si practicó en la última semana
  */
 import { diasDeCalendario, diaEnArgentina, ordenarAvisos } from '@/lib/avisos/armar'
 import { crearAviso, type Aviso, type Lectura } from '@/lib/avisos/tipos'
-import { AVISOS_ALUMNO as T } from '@/lib/textos'
+import { AVISOS_ALUMNO as T, REPASO as TR } from '@/lib/textos'
 
 export const VENTANA_DIAS = 14
 export const HORAS_VENCE_PRONTO = 24
@@ -28,9 +30,24 @@ export type FilaDeAvisoAlumno =
   | { tipo: 'reporteResuelto'; reporteId: number; respondidoPor: string | null; conMensaje: boolean; resueltoEl: string }
   | { tipo: 'temaSuperado'; misconceptionId: number; tema: string; porDocente: boolean; superadoEl: string }
   | { tipo: 'racha'; racha: number; ultimaPractica: string | null }
+  | { tipo: 'repaso'; cuantas: number; practicoEnLaSemana: boolean }
 
 /** A una tarea de Mis tareas. Query y no `#`: la navegación de Next no avisa los cambios de `#`. */
 export const hrefDeTarea = (asignacionId: number) => `/aulas?tarea=${asignacionId}`
+
+/** Desde esta hora (de Argentina) se avisa el repaso del día (X2). */
+export const HORA_REPASO = 9
+
+/**
+ * X2: el instante del aviso del repaso de hoy, o null. Hay algo para repasar,
+ * practicó en la última semana (a quien dejó no se le insiste) y ya son las
+ * 9 h en Argentina. Uno por día: la clave lleva el día.
+ */
+export function repasoDesde(cuantas: number, practicoEnLaSemana: boolean, ahora: Date): string | null {
+  if (cuantas <= 0 || !practicoEnLaSemana) return null
+  const desde = new Date(`${diaEnArgentina(ahora)}T${String(HORA_REPASO + 3).padStart(2, '0')}:00:00.000Z`)
+  return ahora.getTime() >= desde.getTime() ? desde.toISOString() : null
+}
 
 /** Hasta cuántos días sin practicar se sigue avisando (después, ya no es "hoy no practicó"). */
 export const DIAS_RACHA_EN_RIESGO = 7
@@ -120,6 +137,16 @@ function avisoDe(f: FilaDeAvisoAlumno, lectura: Lectura, ahora: Date, esInvitado
           href: esInvitado ? '/aulas' : '/practicar',
           fecha: desde,
         },
+        lectura,
+      )
+    }
+    case 'repaso': {
+      const desde = repasoDesde(f.cuantas, f.practicoEnLaSemana, ahora)
+      // El invitado no tiene práctica libre: tampoco repaso.
+      if (!desde || esInvitado) return null
+      return crearAviso(
+        'repasoDelDia',
+        { clave: `repasoDelDia|${diaEnArgentina(ahora)}`, titulo: TR.aviso(f.cuantas), detalle: TR.detalleAviso, href: '/aulas', fecha: desde },
         lectura,
       )
     }

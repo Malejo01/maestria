@@ -8,6 +8,7 @@ import {
   ClipboardPlus,
   Flag,
   Flame,
+  RotateCcw,
   ListChecks,
   ListTodo,
   Trophy,
@@ -30,6 +31,7 @@ const ICONO: Record<IconoDeAviso, LucideIcon> = {
   resuelto: CircleCheckBig,
   trofeo: Trophy,
   llama: Flame,
+  repaso: RotateCcw,
 }
 
 /** El tinte del círculo por rol semántico. Sólo tokens de app/tokens.css. */

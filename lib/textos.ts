@@ -2260,3 +2260,14 @@ export const PISTA = {
   sinPista: 'Para esta pregunta no hay una pista que no regale la respuesta. Probá con lo que sepas.',
   error: 'No se pudo pensar una pista. Probá de nuevo.',
 } as const
+
+/** Ronda X · X2: "Repasar hoy", el repaso espaciado de lo que te costó. */
+export const REPASO = {
+  titulo: 'Repasar hoy',
+  detalle: (n: number) =>
+    n === 1 ? '1 pregunta que te costó, para que no se te olvide.' : `${n} preguntas que te costaron, para que no se te olviden.`,
+  empezar: 'Empezar el repaso',
+  materia: 'Repaso del día',
+  aviso: (n: number) => (n === 1 ? 'Tenés 1 pregunta para repasar hoy' : `Tenés ${n} preguntas para repasar hoy`),
+  detalleAviso: 'Unos minutos alcanzan: vuelven las que te costaron.',
+} as const

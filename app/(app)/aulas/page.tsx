@@ -14,6 +14,7 @@ import { useAppStore } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
 import { isValidJoinCode, normalizeJoinCode } from '@/lib/classrooms'
 import { CargaFallida } from '@/components/carga-fallida'
+import { RepasarHoy } from '@/components/alumno/repasar-hoy'
 import { TarjetaDeTarea } from '@/components/alumno/tarjeta-de-tarea'
 import { pedirJson } from '@/lib/pedir-json'
 import type { AssignmentState, StudentClassroom, Subject } from '@/lib/types'
@@ -273,6 +274,9 @@ export default function MisAulasPage() {
           )}
         </section>
       )}
+
+      {/* X2: el repaso espaciado de lo que le costó (sólo con cuenta). */}
+      {tieneCuenta && !esInvitado && !isLoading && <RepasarHoy />}
 
       {/* Lo demás que puede hacer un alumno con cuenta. El invitado ve sólo su
           grupo: la práctica libre y el progreso necesitan cuenta. */}
