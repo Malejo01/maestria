@@ -15,6 +15,7 @@ import type { MateriaConPlan } from '@/lib/autodidacta-server'
 import type { Question, QuizConfig } from '@/lib/types'
 import { AUTODIDACTA as T } from '@/lib/textos'
 import { CambiarFechaDelExamen } from '@/components/alumno/cambiar-fecha-del-examen'
+import { RepasarHoy } from '@/components/alumno/repasar-hoy'
 
 /**
  * Ronda T · E1 — Una materia personal: el diagnóstico inicial, lo que ya sabe
@@ -135,6 +136,9 @@ export default function MateriaAutodidactaPage() {
           <Cargando /> {T.generando}
         </p>
       )}
+
+      {/* X2: el repaso espaciado de esta materia. */}
+      {materia.hizoDiagnostico && !generando && <RepasarHoy materia={materia.nombre} nivel="Superior" />}
 
       {!materia.hizoDiagnostico ? (
         <section className="space-y-2 rounded-lg border border-borde bg-superficie-tarjeta p-4">
