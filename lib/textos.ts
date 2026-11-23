@@ -1580,6 +1580,7 @@ export const ADMIN = {
     planes: 'Planes',
     codigos: 'Códigos',
     docentes: 'Docentes',
+    salud: 'Salud',
   },
   hoy: {
     titulo: 'Hoy',
@@ -1598,6 +1599,7 @@ export const ADMIN = {
     planes: (prueba: number, vencen: number, vencidos: number) =>
       `${prueba} en prueba · ${vencen} vencen esta semana · ${vencidos} ${vencidos === 1 ? 'vencido' : 'vencidos'}`,
     docentes: (n: number) => (n === 1 ? '1 docente' : `${n} docentes`),
+    salud: (alertas: number) => (alertas === 0 ? 'Todo en orden' : alertas === 1 ? '1 cosa para mirar' : `${alertas} cosas para mirar`),
     abrir: 'Abrir',
   },
   docentes: {
@@ -2286,5 +2288,48 @@ export const PWA = {
     boton: 'Instalar',
     ahoraNo: 'Ahora no',
     ios: 'En el iPhone: tocá Compartir y después "Agregar a inicio".',
+  },
+} as const
+
+/** Ronda Y · Y1: la salud del sistema en /admin/salud y sus alertas. */
+export const SALUD = {
+  titulo: 'Salud del sistema',
+  detalle: 'Las generaciones, el gasto de IA, los pagos para revisar y los errores. Se lee de la base; no cambia nada.',
+  generaciones: {
+    titulo: 'Generaciones (últimas 24 h)',
+    total: 'Generaciones',
+    fallidas: 'Fallidas',
+    tasaDeFallas: 'Fallan',
+    tasaDeDescarte: 'Descartan los validadores',
+    sinDescarte: 'Sin dato (falta la migración 049)',
+    ultimaHora: (fallidas: number, total: number) => `Última hora: ${fallidas} de ${total} fallidas`,
+  },
+  ia: {
+    titulo: 'Gasto de IA',
+    hoy: 'Hoy',
+    mes: 'Este mes',
+    porEndpoint: 'Últimas 24 h, por uso',
+    columnas: { endpoint: 'Uso', llamadas: 'Llamadas', fallidas: 'Fallidas', usd: 'Gasto' },
+  },
+  pagos: {
+    titulo: 'Pagos',
+    sinTabla: 'Sin la migración 039 todavía no hay pagos.',
+    ninguno: 'Ningún pago para revisar.',
+    sinPagar: (n: number) => (n === 1 ? '1 pago iniciado sin pagar en la última semana (normal: alguien abrió el checkout y no siguió).' : `${n} pagos iniciados sin pagar en la última semana (normal: abrieron el checkout y no siguieron).`),
+    motivo: { montoDistinto: 'Mercado Pago cobró otro monto', pendienteEnMercadoPago: 'Pendiente en Mercado Pago' },
+    fila: (id: number, docente: string) => `Pago ${id} · ${docente}`,
+  },
+  errores: {
+    titulo: 'Errores recientes',
+    sinToken: 'Para verlos acá, cargá SENTRY_API_TOKEN (de sólo lectura) en Vercel. Mientras tanto:',
+    ninguno: 'Ningún error sin resolver en las últimas 24 h.',
+    abrirSentry: 'Abrir Sentry',
+    veces: (n: number) => (n === 1 ? '1 vez' : `${n} veces`),
+  },
+  alertas: {
+    generaciones: 'Fallan muchas generaciones',
+    detalleGeneraciones: (fallidas: number, total: number) => `En la última hora fallaron ${fallidas} de ${total}.`,
+    pago: 'Hay un pago para revisar',
+    detallePago: (docente: string, motivo: string) => `${docente}: ${motivo}.`,
   },
 } as const

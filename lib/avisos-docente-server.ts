@@ -1,10 +1,11 @@
+import { alertasActuales } from '@/lib/salud-server'
 import { premiosRecientes } from '@/lib/referidos-server'
 import { sql } from '@/lib/db'
 import { armarAvisos, type FilaDeAviso } from '@/lib/avisos-docente'
 import { leerLectura, marcarTodoLeido } from '@/lib/avisos/lectura-server'
 import { crearAviso, type RespuestaDeAvisos } from '@/lib/avisos/tipos'
 import { pagosAcreditadosDe } from '@/lib/pagos-server'
-import { PAGAR, REFERIDOS } from '@/lib/textos'
+import { PAGAR, REFERIDOS, SALUD } from '@/lib/textos'
 
 /**
  * O10 · Los avisos del docente, de lo que ya está en la base, de las últimas
@@ -49,8 +50,8 @@ async function reportes(docenteId: string): Promise<FilaDeAviso[]> {
   }
 }
 
-export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAvisos> {
-  const [leida, tareas, nuevos, reportados, pagos, premios] = await Promise.all([
+export async function avisosDelDocente(docenteId: string, { esAdmin = false }: { esAdmin?: boolean } = {}): Promise<RespuestaDeAvisos> {
+  const [leida, tareas, nuevos, reportados, pagos, premios, alertas] = await Promise.all([
     leerLectura(docenteId, { esDocente: true }),
     sql`
       SELECT c.id AS grupo_id, c.name AS grupo, q.title AS tarea,
@@ -78,6 +79,8 @@ export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAv
     pagosAcreditadosDe(docenteId).catch(() => []),
     // V3: los premios por referidos (apagado o sin la 046, ninguno).
     premiosRecientes(docenteId).catch(() => []),
+    // Y1: al admin, las alertas del sistema (si fallan, la campanita sigue sin ellas).
+    esAdmin ? alertasActuales().catch(() => []) : Promise.resolve([]),
   ])
 
   const filas: FilaDeAviso[] = [
@@ -99,7 +102,16 @@ export async function avisosDelDocente(docenteId: string): Promise<RespuestaDeAv
       leida,
     ),
   )
-  const avisos = [...armarAvisos(filas, leida), ...deLosPagos, ...deLosReferidos].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
+  const delSistema = alertas.map((a) =>
+    crearAviso(
+      'alertaSistema',
+      a.tipo === 'generaciones'
+        ? { clave: a.clave, titulo: SALUD.alertas.generaciones, detalle: SALUD.alertas.detalleGeneraciones(a.fallidas ?? 0, a.total ?? 0), href: '/admin/salud', fecha: a.fecha }
+        : { clave: a.clave, titulo: SALUD.alertas.pago, detalle: SALUD.alertas.detallePago(a.docente ?? '', SALUD.pagos.motivo[a.motivo ?? 'pendienteEnMercadoPago']), href: '/admin/salud', fecha: a.fecha },
+      leida,
+    ),
+  )
+  const avisos = [...armarAvisos(filas, leida), ...deLosPagos, ...deLosReferidos, ...delSistema].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
   return { avisos, vistoEl: leida.vistoEl, puedeMarcar: leida.puedeMarcar }
 }
 

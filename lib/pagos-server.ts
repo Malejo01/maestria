@@ -166,7 +166,12 @@ export async function procesarNotificacion(paymentId: string, pedir?: Pedir): Pr
       endpoint: '/api/pagos/mercadopago',
       operation: 'montoDistinto',
     })
-    await sql`UPDATE pagos SET estado = 'pendiente', acreditado_el = NULL WHERE id = ${pagoId}`
+    // Y1: queda marcado para revisar (la salud del sistema lo muestra y avisa al admin).
+    await sql`
+      UPDATE pagos SET estado = 'pendiente', acreditado_el = NULL,
+        detalle = COALESCE(detalle, '{}'::jsonb) || ${JSON.stringify({ revisar: 'montoDistinto', montoCobrado: pago.monto })}::jsonb
+      WHERE id = ${pagoId}
+    `
     return 'pendiente'
   }
 

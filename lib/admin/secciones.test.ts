@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { SECCIONES_ADMIN, seccionActiva } from './secciones'
 
 describe('P1 · secciones del panel de admin', () => {
-  it('están las cuatro páginas de antes, la portada, Códigos (C1) y Docentes', () => {
+  it('están las cuatro páginas de antes, la portada, Códigos (C1), Docentes y Salud (Y1)', () => {
     expect(SECCIONES_ADMIN.map((s) => s.href)).toEqual([
       '/admin',
       '/admin/reportes',
@@ -11,6 +11,7 @@ describe('P1 · secciones del panel de admin', () => {
       '/admin/planes',
       '/admin/codigos',
       '/admin/docentes',
+      '/admin/salud',
     ])
   })
 
