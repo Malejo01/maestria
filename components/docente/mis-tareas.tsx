@@ -3,7 +3,7 @@
 import { tareaDesdeFila } from '@/lib/tarea-docente'
 import { pedirJson } from '@/lib/pedir-json'
 import { DUPLICAR_TAREA } from '@/lib/textos'
-import { BANCO, IMPORTAR_MOODLE } from '@/lib/textos'
+import { BANCO, EXAMEN_IMPRESO, IMPORTAR_MOODLE } from '@/lib/textos'
 import Link from 'next/link'
 import { ComoFunciona } from '@/components/sistema/como-funciona'
 import { ExportarMoodle } from '@/components/docente/exportar-moodle'
@@ -256,6 +256,10 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                           {T.probar}
                         </Boton>
                         <ExportarMoodle exportando={exportingQuizId === quiz.id} onExportar={(formato) => handleExportQuiz(quiz, formato)} />
+                        {/* W4: el examen en papel, temas A y B. */}
+                        <Boton variante="secundario" asChild>
+                          <Link href={`/teacher/tareas/${quiz.id}/imprimir`}>{EXAMEN_IMPRESO.abrir}</Link>
+                        </Boton>
                         {/* Borrar no se deshace: pide confirmación en el lugar. */}
                         {borrando === quiz.id ? (
                           <>
