@@ -955,6 +955,7 @@ export function CurriculumSelector({ onStartQuiz, onCancel, initialNivel, initia
               <div>
                 <label className="block text-sm font-semibold text-foreground mb-3">Tipos de pregunta</label>
                 <QuestionTypeSelector
+                  conMasTipos={isDocente}
                   value={questionTypes}
                   onChange={(next) => {
                     setQuestionTypesTouched(true)

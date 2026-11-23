@@ -1794,6 +1794,11 @@ export const TIPOS_MOODLE_TEXTOS = {
     noCierra: 'La fórmula o los comodines no cierran: revisalos. Mientras tanto, queda como estaba.',
     otrosValores: 'Sortear otros valores',
   },
+  masTipos: {
+    titulo: 'Más tipos (como en Moodle)',
+    detalle: 'Se exportan a Moodle tal cual (Moodle XML). En GIFT, los que no existen ahí van adaptados.',
+    elegidos: (n: number) => (n === 1 ? '1 elegido' : `${n} elegidos`),
+  },
 } as const
 
 /** Ronda T · F1: exportar a Moodle, en XML o en GIFT. */

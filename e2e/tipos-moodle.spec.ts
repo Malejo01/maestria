@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import { ALUMNA, entrarComo, sqlDeStaging } from './ayudas'
+import { ALUMNA, DOCENTE, entrarComo, sqlDeStaging } from './ayudas'
 
 /**
  * Ronda T · F2 a F7: los tipos de pregunta "como en Moodle", respondidos por
@@ -260,4 +260,48 @@ test('F7 · calculada: el alumno ve números (no comodines), responde con coma y
       return fila ? [fila.question_type, fila.is_correct, fila.answer_payload.selectedValue, fila.answer_payload.correctAnswer] : null
     }, { timeout: 30_000 })
     .toEqual(['calculated', true, 279.5, 280])
+})
+
+test('F8 · el docente elige un tipo de "Más tipos (como en Moodle)" y la generación lo pide', async ({ page }) => {
+  test.setTimeout(120_000)
+  await entrarComo(page, DOCENTE)
+  let pedido: { questionTypes?: string[] } | null = null
+  await page.route('**/api/generate-quiz', async (ruta) => {
+    pedido = ruta.request().postDataJSON()
+    const cantidad = Number((pedido as { questionCount?: number } | null)?.questionCount) || 5
+    await ruta.fulfill({
+      json: {
+        questions: Array.from({ length: cantidad }, (_, i) => (
+          {
+            id: `m${i + 1}`,
+            type: 'matching',
+            topic: 't1',
+            topicName: 'Tema',
+            question: 'Uní cada concepto con su definición.',
+            pairs: [
+              { left: 'Clima', right: 'Condiciones de largo plazo' },
+              { left: 'Tiempo', right: 'Condiciones de un momento' },
+              { left: 'Relieve', right: 'Formas de la superficie' },
+            ],
+            explanation: '',
+          }
+        )),
+      },
+    })
+  })
+  await page.goto('/teacher?seccion=materias')
+  await page.getByRole('button', { name: 'Crear cuestionario' }).first().click()
+  await page.getByRole('button', { name: /Unidad 1/ }).first().click()
+  await page.getByRole('button', { name: /^Generar cuestionario/ }).click()
+  const grupo = page.getByRole('button', { name: /Más tipos \(como en Moodle\)/ })
+  await expect(grupo).toBeVisible()
+  await grupo.click()
+  await page.getByRole('button', { name: /Emparejamiento/ }).click()
+  await expect(page.getByRole('button', { name: /Emparejamiento/ })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: /^(Examen práctico|Práctico:)/ }).click()
+  // El docente elige qué hacer con el cuestionario; recién ahí se genera.
+  await page.getByRole('dialog').getByRole('button', { name: 'Realizar' }).click()
+  await expect.poll(() => JSON.stringify(pedido?.questionTypes ?? null), { timeout: 30_000 }).toContain('matching')
+  // Y la pregunta de emparejamiento se responde como tal.
+  await expect(page.getByText('Elegí la pareja de cada uno.')).toBeVisible({ timeout: 30_000 })
 })
