@@ -237,7 +237,10 @@ function buildQuestionBlock(question: Question, index: number): string {
       const [antes, ...resto] = question.text.split('[[1]]')
       const opciones = question.options.map((o, i) => `${i === question.correctAnswer ? '=' : '~'}${escapeGiftText(o)}`).join(' ')
       const consigna = question.question.trim() ? `${escapeGiftText(question.question)}\n` : ''
-      return `::${questionTitle}::${consigna}${escapeGiftText(antes ?? '')} {${opciones}${buildFeedback(question)}} ${escapeGiftText(resto.join(''))}`.trimEnd()
+      // U5: sin espacio antes de la puntuación que sigue al hueco ("es ____." y no "es ____ .").
+      const despues = escapeGiftText(resto.join(''))
+      const separador = /^[.,;:!?)»]/.test(despues) ? '' : ' '
+      return `::${questionTitle}::${consigna}${escapeGiftText(antes ?? '')} {${opciones}${buildFeedback(question)}}${separador}${despues}`.trimEnd()
     }
     case 'gapselect':
     case 'ddwtos': {

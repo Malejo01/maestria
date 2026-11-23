@@ -5,11 +5,13 @@
  *
  *   npx tsx scripts/qa/muestra-moodle-xml.ts
  *
- * Escribe docs/moodle/muestra-ronda-t.xml y lo pasa por el validador. No toca
+ * Escribe docs/moodle/muestra-ronda-t.xml y lo pasa por el validador. U5 suma
+ * dos categorías: una con LaTeX y otra con caracteres difíciles (33 preguntas). No toca
  * la base ni llama a la IA. Cada ítem de F2 a F7 suma su tipo acá.
  */
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { convertQuizToMoodleXml } from '../../lib/moodle-xml'
+import { unirMoodleXml } from '../../lib/moodle-xml'
+import { PREGUNTAS_CON_CARACTERES_DIFICILES, PREGUNTAS_CON_LATEX } from './fixtures/moodle-dificiles'
 import { aleatorioConSemilla, instanciarCalculada } from '../../lib/calculada'
 import { validarMoodleXml } from '../../lib/moodle-xml-validar'
 import type { Question, TeacherQuiz } from '../../lib/types'
@@ -139,24 +141,37 @@ export const PREGUNTAS_DE_MUESTRA: Question[] = [
   )!,
 ]
 
-export function cuestionarioDeMuestra(): TeacherQuiz {
+function cuestionario(titulo: string, tema: string, preguntas: Question[]): TeacherQuiz {
   return {
     id: 0,
     userId: 'muestra',
     teacherProgramId: 0,
-    title: 'Muestra Moodle XML · ronda T',
+    title: titulo,
     subjectName: 'Muestra MaestrIA',
     mode: 'mixto',
     status: 'saved',
-    selectedTopics: [{ id: 'muestra', name: 'Ronda T' }],
-    questionCount: PREGUNTAS_DE_MUESTRA.length,
-    questions: PREGUNTAS_DE_MUESTRA,
+    selectedTopics: [{ id: 'muestra', name: tema }],
+    questionCount: preguntas.length,
+    questions: preguntas.map((p) => ({ ...p, topicName: tema })),
     createdAt: '2026-11-22T00:00:00Z',
-    updatedAt: '2026-11-22T00:00:00Z',
+    updatedAt: '2026-11-23T00:00:00Z',
   } as TeacherQuiz
 }
 
-const xml = convertQuizToMoodleXml(cuestionarioDeMuestra())
+/**
+ * U5: tres categorías en el mismo archivo, cada una con una pregunta de cada
+ * tipo: la de la ronda T, una con LaTeX (fracciones, raíces, conjuntos) y una
+ * con los caracteres que rompieron el GIFT del 20/11.
+ */
+export function cuestionariosDeMuestra(): TeacherQuiz[] {
+  return [
+    cuestionario('Muestra Moodle XML · ronda T', 'Ronda T', PREGUNTAS_DE_MUESTRA),
+    cuestionario('Muestra Moodle XML · con LaTeX', 'Con LaTeX', PREGUNTAS_CON_LATEX),
+    cuestionario('Muestra Moodle XML · caracteres difíciles', 'Caracteres difíciles', PREGUNTAS_CON_CARACTERES_DIFICILES),
+  ]
+}
+
+const xml = unirMoodleXml(cuestionariosDeMuestra())
 const problemas = validarMoodleXml(xml)
 if (problemas.length > 0) {
   console.error('El archivo no pasa el validador:\n' + problemas.join('\n'))
@@ -165,4 +180,4 @@ if (problemas.length > 0) {
 mkdirSync('docs/moodle', { recursive: true })
 writeFileSync('docs/moodle/muestra-ronda-t.xml', xml)
 const tipos = [...xml.matchAll(/<question type="(\w+)">/g)].map((m) => m[1]).filter((t) => t !== 'category')
-console.log(`docs/moodle/muestra-ronda-t.xml · ${tipos.length} preguntas (${[...new Set(tipos)].join(', ')}) · el validador no encontró problemas`)
+console.log(`docs/moodle/muestra-ronda-t.xml · ${tipos.length} preguntas en 3 categorías (${[...new Set(tipos)].join(', ')}) · el validador no encontró problemas`)
