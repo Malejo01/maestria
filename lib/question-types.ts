@@ -1,4 +1,4 @@
-import { ArrowRightLeft, ArrowUpDown, CheckSquare, Hash, ListChecks, Move, PenLine, TextCursorInput, ToggleLeft, type LucideIcon } from 'lucide-react'
+import { ArrowRightLeft, ArrowUpDown, CheckSquare, Hash, ListChecks, Move, PenLine, SpellCheck, TextCursorInput, ToggleLeft, type LucideIcon } from 'lucide-react'
 import type { QuestionType } from '@/lib/types'
 
 export interface QuestionTypeOption {
@@ -69,6 +69,12 @@ export const QUESTION_TYPE_OPTIONS: QuestionTypeOption[] = [
     label: 'Arrastrar al texto',
     description: 'Un texto con huecos y un banco de palabras para poner.',
     Icon: Move,
+  },
+  {
+    value: 'missing_word',
+    label: 'Palabra faltante',
+    description: 'Una oración con un hueco y opciones.',
+    Icon: SpellCheck,
   },
 ]
 

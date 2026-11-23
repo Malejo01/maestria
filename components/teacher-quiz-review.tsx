@@ -805,6 +805,13 @@ function VistaDePregunta({ question }: { question: Question }) {
         </ol>
       )}
 
+      {question.type === 'missing_word' && (
+        <div className="space-y-1">
+          <p className="rounded-md bg-logrado/10 px-2 py-1">{correctaEnTexto(question)}</p>
+          <p className="px-2 text-xs text-muted-foreground">{question.options.map((o, i) => `${String.fromCharCode(65 + i)}. ${o}`).join(' · ')}</p>
+        </div>
+      )}
+
       {(question.type === 'gapselect' || question.type === 'ddwtos') && (
         <div className="space-y-1">
           <p className="rounded-md bg-logrado/10 px-2 py-1">{correctaEnTexto(question)}</p>
@@ -965,6 +972,37 @@ function EditorDePregunta({
             onChange={(e) => onChange({ items: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) } as Partial<Question>)}
           />
         </Campo>
+      )}
+
+      {question.type === 'missing_word' && (
+        <>
+          <Campo label={TIPOS_MOODLE_TEXTOS.palabraFaltante.editorTexto}>
+            <Textarea rows={2} value={question.text} onChange={(e) => onChange({ text: e.target.value } as Partial<Question>)} />
+          </Campo>
+          <Campo label="Opciones — marcá la correcta">
+            <div className="space-y-2">
+              {question.options.map((opcion, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name={`correcta-${question.id}`}
+                    checked={question.correctAnswer === i}
+                    onChange={() => onChange({ correctAnswer: i } as Partial<Question>)}
+                    aria-label={`Marcar opción ${String.fromCharCode(65 + i)} como correcta`}
+                  />
+                  <Input
+                    value={opcion}
+                    onChange={(e) => {
+                      const options = [...question.options]
+                      options[i] = e.target.value
+                      onChange({ options } as Partial<Question>)
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </Campo>
+        </>
       )}
 
       {(question.type === 'gapselect' || question.type === 'ddwtos') && (

@@ -132,6 +132,15 @@ const gapsFields = { text: z.string(), choices: z.array(z.string()) }
 const gapselectQuestionSchema = z.object({ ...baseQuestionFields, type: z.literal('gapselect'), ...gapsFields })
 const ddwtosQuestionSchema = z.object({ ...baseQuestionFields, type: z.literal('ddwtos'), ...gapsFields })
 
+// Ronda T · F6: la palabra faltante (GIFT missing word).
+const missingWordQuestionSchema = z.object({
+  ...baseQuestionFields,
+  type: z.literal('missing_word'),
+  text: z.string(),
+  options: z.array(z.string()),
+  correctAnswer: z.number(),
+})
+
 const questionSchema = z.discriminatedUnion('type', [
   multipleChoiceQuestionSchema,
   shortAnswerQuestionSchema,
@@ -142,6 +151,7 @@ const questionSchema = z.discriminatedUnion('type', [
   orderingQuestionSchema,
   gapselectQuestionSchema,
   ddwtosQuestionSchema,
+  missingWordQuestionSchema,
 ])
 
 export const quizSchema = z.object({
@@ -166,7 +176,7 @@ export const quizSchema = z.object({
  */
 export type GeneratedQuestion = z.infer<typeof quizSchema>['questions'][number]
 
-export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos'] as const
+export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos', 'missing_word'] as const
 export type QuestionType = (typeof QUESTION_TYPE_VALUES)[number]
 
 /** F5: lo mismo para seleccionar y para arrastrar. */
@@ -221,6 +231,12 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 ${CAMPOS_DE_HUECOS}`,
   ddwtos: `TIPO "ddwtos" (arrastrar palabras al texto):
 ${CAMPOS_DE_HUECOS}`,
+  missing_word: `TIPO "missing_word" (la palabra que falta):
+- type: "missing_word"
+- question: la consigna corta ("Elegí la palabra que falta.").
+- text: UNA oración con UN solo hueco escrito [[1]] en lugar de la palabra o expresión clave.
+- options: array de 4 strings cortos, sin LaTeX: la correcta y 3 que encajen en la gramática pero no en el sentido.
+- correctAnswer: number (índice 0-based de la correcta en options).`,
 }
 
 function buildTypeInstructions(
@@ -290,7 +306,7 @@ function shuffleAndRenumber(question: any, newId: string): any {
       correctAnswers: conIndice.flatMap((o: { index: number }, i: number) => (correctas.has(o.index) ? [i] : [])),
     }
   }
-  if (question.type !== 'multiple_choice') {
+  if (question.type !== 'multiple_choice' && question.type !== 'missing_word') {
     return { ...question, id: newId }
   }
 
@@ -682,6 +698,8 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
               case 'gapselect':
               case 'ddwtos':
                 return typeof q.text === 'string' && Array.isArray(q.choices) && q.choices.length > 0
+              case 'missing_word':
+                return typeof q.text === 'string' && Array.isArray(q.options) && typeof q.correctAnswer === 'number'
               default:
                 return false
             }

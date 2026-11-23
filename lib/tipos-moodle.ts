@@ -1,4 +1,4 @@
-import type { Answer, GapsQuestion, MatchingQuestion, MultipleResponseQuestion, OrderingQuestion, Question, QuestionType } from '@/lib/types'
+import type { Answer, GapsQuestion, MatchingQuestion, MissingWordQuestion, MultipleResponseQuestion, OrderingQuestion, Question, QuestionType } from '@/lib/types'
 
 /**
  * Ronda T · F2 a F7 — Los tipos de pregunta "como en Moodle", en un solo
@@ -9,7 +9,7 @@ import type { Answer, GapsQuestion, MatchingQuestion, MultipleResponseQuestion, 
  * respuesta corta) siguen donde estaban; estos se suman acá para que cada
  * tipo nuevo toque este archivo, su componente de respuesta y la exportación.
  */
-export const TIPOS_MOODLE = ['multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos'] as const satisfies readonly QuestionType[]
+export const TIPOS_MOODLE = ['multiple_response', 'matching', 'ordering', 'gapselect', 'ddwtos', 'missing_word'] as const satisfies readonly QuestionType[]
 export type TipoMoodle = (typeof TIPOS_MOODLE)[number]
 
 export function esTipoMoodle(tipo: unknown): tipo is TipoMoodle {
@@ -31,6 +31,7 @@ export const ETIQUETA_DE_TIPO: Record<QuestionType, string> = {
   ordering: 'Ordenamiento',
   gapselect: 'Seleccionar la palabra',
   ddwtos: 'Arrastrar al texto',
+  missing_word: 'Palabra faltante',
 }
 
 const letra = (i: number) => String.fromCharCode(65 + i)
@@ -200,6 +201,19 @@ function textoLleno(texto: string, choices: readonly string[], puestas: readonly
     .join('')
 }
 
+// ─── F6 · La palabra faltante ───────────────────────────────────────────────
+
+/** Una palabra faltante que sirve: un solo hueco [[1]], de 3 a 5 opciones escritas y distintas, la correcta entre ellas. */
+export function palabraFaltanteValida(q: Pick<MissingWordQuestion, 'text' | 'options' | 'correctAnswer'>): boolean {
+  if (typeof q.text !== 'string' || !Array.isArray(q.options)) return false
+  const huecos = partesDelTexto(q.text).filter((p) => p.tipo === 'hueco')
+  if (huecos.length !== 1 || huecos[0].tipo !== 'hueco' || huecos[0].hueco !== 1) return false
+  if (q.options.length < 3 || q.options.length > 5) return false
+  const opciones = q.options.map((o) => normal(o).toLowerCase())
+  if (!opciones.every(Boolean) || new Set(opciones).size !== opciones.length) return false
+  return Number.isInteger(q.correctAnswer) && q.correctAnswer >= 0 && q.correctAnswer < q.options.length
+}
+
 // ─── En texto ───────────────────────────────────────────────────────────────
 
 /** La respuesta correcta de una pregunta de tipo Moodle, en texto. null si no es de estos tipos. */
@@ -214,6 +228,8 @@ export function correctaEnTexto(q: Question): string | null {
     case 'gapselect':
     case 'ddwtos':
       return textoLleno(q.text, q.choices, q.choices.map((_, i) => i))
+    case 'missing_word':
+      return textoLleno(q.text, q.options, [q.correctAnswer])
     default:
       return null
   }
@@ -231,6 +247,8 @@ export function respuestaEnTexto(a: Answer, cual: 'selected' | 'correct'): strin
     case 'gapselect':
     case 'ddwtos':
       return textoLleno(a.text, a.choices, cual === 'selected' ? a.selectedChoices : a.choices.map((_, i) => i))
+    case 'missing_word':
+      return textoLleno(a.text, a.options, [cual === 'selected' ? a.selectedAnswer : a.correctAnswer])
     default:
       return null
   }
@@ -257,6 +275,8 @@ export function payloadDeRespuesta(a: Answer): Record<string, unknown> | null {
     case 'gapselect':
     case 'ddwtos':
       return { tipo: a.type, text: a.text, choices: a.choices, selectedChoices: a.selectedChoices, ...texto }
+    case 'missing_word':
+      return { tipo: a.type, text: a.text, options: a.options, selectedAnswer: a.selectedAnswer, correctAnswer: a.correctAnswer, ...texto }
   }
   return null
 }
@@ -293,6 +313,8 @@ export function problemaDeTipoMoodle(q: Record<string, unknown>): string | null 
     case 'gapselect':
     case 'ddwtos':
       return huecosValidos(q as unknown as GapsQuestion) ? null : 'huecos sin 3 a 6 numerados con su palabra'
+    case 'missing_word':
+      return palabraFaltanteValida(q as unknown as MissingWordQuestion) ? null : 'palabra faltante sin un hueco y 3 a 5 opciones'
     default:
       return null
   }

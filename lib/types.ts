@@ -36,7 +36,7 @@ export interface Topic {
  * generate-quiz, one new case in components/quiz-answer-inputs, one new case
  * in lib/moodle-export.ts's GIFT builder — no other file needs to change.
  */
-export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching' | 'ordering' | 'gapselect' | 'ddwtos'
+export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response' | 'matching' | 'ordering' | 'gapselect' | 'ddwtos' | 'missing_word'
 
 /**
  * De dónde salió el texto de esta pregunta.
@@ -158,6 +158,17 @@ export interface GapsQuestion extends BaseQuestion {
   choices: string[]
 }
 
+/**
+ * Ronda T · F6: la palabra faltante (el "missing word" de GIFT): una oración
+ * con UN hueco [[1]] y opciones, como una opción múltiple.
+ */
+export interface MissingWordQuestion extends BaseQuestion {
+  type: 'missing_word'
+  text: string
+  options: string[]
+  correctAnswer: number
+}
+
 /** Ronda T · F4: ordenamiento (Moodle `ordering`). `items` va en el orden correcto. Todo o nada. */
 export interface OrderingQuestion extends BaseQuestion {
   type: 'ordering'
@@ -173,6 +184,7 @@ export type Question =
   | MatchingQuestion
   | OrderingQuestion
   | GapsQuestion
+  | MissingWordQuestion
 
 export interface QuizConfig {
   subject: string
@@ -309,6 +321,14 @@ export interface GapsAnswer extends BaseAnswer {
   selectedChoices: (number | null)[]
 }
 
+export interface MissingWordAnswer extends BaseAnswer {
+  type: 'missing_word'
+  text: string
+  options: string[]
+  selectedAnswer: number
+  correctAnswer: number
+}
+
 export interface OrderingAnswer extends BaseAnswer {
   type: 'ordering'
   /** En el orden correcto. */
@@ -326,6 +346,7 @@ export type Answer =
   | MatchingAnswer
   | OrderingAnswer
   | GapsAnswer
+  | MissingWordAnswer
 
 export interface QuizResult {
   /**

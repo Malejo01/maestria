@@ -35,6 +35,7 @@ const PREGUNTAS: Question[] = [
   { ...base, id: 'q8', type: 'ordering', question: 'Ordená de la más antigua a la más reciente.', items: ['Paleolítico', 'Neolítico', 'Edad de los metales'], explanation: '' },
   { ...base, id: 'q9', type: 'gapselect', question: 'Completá el texto.', text: 'Si sube el [[1]], baja la [[2]] demandada; la curva de [[3]] baja.', choices: ['precio', 'cantidad', 'demanda', 'oferta'], explanation: '' },
   { ...base, id: 'q10', type: 'ddwtos', question: 'Arrastrá las palabras.', text: 'El [[1]] es el [[2]] de la [[3]].', choices: ['etnocentrismo', 'opuesto', 'relatividad', 'origen'], explanation: '' },
+  { ...base, id: 'q11', type: 'missing_word', question: 'Elegí la palabra que falta.', text: 'Eso se llama [[1]].', options: ['etnocentrismo', 'relativismo', 'evolucionismo'], correctAnswer: 0, explanation: '' },
 ]
 
 function quiz(questions: Question[] = PREGUNTAS): TeacherQuiz {
@@ -68,7 +69,9 @@ describe('F1 · convertQuizToMoodleXml', () => {
 
   it('cada tipo va con el suyo de Moodle', () => {
     const tipos = [...xml.matchAll(/<question type="(\w+)">/g)].map((m) => m[1])
-    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice', 'matching', 'ordering', 'gapselect', 'ddwtos'])
+    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice', 'matching', 'ordering', 'gapselect', 'ddwtos', 'multichoice'])
+    // F6: la palabra faltante como opción múltiple, con el hueco "_____".
+    expect(xml).toContain('<p>Elegí la palabra que falta.</p><p>Eso se llama _____.</p>')
     // F5: la consigna y el texto con [[n]] en el enunciado; las palabras como selectoption / dragbox.
     expect(xml).toContain('<p>Completá el texto.</p><p>Si sube el [[1]], baja la [[2]] demandada; la curva de [[3]] baja.</p>')
     expect(xml).toContain('<selectoption><text>precio</text><group>1</group></selectoption>')
@@ -93,7 +96,8 @@ describe('F1 · convertQuizToMoodleXml', () => {
   })
 
   it('la correcta vale 100 y las demás 0; verdadero o falso con true y false', () => {
-    expect(xml.match(/<answer fraction="100" format="html">/g)).toHaveLength(1)
+    // La opción múltiple y la palabra faltante (F6): una correcta cada una.
+    expect(xml.match(/<answer fraction="100" format="html">/g)).toHaveLength(2)
     // F2: varias correctas, con single = false y las correctas sumando 100.
     expect(xml).toContain('<single>false</single>')
     expect(xml.match(/<answer fraction="50" format="html">/g)).toHaveLength(2)

@@ -299,6 +299,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     if ((question.type === 'gapselect' || question.type === 'ddwtos') && (selection.type === 'gapselect' || selection.type === 'ddwtos')) {
       return { ...base, type: question.type, text: question.text, choices: question.choices, selectedChoices: selection.value }
     }
+    if (question.type === 'missing_word' && selection.type === 'missing_word') {
+      return { ...base, type: 'missing_word', text: question.text, options: question.options, selectedAnswer: selection.value ?? -1, correctAnswer: question.correctAnswer }
+    }
     throw new Error('Selection type does not match question type')
   }, [])
 
@@ -462,6 +465,16 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       return
     }
 
+    // F6: la palabra faltante, como una opción múltiple.
+    if (currentQuestion.type === 'missing_word' && selection.type === 'missing_word') {
+      if (selection.value === null) return
+      const isCorrect = selection.value === currentQuestion.correctAnswer
+      setAnswerState(prev => ({ ...prev, submitted: true, isCorrect }))
+      answerQuestion(buildAnswer(currentQuestion, selection, isCorrect))
+      avanzarSinDevolucion()
+      return
+    }
+
     // F5: huecos, todo o nada.
     if ((currentQuestion.type === 'gapselect' || currentQuestion.type === 'ddwtos') && (selection.type === 'gapselect' || selection.type === 'ddwtos')) {
       if (selection.value.some((v) => v === null)) return
@@ -546,6 +559,8 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       case 'gapselect':
       case 'ddwtos':
         return selection.value.every((v) => v !== null)
+      case 'missing_word':
+        return selection.value !== null
     }
   })()
 

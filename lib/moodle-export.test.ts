@@ -439,3 +439,16 @@ describe('Ronda T · F5: huecos en GIFT', () => {
     expect(gift).not.toContain('renta')
   })
 })
+
+describe('Ronda T · F6: la palabra faltante en GIFT', () => {
+  it('las opciones entre llaves, en el lugar del hueco', () => {
+    const gift = convertQuizToGift(
+      makeQuiz({
+        questions: [
+          { id: 'q1', type: 'missing_word', topic: 't', topicName: 'T', question: 'Elegí la palabra que falta.', text: 'Juzgar con los valores propios se llama [[1]] en antropología.', options: ['relativismo', 'etnocentrismo', 'evolucionismo'], correctAnswer: 1, explanation: 'Es etnocentrismo.' },
+        ],
+      }),
+    )
+    expect(gift).toContain('::Q1::Elegí la palabra que falta.\nJuzgar con los valores propios se llama {~relativismo =etnocentrismo ~evolucionismo####Es etnocentrismo.} en antropología.')
+  })
+})

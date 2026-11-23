@@ -156,6 +156,22 @@ function preguntaXml(question: Question, index: number): string {
         '<numberingstyle>none</numberingstyle>',
         ...question.items.map((item, i) => respuestaHtml(`${i + 1}.0000000`, item)),
       ])
+    case 'missing_word': {
+      // F6: como lo importa Moodle desde GIFT: una opción múltiple con la
+      // oración y el hueco como "_____".
+      const correcta = Number.isInteger(question.correctAnswer) ? question.correctAnswer : -1
+      if (correcta < 0 || correcta >= question.options.length) throw new Error(`La pregunta ${index + 1} no tiene una respuesta correcta valida.`)
+      const oracion = question.text.replace('[[1]]', '_____')
+      const enunciado = `<questiontext format="html"><text>${cdata(`<p>${textoHtml(question.question)}</p><p>${textoHtml(oracion)}</p>`)}</text></questiontext>`
+      return pregunta('multichoice', [
+        comun.replace(/<questiontext[\s\S]*?<\/questiontext>/, enunciado),
+        '<single>true</single>',
+        '<shuffleanswers>true</shuffleanswers>',
+        '<answernumbering>abc</answernumbering>',
+        '<showstandardinstruction>0</showstandardinstruction>',
+        ...question.options.map((opcion, i) => respuestaHtml(i === correcta ? 100 : 0, opcion)),
+      ])
+    }
     case 'gapselect':
     case 'ddwtos': {
       // F5: el enunciado lleva la consigna y el texto con [[n]]; las palabras,
