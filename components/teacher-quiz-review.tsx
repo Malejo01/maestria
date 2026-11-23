@@ -5,6 +5,7 @@ import { calculadaValida, instanciarCalculada } from '@/lib/calculada'
 import { ENSAYO, TIPOS_MOODLE_TEXTOS } from '@/lib/textos'
 import { limpiarRubrica, MAXIMO_CRITERIOS, MINIMO_CRITERIOS, rubricaValida } from '@/lib/ensayo'
 import { Cargando } from '@/components/sistema/cargando'
+import { GraficoFuncion } from '@/components/grafico-funcion'
 
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -744,6 +745,7 @@ function VistaDePregunta({ question }: { question: Question }) {
   return (
     <div className="space-y-2 text-sm">
       <LaTeXRenderer content={question.question} className="font-medium" />
+      {question.grafico && <GraficoFuncion grafico={question.grafico} alto={180} />}
 
       {question.type === 'multiple_choice' && (
         <ul className="space-y-1">

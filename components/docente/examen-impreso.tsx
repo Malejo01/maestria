@@ -1,5 +1,6 @@
 'use client'
 
+import { GraficoFuncion } from '@/components/grafico-funcion'
 import Link from 'next/link'
 import { ArrowLeft, Printer } from 'lucide-react'
 import { LaTeXRenderer } from '@/components/latex-renderer'
@@ -18,6 +19,8 @@ function Pregunta({ p }: { p: PreguntaDelExamen }) {
         <span className="font-bold">{p.numero}.</span>
         <LaTeXRenderer content={p.enunciado} className="min-w-0 flex-1 whitespace-pre-line" />
       </div>
+      {/* X3: el gráfico, en papel (las curvas se distinguen por el trazo). */}
+      {p.grafico && <GraficoFuncion grafico={p.grafico} alto={200} className="mt-3 pl-6" />}
       <div className="cuerpo-s mt-3 pl-6">
         {papel.forma === 'opciones' && (
           <>

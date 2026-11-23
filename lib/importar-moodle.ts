@@ -20,6 +20,7 @@ import { problemaDeTipoMoodle } from '@/lib/tipos-moodle'
 import { aleatorioConSemilla, instanciarCalculada } from '@/lib/calculada'
 import type { Question } from '@/lib/types'
 import { limpiarRubrica, MINIMO_CRITERIOS, type CriterioDeRubrica } from '@/lib/ensayo'
+import { limpiarGrafico, type Grafico } from '@/lib/grafico'
 
 /**
  * W5: los criterios de la rúbrica de un ensayo importado. Salen de una lista
@@ -234,7 +235,24 @@ const hijo = (n: NodoXml | undefined, nombre: string) => n?.hijos.find((h) => h.
 const hijos = (n: NodoXml | undefined, nombre: string) => n?.hijos.filter((h) => h.nombre === nombre) ?? []
 const textoDe = (n: NodoXml | undefined) => (hijo(n, 'text')?.texto ?? n?.texto ?? '').trim()
 
+/** X3: el gráfico de una pregunta exportada por MaestrIA (el `data-grafico` de su imagen). */
+function graficoDelHtml(html: string): Grafico | null {
+  const m = /data-grafico="([^"]*)"/.exec(html)
+  if (!m) return null
+  try {
+    return limpiarGrafico(JSON.parse(m[1].replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')))
+  } catch {
+    return null
+  }
+}
+
 function preguntaXml(q: NodoXml, numero: number, tema: string): { pregunta?: Question; salteada?: PreguntaSalteada } {
+  const r = preguntaXmlSinGrafico(q, numero, tema)
+  const grafico = r.pregunta ? graficoDelHtml(textoDe(hijo(q, 'questiontext'))) : null
+  return grafico && r.pregunta ? { pregunta: { ...r.pregunta, grafico } } : r
+}
+
+function preguntaXmlSinGrafico(q: NodoXml, numero: number, tema: string): { pregunta?: Question; salteada?: PreguntaSalteada } {
   const tipo = q.atributos.type ?? ''
   const donde = htmlATexto(textoDe(hijo(q, 'name'))) || `Q${numero}`
   const html = textoDe(hijo(q, 'questiontext'))

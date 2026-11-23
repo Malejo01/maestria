@@ -1821,7 +1821,7 @@ export const EXPORTAR_MOODLE = {
   xml: 'Moodle XML (.xml)',
   xmlDetalle: 'Recomendado: lleva todos los tipos de pregunta.',
   gift: 'GIFT (.txt)',
-  giftDetalle: 'El formato de siempre. No lleva ordenar ni arrastrar.',
+  giftDetalle: 'El formato de siempre. No lleva ordenar ni arrastrar, y los gráficos van descriptos en texto.',
   listo: 'Exportación lista',
   seDescargo: (archivo: string) => `Se descargó ${archivo}`,
   noSePudo: 'No se pudo exportar',

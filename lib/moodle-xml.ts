@@ -1,3 +1,4 @@
+import { descripcionDelGrafico, limpiarGrafico, svgDelGrafico } from '@/lib/grafico'
 import type { Question, TeacherQuiz } from '@/lib/types'
 import { valoresDelConjunto } from '@/lib/calculada'
 import { fraccionesVariasCorrectas } from '@/lib/tipos-moodle'
@@ -77,7 +78,31 @@ function pregunta(tipo: string, cuerpo: string[]): string {
   return `  <question type="${tipo}">\n    ${cuerpo.join('\n    ')}\n  </question>`
 }
 
+/** UTF-8 a base64, igual en el navegador y en Node. */
+function aBase64(texto: string): string {
+  let binario = ''
+  for (const b of new TextEncoder().encode(texto)) binario += String.fromCharCode(b)
+  return btoa(binario)
+}
+
+/**
+ * X3: el gráfico va como imagen SVG dentro del enunciado (`@@PLUGINFILE@@` y
+ * su `<file>` en base64, como exporta Moodle). El `data-grafico` lleva lo que
+ * hace falta para volver a dibujarlo si el archivo se importa en MaestrIA.
+ */
+function conGrafico(xml: string, question: Question, index: number): string {
+  const grafico = question.grafico ? limpiarGrafico(question.grafico) : null
+  if (!grafico) return xml
+  const nombre = `grafico-${index + 1}.svg`
+  const img = `<p><img src="@@PLUGINFILE@@/${nombre}" alt="${escaparXml(descripcionDelGrafico(grafico))}" data-grafico="${escaparXml(JSON.stringify(grafico))}" width="480" height="360"></p>`
+  return xml.replace('</text></questiontext>', `${cdata(img)}</text><file name="${nombre}" path="/" encoding="base64">${aBase64(svgDelGrafico(grafico))}</file></questiontext>`)
+}
+
 function preguntaXml(question: Question, index: number): string {
+  return conGrafico(preguntaXmlSinGrafico(question, index), question, index)
+}
+
+function preguntaXmlSinGrafico(question: Question, index: number): string {
   const comun = cabecera(question, index)
   switch (question.type) {
     case 'multiple_choice': {

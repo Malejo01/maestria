@@ -13,6 +13,7 @@
  * Si hay que elegir entre "más prolijo" y "idéntico", gana idéntico: los `any`
  * y las ramas tolerantes de abajo están tal como estaban.
  */
+import { limpiarGrafico, temasDeFunciones } from '@/lib/grafico'
 import { instanciarCalculada } from '@/lib/calculada'
 import { problemaDeTipoMoodle } from '@/lib/tipos-moodle'
 import { MOTIVO_DE_CALIDAD, problemaDeCalidad, type ProblemaDeCalidad } from '@/lib/validar-tipos-moodle'
@@ -67,6 +68,21 @@ const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
+/**
+ * Ronda X · X3 — El gráfico de funciones. Va en el system prompt sólo si los
+ * temas son de funciones; la app lo dibuja (lib/grafico.ts) y lo lleva a la
+ * impresión y al Moodle XML.
+ */
+export const BLOQUE_GRAFICO = `GRÁFICOS DE FUNCIONES:
+- Los temas de esta tanda son de funciones: en más o menos una de cada cuatro preguntas (AL MENOS UNA por tanda), la consigna se responde mirando la curva y la pregunta trae el campo "grafico". Buenas consignas: leer raíces, ordenada al origen, vértice, intervalos de crecimiento o de positividad, asíntotas, comparar dos funciones, reconocer qué fórmula corresponde al gráfico.
+- En las demás preguntas no pongas "grafico".
+- Formato: "grafico": { "expresiones": ["x^2 - 4"], "dominio": [-4, 4], "puntos": [{ "x": 2, "y": 0, "etiqueta": "A" }] }
+- "expresiones": de 1 a 3, en función de x, como en la calculadora: x^2, 2x + 1, sqrt(x), abs(x), exp(x), log(x) (natural), log10(x), sin(x), cos(x). Sin "y =" ni "f(x) =".
+- "dominio": [mínimo, máximo] de x, que muestre lo importante (las raíces, el vértice, el corte con los ejes).
+- "puntos" (opcional): los que la pregunta nombra.
+- Si la pregunta pide leer algo del gráfico, el enunciado lo dice ("Observá el gráfico…") y la respuesta se puede leer con las marcas de los ejes.
+- Nunca pongas la respuesta como etiqueta de un punto.`
+
 // Schema Zod — un tipo por variante, discriminado por "type". Agregar un tipo
 // nuevo (essay, matching...) es sumar una variante acá + un caso en el switch
 // de PROMPT_FIELD_BLOCKS + un caso en el switch de shuffle más abajo.
@@ -76,6 +92,14 @@ const baseQuestionFields = {
   topicName: z.string().optional(),
   question: z.string(),
   explanation: z.string(),
+  // Ronda X · X3: el gráfico, sólo en temas de funciones (BLOQUE_GRAFICO).
+  grafico: z
+    .object({
+      expresiones: z.array(z.string()),
+      dominio: z.array(z.number()),
+      puntos: z.array(z.object({ x: z.number(), y: z.number(), etiqueta: z.string().optional() })).optional(),
+    })
+    .optional(),
 }
 
 const multipleChoiceQuestionSchema = z.object({
@@ -451,6 +475,8 @@ function normalizeQuestionSetLogicalNotation(questions: any[]) {
   // la consigna pide una fracción y la IA mandó sólo el número).
   return questions.map((original) => (original?.type === 'numeric' ? normalizarFraccionGenerada(original) : original)).map((question) => ({
     ...question,
+    // X3: un gráfico que no se puede dibujar se saca (la pregunta queda).
+    ...(question.grafico ? { grafico: limpiarGrafico(question.grafico) ?? undefined } : {}),
     question: normalizeLogicalNotation(String(question.question || '')),
     explanation: normalizeLogicalNotation(String(question.explanation || '')),
     ...(Array.isArray(question.options)
@@ -1225,7 +1251,9 @@ export async function generateQuiz(
     temas: topics ?? [],
   })
   const specialistRole = rolDeLaGeneracion(areaCtx, subject)
-  const notacion = bloqueDeNotacion(areaCtx.bloques)
+  // X3: en temas de funciones (con LaTeX completo), la IA puede sumar un gráfico.
+  const conGraficos = areaCtx.bloques.latex && !areaCtx.bloques.latexSoloNumeros && temasDeFunciones((topics ?? []).map((t: { name?: string }) => String(t?.name ?? t)))
+  const notacion = [bloqueDeNotacion(areaCtx.bloques), conGraficos ? BLOQUE_GRAFICO : ''].filter(Boolean).join('\n\n')
   const sinCalculo = areaCtx.caracteres.every((c) => c === 'conceptual')
   const numericaAMano = !tiposPorDefecto && explicitQuestionTypes.includes('numeric')
 

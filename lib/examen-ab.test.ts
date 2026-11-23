@@ -96,3 +96,11 @@ describe('el ensayo en papel (W5)', () => {
     expect(p.correcta).toContain('rúbrica')
   })
 })
+
+describe('el gráfico en papel (X3)', () => {
+  it('pasa a los dos temas tal cual; uno que no se puede dibujar, no', () => {
+    const q = { type: 'true_false', question: '¿Corta en 2?', correctAnswer: true, grafico: { expresiones: ['x^2 - 4'], dominio: [-3, 3] } }
+    expect(preguntaEnTema(q, 1, 's').grafico).toEqual({ expresiones: ['x^2 - 4'], dominio: [-3, 3] })
+    expect(preguntaEnTema({ ...q, grafico: { expresiones: ['x'], dominio: [3, 1] } }, 1, 's').grafico).toBeUndefined()
+  })
+})

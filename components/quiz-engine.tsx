@@ -1,5 +1,6 @@
 'use client'
 
+import { GraficoFuncion } from '@/components/grafico-funcion'
 import { QuizPista } from '@/components/quiz-pista'
 import { limpiarRespuesta } from '@/lib/ensayo'
 import { ENSAYO } from '@/lib/textos'
@@ -818,9 +819,13 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
               )}
 
               {!isEditingQuestion ? (
-                <h2 className="text-xl font-bold text-foreground leading-relaxed">
-                  <LaTeXRenderer content={currentQuestion.question} />
-                </h2>
+                <>
+                  <h2 className="text-xl font-bold text-foreground leading-relaxed">
+                    <LaTeXRenderer content={currentQuestion.question} />
+                  </h2>
+                  {/* X3: el gráfico de la función, si la pregunta lo trae. */}
+                  {currentQuestion.grafico && <GraficoFuncion grafico={currentQuestion.grafico} className="mx-auto mt-4" />}
+                </>
               ) : (
                 <div className="space-y-3">
                   <label className="block space-y-1.5">

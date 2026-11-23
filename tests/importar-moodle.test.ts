@@ -150,3 +150,30 @@ describe('W5: el ensayo va y vuelve con su rúbrica', () => {
     expect(r.salteadas[0].motivo).toContain('3 criterios')
   })
 })
+
+describe('X3: el gráfico va y vuelve', () => {
+  const conGrafico = {
+    id: 'q1',
+    type: 'numeric',
+    question: 'Observá el gráfico: ¿cuál es la raíz positiva de f?',
+    correctAnswer: 2,
+    explanation: 'Corta al eje x en 2.',
+    topic: 't',
+    topicName: 'Funciones',
+    grafico: { expresiones: ['x^2 - 4'], dominio: [-4, 4], puntos: [{ x: 0, y: -4, etiqueta: 'B' }] },
+  } as unknown as Question
+  it('Moodle XML: imagen SVG en base64 dentro del enunciado, válida para Moodle, y vuelve con su gráfico', () => {
+    const xml = convertQuizToMoodleXml(quiz([conGrafico]))
+    expect(xml).toContain('<img src="@@PLUGINFILE@@/grafico-1.svg"')
+    expect(xml).toMatch(/<file name="grafico-1.svg" path="\/" encoding="base64">[A-Za-z0-9+/=]+<\/file><\/questiontext>/)
+    const b64 = /encoding="base64">([^<]+)</.exec(xml)![1]
+    expect(Buffer.from(b64, 'base64').toString('utf8')).toMatch(/^<svg xmlns=/)
+    const r = importarMoodleXml(xml)
+    expect(r.salteadas).toEqual([])
+    expect(r.preguntas[0]).toMatchObject({ type: 'numeric', question: conGrafico.question, grafico: { expresiones: ['x^2 - 4'], dominio: [-4, 4] } })
+  })
+  it('GIFT: el gráfico va descripto en texto', () => {
+    const gift = convertQuizToGift(quiz([conGrafico]))
+    expect(gift).toContain('[Gráfico de y \\= x^2 - 4, con x entre -4 y 4')
+  })
+})
