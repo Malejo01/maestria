@@ -134,3 +134,11 @@ describe('P3 · qué campanita va en la barra', () => {
     expect(resolverCaparazon(null, '/').campanita).toBeNull()
   })
 })
+
+describe('W1 · el banco y la revisión de una tarea son de "Mis tareas"', () => {
+  it('marca Mis tareas', () => {
+    expect(entradaActiva('docente', '/teacher/banco', null)).toBe('tareas')
+    expect(entradaActiva('docente', '/teacher/tareas/12/revisar', null)).toBe('tareas')
+    expect(entradaActiva('docente', '/teacher/grupos/3', null)).toBe('alumnos')
+  })
+})

@@ -1,5 +1,7 @@
 'use client'
 
+import { BANCO } from '@/lib/textos'
+import Link from 'next/link'
 import { ComoFunciona } from '@/components/sistema/como-funciona'
 import { ExportarMoodle } from '@/components/docente/exportar-moodle'
 import { useState } from 'react'
@@ -95,6 +97,10 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
             onClick={() => setTeacherSection('crear')}
           >
             {PANEL_DOCENTE.tareas.armar}
+          </Boton>
+          {/* W1: el banco de preguntas. */}
+          <Boton variante="secundario" asChild>
+            <Link href="/teacher/banco">{BANCO.abrir}</Link>
           </Boton>
         </div>
       )}

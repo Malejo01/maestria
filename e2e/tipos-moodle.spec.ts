@@ -13,6 +13,8 @@ async function practicarCon(page: Page, preguntas: Record<string, unknown>[]) {
   const [materia] = (await sql`
     SELECT id FROM teacher_programs
     WHERE user_id = 'stg-demo-sofia' AND personal = TRUE AND status = 'active' AND pase_hasta >= CURRENT_DATE
+      -- Con el diagnóstico hecho: si no, no hay "Práctica de hoy" (U2 deja materias con pase sin diagnóstico).
+      AND EXISTS (SELECT 1 FROM autodidacta_resultados r WHERE r.program_id = teacher_programs.id AND r.tipo = 'diagnostico')
     ORDER BY id DESC LIMIT 1
   `) as { id: number }[]
   expect(materia, 'Hace falta una materia personal de Sofía con el pase (la deja e2e/autodidacta-pase.spec.ts)').toBeTruthy()

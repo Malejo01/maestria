@@ -2124,3 +2124,27 @@ export const AYUDA = {
   noEncontrada: 'Esa guía no existe.',
   otras: 'Otras guías',
 } as const
+
+/** Ronda W · W1: el banco de preguntas del docente. */
+export const BANCO = {
+  titulo: 'Banco de preguntas',
+  detalle: 'Todas las preguntas de tus cuestionarios, sin repetidas. Buscalas y sumalas a una tarea nueva: la IA completa el resto.',
+  abrir: 'Banco de preguntas',
+  buscar: 'Buscar en el texto',
+  todas: 'Todas',
+  filtros: { materia: 'Materia', unidad: 'Unidad', tema: 'Tema', tipo: 'Tipo', valoracion: 'Valoración' },
+  valoraciones: { arriba: 'Con pulgar arriba', abajo: 'Con pulgar abajo', sin: 'Sin valorar' },
+  resultados: (n: number, total: number) => (n === total ? (n === 1 ? '1 pregunta' : `${n} preguntas`) : `${n} de ${total} preguntas`),
+  vacio: 'No hay preguntas con esos filtros.',
+  sinPreguntas: 'Todavía no tenés preguntas guardadas. Se suman solas cuando armás tareas.',
+  deCuestionario: (titulo: string) => `De «${titulo}»`,
+  cargando: 'Cargando el banco…',
+  sumar: 'Sumar del banco',
+  sumarCon: (n: number) => (n === 0 ? 'Sumar del banco' : n === 1 ? 'Del banco: 1 pregunta' : `Del banco: ${n} preguntas`),
+  elegirTitulo: 'Elegí preguntas del banco',
+  elegirDetalle: 'Las que elijas van en la tarea tal cual; la IA arma las que faltan para llegar a la cantidad, sin repetir.',
+  soloTemas: 'Sólo de los temas elegidos',
+  listo: 'Listo',
+  quitarTodas: 'Quitar todas',
+  elegir: (texto: string) => `Elegir: ${texto.slice(0, 60)}`,
+} as const
