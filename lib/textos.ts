@@ -2250,3 +2250,13 @@ export const ENSAYO = {
     sugerida: 'Sugerencia de la IA: revisala antes de confirmar.',
   },
 } as const
+
+/** Ronda X · X1: la pista antes de responder (sólo en la práctica). */
+export const PISTA = {
+  pedir: 'Pedir una pista',
+  pensando: 'Pensando una pista…',
+  titulo: 'Pista',
+  tope: 'Ya usaste las pistas de hoy. Mañana tenés de nuevo.',
+  sinPista: 'Para esta pregunta no hay una pista que no regale la respuesta. Probá con lo que sepas.',
+  error: 'No se pudo pensar una pista. Probá de nuevo.',
+} as const

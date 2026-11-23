@@ -1,5 +1,6 @@
 'use client'
 
+import { QuizPista } from '@/components/quiz-pista'
 import { limpiarRespuesta } from '@/lib/ensayo'
 import { ENSAYO } from '@/lib/textos'
 import { corregirCalculada } from '@/lib/calculada'
@@ -846,6 +847,18 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
               )}
             </div>
           </Card>
+
+          {/* X1: la pista antes de responder, sólo en la práctica. */}
+          {!isEditingQuestion && (
+            <QuizPista
+              question={currentQuestion}
+              contexto={config}
+              respondida={answerState.submitted}
+              nivel={config?.nivel}
+              grado={config?.grado}
+              materia={config?.subjectName}
+            />
+          )}
 
           {/* Answer input */}
           <AnswerInput

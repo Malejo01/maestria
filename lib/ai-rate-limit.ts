@@ -28,6 +28,7 @@ export const AI_BUCKETS = [
   'program_extraction',
   'program_upload',
   'autodidacta',
+  'hint',
 ] as const
 export type AiBucket = (typeof AI_BUCKETS)[number]
 
@@ -94,6 +95,16 @@ export const AI_LIMITS: Record<AiBucket, Record<Exclude<AiActor, 'admin'>, Bucke
     guest: { perDay: 0, perHour: 0 },
     alumno: { perDay: 12, perHour: 6 },
     docente: { perDay: 12, perHour: 6 },
+  },
+  /**
+   * Ronda X · X1: la pista antes de responder, sólo en la práctica (lib/pista.ts).
+   * 20 por día alcanza para dos o tres prácticas pidiendo pista en casi todo;
+   * el invitado no tiene (no hay práctica libre de invitado).
+   */
+  hint: {
+    guest: { perDay: 0, perHour: 0 },
+    alumno: { perDay: 20, perHour: 12 },
+    docente: { perDay: 20, perHour: 12 },
   },
 }
 

@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+// X1: la pista lee la sesión; acá no hay SessionProvider.
+vi.mock('next-auth/react', () => ({ useSession: () => ({ data: null, status: 'unauthenticated' }) }))
 import { render, screen, cleanup, act } from '@testing-library/react'
 import { QuizEngine } from './quiz-engine'
 import { useAppStore } from '@/lib/store'
