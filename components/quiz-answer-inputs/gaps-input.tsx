@@ -37,8 +37,10 @@ export function GapsInput({
   const bloqueado = submitted || disabled
   const arrastrar = question.type === 'ddwtos'
 
+  // Arrastrar: cada palabra va en un solo hueco (se saca de donde estaba).
+  // Seleccionar: cada lista es independiente, como en Moodle.
   const poner = (hueco: number, valor: number | null) => {
-    const nuevo = elegidas.map((v) => (valor !== null && v === valor ? null : v))
+    const nuevo = arrastrar ? elegidas.map((v) => (valor !== null && v === valor ? null : v)) : [...elegidas]
     nuevo[hueco] = valor
     onChange(nuevo)
   }

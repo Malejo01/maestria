@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="category">
+    <category><text>$course$/Introduccion a la Economia G1 22 11 22 52 13/Ley de la demanda-Elasticidad precio de la demanda-Variaciones porcentuales de precios</text></category>
+  </question>
+  <question type="ddwtos">
+    <name><text>1. Completá el texto con las palabras que faltan.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Completá el texto con las palabras que faltan.</p><p>La ley de la demanda postula que, ante un incremento en el precio de un bien, la [[1]] demandada tiende a [[2]], siempre que se mantengan constantes los demás factores, bajo la condición de [[3]].</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>La ley de la demanda establece una relación inversa entre precio y cantidad. Si el precio sube, los consumidores reducen su demanda, asumiendo que el resto de las variables permanecen constantes.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>1</shuffleanswers>
+    <dragbox><text>cantidad</text><group>1</group></dragbox>
+    <dragbox><text>disminuir</text><group>1</group></dragbox>
+    <dragbox><text>ceteris paribus</text><group>1</group></dragbox>
+    <dragbox><text>oferta</text><group>1</group></dragbox>
+    <dragbox><text>aumentar</text><group>1</group></dragbox>
+    <dragbox><text>equilibrio</text><group>1</group></dragbox>
+  </question>
+  <question type="matching">
+    <name><text>2. Uní cada concepto con su definición técnica correspondiente.</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Uní cada concepto con su definición técnica correspondiente.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Es fundamental distinguir entre la elasticidad, que mide la sensibilidad, y los movimientos a lo largo de la curva frente a desplazamientos de la misma.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>true</shuffleanswers>
+    <subquestion format="html"><text><![CDATA[<p>Demanda elástica</p>]]></text><answer><text>Variación porcentual de cantidad mayor al precio</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Demanda inelástica</p>]]></text><answer><text>Variación porcentual de cantidad menor al precio</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Movimiento a lo largo</p>]]></text><answer><text>Cambio causado exclusivamente por el precio</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Desplazamiento de curva</p>]]></text><answer><text>Cambio causado por factores exógenos</text></answer></subquestion>
+    <subquestion format="html"><text></text><answer><text>Cambio en la oferta monetaria</text></answer></subquestion>
+  </question>
+  <question type="multichoice">
+    <name><text>3. Marcá todas las opciones que representan correctamente un…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Marcá todas las opciones que representan correctamente una situación de cambio en la demanda de un bien.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Un desplazamiento de la curva de demanda ocurre cuando cambian factores distintos al precio del propio bien, como el ingreso de los consumidores o los precios de bienes relacionados.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>false</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>1</showstandardinstruction>
+    <answer fraction="-33.33333" format="html"><text><![CDATA[<p>Disminución del precio del bien que aumenta la cantidad demandada</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-33.33333" format="html"><text><![CDATA[<p>Cambio en la tecnología de producción del bien</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="50" format="html"><text><![CDATA[<p>Aumento en el ingreso de los consumidores para un bien normal</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-33.33333" format="html"><text><![CDATA[<p>Aumento del precio del bien que reduce la cantidad demandada</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="50" format="html"><text><![CDATA[<p>Cambio en los gustos de los consumidores hacia el bien</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="multichoice">
+    <name><text>4. ¿Cuáles de estas situaciones representan correctamente un…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>¿Cuáles de estas situaciones representan correctamente una variación porcentual de precios y su impacto según la teoría económica?</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>Las variaciones porcentuales permiten normalizar el impacto de los cambios de precios. Un aumento del 10 % en el precio de un bien con demanda inelástica genera una caída menor al 10 % en la cantidad demandada.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>false</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>1</showstandardinstruction>
+    <answer fraction="33.33333" format="html"><text><![CDATA[<p>Si el precio sube un 20 % y la cantidad cae un 10 %, la demanda es inelástica.</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="33.33333" format="html"><text><![CDATA[<p>Una elasticidad de 2,5 implica que la demanda es altamente sensible al precio.</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-50" format="html"><text><![CDATA[<p>Un aumento del 5 % en el precio siempre reduce la demanda un 5 %.</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="33.33333" format="html"><text><![CDATA[<p>La variación porcentual de precios es independiente de la unidad monetaria.</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-50" format="html"><text><![CDATA[<p>El desplazamiento de la curva de demanda es causado por variaciones en el precio.</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
+  <question type="matching">
+    <name><text>5. Relacioná cada concepto con su descripción técnica en el…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>Relacioná cada concepto con su descripción técnica en el análisis de mercado.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>La comprensión de estos conceptos es fundamental para distinguir entre movimientos a lo largo de la curva y desplazamientos de la misma, así como para medir la sensibilidad de los consumidores.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <shuffleanswers>true</shuffleanswers>
+    <subquestion format="html"><text><![CDATA[<p>Ley de la demanda</p>]]></text><answer><text>Relación inversa entre precio y cantidad</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Elasticidad precio</p>]]></text><answer><text>Sensibilidad de la cantidad ante precios</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Movimiento a lo largo</p>]]></text><answer><text>Cambio causado por variación del precio</text></answer></subquestion>
+    <subquestion format="html"><text><![CDATA[<p>Desplazamiento de curva</p>]]></text><answer><text>Cambio por factores externos al precio</text></answer></subquestion>
+    <subquestion format="html"><text></text><answer><text>Aumento de la oferta monetaria</text></answer></subquestion>
+  </question>
+</quiz>

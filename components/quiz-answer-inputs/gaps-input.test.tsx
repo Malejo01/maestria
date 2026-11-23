@@ -47,3 +47,12 @@ describe('F5 · GapsInput', () => {
     expect(screen.getByText('Correctas, en orden: precio · cantidad · demanda')).toBeTruthy()
   })
 })
+
+describe('F5 · seleccionar: cada lista es independiente', () => {
+  it('elegir en un hueco una palabra ya elegida en otro no vacía el otro', () => {
+    const onChange = vi.fn()
+    render(<GapsInput question={{ ...base, type: 'gapselect' }} elegidas={[1, null, null]} submitted={false} onChange={onChange} />)
+    fireEvent.change(screen.getByRole('combobox', { name: 'Hueco 2' }), { target: { value: '1' } })
+    expect(onChange).toHaveBeenLastCalledWith([1, 1, null])
+  })
+})
