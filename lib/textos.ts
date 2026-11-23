@@ -2326,6 +2326,12 @@ export const SALUD = {
     abrirSentry: 'Abrir Sentry',
     veces: (n: number) => (n === 1 ? '1 vez' : `${n} veces`),
   },
+  respaldo: {
+    titulo: 'Respaldo diario',
+    noConfigurado: (faltan: string) => `No está configurado: no se está haciendo. Falta cargar en Vercel ${faltan} (ver docs/backups.md §7).`,
+    ninguno: 'Está configurado, pero todavía no hay ningún respaldo: el primero sale a las 3:30 (hora de Argentina).',
+    ultimo: (fecha: string, tamano: string, cantidad: number) => `El último: ${fecha} (${tamano}). Hay ${cantidad === 1 ? '1 guardado' : `${cantidad} guardados`}; se guardan 14 días.`,
+  },
   alertas: {
     generaciones: 'Fallan muchas generaciones',
     detalleGeneraciones: (fallidas: number, total: number) => `En la última hora fallaron ${fallidas} de ${total}.`,

@@ -114,6 +114,23 @@ export default async function SaludPage() {
         {s.sinPagar !== null && s.sinPagar > 0 && <p className="nota text-texto-suave">{T.pagos.sinPagar(s.sinPagar)}</p>}
       </section>
 
+      <section aria-labelledby="salud-respaldo" className="space-y-3" data-respaldo={s.respaldo.faltan.length > 0 ? 'sin-configurar' : 'configurado'}>
+        <h2 id="salud-respaldo" className="titulo-m text-texto">
+          {T.respaldo.titulo}
+        </h2>
+        <p className={cn('cuerpo-s', s.respaldo.faltan.length > 0 ? 'font-semibold text-flojo' : 'text-texto-suave')}>
+          {s.respaldo.faltan.length > 0
+            ? T.respaldo.noConfigurado(s.respaldo.faltan.join(' y '))
+            : s.respaldo.ultimo
+              ? T.respaldo.ultimo(
+                  new Date(s.respaldo.ultimo.fecha).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', dateStyle: 'short', timeStyle: 'short' }),
+                  `${(s.respaldo.ultimo.bytes / 1024).toLocaleString('es-AR', { maximumFractionDigits: 0 })} KB`,
+                  s.respaldo.cantidad,
+                )
+              : T.respaldo.ninguno}
+        </p>
+      </section>
+
       <section aria-labelledby="salud-errores" className="space-y-3">
         <h2 id="salud-errores" className="titulo-m text-texto">
           {T.errores.titulo}

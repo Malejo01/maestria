@@ -1,4 +1,5 @@
 import { sql } from '@/lib/db'
+import { estadoDelRespaldo } from '@/lib/respaldo-server'
 import { alertasDelSistema, MINUTOS_COLGADA, type AlertaDelSistema, type CuentaDeGeneraciones, type PagoARevisar } from '@/lib/salud'
 
 /**
@@ -122,15 +123,17 @@ async function erroresRecientes(): Promise<{ errores: ErrorReciente[] | null; li
 }
 
 export async function leerSalud() {
-  const [dia, hora, ia, pagos, sinPagar, sentry] = await Promise.all([
+  const [dia, hora, ia, pagos, sinPagar, sentry, respaldo] = await Promise.all([
     generaciones(24),
     generaciones(1),
     gasto(),
     pagosARevisar(),
     pagosSinPagar(),
     erroresRecientes(),
+    // Y2: el respaldo diario (configurado o no, y el último).
+    estadoDelRespaldo(),
   ])
-  return { dia, hora, ia, pagos, sinPagar, sentry }
+  return { dia, hora, ia, pagos, sinPagar, sentry, respaldo }
 }
 
 export type Salud = Awaited<ReturnType<typeof leerSalud>>
