@@ -2271,3 +2271,20 @@ export const REPASO = {
   aviso: (n: number) => (n === 1 ? 'Tenés 1 pregunta para repasar hoy' : `Tenés ${n} preguntas para repasar hoy`),
   detalleAviso: 'Unos minutos alcanzan: vuelven las que te costaron.',
 } as const
+
+/** Ronda X · X4: la app instalable y sin conexión. */
+export const PWA = {
+  descripcion: 'Tareas y práctica con IA, para cualquier materia.',
+  sinConexion: {
+    titulo: 'Sin conexión',
+    detalle: 'No hay internet en este momento. Cuando vuelva, seguí desde donde estabas: lo que respondiste queda guardado en este dispositivo hasta que se pueda enviar.',
+    reintentar: 'Probar de nuevo',
+  },
+  instalar: {
+    titulo: 'Instalá MaestrIA',
+    detalle: 'Tenela a mano como una app más del celular o la compu, sin buscarla en el navegador.',
+    boton: 'Instalar',
+    ahoraNo: 'Ahora no',
+    ios: 'En el iPhone: tocá Compartir y después "Agregar a inicio".',
+  },
+} as const

@@ -1,3 +1,4 @@
+import { RegistrarPwa } from '@/components/pwa/registrar-pwa'
 import { urlDelSitio } from '@/lib/sitio'
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
@@ -93,6 +94,8 @@ export default function RootLayout({
       <body className="font-sans antialiased min-h-screen">
         <SessionProvider>
           {children}
+          {/* X4: el service worker (sólo la cáscara) y el aviso de instalación. */}
+          <RegistrarPwa />
           {process.env.NODE_ENV === 'production' && <Analytics />}
         </SessionProvider>
       </body>

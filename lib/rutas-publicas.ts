@@ -32,6 +32,8 @@ export const RUTAS_PUBLICAS = [
   '/robots.txt',
   '/opengraph-image',     // V5: la imagen para compartir el link
   '/ayuda',               // V6: el centro de ayuda (sirve antes de registrarse)
+  '/sin-conexion',        // X4: la página que muestra el service worker sin internet
+  '/icono-pwa',           // X4: los íconos de la app instalada
 ] as const
 
 export function esRutaPublica(pathname: string): boolean {

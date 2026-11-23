@@ -1,5 +1,6 @@
 'use client'
 
+import { OfrecerInstalar } from '@/components/pwa/ofrecer-instalar'
 import { resultadoPorTema } from '@/lib/autodidacta'
 import { AUTODIDACTA } from '@/lib/textos'
 import { revanchaPermitida } from '@/lib/revancha'
@@ -482,6 +483,9 @@ export function ResultsScreen() {
             )}
           </div>
         </Card>
+
+        {/* X4: "Instalá MaestrIA", una vez, después de la segunda práctica. */}
+        {!config?.previewOnly && !config?.assignmentId && <OfrecerInstalar intento={clientAttemptId} />}
 
         {/* O4: la racha (aprobados seguidos), de la base; textos en lib/textos.ts. */}
         <Card className="p-5 border-2 border-border bg-card/90">

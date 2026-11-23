@@ -8,6 +8,18 @@ const nextConfig = {
     // están en un camino de código muerto — ver docs/deuda-tecnica.md.
     unoptimized: true,
   },
+  // X4: el service worker no se cachea en el navegador: una versión nueva se toma al toque.
+  async headers() {
+    return [
+      {
+        source: '/sw.js',
+        headers: [
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+          { key: 'Content-Type', value: 'application/javascript; charset=utf-8' },
+        ],
+      },
+    ]
+  },
 }
 
 export default withSentryConfig(nextConfig, {
