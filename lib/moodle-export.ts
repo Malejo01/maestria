@@ -1,4 +1,5 @@
 import type { Question, TeacherQuiz } from '@/lib/types'
+import { fraccionesVariasCorrectas } from '@/lib/tipos-moodle'
 import { sanitizeSubjectSegment as sanitizePathSegment, slugifySubject as toSlug } from '@/lib/subject-slug'
 import { esFactorizacion, factorizar } from '@/lib/factorizacion'
 
@@ -200,6 +201,13 @@ function buildQuestionBlock(question: Question, index: number): string {
       const margen = question.tolerance || (periodica ? 0.0001 : 0)
       const tolerance = margen ? `:${margen}` : ''
       return `::${questionTitle}::${questionText} {#${numero}${tolerance}${buildFeedback(question)}}`
+    }
+    case 'multiple_response': {
+      // F2: varias correctas. Cada correcta suma su parte y cada incorrecta resta.
+      const fracciones = fraccionesVariasCorrectas(question.options.length, question.correctAnswers)
+      const opciones = question.options.map((o, i) => `~%${fracciones[i]}%${escapeGiftText(o)}`)
+      const feedback = buildFeedback(question)
+      return `::${questionTitle}::${questionText} {\n${opciones.join('\n')}${feedback ? `\n${feedback}` : ''}\n}`
     }
     case 'short_answer': {
       if (question.acceptedAnswers.length === 0) {

@@ -1,4 +1,4 @@
-import { CheckSquare, Hash, PenLine, ToggleLeft, type LucideIcon } from 'lucide-react'
+import { CheckSquare, Hash, ListChecks, PenLine, ToggleLeft, type LucideIcon } from 'lucide-react'
 import type { QuestionType } from '@/lib/types'
 
 export interface QuestionTypeOption {
@@ -38,6 +38,13 @@ export const QUESTION_TYPE_OPTIONS: QuestionTypeOption[] = [
     label: 'Respuesta numérica',
     description: 'El alumno ingresa un número.',
     Icon: Hash,
+  },
+  // Ronda T · F2 a F7: los tipos como en Moodle (F8 los agrupa en "Más tipos").
+  {
+    value: 'multiple_response',
+    label: 'Varias correctas',
+    description: 'Opción múltiple con más de una correcta.',
+    Icon: ListChecks,
   },
 ]
 

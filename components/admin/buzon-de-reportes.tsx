@@ -1,5 +1,6 @@
 'use client'
 
+import { correctaEnTexto } from '@/lib/tipos-moodle'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ChevronDown, ExternalLink } from 'lucide-react'
@@ -30,6 +31,8 @@ function correcta(p: Question): string {
       return String(p.correctAnswer)
     case 'short_answer':
       return p.acceptedAnswers.join(' / ')
+    default:
+      return correctaEnTexto(p) ?? '—'
   }
 }
 

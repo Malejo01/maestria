@@ -372,3 +372,16 @@ describe('moodle export GIFT', () => {
     expect(gift).toContain('~\\(\\\\\\{ \\frac\\{5\\}\\{3\\}, 7\\\\\\}\\)')
   })
 })
+
+describe('Ronda T · F2: varias correctas en GIFT', () => {
+  it('cada correcta con su parte (%50%) y cada incorrecta restando (%-50%)', () => {
+    const gift = convertQuizToGift(
+      makeQuiz({
+        questions: [
+          { id: 'q1', type: 'multiple_response', topic: 't', topicName: 'T', question: '¿Cuáles son pares?', options: ['2', '3', '4', '5'], correctAnswers: [0, 2], explanation: 'Los pares.' },
+        ],
+      }),
+    )
+    expect(gift).toContain('::Q1::¿Cuáles son pares? {\n~%50%2\n~%-50%3\n~%50%4\n~%-50%5\n####Los pares.\n}')
+  })
+})

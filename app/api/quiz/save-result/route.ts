@@ -1,4 +1,6 @@
 import { sql } from '@/lib/db'
+import { laBaseAceptaElTipo } from '@/lib/tipos-moodle-server'
+import { esTipoMoodle, payloadDeRespuesta } from '@/lib/tipos-moodle'
 import { anotarIntentoEnLaRacha } from '@/lib/racha-server'
 import { resolverPorAciertos } from '@/lib/a-reforzar-server'
 import { NextResponse } from 'next/server'
@@ -253,9 +255,15 @@ export async function POST(req: Request) {
     // legacy (options/selected_answer/correct_answer) para no romper lectores
     // existentes; el resto usa answer_payload (ver migracion 013).
     debugLog('[v0] Saving', answers.length, 'answers...')
+    // Ronda T · F2 a F7: sin la 042, un tipo como en Moodle se guarda como
+    // respuesta corta (el tipo real viaja en el payload). Se pregunta una vez.
+    const tiposMoodle: string[] = [...new Set<string>(answers.map((a: { type?: string }) => String(a.type ?? '')).filter(esTipoMoodle))]
+    const tiposSinLugar = new Set<string>()
+    for (const tipo of tiposMoodle) if (!(await laBaseAceptaElTipo(tipo))) tiposSinLugar.add(tipo)
     for (let i = 0; i < answers.length; i++) {
       const answer = answers[i]
-      const questionType = answer.type || 'multiple_choice'
+      const tipoReal = answer.type || 'multiple_choice'
+      const questionType = tiposSinLugar.has(tipoReal) ? 'short_answer' : tipoReal
 
       const isLegacyMultipleChoice = questionType === 'multiple_choice'
       const options = isLegacyMultipleChoice ? JSON.stringify(answer.options) : null
@@ -276,6 +284,10 @@ export async function POST(req: Request) {
           ...(answer.fraccion ? { fraccion: answer.fraccion, exigeIrreducible: answer.exigeIrreducible === true } : {}),
           ...(answer.forma === 'factorizacion' ? { forma: 'factorizacion' } : {}),
         })
+      } else if (payloadDeRespuesta(answer)) {
+        // Ronda T · F2 a F7: todo lo del tipo y, además, lo elegido y lo
+        // correcto en texto (lo lee cualquier pantalla que no conoce el tipo).
+        answerPayload = JSON.stringify(payloadDeRespuesta(answer))
       } else if (questionType === 'short_answer') {
         answerPayload = JSON.stringify({
           selectedText: answer.selectedText,

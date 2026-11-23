@@ -55,6 +55,16 @@ export const PREGUNTAS_DE_MUESTRA: Question[] = [
     acceptedAnswers: ['rito de paso', 'ritos de paso', 'rito de pasaje'],
     explanation: 'Van Gennep los llamó ritos de paso.',
   },
+  // F2 · varias correctas
+  {
+    ...comun,
+    id: 'm5',
+    type: 'multiple_response',
+    question: '¿Cuáles son rasgos de la cultura para la antropología? Marcá todas las que correspondan.',
+    options: ['Se aprende', 'Es innata', 'Se comparte', 'Es individual', 'Es simbólica'],
+    correctAnswers: [0, 2, 4],
+    explanation: 'La cultura se aprende, se comparte y es simbólica.',
+  },
 ]
 
 export function cuestionarioDeMuestra(): TeacherQuiz {

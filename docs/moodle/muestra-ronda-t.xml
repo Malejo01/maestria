@@ -58,4 +58,22 @@
     <answer fraction="100" format="moodle_auto_format"><text>ritos de paso</text><feedback format="html"><text></text></feedback></answer>
     <answer fraction="100" format="moodle_auto_format"><text>rito de pasaje</text><feedback format="html"><text></text></feedback></answer>
   </question>
+  <question type="multichoice">
+    <name><text>5. ¿Cuáles son rasgos de la cultura para la antropología? Ma…</text></name>
+    <questiontext format="html"><text><![CDATA[<p>¿Cuáles son rasgos de la cultura para la antropología? Marcá todas las que correspondan.</p>]]></text></questiontext>
+    <generalfeedback format="html"><text><![CDATA[<p>La cultura se aprende, se comparte y es simbólica.</p>]]></text></generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.3333333</penalty>
+    <hidden>0</hidden>
+    <idnumber></idnumber>
+    <single>false</single>
+    <shuffleanswers>true</shuffleanswers>
+    <answernumbering>abc</answernumbering>
+    <showstandardinstruction>1</showstandardinstruction>
+    <answer fraction="33.33333" format="html"><text><![CDATA[<p>Se aprende</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-50" format="html"><text><![CDATA[<p>Es innata</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="33.33333" format="html"><text><![CDATA[<p>Se comparte</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="-50" format="html"><text><![CDATA[<p>Es individual</p>]]></text><feedback format="html"><text></text></feedback></answer>
+    <answer fraction="33.33333" format="html"><text><![CDATA[<p>Es simbólica</p>]]></text><feedback format="html"><text></text></feedback></answer>
+  </question>
 </quiz>

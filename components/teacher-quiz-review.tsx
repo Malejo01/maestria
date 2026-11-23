@@ -1,5 +1,7 @@
 'use client'
 
+import { ETIQUETA_DE_TIPO } from '@/lib/tipos-moodle'
+import { TIPOS_MOODLE_TEXTOS } from '@/lib/textos'
 import { Cargando } from '@/components/sistema/cargando'
 
 
@@ -88,12 +90,7 @@ interface TeacherQuizReviewProps {
 }
 
 /** Etiqueta legible del tipo, para el badge de cada pregunta. */
-const TIPO_LABEL: Record<Question['type'], string> = {
-  multiple_choice: 'Opción múltiple',
-  true_false: 'Verdadero o falso',
-  numeric: 'Numérica',
-  short_answer: 'Respuesta corta',
-}
+const TIPO_LABEL: Record<Question['type'], string> = ETIQUETA_DE_TIPO
 
 function origenDe(question: Question): 'ai' | 'ai_regenerada' | 'editada' {
   return question.origin ?? 'ai'
@@ -766,6 +763,21 @@ function VistaDePregunta({ question }: { question: Question }) {
         </ul>
       )}
 
+      {question.type === 'multiple_response' && (
+        <ul className="space-y-1">
+          {question.options.map((opcion, i) => (
+            <li
+              key={i}
+              className={cn('flex items-start gap-2 rounded-md px-2 py-1', question.correctAnswers.includes(i) && 'bg-logrado/10 font-semibold')}
+            >
+              <span className="shrink-0 text-xs text-muted-foreground">{String.fromCharCode(65 + i)}.</span>
+              <LaTeXRenderer content={opcion} />
+              {question.correctAnswers.includes(i) && <Check className="ml-auto h-4 w-4 shrink-0 text-logrado" />}
+            </li>
+          ))}
+        </ul>
+      )}
+
       {question.type === 'true_false' && (
         <p className="text-sm">
           Correcta: <strong>{question.correctAnswer ? 'Verdadero' : 'Falso'}</strong>
@@ -823,6 +835,37 @@ function EditorDePregunta({
                   name={`correcta-${question.id}`}
                   checked={question.correctAnswer === i}
                   onChange={() => onChange({ correctAnswer: i } as Partial<Question>)}
+                  aria-label={`Marcar opción ${String.fromCharCode(65 + i)} como correcta`}
+                />
+                <Input
+                  value={opcion}
+                  onChange={(e) => {
+                    const options = [...question.options]
+                    options[i] = e.target.value
+                    onChange({ options } as Partial<Question>)
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </Campo>
+      )}
+
+      {question.type === 'multiple_response' && (
+        <Campo label={TIPOS_MOODLE_TEXTOS.variasCorrectas.editor}>
+          <div className="space-y-2">
+            {question.options.map((opcion, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="size-5 shrink-0 accent-accion"
+                  checked={question.correctAnswers.includes(i)}
+                  onChange={(e) => {
+                    const correctAnswers = e.target.checked
+                      ? [...question.correctAnswers, i].sort((a, b) => a - b)
+                      : question.correctAnswers.filter((x) => x !== i)
+                    onChange({ correctAnswers } as Partial<Question>)
+                  }}
                   aria-label={`Marcar opción ${String.fromCharCode(65 + i)} como correcta`}
                 />
                 <Input

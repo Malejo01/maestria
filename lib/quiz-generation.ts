@@ -13,6 +13,7 @@
  * Si hay que elegir entre "más prolijo" y "idéntico", gana idéntico: los `any`
  * y las ramas tolerantes de abajo están tal como estaban.
  */
+import { problemaDeTipoMoodle } from '@/lib/tipos-moodle'
 import { generateObject, generateText, type RepairTextFunction } from 'ai'
 import { anclarTema } from '@/lib/a-reforzar'
 import { seccionEvitar, type PreguntaAEvitar } from '@/lib/valoraciones'
@@ -103,11 +104,20 @@ const numericQuestionSchema = z.object({
   forma: z.enum(['factorizacion']).optional(),
 })
 
+// Ronda T · F2: varias correctas (Moodle multichoice con single = false).
+const multipleResponseQuestionSchema = z.object({
+  ...baseQuestionFields,
+  type: z.literal('multiple_response'),
+  options: z.array(z.string()),
+  correctAnswers: z.array(z.number()),
+})
+
 const questionSchema = z.discriminatedUnion('type', [
   multipleChoiceQuestionSchema,
   shortAnswerQuestionSchema,
   trueFalseQuestionSchema,
   numericQuestionSchema,
+  multipleResponseQuestionSchema,
 ])
 
 export const quizSchema = z.object({
@@ -132,7 +142,7 @@ export const quizSchema = z.object({
  */
 export type GeneratedQuestion = z.infer<typeof quizSchema>['questions'][number]
 
-export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric'] as const
+export const QUESTION_TYPE_VALUES = ['multiple_choice', 'short_answer', 'true_false', 'numeric', 'multiple_response'] as const
 export type QuestionType = (typeof QUESTION_TYPE_VALUES)[number]
 
 const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
@@ -159,6 +169,12 @@ const PROMPT_FIELD_BLOCKS: Record<QuestionType, string> = {
 - Usalo SOLO cuando la respuesta es un único número que sale de un cálculo o un conteo (ej: "Calculá el MCD(24, 36)" → 12).
 - UNA CONSIGNA, UNA RESPUESTA: hay un solo casillero, así que la pregunta pide exactamente un resultado. NUNCA "calculá la media y la mediana", "el perímetro y el área", "el MCD y el MCM", dos preguntas en una ("¿cuánto…? ¿y cuántos…?") ni "a) … b) …". Si el tema tiene dos cálculos, hacé dos preguntas separadas.
 - NUNCA lo uses para preguntas que se responden con palabras (explicar, justificar, identificar un error, nombrar un concepto o una propiedad), ni para codificar sí/no o verdadero/falso como 1/0. Si la respuesta es conceptual, usá otro de los tipos pedidos.`,
+  multiple_response: `TIPO "multiple_response" (opción múltiple con VARIAS correctas):
+- type: "multiple_response"
+- options: array de 5 strings
+- correctAnswers: array con los índices 0-based de TODAS las correctas: entre 2 y 3 (nunca 1, nunca todas)
+- question: tiene que decir que hay más de una correcta ("Marcá todas las que correspondan", "¿Cuáles de estas…?").
+- Cada opción se juzga sola: correcta o incorrecta, sin "todas las anteriores" ni "ninguna de las anteriores".`,
 }
 
 function buildTypeInstructions(
@@ -213,9 +229,21 @@ function shuffleInPlace<T>(arr: T[]): T[] {
   return arr
 }
 
-/** Shuffles options + remaps correctAnswer for multiple_choice only — every
- *  other type has no options array to shuffle, so it passes through as-is. */
+/** Shuffles options + remaps correctAnswer for multiple_choice (and
+ *  correctAnswers for multiple_response, F2) — every other type has no
+ *  options array to shuffle, so it passes through as-is. */
 function shuffleAndRenumber(question: any, newId: string): any {
+  if (question.type === 'multiple_response') {
+    const conIndice = question.options.map((text: string, index: number) => ({ text, index }))
+    shuffleInPlace(conIndice)
+    const correctas = new Set<number>(question.correctAnswers)
+    return {
+      ...question,
+      id: newId,
+      options: conIndice.map((o: { text: string }) => o.text),
+      correctAnswers: conIndice.flatMap((o: { index: number }, i: number) => (correctas.has(o.index) ? [i] : [])),
+    }
+  }
   if (question.type !== 'multiple_choice') {
     return { ...question, id: newId }
   }
@@ -599,6 +627,8 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
                 return typeof q.correctAnswer === 'number'
               case 'short_answer':
                 return Array.isArray(q.acceptedAnswers) && q.acceptedAnswers.length > 0
+              case 'multiple_response':
+                return Array.isArray(q.options) && q.options.length > 1 && Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0
               default:
                 return false
             }
@@ -1133,6 +1163,12 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     // pide otra pregunta (completa la cantidad).
     if (!tiposDeLaTanda.includes(question.type as QuestionType)) {
       console.log(`[generate-quiz] Dropped (tipo no pedido: ${question.type}):`, question.question)
+      return true
+    }
+    // Ronda T · F2 a F7: un tipo como en Moodle mal armado (varias correctas con una sola) se descarta.
+    const deTipo = problemaDeTipoMoodle(question as Record<string, unknown>)
+    if (deTipo) {
+      console.log(`[generate-quiz] Dropped (${deTipo}):`, question.question)
       return true
     }
     // Ronda T · A5: en una unidad conceptual, ni LaTeX, ni numérica, ni cuentas.

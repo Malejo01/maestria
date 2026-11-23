@@ -7,6 +7,7 @@ import { MultipleChoiceInput } from './multiple-choice-input'
 import { ShortAnswerInput } from './short-answer-input'
 import { TrueFalseInput } from './true-false-input'
 import { NumericInput } from './numeric-input'
+import { MultipleResponseInput } from './multiple-response-input'
 
 export type AnswerSelection =
   | { type: 'multiple_choice'; value: number | null }
@@ -14,6 +15,8 @@ export type AnswerSelection =
   | { type: 'true_false'; value: boolean | null }
   // `texto`: lo que escribió (K2: `6/8` no es `3/4` si pide la irreducible).
   | { type: 'numeric'; value: number | null; texto?: string }
+  // F2: los índices marcados.
+  | { type: 'multiple_response'; value: number[] }
 
 export function emptySelectionFor(question: Question): AnswerSelection {
   switch (question.type) {
@@ -25,6 +28,8 @@ export function emptySelectionFor(question: Question): AnswerSelection {
       return { type: 'true_false', value: null }
     case 'numeric':
       return { type: 'numeric', value: null }
+    case 'multiple_response':
+      return { type: 'multiple_response', value: [] }
   }
 }
 
@@ -94,6 +99,18 @@ export function AnswerInput({
         disabled={disabled}
         isCorrect={isCorrect}
         onChange={(value, texto) => onChange({ type: 'numeric', value, texto })}
+      />
+    )
+  }
+
+  if (question.type === 'multiple_response' && selection.type === 'multiple_response') {
+    return (
+      <MultipleResponseInput
+        question={question}
+        selected={selection.value}
+        submitted={submitted}
+        disabled={disabled}
+        onChange={(value) => onChange({ type: 'multiple_response', value })}
       />
     )
   }

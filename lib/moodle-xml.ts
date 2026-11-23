@@ -1,4 +1,5 @@
 import type { Question, TeacherQuiz } from '@/lib/types'
+import { fraccionesVariasCorrectas } from '@/lib/tipos-moodle'
 import { slugifySubject as toSlug } from '@/lib/subject-slug'
 import { esFactorizacion, factorizar } from '@/lib/factorizacion'
 import { buildCategoryPath, exportQuizToMoodleGift, extractTopicNames, normalizeLogicalNotation, normalizeMathJaxDelimiters } from '@/lib/moodle-export'
@@ -115,6 +116,18 @@ function preguntaXml(question: Question, index: number): string {
         '<unitpenalty>0.1000000</unitpenalty>',
         '<showunits>3</showunits>',
         '<unitsleft>0</unitsleft>',
+      ])
+    }
+    case 'multiple_response': {
+      // F2: multichoice con single = false; las correctas suman 100.
+      const fracciones = fraccionesVariasCorrectas(question.options.length, question.correctAnswers)
+      return pregunta('multichoice', [
+        comun,
+        '<single>false</single>',
+        '<shuffleanswers>true</shuffleanswers>',
+        '<answernumbering>abc</answernumbering>',
+        '<showstandardinstruction>1</showstandardinstruction>',
+        ...question.options.map((opcion, i) => respuestaHtml(fracciones[i], opcion)),
       ])
     }
     case 'short_answer': {

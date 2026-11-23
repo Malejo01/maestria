@@ -194,3 +194,51 @@ describe('P4 · la práctica extra no es un intento de la tarea', () => {
   })
 })
 
+
+describe('Ronda T · F2: una respuesta de varias correctas (y la válvula de la 042)', () => {
+  const varias = {
+    type: 'multiple_response',
+    questionId: 'q1',
+    questionText: '¿Cuáles son rasgos de la cultura?',
+    isCorrect: false,
+    options: ['Se aprende', 'Es innata', 'Se comparte'],
+    selectedAnswers: [0],
+    correctAnswers: [0, 2],
+    topic: 't1',
+    topicName: 'Cultura',
+    explanation: '',
+  }
+  const insertada = () => enTransaccion[0].find((c) => c.texto.includes('INSERT INTO quiz_answers'))!
+
+  it('con la 042: se guarda con su tipo y el payload lleva todo, más lo elegido y lo correcto en texto', async () => {
+    responder = (c) =>
+      c.texto.includes('nextval')
+        ? [{ id: 900 }]
+        : c.texto.includes('pg_constraint')
+          ? [{ def: "CHECK ((question_type = ANY (ARRAY['multiple_choice'::text, 'multiple_response'::text])))" }]
+          : []
+    expect((await POST(pedido({ answers: [varias], correctAnswers: 0, score: 0 }))).status).toBe(200)
+    const fila = insertada()
+    expect(fila.valores[4]).toBe('multiple_response')
+    expect(JSON.parse(String(fila.valores[8]))).toMatchObject({
+      tipo: 'multiple_response',
+      selectedAnswers: [0],
+      correctAnswers: [0, 2],
+      selectedText: 'A) Se aprende',
+      acceptedAnswers: ['A) Se aprende · C) Se comparte'],
+    })
+  })
+
+  it('sin la 042 (el CHECK de la 013): se guarda como respuesta corta, con el tipo real en el payload', async () => {
+    responder = (c) =>
+      c.texto.includes('nextval')
+        ? [{ id: 901 }]
+        : c.texto.includes('pg_constraint')
+          ? [{ def: "CHECK ((question_type = ANY (ARRAY['multiple_choice'::text, 'short_answer'::text, 'true_false'::text, 'numeric'::text])))" }]
+          : []
+    expect((await POST(pedido({ answers: [varias], correctAnswers: 0, score: 0 }))).status).toBe(200)
+    const fila = insertada()
+    expect(fila.valores[4]).toBe('short_answer')
+    expect(JSON.parse(String(fila.valores[8]))).toMatchObject({ tipo: 'multiple_response', selectedText: 'A) Se aprende' })
+  })
+})
