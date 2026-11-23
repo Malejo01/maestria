@@ -18,6 +18,7 @@ const PREGUNTAS: Question[] = [
   { ...base, id: 'q3', type: 'numeric', question: '¿Cuánto es 3/4?', correctAnswer: 0.75, tolerance: 0.01, explanation: '' },
   { ...base, id: 'q4', type: 'numeric', question: '¿Cuánto es 11/12?', correctAnswer: 11 / 12, fraccion: { numerador: 11, denominador: 12 }, explanation: '' },
   { ...base, id: 'q5', type: 'short_answer', question: '¿Capital de Francia?', acceptedAnswers: ['París', 'Paris'], explanation: '' },
+  { ...base, id: 'q6', type: 'multiple_response', question: '¿Cuáles son pares?', options: ['2', '3', '4', '5'], correctAnswers: [0, 2], explanation: '' },
 ]
 
 function quiz(questions: Question[] = PREGUNTAS): TeacherQuiz {
@@ -51,7 +52,7 @@ describe('F1 · convertQuizToMoodleXml', () => {
 
   it('cada tipo va con el suyo de Moodle', () => {
     const tipos = [...xml.matchAll(/<question type="(\w+)">/g)].map((m) => m[1])
-    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer'])
+    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice'])
   })
 
   it('el texto va como HTML: "<" escapado, la matemática en \\( \\), los saltos como <br>, y "]]>" queda escapado adentro del CDATA', () => {
@@ -66,6 +67,10 @@ describe('F1 · convertQuizToMoodleXml', () => {
 
   it('la correcta vale 100 y las demás 0; verdadero o falso con true y false', () => {
     expect(xml.match(/<answer fraction="100" format="html">/g)).toHaveLength(1)
+    // F2: varias correctas, con single = false y las correctas sumando 100.
+    expect(xml).toContain('<single>false</single>')
+    expect(xml.match(/<answer fraction="50" format="html">/g)).toHaveLength(2)
+    expect(xml.match(/<answer fraction="-50" format="html">/g)).toHaveLength(2)
     expect(xml).toContain('<answer fraction="100" format="moodle_auto_format"><text>true</text>')
     expect(xml).toContain('<answer fraction="0" format="moodle_auto_format"><text>false</text>')
   })

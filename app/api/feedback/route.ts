@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { TIPOS_MOODLE } from '@/lib/tipos-moodle'
 import { sql } from '@/lib/db'
 import { getViewer } from '@/lib/auth-session'
 import type { QuestionType } from '@/lib/types'
@@ -21,7 +22,7 @@ const MAX_QUESTION_ID = 128
  */
 const MAX_REPORTS_PER_HOUR = 10
 
-const QUESTION_TYPES: QuestionType[] = ['multiple_choice', 'short_answer', 'true_false', 'numeric']
+const QUESTION_TYPES: QuestionType[] = ['multiple_choice', 'short_answer', 'true_false', 'numeric', ...TIPOS_MOODLE]
 
 function trimTo(value: unknown, max: number): string | null {
   if (typeof value !== 'string') return null

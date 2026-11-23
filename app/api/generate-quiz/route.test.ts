@@ -910,3 +910,30 @@ describe('POST — Ronda T · A4: el área de la materia guía la generación', 
     expect(generateObject.mock.calls[0][0].prompt).toContain('PREFERENCIAS PEDAGOGICAS DEL DOCENTE:\nTrabajo con casos de la vida cotidiana')
   })
 })
+
+describe('POST — Ronda T · F2: varias correctas', () => {
+  const varias = (n: number, correctas: number[]) => ({
+    id: `v${n}`,
+    type: 'multiple_response',
+    topic: 't1',
+    topicName: 'Álgebra',
+    question: `Marcá todas las expresiones equivalentes a ${n}x (caso ${n}).`,
+    options: [`${n}x`, `x·${n}`, `${n}+x`, `x^${n}`, `${2 * n}x/2`],
+    correctAnswers: correctas,
+    explanation: 'Las que valen lo mismo para todo x.',
+  })
+
+  it('al barajar, las correctas siguen siendo las mismas opciones; una con una sola correcta se descarta', async () => {
+    generateObject
+      .mockResolvedValueOnce({ object: { questions: [varias(2, [0, 1, 4]), varias(3, [0]), varias(4, [0, 1, 4])] }, usage: {} })
+      .mockResolvedValueOnce({ object: { questions: [varias(5, [0, 1, 4])] }, usage: {} })
+    const res = await POST(request({ questionTypes: ['multiple_response'], questionCount: 3 }))
+    const { questions: salida } = (await res.json()) as { questions: { options: string[]; correctAnswers: number[]; question: string }[] }
+    expect(salida).toHaveLength(3)
+    expect(salida.some((q) => q.question.includes('caso 3'))).toBe(false)
+    for (const q of salida) {
+      const n = q.question.match(/caso (\d+)/)![1]
+      expect(q.correctAnswers.map((i) => q.options[i]).sort()).toEqual([`${n}x`, `x·${n}`, `${2 * Number(n)}x/2`].sort())
+    }
+  })
+})

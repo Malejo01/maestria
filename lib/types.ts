@@ -36,7 +36,7 @@ export interface Topic {
  * generate-quiz, one new case in components/quiz-answer-inputs, one new case
  * in lib/moodle-export.ts's GIFT builder — no other file needs to change.
  */
-export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric'
+export type QuestionType = 'multiple_choice' | 'short_answer' | 'true_false' | 'numeric' | 'multiple_response'
 
 /**
  * De dónde salió el texto de esta pregunta.
@@ -119,7 +119,19 @@ export interface NumericQuestion extends BaseQuestion {
   forma?: 'factorizacion'
 }
 
-export type Question = MultipleChoiceQuestion | ShortAnswerQuestion | TrueFalseQuestion | NumericQuestion
+/**
+ * Ronda T · F2: opción múltiple con VARIAS correctas (en Moodle, multichoice
+ * con `single = false`). Se corrige todo o nada: vale si marcó exactamente
+ * las correctas.
+ */
+export interface MultipleResponseQuestion extends BaseQuestion {
+  type: 'multiple_response'
+  options: string[]
+  /** Índices 0-based de las correctas (dos o más). */
+  correctAnswers: number[]
+}
+
+export type Question = MultipleChoiceQuestion | ShortAnswerQuestion | TrueFalseQuestion | NumericQuestion | MultipleResponseQuestion
 
 export interface QuizConfig {
   subject: string
@@ -234,7 +246,14 @@ export interface NumericAnswer extends BaseAnswer {
   forma?: 'factorizacion'
 }
 
-export type Answer = MultipleChoiceAnswer | ShortAnswerAnswer | TrueFalseAnswer | NumericAnswer
+export interface MultipleResponseAnswer extends BaseAnswer {
+  type: 'multiple_response'
+  options: string[]
+  selectedAnswers: number[]
+  correctAnswers: number[]
+}
+
+export type Answer = MultipleChoiceAnswer | ShortAnswerAnswer | TrueFalseAnswer | NumericAnswer | MultipleResponseAnswer
 
 export interface QuizResult {
   /**

@@ -1,5 +1,6 @@
 'use client'
 
+import { respuestaGuardadaEnTexto } from '@/lib/tipos-moodle'
 import { Cargando } from '@/components/sistema/cargando'
 
 
@@ -90,6 +91,9 @@ const DEFAULT_SUBJECT_COLOR: SubjectColorName = 'teal'
 /** Formats a saved quiz_answers row's selected/correct value as display text, per question_type. */
 function formatAttemptAnswerText(answer: AttemptAnswer, which: 'selected' | 'correct'): string {
   const payload = answer.answer_payload ?? {}
+  // Ronda T · F2 a F7: los tipos como en Moodle (también guardados como respuesta corta, sin la 042).
+  const moodle = respuestaGuardadaEnTexto(answer.question_type, payload)
+  if (moodle) return which === 'selected' ? moodle.elegido : moodle.correcto
   switch (answer.question_type) {
     case 'true_false': {
       const value = which === 'selected' ? payload.selectedAnswer : payload.correctAnswer

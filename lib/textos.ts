@@ -1739,6 +1739,16 @@ export const SIMULACRO = {
     `Tenés ${minutos} minutos para ${preguntas} preguntas. El tiempo empieza cuando tocás Empezar; si se acaba, el simulacro termina con lo que respondiste.`,
 } as const
 
+/** Ronda T · F2 a F7: los tipos de pregunta "como en Moodle". */
+export const TIPOS_MOODLE_TEXTOS = {
+  variasCorrectas: {
+    consigna: 'Marcá todas las correctas.',
+    grupo: 'Opciones: puede haber más de una correcta',
+    falto: 'Era correcta y no la marcaste.',
+    editor: 'Opciones — marcá todas las correctas',
+  },
+} as const
+
 /** Ronda T · F1: exportar a Moodle, en XML o en GIFT. */
 export const EXPORTAR_MOODLE = {
   boton: 'Exportar a Moodle',

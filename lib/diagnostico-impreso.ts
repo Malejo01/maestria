@@ -1,4 +1,6 @@
 import type { MarcaDePregunta } from '@/lib/diagnostico-resultados'
+import { correctaEnTexto, esTipoMoodle } from '@/lib/tipos-moodle'
+import type { Question } from '@/lib/types'
 import { comaDecimal, respuestaCorrectaNumerica } from '@/lib/numeros'
 import { fraccionValida } from '@/lib/fraccion'
 
@@ -26,10 +28,16 @@ export const letra = (i: number) => LETRAS[i] ?? String(i + 1)
 /** Una pregunta de `teacher_quizzes.questions` lista para el papel. */
 export function preguntaImpresa(cruda: unknown, indice: number): PreguntaImpresa {
   const q = (cruda ?? {}) as Record<string, unknown>
-  const tipo = (['multiple_choice', 'true_false', 'numeric', 'short_answer'].includes(String(q.type)) ? q.type : 'multiple_choice') as PreguntaImpresa['tipo']
+  const moodle = esTipoMoodle(q.type) ? correctaEnTexto(q as unknown as Question) : null
+  const tipo = (
+    moodle !== null ? (Array.isArray(q.options) ? 'multiple_choice' : 'short_answer') : ['multiple_choice', 'true_false', 'numeric', 'short_answer'].includes(String(q.type)) ? q.type : 'multiple_choice'
+  ) as PreguntaImpresa['tipo']
   const opciones = Array.isArray(q.options) ? q.options.map(String) : []
   let correcta = ''
-  if (tipo === 'multiple_choice') {
+  if (moodle !== null) {
+    // Ronda T · F2 a F7: lo correcto en texto (varias correctas: las letras).
+    correcta = moodle
+  } else if (tipo === 'multiple_choice') {
     const i = Number(q.correctAnswer)
     correcta = Number.isInteger(i) && opciones[i] !== undefined ? `${letra(i)}. ${opciones[i]}` : ''
   } else if (tipo === 'true_false') {

@@ -1,4 +1,5 @@
 import { LaTeXRenderer } from '@/components/latex-renderer'
+import { respuestaEnTexto } from '@/lib/tipos-moodle'
 import type { Answer } from '@/lib/types'
 import { respuestaCorrectaNumerica, respuestaEscrita } from '@/lib/numeros'
 
@@ -18,6 +19,9 @@ function formatValue(answer: Answer, which: 'selected' | 'correct'): string {
     }
     case 'short_answer':
       return which === 'selected' ? answer.selectedText : answer.acceptedAnswers.join(' / ')
+    default:
+      // Ronda T · F2 a F7: los tipos como en Moodle.
+      return respuestaEnTexto(answer, which) ?? ''
   }
 }
 

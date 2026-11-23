@@ -8,10 +8,11 @@
  * conteo de intentos. Se guarda como práctica del grupo (assignment_id NULL,
  * classroom_id del grupo, `practica_extra_id`) y el docente la ve aparte.
  */
+import { TIPOS_MOODLE } from '@/lib/tipos-moodle'
 import type { QuestionType } from '@/lib/types'
 
 /** Los tipos del motor (la lista de lib/quiz-generation.ts; ése no se importa acá porque arrastra la IA al navegador). */
-const TIPOS: readonly QuestionType[] = ['multiple_choice', 'short_answer', 'true_false', 'numeric']
+const TIPOS: readonly QuestionType[] = ['multiple_choice', 'short_answer', 'true_false', 'numeric', ...TIPOS_MOODLE]
 
 /** Por alumno, por tarea y por día (de Argentina). */
 export const TOPE_PRACTICAS_EXTRA = 3
