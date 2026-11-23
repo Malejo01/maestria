@@ -1,6 +1,6 @@
 'use client'
 
-import { corregirEmparejamiento, corregirOrden, corregirVariasCorrectas, tipoParaAtajos } from '@/lib/tipos-moodle'
+import { cantidadDeHuecos, corregirEmparejamiento, corregirHuecos, corregirOrden, corregirVariasCorrectas, tipoParaAtajos } from '@/lib/tipos-moodle'
 import { useCuentaRegresiva, formatearTiempo } from '@/hooks/use-cuenta-regresiva'
 import { SIMULACRO } from '@/lib/textos'
 import { revanchaPermitida } from '@/lib/revancha'
@@ -296,6 +296,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
     if (question.type === 'ordering' && selection.type === 'ordering') {
       return { ...base, type: 'ordering', items: question.items, selectedOrder: selection.value }
     }
+    if ((question.type === 'gapselect' || question.type === 'ddwtos') && (selection.type === 'gapselect' || selection.type === 'ddwtos')) {
+      return { ...base, type: question.type, text: question.text, choices: question.choices, selectedChoices: selection.value }
+    }
     throw new Error('Selection type does not match question type')
   }, [])
 
@@ -459,6 +462,16 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       return
     }
 
+    // F5: huecos, todo o nada.
+    if ((currentQuestion.type === 'gapselect' || currentQuestion.type === 'ddwtos') && (selection.type === 'gapselect' || selection.type === 'ddwtos')) {
+      if (selection.value.some((v) => v === null)) return
+      const isCorrect = corregirHuecos(selection.value, cantidadDeHuecos(currentQuestion.text))
+      setAnswerState(prev => ({ ...prev, submitted: true, isCorrect }))
+      answerQuestion(buildAnswer(currentQuestion, selection, isCorrect))
+      avanzarSinDevolucion()
+      return
+    }
+
     // F4: ordenamiento, el orden exacto.
     if (currentQuestion.type === 'ordering' && selection.type === 'ordering') {
       const isCorrect = corregirOrden(selection.value)
@@ -530,6 +543,9 @@ function QuizQuestionRunner({ question: currentQuestion }: { question: Question 
       // F4: el orden en que esté es una respuesta.
       case 'ordering':
         return true
+      case 'gapselect':
+      case 'ddwtos':
+        return selection.value.every((v) => v !== null)
     }
   })()
 

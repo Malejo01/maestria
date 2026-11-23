@@ -1,6 +1,6 @@
 'use client'
 
-import { ETIQUETA_DE_TIPO } from '@/lib/tipos-moodle'
+import { cantidadDeHuecos, correctaEnTexto, ETIQUETA_DE_TIPO } from '@/lib/tipos-moodle'
 import { TIPOS_MOODLE_TEXTOS } from '@/lib/textos'
 import { Cargando } from '@/components/sistema/cargando'
 
@@ -805,6 +805,17 @@ function VistaDePregunta({ question }: { question: Question }) {
         </ol>
       )}
 
+      {(question.type === 'gapselect' || question.type === 'ddwtos') && (
+        <div className="space-y-1">
+          <p className="rounded-md bg-logrado/10 px-2 py-1">{correctaEnTexto(question)}</p>
+          {question.choices.length > cantidadDeHuecos(question.text) && (
+            <p className="px-2 text-xs text-muted-foreground">
+              {TIPOS_MOODLE_TEXTOS.emparejamiento.distractores}: {question.choices.slice(cantidadDeHuecos(question.text)).join(' · ')}
+            </p>
+          )}
+        </div>
+      )}
+
       {question.type === 'true_false' && (
         <p className="text-sm">
           Correcta: <strong>{question.correctAnswer ? 'Verdadero' : 'Falso'}</strong>
@@ -954,6 +965,21 @@ function EditorDePregunta({
             onChange={(e) => onChange({ items: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) } as Partial<Question>)}
           />
         </Campo>
+      )}
+
+      {(question.type === 'gapselect' || question.type === 'ddwtos') && (
+        <>
+          <Campo label={TIPOS_MOODLE_TEXTOS.huecos.editorTexto}>
+            <Textarea rows={4} value={question.text} onChange={(e) => onChange({ text: e.target.value } as Partial<Question>)} />
+          </Campo>
+          <Campo label={TIPOS_MOODLE_TEXTOS.huecos.editorPalabras}>
+            <Textarea
+              rows={5}
+              value={question.choices.join('\n')}
+              onChange={(e) => onChange({ choices: e.target.value.split('\n').map((s) => s.trim()).filter(Boolean) } as Partial<Question>)}
+            />
+          </Campo>
+        </>
       )}
 
       {question.type === 'true_false' && (

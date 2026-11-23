@@ -1767,6 +1767,19 @@ export const TIPOS_MOODLE_TEXTOS = {
     editor: 'Elementos en el orden correcto — uno por línea',
     lugar: (n: number) => `Lugar ${n}`,
   },
+  huecos: {
+    consignaSeleccionar: 'Elegí la palabra de cada hueco.',
+    consignaArrastrar: 'Tocá una palabra y después el hueco donde va.',
+    elegir: 'Elegí…',
+    hueco: (n: number) => `Hueco ${n}`,
+    huecoCon: (n: number, palabra: string | null) => (palabra ? `Hueco ${n}: ${palabra}. Tocalo para sacarla.` : `Hueco ${n}: vacío`),
+    banco: 'Palabras para poner',
+    tocaPalabra: 'Tocá una palabra.',
+    tocaHueco: (palabra: string) => `Ahora tocá el hueco donde va "${palabra}".`,
+    correctas: (palabras: string[]) => `Correctas, en orden: ${palabras.join(' · ')}`,
+    editorTexto: 'Texto — los huecos como [[1]], [[2]], [[3]]…',
+    editorPalabras: 'Palabras — primero la de cada hueco, en orden; después las de más. Una por línea',
+  },
 } as const
 
 /** Ronda T · F1: exportar a Moodle, en XML o en GIFT. */

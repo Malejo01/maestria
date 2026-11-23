@@ -425,3 +425,17 @@ describe('Ronda T · F4: ordenamiento en GIFT', () => {
     expect(gift).toContain('{\n=Lugar 1 -> Paleolítico\n=Lugar 2 -> Neolítico\n=Lugar 3 -> Edad de los metales\n}')
   })
 })
+
+describe('Ronda T · F5: huecos en GIFT', () => {
+  it('GIFT no tiene huecos múltiples: el texto con (n) ___ y cada hueco emparejado con su palabra', () => {
+    const gift = convertQuizToGift(
+      makeQuiz({
+        questions: [
+          { id: 'q1', type: 'gapselect', topic: 't', topicName: 'T', question: 'Completá el texto.', text: 'El [[1]] y la [[2]] y el [[3]].', choices: ['precio', 'cantidad', 'mercado', 'renta'], explanation: '' },
+        ],
+      }),
+    )
+    expect(gift).toContain('::Q1::Completá el texto.\nEl (1) ___ y la (2) ___ y el (3) ___. {\n=Hueco 1 -> precio\n=Hueco 2 -> cantidad\n=Hueco 3 -> mercado\n}')
+    expect(gift).not.toContain('renta')
+  })
+})

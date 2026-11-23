@@ -33,6 +33,8 @@ const PREGUNTAS: Question[] = [
     explanation: '',
   },
   { ...base, id: 'q8', type: 'ordering', question: 'Ordená de la más antigua a la más reciente.', items: ['Paleolítico', 'Neolítico', 'Edad de los metales'], explanation: '' },
+  { ...base, id: 'q9', type: 'gapselect', question: 'Completá el texto.', text: 'Si sube el [[1]], baja la [[2]] demandada; la curva de [[3]] baja.', choices: ['precio', 'cantidad', 'demanda', 'oferta'], explanation: '' },
+  { ...base, id: 'q10', type: 'ddwtos', question: 'Arrastrá las palabras.', text: 'El [[1]] es el [[2]] de la [[3]].', choices: ['etnocentrismo', 'opuesto', 'relatividad', 'origen'], explanation: '' },
 ]
 
 function quiz(questions: Question[] = PREGUNTAS): TeacherQuiz {
@@ -66,7 +68,11 @@ describe('F1 · convertQuizToMoodleXml', () => {
 
   it('cada tipo va con el suyo de Moodle', () => {
     const tipos = [...xml.matchAll(/<question type="(\w+)">/g)].map((m) => m[1])
-    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice', 'matching', 'ordering'])
+    expect(tipos).toEqual(['category', 'multichoice', 'truefalse', 'numerical', 'numerical', 'shortanswer', 'multichoice', 'matching', 'ordering', 'gapselect', 'ddwtos'])
+    // F5: la consigna y el texto con [[n]] en el enunciado; las palabras como selectoption / dragbox.
+    expect(xml).toContain('<p>Completá el texto.</p><p>Si sube el [[1]], baja la [[2]] demandada; la curva de [[3]] baja.</p>')
+    expect(xml).toContain('<selectoption><text>precio</text><group>1</group></selectoption>')
+    expect(xml).toContain('<dragbox><text>relatividad</text><group>1</group></dragbox>')
     // F4: cada elemento en el orden correcto, con su lugar como fracción.
     expect(xml).toContain('<answer fraction="2.0000000" format="html"><text><![CDATA[<p>Neolítico</p>]]></text>')
     // F3: cada par un subquestion; el distractor, uno sin texto; la respuesta en texto plano escapado.
