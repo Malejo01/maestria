@@ -726,6 +726,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
         minQuestionCount={MIN_QUESTION_COUNT}
         maxQuestionCount={MAX_QUESTION_COUNT}
         showQuestionTypeSelector
+        conMasTipos={userProfile?.role === 'DOCENTE'}
         questionTypes={selectedQuestionTypes}
         onQuestionTypesChange={(tipos) => {
           setTocoLosTipos(true)

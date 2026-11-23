@@ -42,6 +42,8 @@ interface QuizModeDialogProps {
   showQuestionTypeSelector?: boolean
   questionTypes?: QuestionType[]
   onQuestionTypesChange?: (next: QuestionType[]) => void
+  /** Ronda T · F8: los tipos como en Moodle (sólo el docente). */
+  conMasTipos?: boolean
   /** Ronda T · A4: con el área, los modos dicen lo que significan en ella. */
   area?: AreaId
 }
@@ -95,6 +97,7 @@ export function QuizModeDialog({
   showQuestionTypeSelector = false,
   questionTypes = ['multiple_choice'],
   onQuestionTypesChange,
+  conMasTipos = false,
   area,
 }: QuizModeDialogProps) {
   const tarjetas = area
@@ -190,6 +193,7 @@ export function QuizModeDialog({
             <div className="rounded-2xl border-2 border-border/70 bg-muted/20 p-4 space-y-2">
               <p className="text-sm font-semibold text-foreground">Tipos de pregunta</p>
               <QuestionTypeSelector
+                conMasTipos={conMasTipos}
                 value={questionTypes}
                 onChange={(next) => onQuestionTypesChange?.(next)}
                 disabled={isLoading}
