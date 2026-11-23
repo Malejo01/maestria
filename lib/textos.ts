@@ -2148,3 +2148,11 @@ export const BANCO = {
   quitarTodas: 'Quitar todas',
   elegir: (texto: string) => `Elegir: ${texto.slice(0, 60)}`,
 } as const
+
+/** Ronda W · W2: duplicar una tarea y mandarla a otro grupo. */
+export const DUPLICAR_TAREA = {
+  boton: 'Duplicar y mandar',
+  botonGrupo: 'Duplicar a otro grupo',
+  duplicando: 'Duplicando…',
+  noSePudo: 'No se pudo duplicar la tarea. Probá de nuevo.',
+} as const

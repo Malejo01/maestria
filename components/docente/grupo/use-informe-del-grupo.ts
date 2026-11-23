@@ -39,6 +39,8 @@ export interface TemaDelGrupo extends TemaFlojo {
 
 export interface TareaDelInforme {
   id: number
+  /** W2: el cuestionario de la tarea. */
+  teacherQuizId?: number
   title: string
   questionCount: number
   opensAt: string | null

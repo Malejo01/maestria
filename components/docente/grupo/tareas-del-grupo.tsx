@@ -1,5 +1,9 @@
 'use client'
 
+import type { TeacherQuiz } from '@/lib/types'
+import { tareaDesdeFila } from '@/lib/tarea-docente'
+import { exportarParaMoodle } from '@/lib/moodle-xml'
+import { ShareQuizDialog } from '@/components/share-quiz-dialog'
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { Trash2, Users } from 'lucide-react'
@@ -8,7 +12,7 @@ import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { formatDateTime, formatScore } from '@/components/classroom-report-parts'
 import { tamanoDeTarea } from '@/lib/diagnostico'
 import { pedirJson } from '@/lib/pedir-json'
-import { ASIGNACIONES_INDIVIDUALES, PAGINA_DEL_GRUPO } from '@/lib/textos'
+import { ASIGNACIONES_INDIVIDUALES, DUPLICAR_TAREA, PAGINA_DEL_GRUPO } from '@/lib/textos'
 import type { TareaDelInforme } from './use-informe-del-grupo'
 import { PlanillaDeTarea } from './planilla-de-tarea'
 
@@ -30,6 +34,20 @@ export function TareasDelGrupo({
 }) {
   const [error, setError] = useState<string | null>(null)
   const [ocupada, setOcupada] = useState<number | null>(null)
+  // W2: la copia que se está mandando a otro grupo.
+  const [copia, setCopia] = useState<TeacherQuiz | null>(null)
+
+  async function duplicar(tarea: TareaDelInforme) {
+    if (!tarea.teacherQuizId) return
+    setOcupada(tarea.id)
+    const res = await pedirJson<{ quiz: Record<string, unknown> }>(`/api/teacher/quizzes/${tarea.teacherQuizId}/duplicar`, { method: 'POST' })
+    setOcupada(null)
+    if ('error' in res) {
+      setError(DUPLICAR_TAREA.noSePudo)
+      return
+    }
+    setCopia(tareaDesdeFila(res.data.quiz))
+  }
   const delGrupo = tareas.filter((t) => !t.individual)
   const router = useRouter()
   const ruta = usePathname()
@@ -100,6 +118,11 @@ export function TareasDelGrupo({
                 <Users aria-hidden="true" strokeWidth={TRAZO_ICONO} />
                 {tareaAbierta?.id === tarea.id ? T.ocultarQuienes : T.verQuienes}
               </Boton>
+              {tarea.teacherQuizId && (
+                <Boton variante="secundario" disabled={ocupada === tarea.id} onClick={() => void duplicar(tarea)}>
+                  {DUPLICAR_TAREA.botonGrupo}
+                </Boton>
+              )}
               <Boton variante="secundario" disabled={ocupada === tarea.id} onClick={() => void quitar(tarea)}>
                 <Trash2 aria-hidden="true" strokeWidth={TRAZO_ICONO} />
                 {T.quitar}
@@ -140,6 +163,17 @@ export function TareasDelGrupo({
           </ul>
         </div>
       )}
+      <ShareQuizDialog
+        open={copia !== null}
+        onOpenChange={(abre) => {
+          if (!abre) {
+            setCopia(null)
+            alCambiar()
+          }
+        }}
+        quiz={copia}
+        onExportMoodle={(formato) => copia && exportarParaMoodle(copia, formato)}
+      />
     </section>
   )
 }

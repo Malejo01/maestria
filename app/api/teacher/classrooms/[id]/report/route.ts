@@ -105,6 +105,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       `,
       sql`
         SELECT a.id,
+               a.teacher_quiz_id,
                a.due_at,
                a.opens_at,
                a.max_attempts,
@@ -226,6 +227,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         const individual = !esDelGrupo(destinatarioDeFila(row))
         return {
           id: Number(row.id),
+          // W2: el cuestionario, para duplicarlo y mandarlo a otro grupo.
+          teacherQuizId: Number(row.teacher_quiz_id),
           title: String(row.title),
           questionCount: Number(row.question_count),
           opensAt: row.opens_at,

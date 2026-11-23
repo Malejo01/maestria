@@ -1,5 +1,8 @@
 'use client'
 
+import { tareaDesdeFila } from '@/lib/tarea-docente'
+import { pedirJson } from '@/lib/pedir-json'
+import { DUPLICAR_TAREA } from '@/lib/textos'
 import { BANCO } from '@/lib/textos'
 import Link from 'next/link'
 import { ComoFunciona } from '@/components/sistema/como-funciona'
@@ -64,6 +67,21 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
 
   /** La tarea que está pidiendo confirmación para borrarse, o null. */
   const [borrando, setBorrando] = useState<number | null>(null)
+
+  // W2: duplicar una tarea (sin generar) y abrir el envío con la copia.
+  const [duplicando, setDuplicando] = useState<number | null>(null)
+  async function duplicarYMandar(quizId: number) {
+    setDuplicando(quizId)
+    const res = await pedirJson<{ quiz: Record<string, unknown> }>(`/api/teacher/quizzes/${quizId}/duplicar`, { method: 'POST' })
+    setDuplicando(null)
+    if ('error' in res) {
+      toast({ title: DUPLICAR_TAREA.noSePudo, description: res.error })
+      return
+    }
+    const copia = tareaDesdeFila(res.data.quiz)
+    setTeacherQuizzes([copia, ...teacherQuizzes])
+    setSharingQuiz(copia)
+  }
 
   // N2: corregir en lote las preguntas cuyo tipo no encaja con la consigna.
   const { toast } = useToast()
@@ -226,6 +244,9 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                         </Boton>
                         <Boton variante="secundario" onClick={() => handlePreviewQuiz(quiz)}>
                           {T.verComoAlumno}
+                        </Boton>
+                        <Boton variante="secundario" disabled={duplicando === quiz.id} onClick={() => void duplicarYMandar(quiz.id)}>
+                          {duplicando === quiz.id ? DUPLICAR_TAREA.duplicando : DUPLICAR_TAREA.boton}
                         </Boton>
                         <Boton variante="secundario" onClick={() => handleRunQuiz(quiz)}>
                           {T.probar}
