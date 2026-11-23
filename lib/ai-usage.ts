@@ -25,6 +25,8 @@ export const MODEL_PRICING_USD_PER_MTOK: Record<string, { input: number; output:
   'gemini-2.5-flash-lite': { input: 0.1, output: 0.4 },
   // Tarifa estándar pública verificada el 30/09/2026 (entrada de texto).
   'gemini-3.1-flash-lite': { input: 0.25, output: 1.5 },
+  // Ronda Y · Y4: sólo para la medición contra Gemini (la app no lo usa). Prompts de hasta 100K tokens.
+  'claude-haiku-5-5': { input: 0.1, output: 0.5 },
 }
 
 const FALLBACK_PRICING = MODEL_PRICING_USD_PER_MTOK['gemini-2.5-flash']

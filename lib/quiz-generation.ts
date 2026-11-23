@@ -17,7 +17,7 @@ import { limpiarGrafico, temasDeFunciones } from '@/lib/grafico'
 import { instanciarCalculada } from '@/lib/calculada'
 import { problemaDeTipoMoodle } from '@/lib/tipos-moodle'
 import { MOTIVO_DE_CALIDAD, problemaDeCalidad, type ProblemaDeCalidad } from '@/lib/validar-tipos-moodle'
-import { generateObject, generateText, type RepairTextFunction } from 'ai'
+import { generateObject, generateText, type LanguageModel, type RepairTextFunction } from 'ai'
 import { anclarTema } from '@/lib/a-reforzar'
 import { seccionEvitar, type PreguntaAEvitar } from '@/lib/valoraciones'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
@@ -572,6 +572,7 @@ async function generateQuizBatchWithFallback({
   notacion,
   sinCalculo,
   onUsage,
+  modelo,
 }: {
   subject: string
   curriculum: string
@@ -605,6 +606,8 @@ async function generateQuizBatchWithFallback({
    * rate limit, y el dashboard tiene que reflejarlo.
    */
   onUsage?: (usage: AiSdkUsage | undefined) => void
+  /** Ronda Y · Y4: SÓLO para medir otro modelo (scripts/qa/comparar-gemini-claude.ts). Sin esto, el de siempre. */
+  modelo?: LanguageModel
 }) {
   const educationPrompt = buildEducationSystemPrompt({
     nivel,
@@ -657,7 +660,7 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
 
   try {
     const { object, usage } = await generateObject({
-      model: google(AI_MODEL),
+      model: modelo ?? google(AI_MODEL),
       schema: quizSchema,
       schemaName: 'quizQuestions',
       schemaDescription: `Objeto JSON con exactamente ${questionCount} preguntas, cada una con los campos correspondientes a su "type" (${questionTypes.join(', ')}).`,
@@ -687,7 +690,7 @@ IMPORTANTE: Responde SOLO JSON válido comenzando con { y terminando con }`
     for (let retryAttempt = 0; retryAttempt < 2; retryAttempt++) {
       try {
         const response = await generateText({
-          model: google(AI_MODEL),
+          model: modelo ?? google(AI_MODEL),
           system: systemPrompt,
           prompt: userPrompt,
           maxOutputTokens: 8000,
@@ -1205,6 +1208,8 @@ export async function generateQuiz(
   params: QuizRequestParams,
   onUsage?: (usage: AiSdkUsage | undefined) => void,
   observar?: ObservadorDeGeneracion,
+  /** Ronda Y · Y4: SÓLO para medir otro modelo. La app nunca lo pasa: el modelo por defecto no cambia. */
+  opciones?: { modelo?: LanguageModel },
 ): Promise<GenerateQuizResult> {
   const {
     subject,
@@ -1458,7 +1463,7 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
 
   /** U4: la tanda del modelo, tal cual, para quien observa; después se filtra como siempre. */
   const pedirTanda = async (p: Parameters<typeof generateQuizBatch>[0]) => {
-    const tanda = await generateQuizBatch(p)
+    const tanda = await generateQuizBatch(opciones?.modelo ? { ...p, modelo: opciones.modelo } : p)
     observar?.tanda?.(tanda as Record<string, unknown>[])
     return tanda
   }
