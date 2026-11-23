@@ -4,6 +4,21 @@
  */
 
 /** Lexical fingerprint: same words, ignoring LaTeX, case, accents and punctuation. */
+/**
+ * Ronda U · U4 — Lo que distingue a una pregunta de otra, en texto. En los
+ * tipos de Moodle la consigna suele ser genérica ("Completá el texto con las
+ * palabras que faltan.", "Uní cada concepto con su definición.") y lo que
+ * cambia está en el texto con huecos, los pares o los pasos: comparar sólo la
+ * consigna descartaba como repetida la segunda de cada tipo.
+ */
+export function contenidoParaComparar(q: { question?: unknown; text?: unknown; pairs?: unknown; items?: unknown; plantilla?: unknown }): string {
+  const partes = [String(q.plantilla ?? q.question ?? '')]
+  if (typeof q.text === 'string') partes.push(q.text)
+  if (Array.isArray(q.pairs)) partes.push(q.pairs.map((p: { left?: unknown }) => String(p?.left ?? '')).join(' · '))
+  if (Array.isArray(q.items)) partes.push(q.items.map(String).join(' · '))
+  return partes.filter((p) => p.trim()).join(' — ')
+}
+
 export function normalizeQuestionText(text: string): string {
   return text
     .toLowerCase()

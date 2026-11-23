@@ -1,0 +1,984 @@
+{
+ "costoUsd": 0.051227,
+ "corridas": [
+  {
+   "programa": "matematica-i",
+   "corrida": 1,
+   "modo": "practico",
+   "pedidos": [
+    "multiple_response",
+    "matching",
+    "ordering",
+    "missing_word",
+    "multiple_choice"
+   ],
+   "ok": true,
+   "avisos": [],
+   "crudas": {
+    "multiple_choice": 16,
+    "multiple_response": 1,
+    "matching": 1,
+    "ordering": 1,
+    "missing_word": 1
+   },
+   "descartes": [],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u1-t1",
+     "topicName": "Operaciones con fracciones",
+     "question": "Considerando la expresión $\\frac{2}{3} + \\frac{1}{4} \\div \\frac{1}{2}$, determine el resultado correcto operando según la jerarquía de las operaciones.",
+     "explanation": "Es fundamental aplicar la jerarquía de operaciones: primero se resuelve la división de fracciones multiplicando por el recíproco y luego la suma. El error común es sumar antes de dividir.",
+     "type": "multiple_choice",
+     "options": [
+      "$\\frac{11}{12}$",
+      "$\\frac{7}{6}$",
+      "$\\frac{1}{3}$",
+      "$\\frac{5}{6}$"
+     ],
+     "correctAnswer": 1
+    },
+    {
+     "id": "q2",
+     "topic": "u2-t1",
+     "topicName": "Ecuaciones lineales",
+     "question": "Dada la ecuación lineal $3(x - 2) - 2(x + 1) = 5$, identifique el valor de $x$ que satisface la igualdad.",
+     "explanation": "Se debe aplicar la propiedad distributiva para eliminar los paréntesis, agrupar los términos con $x$ y despejar la incógnita. Un error frecuente es omitir el cambio de signo al distribuir el $-2$.",
+     "type": "multiple_choice",
+     "options": [
+      "$x = 1$",
+      "$x = 9$",
+      "$x = 13$",
+      "$x = 3$"
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q3",
+     "topic": "u2-t2",
+     "topicName": "Ecuaciones cuadráticas",
+     "question": "Para la ecuación cuadrática $x^2 - 5x + 6 = 0$, seleccione el conjunto de soluciones reales que la satisfacen.",
+     "explanation": "La ecuación puede resolverse mediante factorización del trinomio o aplicando la fórmula de Bhaskara. Las raíces son los valores que anulan la expresión cuadrática.",
+     "type": "multiple_choice",
+     "options": [
+      "$\\{-2, -3\\}$",
+      "$\\{1, 6\\}$",
+      "$\\{2, 3\\}$",
+      "$\\{-1, -6\\}$"
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q4",
+     "topic": "u3-t1",
+     "topicName": "Función lineal",
+     "question": "Dada la función lineal $f(x) = -2x + 4$, identifique el punto de intersección con el eje de las abscisas.",
+     "explanation": "La intersección con el eje $x$ ocurre cuando $f(x) = 0$. Al resolver $-2x + 4 = 0$, obtenemos el valor de la raíz de la función.",
+     "type": "multiple_choice",
+     "options": [
+      "$(0, 2)$",
+      "$(2, 0)$",
+      "$(0, 4)$",
+      "$(4, 0)$"
+     ],
+     "correctAnswer": 1
+    },
+    {
+     "id": "q5",
+     "topic": "u3-t1",
+     "topicName": "Función lineal",
+     "question": "Elegí la palabra que falta.",
+     "explanation": "En una función lineal de la forma $f(x) = mx + b$, el parámetro $m$ determina la inclinación de la recta respecto al eje de las abscisas, mientras que $b$ indica el punto de corte con el eje vertical.",
+     "type": "missing_word",
+     "text": "En la función lineal $f(x) = -3x + 7$, el valor $-3$ representa la [[1]] de la recta.",
+     "options": [
+      "raíz",
+      "ordenada",
+      "abscisa",
+      "pendiente"
+     ],
+     "correctAnswer": 3
+    },
+    {
+     "id": "q6",
+     "topic": "u2-t2",
+     "topicName": "Ecuaciones cuadráticas",
+     "question": "Ordená los pasos necesarios para resolver la ecuación cuadrática $x^2 - 4x - 5 = 0$ mediante factorización.",
+     "explanation": "El método de factorización consiste en expresar el trinomio como producto de binomios, igualar cada factor a cero y despejar la variable para hallar las raíces.",
+     "type": "ordering",
+     "items": [
+      "Identificar dos números que sumen -4 y multipliquen -5",
+      "Escribir la ecuación como $(x - 5)(x + 1) = 0$",
+      "Igualar cada factor a cero: $x - 5 = 0$ y $x + 1 = 0$",
+      "Determinar el conjunto solución: $\\{5, -1\\}$"
+     ]
+    },
+    {
+     "id": "q7",
+     "topic": "u2-t1",
+     "topicName": "Ecuaciones lineales",
+     "question": "Relacioná cada ecuación lineal con su respectiva solución $x$.",
+     "explanation": "La resolución de ecuaciones lineales requiere despejar la incógnita aplicando propiedades de igualdad, asegurando que el valor obtenido verifique la ecuación original.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "$5x - 7 = 3$",
+       "right": "2"
+      },
+      {
+       "left": "$2(x + 4) = 10$",
+       "right": "1"
+      },
+      {
+       "left": "$3x + 1 = x + 9$",
+       "right": "4"
+      },
+      {
+       "left": "$x - 5 = 2x - 10$",
+       "right": "5"
+      }
+     ],
+     "distractors": [
+      "3",
+      "0"
+     ]
+    },
+    {
+     "id": "q8",
+     "topic": "u1-t1",
+     "topicName": "Operaciones con fracciones",
+     "question": "Marcá todas las opciones que representan un resultado equivalente a la operación $\\frac{3}{8} + \\frac{5}{6} \\cdot \\frac{3}{4}$.",
+     "explanation": "Para resolver esta expresión, primero se debe realizar la multiplicación siguiendo la jerarquía de operaciones y luego la suma, simplificando el resultado final a su mínima expresión.",
+     "type": "multiple_response",
+     "options": [
+      "$\\frac{15}{12}$",
+      "$\\frac{27}{24}$",
+      "$\\frac{3}{8} + \\frac{15}{24}$",
+      "$\\frac{9}{8}$",
+      "$\\frac{1}{8} + \\frac{5}{8}$"
+     ],
+     "correctAnswers": [
+      1,
+      2,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "programa": "microeconomia",
+   "corrida": 1,
+   "modo": "practico",
+   "pedidos": [
+    "multiple_response",
+    "matching",
+    "ordering",
+    "missing_word",
+    "multiple_choice"
+   ],
+   "ok": true,
+   "avisos": [],
+   "crudas": {
+    "multiple_choice": 16,
+    "multiple_response": 1,
+    "matching": 1,
+    "ordering": 1,
+    "missing_word": 1
+   },
+   "descartes": [],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u1-t3",
+     "topicName": "Elasticidad precio de la demanda",
+     "question": "Si el precio de un bien aumenta de 100 a 120 pesos y la cantidad demandada cae de 500 a 400 unidades, ¿cuál es el valor absoluto de la elasticidad precio de la demanda utilizando el método del punto medio?",
+     "explanation": "La elasticidad arco se calcula como el cambio porcentual en la cantidad dividido el cambio porcentual en el precio, usando promedios. En este caso, la variación porcentual en cantidad es 22,2 % y en precio es 18,2 %, resultando en un valor aproximado de 1,22.",
+     "type": "multiple_choice",
+     "options": [
+      "0,82",
+      "0,50",
+      "1,50",
+      "1,22"
+     ],
+     "correctAnswer": 3
+    },
+    {
+     "id": "q2",
+     "topic": "u3-t1",
+     "topicName": "Competencia perfecta",
+     "question": "En un mercado de competencia perfecta, si todas las empresas obtienen beneficios económicos extraordinarios a corto plazo, ¿qué sucederá en el largo plazo?",
+     "explanation": "En competencia perfecta, la libre entrada de empresas desplaza la curva de oferta de mercado hacia la derecha, reduciendo el precio hasta que los beneficios extraordinarios desaparecen y se alcanza el equilibrio de largo plazo.",
+     "type": "multiple_choice",
+     "options": [
+      "Nuevas empresas ingresarán al mercado desplazando la oferta a la derecha.",
+      "El precio de mercado aumentará debido a la mayor demanda.",
+      "Las empresas existentes reducirán su producción para elevar el precio.",
+      "El mercado se transformará automáticamente en un monopolio."
+     ],
+     "correctAnswer": 0
+    },
+    {
+     "id": "q3",
+     "topic": "u3-t2",
+     "topicName": "Monopolio",
+     "question": "Un monopolista enfrenta una función de demanda $Q = 100 - 2P$ y tiene un costo marginal constante de 10 pesos. ¿Cuál es el precio que maximiza sus beneficios?",
+     "explanation": "El monopolista maximiza beneficios donde $IMg = CMg$. Dada la demanda inversa $P = 50 - 0,5Q$, el ingreso marginal es $IMg = 50 - Q$. Igualando a $CMg = 10$, obtenemos $Q = 40$ y $P = 30$.",
+     "type": "multiple_choice",
+     "options": [
+      "30 pesos",
+      "10 pesos",
+      "40 pesos",
+      "20 pesos"
+     ],
+     "correctAnswer": 0
+    },
+    {
+     "id": "q4",
+     "topic": "u1-t2",
+     "topicName": "Equilibrio de mercado",
+     "question": "Si en un mercado de trigo en Argentina se observa un aumento simultáneo en el precio de equilibrio y en la cantidad de equilibrio, ¿cuál es la causa más probable?",
+     "explanation": "Un desplazamiento de la curva de demanda hacia la derecha, manteniendo la oferta constante, genera un aumento tanto en el precio como en la cantidad de equilibrio del mercado.",
+     "type": "multiple_choice",
+     "options": [
+      "Una disminución en el precio de un bien sustituto.",
+      "Una mejora tecnológica en la cosecha.",
+      "Un aumento en los costos de los fertilizantes.",
+      "Un aumento en el ingreso de los consumidores."
+     ],
+     "correctAnswer": 3
+    },
+    {
+     "id": "q5",
+     "topic": "u1-t3",
+     "topicName": "Elasticidad precio de la demanda",
+     "question": "Elegí la palabra que falta.",
+     "explanation": "La elasticidad precio de la demanda mide la sensibilidad de la cantidad demandada ante cambios en el precio. Cuando el valor absoluto es mayor a uno, se dice que la demanda es elástica, indicando una respuesta proporcionalmente mayor.",
+     "type": "missing_word",
+     "text": "Si ante una variación porcentual en el precio, la cantidad demandada varía en una proporción mayor, se dice que la demanda es [[1]].",
+     "options": [
+      "unitaria",
+      "inelástica",
+      "perfecta",
+      "elástica"
+     ],
+     "correctAnswer": 3
+    },
+    {
+     "id": "q6",
+     "topic": "u3-t1",
+     "topicName": "Competencia perfecta",
+     "question": "Ordená los siguientes pasos que sigue una empresa en competencia perfecta para determinar su nivel de producción óptimo a corto plazo.",
+     "explanation": "La lógica de maximización de beneficios en competencia perfecta requiere que la empresa primero identifique el precio de mercado, luego iguale este al costo marginal y finalmente verifique si el precio cubre los costos variables medios para decidir producir.",
+     "type": "ordering",
+     "items": [
+      "Observar el precio vigente en el mercado",
+      "Igualar el precio al costo marginal",
+      "Determinar la cantidad donde el costo marginal es creciente",
+      "Comparar el precio con el costo variable medio"
+     ]
+    },
+    {
+     "id": "q7",
+     "topic": "u3-t2",
+     "topicName": "Monopolio",
+     "question": "Uní cada concepto relacionado con el monopolio con su definición técnica correspondiente.",
+     "explanation": "El monopolio se caracteriza por la ausencia de sustitutos cercanos y la existencia de barreras que impiden la entrada de competidores. La relación entre el ingreso marginal y la elasticidad es fundamental para entender su comportamiento óptimo.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "Barrera de entrada",
+       "right": "Obstáculo que impide nuevos competidores"
+      },
+      {
+       "left": "Ingreso marginal",
+       "right": "Variación del ingreso por unidad adicional"
+      },
+      {
+       "left": "Poder de mercado",
+       "right": "Capacidad de fijar precios superiores"
+      },
+      {
+       "left": "Monopolio natural",
+       "right": "Costos medios decrecientes a gran escala"
+      }
+     ],
+     "distractors": [
+      "Curva de demanda horizontal"
+     ]
+    },
+    {
+     "id": "q8",
+     "topic": "u3-t1",
+     "topicName": "Competencia perfecta",
+     "question": "Marcá todas las opciones que describen correctamente las características de un mercado de competencia perfecta.",
+     "explanation": "La competencia perfecta se define por la presencia de muchos agentes económicos que no pueden influir en el precio, junto con la homogeneidad del producto y la libre movilidad de los factores. Estas condiciones garantizan que el precio sea un dato para la firma.",
+     "type": "multiple_response",
+     "options": [
+      "No existen barreras significativas a la entrada o salida.",
+      "Existe información perfecta sobre los precios y productos.",
+      "Las empresas tienen poder de mercado para fijar precios.",
+      "El producto ofrecido por cada empresa es diferenciado.",
+      "Cada empresa enfrenta una curva de demanda con pendiente negativa."
+     ],
+     "correctAnswers": [
+      0,
+      1
+     ]
+    }
+   ]
+  },
+  {
+   "programa": "antropologia",
+   "corrida": 1,
+   "modo": "practico",
+   "pedidos": [
+    "multiple_response",
+    "matching",
+    "ordering",
+    "missing_word",
+    "multiple_choice"
+   ],
+   "ok": true,
+   "avisos": [],
+   "crudas": {
+    "multiple_choice": 16,
+    "multiple_response": 1,
+    "matching": 1,
+    "ordering": 1,
+    "missing_word": 1
+   },
+   "descartes": [
+    {
+     "tipo": "multiple_choice",
+     "motivo": "area:calculo-en-conceptual",
+     "pregunta": "En una sociedad, el linaje se calcula siguiendo únicamente la línea de los antepasados varones. ¿Cómo se denomina este sistema de filiación?"
+    }
+   ],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u2-t2",
+     "topicName": "Etnocentrismo y relativismo cultural",
+     "question": "Un grupo de estudiantes observa una ceremonia de iniciación en una comunidad remota y concluye que es un acto irracional porque no sigue los estándares de su propia sociedad. ¿Qué concepto antropológico describe esta actitud?",
+     "explanation": "El etnocentrismo implica juzgar otras culturas desde la superioridad de la propia. Es un error común confundir la observación con el juicio de valor.",
+     "type": "multiple_choice",
+     "options": [
+      "Estructuralismo",
+      "Relativismo cultural",
+      "Enculturación",
+      "Etnocentrismo"
+     ],
+     "correctAnswer": 3
+    },
+    {
+     "id": "q2",
+     "topic": "u2-t1",
+     "topicName": "El concepto de cultura",
+     "question": "Un texto plantea que la cultura no es un conjunto de objetos estáticos, sino un sistema dinámico de significados compartidos que orientan la conducta humana. ¿Cuál de las siguientes opciones refleja mejor esta perspectiva?",
+     "explanation": "La cultura es un proceso vivo y cambiante. La opción correcta destaca su carácter simbólico y su función como guía de acción.",
+     "type": "multiple_choice",
+     "options": [
+      "La cultura es un repertorio fijo de tradiciones heredadas.",
+      "La cultura es un sistema de significados compartidos y dinámicos.",
+      "La cultura se limita a las manifestaciones artísticas de un pueblo.",
+      "La cultura es un rasgo biológico determinado por la genética."
+     ],
+     "correctAnswer": 1
+    },
+    {
+     "id": "q3",
+     "topic": "u2-t2",
+     "topicName": "Etnocentrismo y relativismo cultural",
+     "question": "En una investigación, un antropólogo decide suspender sus propios juicios morales para comprender la lógica interna de una práctica ritual ajena. ¿Qué postura metodológica está adoptando?",
+     "explanation": "El relativismo cultural busca comprender las prácticas en su propio contexto, evitando la imposición de valores externos.",
+     "type": "multiple_choice",
+     "options": [
+      "Etnocentrismo crítico",
+      "Evolucionismo social",
+      "Relativismo cultural",
+      "Universalismo ético"
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q4",
+     "topic": "u3-t2",
+     "topicName": "Ritos de paso",
+     "question": "Un texto describe una ceremonia donde un joven debe superar pruebas de resistencia para ser reconocido como adulto por su comunidad. ¿Qué categoría antropológica se aplica a este evento?",
+     "explanation": "Los ritos de paso marcan la transición de un estado social a otro. La superación de pruebas es una etapa clásica de estos rituales.",
+     "type": "multiple_choice",
+     "options": [
+      "Tabú de incesto",
+      "Ritos de paso",
+      "Parentesco consanguíneo",
+      "Etnocentrismo"
+     ],
+     "correctAnswer": 1
+    },
+    {
+     "id": "q5",
+     "topic": "u3-t1",
+     "topicName": "Familia y parentesco",
+     "question": "Elegí la palabra que falta.",
+     "explanation": "El parentesco es una construcción social que organiza las relaciones de filiación y alianza. La terminología técnica es clave para distinguir entre la biología y la organización social.",
+     "type": "missing_word",
+     "text": "En los sistemas de parentesco, la [[1]] se refiere a la relación establecida mediante el matrimonio, diferenciándose de la consanguinidad.",
+     "options": [
+      "descendencia",
+      "exogamia",
+      "alianza",
+      "filiación"
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q6",
+     "topic": "u2-t1",
+     "topicName": "El concepto de cultura",
+     "question": "Ordená cronológicamente los procesos que explican la construcción de la cultura como sistema aprendido.",
+     "explanation": "La cultura no es innata, sino que se adquiere mediante la interacción social. Este ordenamiento refleja cómo el individuo se integra en su matriz cultural.",
+     "type": "ordering",
+     "items": [
+      "Exposición del individuo a los símbolos del grupo",
+      "Observación de las conductas de los adultos",
+      "Internalización de las normas y valores compartidos",
+      "Reproducción de las prácticas en la vida cotidiana"
+     ]
+    },
+    {
+     "id": "q7",
+     "topic": "u3-t2",
+     "topicName": "Ritos de paso",
+     "question": "Uní cada fase del rito de paso, según la propuesta teórica de Arnold van Gennep, con su descripción correspondiente.",
+     "explanation": "Los ritos de paso son procesos de transformación social. Comprender sus etapas permite analizar cómo las sociedades gestionan los cambios de estatus de sus miembros.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "Separación",
+       "right": "Desprendimiento del estatus previo"
+      },
+      {
+       "left": "Marginalidad",
+       "right": "Estado liminal o de transición"
+      },
+      {
+       "left": "Agregación",
+       "right": "Reincorporación con nuevo rol"
+      }
+     ],
+     "distractors": [
+      "Fase de negación cultural"
+     ]
+    },
+    {
+     "id": "q8",
+     "topic": "u2-t2",
+     "topicName": "Etnocentrismo y relativismo cultural",
+     "question": "Marcá todas las opciones que representan una manifestación clara de etnocentrismo en el análisis de prácticas culturales ajenas.",
+     "explanation": "El etnocentrismo implica evaluar otras culturas desde la superioridad de la propia. Es fundamental identificar cómo este sesgo impide una comprensión objetiva de la diversidad.",
+     "type": "multiple_response",
+     "options": [
+      "Afirmar que una religión es superior por ser monoteísta.",
+      "Reconocer que cada cultura posee su propia lógica interna.",
+      "Considerar que las leyes locales son universales y naturales.",
+      "Sostener que el desarrollo tecnológico define el progreso humano.",
+      "Analizar una práctica ritual según su función social interna."
+     ],
+     "correctAnswers": [
+      0,
+      2,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "programa": "contabilidad",
+   "corrida": 1,
+   "modo": "practico",
+   "pedidos": [
+    "multiple_response",
+    "matching",
+    "ordering",
+    "missing_word",
+    "multiple_choice"
+   ],
+   "ok": true,
+   "avisos": [],
+   "crudas": {
+    "multiple_choice": 16,
+    "multiple_response": 1,
+    "matching": 1,
+    "ordering": 1,
+    "missing_word": 1
+   },
+   "descartes": [],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u2-t2",
+     "topicName": "Asientos contables",
+     "question": "Una empresa adquiere mercaderías por 50.000 pesos, abonando el 40 % en efectivo y el resto mediante un pagaré a 30 días. ¿Qué cuenta debe debitarse en el asiento contable?",
+     "explanation": "Al ingresar mercaderías al patrimonio, se debe debitar la cuenta de activo correspondiente. El pago parcial y la emisión del pagaré generan salidas de activos o aumentos de pasivos que se acreditan.",
+     "type": "multiple_choice",
+     "options": [
+      "Proveedores",
+      "Documentos a pagar",
+      "Mercaderías",
+      "Caja"
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q2",
+     "topic": "u1-t2",
+     "topicName": "La ecuación contable",
+     "question": "Si una empresa posee un Activo de 200.000 pesos y un Pasivo de 80.000 pesos, ¿cuál es el valor del Patrimonio Neto según la ecuación contable fundamental?",
+     "explanation": "La ecuación contable fundamental establece que Activo es igual a Pasivo más Patrimonio Neto. Por lo tanto, el Patrimonio Neto surge de restar el Pasivo al Activo.",
+     "type": "multiple_choice",
+     "options": [
+      "120.000 pesos",
+      "200.000 pesos",
+      "280.000 pesos",
+      "80.000 pesos"
+     ],
+     "correctAnswer": 0
+    },
+    {
+     "id": "q3",
+     "topic": "u3-t1",
+     "topicName": "Compras y ventas de mercadería",
+     "question": "Al realizar una venta de mercaderías por 100.000 pesos en cuenta corriente, ¿cuál es el registro contable correcto para la cuenta deudora?",
+     "explanation": "En una venta a crédito, el derecho de cobro sobre el cliente representa un aumento de activo. Por tanto, se debe debitar la cuenta deudores por ventas.",
+     "type": "multiple_choice",
+     "options": [
+      "Caja",
+      "Mercaderías",
+      "Deudores por ventas",
+      "Ventas"
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q4",
+     "topic": "u3-t2",
+     "topicName": "Cobros y pagos",
+     "question": "Una empresa paga una deuda de 30.000 pesos en efectivo, obteniendo un descuento por pronto pago del 5 %. ¿Qué cuenta se acredita por el valor del descuento?",
+     "explanation": "El descuento obtenido por pronto pago representa un resultado positivo para la empresa. Según la naturaleza de las cuentas de resultado, los ingresos se acreditan.",
+     "type": "multiple_choice",
+     "options": [
+      "Intereses perdidos",
+      "Proveedores",
+      "Descuentos obtenidos",
+      "Caja"
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q5",
+     "topic": "u3-t2",
+     "topicName": "Cobros y pagos",
+     "question": "Elegí la palabra que falta.",
+     "explanation": "El documento comercial que respalda la salida de fondos por el pago de una obligación es el recibo. Es el comprobante que otorga validez legal a la cancelación de una deuda.",
+     "type": "missing_word",
+     "text": "Al cancelar una deuda con un proveedor mediante la entrega de dinero en efectivo, la empresa debe emitir o recibir un [[1]] para documentar la operación.",
+     "options": [
+      "remito",
+      "factura",
+      "recibo",
+      "pagaré"
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q6",
+     "topic": "u3-t1",
+     "topicName": "Compras y ventas de mercadería",
+     "question": "Ordená cronológicamente los pasos para registrar una venta de mercaderías con cobro diferido.",
+     "explanation": "El proceso contable sigue una secuencia lógica: primero se reconoce el hecho económico, luego se calculan los componentes financieros y finalmente se realiza el asiento en el libro diario para reflejar la situación patrimonial.",
+     "type": "ordering",
+     "items": [
+      "Identificar el comprobante de venta",
+      "Calcular el valor neto y los intereses",
+      "Determinar las cuentas patrimoniales y de resultado",
+      "Registrar el asiento en el libro diario"
+     ]
+    },
+    {
+     "id": "q7",
+     "topic": "u2-t2",
+     "topicName": "Asientos contables",
+     "question": "Uní cada operación contable con la cuenta que debe acreditarse en el asiento correspondiente.",
+     "explanation": "La acreditación representa la salida de un activo, el nacimiento de un pasivo o el registro de un ingreso. Es fundamental identificar correctamente la naturaleza de cada cuenta para mantener el equilibrio contable.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "Venta de mercaderías en efectivo",
+       "right": "Ventas"
+      },
+      {
+       "left": "Pago de sueldos con cheque",
+       "right": "Banco"
+      },
+      {
+       "left": "Compra de mercaderías a crédito",
+       "right": "Proveedores"
+      },
+      {
+       "left": "Devolución de una compra en efectivo",
+       "right": "Caja"
+      }
+     ],
+     "distractors": [
+      "Mercaderías",
+      "Deudores por ventas"
+     ]
+    },
+    {
+     "id": "q8",
+     "topic": "u1-t2",
+     "topicName": "La ecuación contable",
+     "question": "Marcá todas las opciones que representan un aumento en el Patrimonio Neto de una empresa comercial.",
+     "explanation": "El Patrimonio Neto aumenta por la obtención de ingresos o aportes de los propietarios. Los gastos y retiros disminuyen el capital propio, mientras que los intercambios de activos no alteran el valor total del patrimonio.",
+     "type": "multiple_response",
+     "options": [
+      "Aporte inicial de capital en efectivo",
+      "Compra de una computadora en efectivo",
+      "Cancelación de una deuda con proveedores",
+      "Pago de servicios públicos del local",
+      "Reconocimiento de una venta de mercaderías"
+     ],
+     "correctAnswers": [
+      0,
+      4
+     ]
+    }
+   ]
+  },
+  {
+   "programa": "enfermeria",
+   "corrida": 1,
+   "modo": "practico",
+   "pedidos": [
+    "multiple_response",
+    "matching",
+    "ordering",
+    "missing_word",
+    "multiple_choice"
+   ],
+   "ok": true,
+   "avisos": [],
+   "crudas": {
+    "multiple_choice": 16,
+    "multiple_response": 1,
+    "matching": 1,
+    "ordering": 1,
+    "missing_word": 1
+   },
+   "descartes": [],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u2-t1",
+     "topicName": "Valoración familiar",
+     "question": "En una visita domiciliaria a un paciente con úlcera por presión grado II, el cuidador principal manifiesta agotamiento extremo y falta de apoyo social. ¿Cuál es la intervención prioritaria de enfermería?",
+     "explanation": "La valoración familiar debe identificar los recursos de apoyo. Priorizar la evaluación de la sobrecarga del cuidador es fundamental para garantizar la continuidad del plan de cuidados en el domicilio.",
+     "type": "multiple_choice",
+     "options": [
+      "Realizar una valoración de la sobrecarga del cuidador mediante escalas validadas.",
+      "Aumentar la frecuencia de las visitas de enfermería para realizar las curaciones.",
+      "Derivar al paciente a un centro de cuidados prolongados de forma inmediata.",
+      "Instruir al cuidador sobre la técnica de curación de heridas."
+     ],
+     "correctAnswer": 0
+    },
+    {
+     "id": "q2",
+     "topic": "u3-t1",
+     "topicName": "Inmunizaciones",
+     "question": "Un lactante de 6 meses debe recibir la vacuna pentavalente. Al revisar el carnet, se observa que la dosis anterior fue aplicada hace apenas 20 días. ¿Qué conducta debe adoptar el enfermero?",
+     "explanation": "Las inmunizaciones deben respetar los intervalos mínimos entre dosis para asegurar la respuesta inmunológica. Aplicar la vacuna antes del tiempo estipulado invalida la dosis y no genera protección adecuada.",
+     "type": "multiple_choice",
+     "options": [
+      "Posponer la vacunación hasta cumplir el intervalo mínimo recomendado.",
+      "Registrar la dosis como aplicada para completar el esquema rápidamente.",
+      "Aplicar la mitad de la dosis para evitar efectos adversos.",
+      "Administrar la vacuna para no perder la oportunidad de contacto."
+     ],
+     "correctAnswer": 0
+    },
+    {
+     "id": "q3",
+     "topic": "u1-t1",
+     "topicName": "Atención primaria de la salud",
+     "question": "En el marco de la Atención Primaria de la Salud, un equipo de enfermería detecta un aumento de casos de hipertensión arterial en un barrio. ¿Cuál es la estrategia de prevención primaria más efectiva?",
+     "explanation": "La prevención primaria busca evitar la aparición de la enfermedad mediante la promoción de estilos de vida saludables en la comunidad, antes de que se manifiesten los factores de riesgo clínicos.",
+     "type": "multiple_choice",
+     "options": [
+      "Aumentar la entrega de medicación antihipertensiva en el centro de salud.",
+      "Realizar interconsultas con especialistas para los pacientes diagnosticados.",
+      "Organizar talleres comunitarios sobre alimentación saludable y actividad física.",
+      "Implementar un programa de tamizaje masivo para detección precoz."
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q4",
+     "topic": "u2-t2",
+     "topicName": "Plan de cuidados en el domicilio",
+     "question": "Durante la planificación de cuidados en el domicilio para un adulto mayor con movilidad reducida, ¿qué acción es fundamental para prevenir riesgos de caídas?",
+     "explanation": "El plan de cuidados en el domicilio debe ser integral. La adecuación del entorno físico es una intervención de enfermería esencial para reducir riesgos evitables y promover la autonomía del paciente.",
+     "type": "multiple_choice",
+     "options": [
+      "Instruir al paciente para que no se levante de la cama sin ayuda.",
+      "Solicitar internación domiciliaria para vigilancia constante.",
+      "Administrar suplementos vitamínicos para fortalecer los huesos.",
+      "Evaluar y modificar los obstáculos en el entorno doméstico del paciente."
+     ],
+     "correctAnswer": 3
+    },
+    {
+     "id": "q5",
+     "topic": "u2-t2",
+     "topicName": "Plan de cuidados en el domicilio",
+     "question": "Elegí la palabra que falta.",
+     "explanation": "La planificación de cuidados domiciliarios requiere un enfoque centrado en la autonomía del paciente. La evaluación de la capacidad del cuidador es un pilar para evitar la claudicación del mismo.",
+     "type": "missing_word",
+     "text": "Al diseñar un plan de cuidados en el domicilio para un paciente con dependencia, es indispensable evaluar la [[1]] del cuidador principal para prevenir el síndrome de sobrecarga.",
+     "options": [
+      "disponibilidad",
+      "capacidad",
+      "escolaridad",
+      "resiliencia"
+     ],
+     "correctAnswer": 1
+    },
+    {
+     "id": "q6",
+     "topic": "u3-t1",
+     "topicName": "Inmunizaciones",
+     "question": "Ordená los pasos para la administración segura de una vacuna multidosis en el domicilio, desde la preparación hasta el registro.",
+     "explanation": "El cumplimiento estricto de la cadena de frío y los protocolos de bioseguridad es innegociable en el domicilio. El registro posterior garantiza la trazabilidad y el seguimiento del esquema de inmunización.",
+     "type": "ordering",
+     "items": [
+      "Verificar la fecha de vencimiento y el estado del vial.",
+      "Realizar la higiene de manos y preparar el material estéril.",
+      "Explicar el procedimiento y los posibles efectos adversos al tutor.",
+      "Administrar la vacuna mediante la técnica correcta según el sitio.",
+      "Registrar la dosis en el carnet y en el sistema nominal."
+     ]
+    },
+    {
+     "id": "q7",
+     "topic": "u2-t1",
+     "topicName": "Valoración familiar",
+     "question": "Uní cada instrumento de valoración familiar con su utilidad clínica principal en el contexto de la enfermería comunitaria.",
+     "explanation": "El uso de herramientas estructuradas permite al enfermero visualizar la complejidad de las relaciones familiares. Esto facilita la identificación de recursos y debilidades en el sistema de apoyo del paciente.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "Genograma",
+       "right": "Representa la estructura y composición familiar"
+      },
+      {
+       "left": "Ecomapa",
+       "right": "Identifica vínculos con el entorno social"
+      },
+      {
+       "left": "APGAR familiar",
+       "right": "Evalúa la funcionalidad del sistema familiar"
+      },
+      {
+       "left": "Ciclo vital",
+       "right": "Analiza etapas de desarrollo familiar"
+      }
+     ],
+     "distractors": [
+      "Mide el nivel de glucemia capilar"
+     ]
+    },
+    {
+     "id": "q8",
+     "topic": "u1-t1",
+     "topicName": "Atención primaria de la salud",
+     "question": "Marcá todas las intervenciones que corresponden a la estrategia de Atención primaria de la salud para abordar la malnutrición en una comunidad vulnerable.",
+     "explanation": "La Atención Primaria de la Salud se enfoca en la promoción y prevención integral. Es fundamental trabajar con la comunidad para empoderar a los actores locales y asegurar el acceso equitativo a recursos básicos.",
+     "type": "multiple_response",
+     "options": [
+      "Implementar un programa de suplementación nutricional focalizado.",
+      "Derivar todos los casos detectados a centros de tercer nivel.",
+      "Gestionar la creación de huertas comunitarias con los vecinos.",
+      "Realizar talleres de educación alimentaria con referentes barriales.",
+      "Prescribir fórmulas lácteas de forma masiva sin evaluación previa."
+     ],
+     "correctAnswers": [
+      2,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "programa": "matematica-didactica",
+   "corrida": 1,
+   "modo": "practico",
+   "pedidos": [
+    "multiple_response",
+    "matching",
+    "ordering",
+    "missing_word",
+    "multiple_choice"
+   ],
+   "ok": true,
+   "avisos": [],
+   "crudas": {
+    "multiple_choice": 16,
+    "multiple_response": 1,
+    "matching": 1,
+    "ordering": 1,
+    "missing_word": 1
+   },
+   "descartes": [],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u1-t2",
+     "topicName": "Divisibilidad: múltiplos y divisores",
+     "question": "Un alumno afirma que $12$ es divisor de $4$ porque $12 \\div 4 = 3$. ¿Cuál es el error conceptual subyacente en su razonamiento?",
+     "explanation": "El estudiante confunde la relación de divisibilidad con la operación de división simple, invirtiendo los términos. Es fundamental trabajar la definición de divisor como aquel número que divide a otro de manera exacta, resultando en un resto cero.",
+     "type": "multiple_choice",
+     "options": [
+      "Considera que cualquier número natural es divisor de otro si el cociente es un número entero.",
+      "Realiza correctamente la operación pero desconoce la terminología técnica de la divisibilidad.",
+      "Confunde la relación de divisibilidad con la de múltiplo al invertir el orden de los términos.",
+      "Aplica incorrectamente el algoritmo de la división al no considerar el resto de la operación."
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q2",
+     "topic": "u2-t1",
+     "topicName": "Transposición didáctica",
+     "question": "En el marco de la transposición didáctica, ¿qué ocurre cuando el saber sabio se transforma en saber a enseñar?",
+     "explanation": "La transposición didáctica implica una serie de adaptaciones necesarias para que el conocimiento científico sea accesible al alumno sin perder su rigor, proceso que debe ser gestionado conscientemente por el docente.",
+     "type": "multiple_choice",
+     "options": [
+      "El conocimiento se simplifica de forma arbitraria perdiendo toda su validez matemática original.",
+      "El docente elimina los obstáculos epistemológicos para que el aprendizaje sea inmediato y sin esfuerzo.",
+      "El saber sabio se mantiene inalterado para garantizar la pureza del contenido matemático.",
+      "Se produce una adaptación necesaria para que el objeto de saber sea enseñable en el aula."
+     ],
+     "correctAnswer": 3
+    },
+    {
+     "id": "q3",
+     "topic": "u3-t1",
+     "topicName": "Fracciones equivalentes",
+     "question": "Un estudiante sostiene que $\\frac{2}{3}$ es equivalente a $\\frac{4}{6}$ porque 'multiplicó ambos números por 2'. ¿Cómo debería intervenir el docente para promover el aprendizaje?",
+     "explanation": "El error del alumno es una oportunidad para profundizar en la propiedad fundamental de las fracciones equivalentes. La intervención debe validar el procedimiento y formalizar la propiedad de amplificación.",
+     "type": "multiple_choice",
+     "options": [
+      "Corregir el error señalando que solo se puede multiplicar por números primos para obtener equivalencias.",
+      "Solicitarle que represente gráficamente ambas fracciones para visualizar la igualdad de las partes.",
+      "Explicar que la equivalencia solo se logra mediante la simplificación y no por amplificación.",
+      "Indicarle que el procedimiento es correcto y pedirle que verifique si ocurre lo mismo con otras fracciones."
+     ],
+     "correctAnswer": 1
+    },
+    {
+     "id": "q4",
+     "topic": "u2-t2",
+     "topicName": "El error como oportunidad de aprendizaje",
+     "question": "Ante un error recurrente de los alumnos al identificar múltiplos, ¿cuál es la actitud pedagógica más adecuada según el enfoque del error como oportunidad?",
+     "explanation": "El error no debe ser visto como un fracaso, sino como un síntoma de las concepciones previas del alumno. Analizarlo permite diseñar situaciones didácticas que desafíen esas concepciones y promuevan la construcción del conocimiento.",
+     "type": "multiple_choice",
+     "options": [
+      "Proporcionar la respuesta correcta inmediatamente para evitar que el error se consolide en el grupo.",
+      "Utilizar el error como insumo para generar un debate que permita reconstruir el concepto de múltiplo.",
+      "Ignorar el error si solo lo comete una minoría para no retrasar el avance del programa.",
+      "Sancionar el error mediante la repetición mecánica de ejercicios de múltiplos hasta lograr la precisión."
+     ],
+     "correctAnswer": 1
+    },
+    {
+     "id": "q5",
+     "topic": "u1-t2",
+     "topicName": "Divisibilidad: múltiplos y divisores",
+     "question": "Elegí la palabra que falta.",
+     "explanation": "La relación de divisibilidad implica que un número contiene a otro una cantidad exacta de veces, lo cual es la base para comprender la estructura de los números naturales.",
+     "type": "missing_word",
+     "text": "Si al dividir un número natural $a$ por otro $b$ el resto es cero, decimos que $b$ es un [[1]] de $a$.",
+     "options": [
+      "múltiplo",
+      "producto",
+      "divisor",
+      "cociente"
+     ],
+     "correctAnswer": 2
+    },
+    {
+     "id": "q6",
+     "topic": "u3-t1",
+     "topicName": "Fracciones equivalentes",
+     "question": "Ordená los pasos que debería seguir un docente para guiar a un estudiante a descubrir la equivalencia entre $\\frac{2}{5}$ y $\\frac{6}{15}$ mediante el uso de representaciones gráficas.",
+     "explanation": "El pasaje de lo concreto a lo abstracto es fundamental en la didáctica de las fracciones para que el alumno comprenda la relación de equivalencia más allá de la regla algorítmica.",
+     "type": "ordering",
+     "items": [
+      "Representar gráficamente la fracción $\\frac{2}{5}$ en una unidad rectangular.",
+      "Dividir cada una de las partes originales en tres subpartes iguales.",
+      "Contar cuántas partes coloreadas y totales hay en la nueva partición.",
+      "Comparar la fracción resultante $\\frac{6}{15}$ con la original $\\frac{2}{5}$."
+     ]
+    },
+    {
+     "id": "q7",
+     "topic": "u2-t1",
+     "topicName": "Transposición didáctica",
+     "question": "Uní cada concepto de la transposición didáctica con su definición correspondiente.",
+     "explanation": "La transposición didáctica explica cómo el saber científico se adapta para ser enseñable en el aula, pasando por distintas instancias de transformación.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "Saber sabio",
+       "right": "Conocimiento científico producido por la comunidad"
+      },
+      {
+       "left": "Saber a enseñar",
+       "right": "Contenido definido en el diseño curricular"
+      },
+      {
+       "left": "Saber enseñado",
+       "right": "Conocimiento efectivamente construido en el aula"
+      },
+      {
+       "left": "Vigilancia epistemológica",
+       "right": "Control sobre la deformación del saber"
+      }
+     ],
+     "distractors": [
+      "Evaluación sumativa de los aprendizajes"
+     ]
+    },
+    {
+     "id": "q8",
+     "topic": "u2-t2",
+     "topicName": "El error como oportunidad de aprendizaje",
+     "question": "Marcá todas las opciones que representan una intervención docente adecuada para transformar el error de un alumno que confunde múltiplos con divisores en una oportunidad de aprendizaje.",
+     "explanation": "El enfoque del error como oportunidad requiere que el docente no valide ni corrija inmediatamente, sino que proponga situaciones que permitan al alumno confrontar su hipótesis con la realidad matemática.",
+     "type": "multiple_response",
+     "options": [
+      "Pedir al alumno que busque otros números que cumplan la misma relación y compare resultados.",
+      "Indicarle al alumno que su respuesta es incorrecta y pedirle que vuelva a intentarlo.",
+      "Explicar directamente la definición formal de múltiplo y divisor en la pizarra.",
+      "Proponer que el alumno realice la división y analice si el resto es cero.",
+      "Solicitar al alumno que verifique si el número obtenido es mayor o menor que el original."
+     ],
+     "correctAnswers": [
+      0,
+      3
+     ]
+    }
+   ]
+  }
+ ]
+}

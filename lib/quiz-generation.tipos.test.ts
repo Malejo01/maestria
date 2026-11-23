@@ -165,3 +165,56 @@ describe('generateQuiz · al menos uno de cada tipo pedido (U1)', () => {
     expect(new Set(r.questions.map((q) => q.type))).toEqual(new Set(['calculated', 'ordering']))
   })
 })
+
+describe('generateQuiz · el observador (U4)', () => {
+  it('ve cada tanda tal cual y cada descarte con su motivo, sin cambiar lo que se genera', async () => {
+    let llamada = 0
+    generateObject.mockImplementation(async () => {
+      llamada++
+      const malo = { ...PREGUNTAS.ordering(), question: 'Ordená estos conceptos.' } // sin criterio de orden
+      const buenas = [PREGUNTAS.matching(), PREGUNTAS.matching(), PREGUNTAS.ordering()]
+      return { object: { questions: llamada === 1 ? [malo, ...buenas] : [PREGUNTAS.ordering(), PREGUNTAS.matching()] }, usage: undefined }
+    })
+    const tandas: number[] = []
+    const descartes: string[] = []
+    const r = await generateQuiz(params(['matching', 'ordering'], 'cuantitativo', { questionCount: 4 }), undefined, {
+      tanda: (p) => tandas.push(p.length),
+      descarte: (_, motivo) => descartes.push(motivo),
+    })
+    expect(r.ok && r.questions).toHaveLength(4)
+    expect(tandas[0]).toBe(4)
+    expect(descartes).toContain('calidad:ordenamiento-sin-criterio')
+  })
+})
+
+describe('generateQuiz · lo que mostró la medición U4', () => {
+  it('dos de huecos con la misma consigna y distinto texto no son repetidas', async () => {
+    simular((_, cantidad) => Array(cantidad).fill('ddwtos'))
+    const original = PREGUNTAS.ddwtos
+    PREGUNTAS.ddwtos = () => ({ ...original(), question: 'Completá el texto con las palabras que faltan.' })
+    try {
+      const r = await generateQuiz(params(['ddwtos'], 'cuantitativo', { questionCount: 3 }))
+      expect(r.ok && r.questions.map((q) => q.type)).toEqual(['ddwtos', 'ddwtos', 'ddwtos'])
+      expect(generateObject).toHaveBeenCalledTimes(1)
+    } finally {
+      PREGUNTAS.ddwtos = original
+    }
+  })
+
+  it('una calculada sin tolerancia no se descarta: va con el 1 %', async () => {
+    simular((_, cantidad) => Array(cantidad).fill('calculated'))
+    const sinTolerancia = PREGUNTAS.calculated
+    PREGUNTAS.calculated = () => {
+      const q = sinTolerancia()
+      delete q.tolerance
+      q.question = `El precio sube de {p} a {q} (${n}). ¿Cuál es la variación porcentual?`
+      return q
+    }
+    try {
+      const r = await generateQuiz(params(['calculated'], 'cuantitativo', { questionCount: 1 }))
+      expect(r.ok && r.questions[0]).toMatchObject({ type: 'calculated', tolerance: 0.01 })
+    } finally {
+      PREGUNTAS.calculated = sinTolerancia
+    }
+  })
+})

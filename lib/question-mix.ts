@@ -129,8 +129,11 @@ export function restrictQuestionTypeMix(
   const floor = Math.min(...declared)
   const restricted: QuestionTypeMix = {}
 
-  for (const type of TYPE_PRIORITY) {
-    if (!allowed.includes(type)) continue
+  // U4: los tipos como en Moodle no están en TYPE_PRIORITY (que es el orden de
+  // los cuatro de siempre). Antes se salteaban: con "Más tipos", la mezcla
+  // quedaba sólo con verdadero o falso y el modelo armaba casi todo de eso.
+  const orden = [...TYPE_PRIORITY.filter((t) => allowed.includes(t)), ...allowed.filter((t) => !TYPE_PRIORITY.includes(t))]
+  for (const type of orden) {
     restricted[type] = mix[type] ?? floor
   }
 

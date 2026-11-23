@@ -1,0 +1,860 @@
+{
+ "costoUsd": 0.042342,
+ "corridas": [
+  {
+   "programa": "matematica-i",
+   "corrida": 2,
+   "modo": "practico",
+   "pedidos": [
+    "gapselect",
+    "ddwtos",
+    "matching",
+    "calculated",
+    "true_false"
+   ],
+   "ok": true,
+   "avisos": [
+    {
+     "tipo": "ddwtos",
+     "motivo": "no-salio"
+    }
+   ],
+   "crudas": {
+    "true_false": 17,
+    "gapselect": 1,
+    "calculated": 1,
+    "matching": 1
+   },
+   "descartes": [
+    {
+     "tipo": "true_false",
+     "motivo": "repetida",
+     "pregunta": "Toda función lineal de la forma $f(x) = mx + b$ es estrictamente decreciente si $m < 0$."
+    }
+   ],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u2-t1",
+     "topicName": "Ecuaciones lineales",
+     "question": "El conjunto solución de la inecuación lineal $-3x + 5 \\geq 11$ es el intervalo $(-\\infty; -2]$.",
+     "explanation": "Al resolver la inecuación, restamos 5 en ambos miembros obteniendo $-3x \\geq 6$. Al dividir por $-3$, el sentido de la desigualdad se invierte, resultando $x \\leq -2$.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q2",
+     "topic": "u2-t2",
+     "topicName": "Ecuaciones cuadráticas",
+     "question": "La ecuación cuadrática $x^2 - 9 = 0$ posee dos soluciones reales distintas.",
+     "explanation": "La ecuación puede expresarse como $x^2 = 9$, lo que implica $x = \\pm \\sqrt{9}$. Por tanto, las soluciones son $x = 3$ y $x = -3$, las cuales son reales y distintas.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q3",
+     "topic": "u3-t1",
+     "topicName": "Función lineal",
+     "question": "La pendiente de una función lineal que pasa por los puntos $(0, 2)$ y $(4, 10)$ es igual a 3.",
+     "explanation": "La pendiente $m$ se calcula como $\\frac{y_2 - y_1}{x_2 - x_1}$. En este caso, $m = \\frac{10 - 2}{4 - 0} = \\frac{8}{4} = 2$. La afirmación es falsa.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q4",
+     "topic": "u1-t1",
+     "topicName": "Operaciones con fracciones",
+     "question": "El resultado de la operación con fracciones $\\frac{1}{2} + \\frac{1}{3}$ es igual a $\\frac{2}{5}$.",
+     "explanation": "Para sumar fracciones con distinto denominador, se debe hallar el denominador común, que es 6. La suma correcta es $\\frac{3}{6} + \\frac{2}{6} = \\frac{5}{6}$.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q5",
+     "topic": "u3-t1",
+     "topicName": "Función lineal",
+     "question": "Toda función lineal de la forma $f(x) = mx + b$ es estrictamente creciente si $m < 0$.",
+     "explanation": "Una función lineal es estrictamente creciente si y solo si su pendiente $m$ es mayor que cero. Si $m < 0$, la función es estrictamente decreciente.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q6",
+     "topic": "u3-t1",
+     "topicName": "Función lineal",
+     "question": "Uní cada función lineal con su respectiva pendiente.",
+     "explanation": "La pendiente $m$ de una función lineal $f(x) = mx + b$ determina su inclinación. Se identifica observando el coeficiente que multiplica a la variable independiente $x$.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "$f(x) = 4x - 1$",
+       "right": "4"
+      },
+      {
+       "left": "$f(x) = -2x + 5$",
+       "right": "-2"
+      },
+      {
+       "left": "$f(x) = \\frac{1}{2}x + 3$",
+       "right": "0,5"
+      },
+      {
+       "left": "$f(x) = -x - 7$",
+       "right": "-1"
+      }
+     ],
+     "distractors": [
+      "1",
+      "0"
+     ]
+    },
+    {
+     "id": "q7",
+     "topic": "u2-t2",
+     "topicName": "Ecuaciones cuadráticas",
+     "question": "Un proyectil sigue una trayectoria definida por la función cuadrática $f(x) = -x^2 + 7x$. ¿Cuál es el valor de $x$ donde el proyectil alcanza su altura máxima?",
+     "explanation": "El vértice de una parábola $f(x) = ax^2 + bx + c$ se encuentra en $x = -b / (2a)$. Aplicando esta fórmula, obtenemos el punto crítico de la función.",
+     "type": "calculated",
+     "formula": "{a} / 2",
+     "variables": [
+      {
+       "name": "a",
+       "min": 4,
+       "max": 10,
+       "decimals": 0
+      }
+     ],
+     "valores": {
+      "a": 7
+     },
+     "tolerance": 0.01,
+     "plantilla": "Un proyectil sigue una trayectoria definida por la función cuadrática $f(x) = -x^2 + {a}x$. ¿Cuál es el valor de $x$ donde el proyectil alcanza su altura máxima?",
+     "correctAnswer": 3.5
+    },
+    {
+     "id": "q8",
+     "topic": "u2-t1",
+     "topicName": "Ecuaciones lineales",
+     "question": "Completá el texto con las palabras que faltan.",
+     "explanation": "La resolución de una ecuación lineal requiere aislar la incógnita mediante operaciones inversas. Es fundamental mantener la igualdad aplicando las mismas operaciones en ambos miembros.",
+     "type": "gapselect",
+     "text": "Para resolver la ecuación lineal $4x - 8 = 12$, primero debemos [[1]] el valor 8 en ambos miembros, obteniendo $4x = 20$. Posteriormente, aplicamos la operación de [[2]] por 4 para despejar la variable, resultando en $x = [[3]]$.",
+     "choices": [
+      "sumar",
+      "dividir",
+      "5",
+      "restar",
+      "multiplicar",
+      "20"
+     ]
+    }
+   ]
+  },
+  {
+   "programa": "microeconomia",
+   "corrida": 2,
+   "modo": "practico",
+   "pedidos": [
+    "gapselect",
+    "ddwtos",
+    "matching",
+    "calculated",
+    "true_false"
+   ],
+   "ok": true,
+   "avisos": [
+    {
+     "tipo": "ddwtos",
+     "motivo": "no-salio"
+    }
+   ],
+   "crudas": {
+    "true_false": 17,
+    "calculated": 1,
+    "gapselect": 1,
+    "matching": 1
+   },
+   "descartes": [],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u1-t2",
+     "topicName": "Equilibrio de mercado",
+     "question": "Un aumento en el precio de un bien sustituto provoca un movimiento a lo largo de la curva de demanda del bien principal.",
+     "explanation": "El cambio en el precio de un bien sustituto desplaza la curva de demanda hacia la derecha, no genera un movimiento a lo largo de la misma. Los movimientos a lo largo de la curva son causados exclusivamente por variaciones en el precio del propio bien.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q2",
+     "topic": "u1-t3",
+     "topicName": "Elasticidad precio de la demanda",
+     "question": "Si la elasticidad precio de la demanda es igual a 0,5 en valor absoluto, un incremento del 10 % en el precio generará una disminución del 5 % en la cantidad demandada.",
+     "explanation": "La elasticidad precio de la demanda mide la sensibilidad de la cantidad ante cambios en el precio. Si el valor absoluto es 0,5, un cambio del 10 % en el precio resulta en una variación porcentual de la cantidad igual a 0,5 multiplicado por 10 %, es decir, 5 %.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q3",
+     "topic": "u3-t1",
+     "topicName": "Competencia perfecta",
+     "question": "En el modelo de competencia perfecta, la curva de demanda que enfrenta una empresa individual es perfectamente inelástica.",
+     "explanation": "En competencia perfecta, la empresa es precio-aceptante, lo que implica que enfrenta una curva de demanda perfectamente elástica (horizontal) al precio de mercado vigente.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q4",
+     "topic": "u3-t2",
+     "topicName": "Monopolio",
+     "question": "Un monopolista maximiza sus beneficios cuando iguala el ingreso marginal al costo marginal.",
+     "explanation": "La condición de optimización para cualquier estructura de mercado, incluyendo el monopolio, es la igualdad entre el ingreso marginal y el costo marginal, siempre que se cumplan las condiciones de segundo orden.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q5",
+     "topic": "u1-t2",
+     "topicName": "Equilibrio de mercado",
+     "question": "Un impuesto a la producción desplaza la curva de oferta hacia la derecha, aumentando el precio de equilibrio y reduciendo la cantidad.",
+     "explanation": "Un impuesto a la producción aumenta los costos marginales, lo que desplaza la curva de oferta hacia la izquierda (o hacia arriba). Esto provoca un aumento en el precio de equilibrio y una disminución en la cantidad transada.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q6",
+     "topic": "u1-t2",
+     "topicName": "Equilibrio de mercado",
+     "question": "Uní cada concepto con su definición técnica correspondiente en el marco del equilibrio de mercado.",
+     "explanation": "El equilibrio de mercado se alcanza cuando las fuerzas de oferta y demanda se compensan. Un exceso de oferta presiona los precios a la baja, mientras que un exceso de demanda los presiona al alza.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "Exceso de oferta",
+       "right": "Precio superior al de equilibrio"
+      },
+      {
+       "left": "Exceso de demanda",
+       "right": "Precio inferior al de equilibrio"
+      },
+      {
+       "left": "Precio de equilibrio",
+       "right": "Cantidad demandada igual a ofrecida"
+      },
+      {
+       "left": "Desplazamiento de demanda",
+       "right": "Cambio en variables exógenas"
+      }
+     ],
+     "distractors": [
+      "Movimiento a lo largo de la curva"
+     ]
+    },
+    {
+     "id": "q7",
+     "topic": "u3-t1",
+     "topicName": "Competencia perfecta",
+     "question": "Completá el texto con las palabras que faltan.",
+     "explanation": "En competencia perfecta, la empresa es precio-aceptante. Esto implica que la curva de demanda que enfrenta es horizontal, lo que significa que el ingreso marginal es igual al precio de mercado.",
+     "type": "gapselect",
+     "text": "En un mercado de [[1]], la empresa individual enfrenta una curva de demanda [[2]], lo que implica que el ingreso marginal es siempre [[3]] al precio de mercado.",
+     "choices": [
+      "competencia",
+      "horizontal",
+      "igual",
+      "monopolio",
+      "vertical",
+      "mayor"
+     ]
+    },
+    {
+     "id": "q8",
+     "topic": "u1-t3",
+     "topicName": "Elasticidad precio de la demanda",
+     "question": "En el mercado de servicios de internet en una ciudad argentina, si el precio aumenta de 1.310 a 2.534 pesos y la cantidad demandada cae de 787 a 299 unidades, calculá la elasticidad precio de la demanda en valor absoluto.",
+     "explanation": "La elasticidad precio de la demanda mide la sensibilidad de la cantidad ante cambios en el precio. Se calcula como el cociente entre la variación porcentual de la cantidad y la variación porcentual del precio, utilizando el método del punto medio o la fórmula estándar según el contexto académico.",
+     "type": "calculated",
+     "formula": "abs((({q2} - {q1}) / (({q1} + {q2}) / 2)) / (({p2} - {p1}) / (({p1} + {p2}) / 2)))",
+     "variables": [
+      {
+       "name": "p1",
+       "min": 1000,
+       "max": 2000,
+       "decimals": 0
+      },
+      {
+       "name": "p2",
+       "min": 2100,
+       "max": 3000,
+       "decimals": 0
+      },
+      {
+       "name": "q1",
+       "min": 500,
+       "max": 800,
+       "decimals": 0
+      },
+      {
+       "name": "q2",
+       "min": 200,
+       "max": 400,
+       "decimals": 0
+      }
+     ],
+     "valores": {
+      "p1": 1310,
+      "p2": 2534,
+      "q1": 787,
+      "q2": 299
+     },
+     "tolerance": 0.01,
+     "plantilla": "En el mercado de servicios de internet en una ciudad argentina, si el precio aumenta de {p1} a {p2} pesos y la cantidad demandada cae de {q1} a {q2} unidades, calculá la elasticidad precio de la demanda en valor absoluto.",
+     "correctAnswer": 1.411211016020896
+    }
+   ]
+  },
+  {
+   "programa": "antropologia",
+   "corrida": 2,
+   "modo": "practico",
+   "pedidos": [
+    "gapselect",
+    "ddwtos",
+    "matching",
+    "calculated",
+    "true_false"
+   ],
+   "ok": true,
+   "avisos": [
+    {
+     "tipo": "calculated",
+     "motivo": "sin-calculos"
+    }
+   ],
+   "crudas": {
+    "true_false": 16,
+    "gapselect": 1,
+    "matching": 1,
+    "ddwtos": 1
+   },
+   "descartes": [],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u2-t2",
+     "topicName": "Etnocentrismo y relativismo cultural",
+     "question": "La tendencia a juzgar las prácticas de otras sociedades exclusivamente desde los valores y normas de la propia cultura se denomina etnocentrismo.",
+     "explanation": "El etnocentrismo constituye un mecanismo cognitivo y social donde el grupo propio se erige como parámetro universal de normalidad, invalidando la alteridad.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q2",
+     "topic": "u2-t2",
+     "topicName": "Etnocentrismo y relativismo cultural",
+     "question": "El relativismo cultural sostiene que todas las prácticas sociales son éticamente aceptables sin restricción alguna independientemente de su impacto en los derechos humanos.",
+     "explanation": "El relativismo cultural es una herramienta metodológica para comprender la lógica interna de otras culturas, pero no implica una validación moral absoluta de todas las conductas.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q3",
+     "topic": "u2-t1",
+     "topicName": "El concepto de cultura",
+     "question": "Un texto plantea que la cultura es un conjunto estático y inmutable de tradiciones heredadas que determinan completamente la conducta individual sin posibilidad de cambio.",
+     "explanation": "La cultura es un proceso dinámico y maleable, no una estructura rígida. Los individuos son agentes activos que transforman significados a través del tiempo.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q4",
+     "topic": "u3-t1",
+     "topicName": "Familia y parentesco",
+     "question": "La familia nuclear es la única forma de organización social reconocida universalmente como natural y biológicamente necesaria en todas las sociedades humanas.",
+     "explanation": "La antropología demuestra que las estructuras de parentesco son construcciones sociales diversas. La familia nuclear es solo una de las múltiples formas de organización existentes.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q5",
+     "topic": "u3-t2",
+     "topicName": "Ritos de paso",
+     "question": "Los ritos de paso son ceremonias que marcan la transición de un individuo de un estado o posición social a otro dentro de su comunidad.",
+     "explanation": "Los ritos de paso cumplen la función de estructurar los cambios de estatus vital, facilitando la integración del individuo en su nuevo rol social.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q6",
+     "topic": "u3-t2",
+     "topicName": "Ritos de paso",
+     "question": "Completá el texto con las palabras que faltan.",
+     "explanation": "Los ritos de paso son fundamentales para entender cómo las sociedades gestionan los cambios de estatus. La fase de liminalidad es el momento crítico donde el sujeto se encuentra en un estado intermedio.",
+     "type": "ddwtos",
+     "text": "En el análisis de los rituales, la fase de [[1]] marca el despojo del estatus previo del individuo. Posteriormente, la etapa de [[2]] sitúa al sujeto en un umbral donde carece de posición social definida. Finalmente, la [[3]] sella la incorporación del individuo con sus nuevas responsabilidades.",
+     "choices": [
+      "separación",
+      "liminalidad",
+      "agregación",
+      "iniciación",
+      "exclusión"
+     ]
+    },
+    {
+     "id": "q7",
+     "topic": "u2-t2",
+     "topicName": "Etnocentrismo y relativismo cultural",
+     "question": "Uní cada concepto con su definición",
+     "explanation": "El etnocentrismo y el relativismo cultural son posturas metodológicas opuestas al abordar la diversidad. Mientras el primero jerarquiza, el segundo busca la comprensión interna de las prácticas.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "Etnocentrismo",
+       "right": "Jerarquización de culturas desde parámetros propios"
+      },
+      {
+       "left": "Relativismo cultural",
+       "right": "Comprensión de prácticas según su lógica interna"
+      },
+      {
+       "left": "Universalismo",
+       "right": "Búsqueda de rasgos comunes a toda humanidad"
+      },
+      {
+       "left": "Alteridad",
+       "right": "Reconocimiento del otro como sujeto distinto"
+      }
+     ],
+     "distractors": [
+      "Asimilación cultural forzada"
+     ]
+    },
+    {
+     "id": "q8",
+     "topic": "u2-t1",
+     "topicName": "El concepto de cultura",
+     "question": "Completá el texto con las palabras que faltan.",
+     "explanation": "El concepto de cultura en antropología trasciende la mera acumulación de saberes, entendiéndose como una red de significados. Es fundamental distinguir entre la visión procesual y las visiones esencialistas que la consideran inmutable.",
+     "type": "gapselect",
+     "text": "La cultura no debe entenderse como un conjunto de rasgos aislados, sino como un [[1]] dinámico de significados. Este sistema permite a los sujetos [[2]] su entorno social y otorgar sentido a sus acciones cotidianas. Por tanto, la identidad cultural no es una esencia fija, sino un proceso de [[3]] constante.",
+     "choices": [
+      "sistema",
+      "interpretar",
+      "reconfiguración",
+      "catálogo",
+      "ignorar",
+      "estancamiento"
+     ]
+    }
+   ]
+  },
+  {
+   "programa": "contabilidad",
+   "corrida": 2,
+   "modo": "practico",
+   "pedidos": [
+    "gapselect",
+    "ddwtos",
+    "matching",
+    "calculated",
+    "true_false"
+   ],
+   "ok": true,
+   "avisos": [
+    {
+     "tipo": "ddwtos",
+     "motivo": "no-salio"
+    }
+   ],
+   "crudas": {
+    "true_false": 17,
+    "gapselect": 1,
+    "calculated": 1,
+    "matching": 1
+   },
+   "descartes": [],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u1-t2",
+     "topicName": "La ecuación contable",
+     "question": "La ecuación contable fundamental se mantiene equilibrada si un incremento en el activo se compensa con un incremento equivalente en el pasivo.",
+     "explanation": "La igualdad patrimonial $Activo = Pasivo + Patrimonio Neto$ permite que un aumento en el activo sea financiado por un aumento en las obligaciones con terceros, manteniendo la paridad.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q2",
+     "topic": "u2-t2",
+     "topicName": "Asientos contables",
+     "question": "El registro de una compra de mercaderías a crédito implica necesariamente un débito en la cuenta de pasivo Proveedores.",
+     "explanation": "Al comprar a crédito, se genera una obligación, por lo cual la cuenta Proveedores debe acreditarse, no debitarse, según la naturaleza de las cuentas de pasivo.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q3",
+     "topic": "u3-t1",
+     "topicName": "Compras y ventas de mercadería",
+     "question": "La venta de bienes de cambio al contado genera un aumento en el activo y un incremento simultáneo en el patrimonio neto por el valor total de la operación.",
+     "explanation": "El ingreso por ventas aumenta el patrimonio neto, pero el costo de la mercadería vendida reduce el activo y el patrimonio neto, por lo que el incremento neto es solo la utilidad.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q4",
+     "topic": "u3-t2",
+     "topicName": "Cobros y pagos",
+     "question": "El pago de una deuda documentada mediante un pagaré propio requiere debitar la cuenta Documentos a Pagar.",
+     "explanation": "Al cancelar un pasivo, la cuenta que representa la obligación debe debitarse para reflejar su disminución en el libro diario.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q5",
+     "topic": "u2-t2",
+     "topicName": "Asientos contables",
+     "question": "Un aumento en el patrimonio neto siempre se registra mediante un débito en una cuenta de resultado positivo.",
+     "explanation": "Las cuentas de resultado positivo, al representar ganancias, se acreditan cuando se devengan, no se debitan.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q6",
+     "topic": "u3-t2",
+     "topicName": "Cobros y pagos",
+     "question": "Uní cada operación de cobro o pago con su cuenta contable correspondiente.",
+     "explanation": "La correcta identificación de las cuentas contables según la naturaleza de la operación es fundamental para la técnica de partida doble.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "Pago de sueldos mediante transferencia bancaria",
+       "right": "Banco"
+      },
+      {
+       "left": "Cobro de un cheque de terceros en efectivo",
+       "right": "Caja"
+      },
+      {
+       "left": "Pago de una deuda con un pagaré propio",
+       "right": "Documentos a Pagar"
+      },
+      {
+       "left": "Cobro de una factura a un cliente en cuenta corriente",
+       "right": "Deudores por Ventas"
+      }
+     ],
+     "distractors": [
+      "Proveedores",
+      "Intereses Ganados"
+     ]
+    },
+    {
+     "id": "q7",
+     "topic": "u3-t1",
+     "topicName": "Compras y ventas de mercadería",
+     "question": "Una empresa adquiere mercaderías por 58.368 pesos, abonando el 34 % en efectivo y el resto mediante una transferencia bancaria. ¿Qué importe se acredita en la cuenta Banco?",
+     "explanation": "El importe a acreditar en la cuenta Banco corresponde al porcentaje restante del valor total de la compra tras deducir la porción pagada en efectivo.",
+     "type": "calculated",
+     "formula": "{m} * (1 - {p} / 100)",
+     "variables": [
+      {
+       "name": "m",
+       "min": 10000,
+       "max": 90000,
+       "decimals": 0
+      },
+      {
+       "name": "p",
+       "min": 20,
+       "max": 50,
+       "decimals": 0
+      }
+     ],
+     "tolerance": 0.01,
+     "correctAnswer": 38522.88,
+     "plantilla": "Una empresa adquiere mercaderías por {m} pesos, abonando el {p} % en efectivo y el resto mediante una transferencia bancaria. ¿Qué importe se acredita en la cuenta Banco?",
+     "valores": {
+      "m": 58368,
+      "p": 34
+     }
+    },
+    {
+     "id": "q8",
+     "topic": "u2-t2",
+     "topicName": "Asientos contables",
+     "question": "Completá el texto con las palabras que faltan.",
+     "explanation": "En el registro de una venta, el ingreso se reconoce por el valor de la operación, mientras que la salida de mercaderías se ajusta mediante el costo, afectando el resultado del ejercicio.",
+     "type": "gapselect",
+     "text": "Al registrar una venta de mercaderías, se debe acreditar la cuenta [[1]] por el valor de venta, mientras que el costo de la mercadería vendida se registra debitando una cuenta de [[2]] y acreditando la cuenta [[3]].",
+     "choices": [
+      "Ventas",
+      "Resultado negativo",
+      "Mercaderías",
+      "Pasivo",
+      "Activo",
+      "Caja"
+     ]
+    }
+   ]
+  },
+  {
+   "programa": "enfermeria",
+   "corrida": 2,
+   "modo": "practico",
+   "pedidos": [
+    "gapselect",
+    "ddwtos",
+    "matching",
+    "calculated",
+    "true_false"
+   ],
+   "ok": true,
+   "avisos": [
+    {
+     "tipo": "calculated",
+     "motivo": "sin-calculos"
+    },
+    {
+     "tipo": "ddwtos",
+     "motivo": "no-salio"
+    }
+   ],
+   "crudas": {
+    "true_false": 17,
+    "gapselect": 1,
+    "matching": 1
+   },
+   "descartes": [],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u1-t1",
+     "topicName": "Atención primaria de la salud",
+     "question": "La Atención Primaria de la Salud se fundamenta exclusivamente en la atención curativa de enfermedades agudas dentro de los centros de salud de baja complejidad.",
+     "explanation": "La Atención Primaria de la Salud trasciende la curación, enfocándose en la promoción, prevención, rehabilitación y participación comunitaria integral, no solo en la atención de patologías agudas.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q2",
+     "topic": "u2-t1",
+     "topicName": "Valoración familiar",
+     "question": "El genograma es una herramienta de valoración familiar que permite representar gráficamente la estructura, las relaciones y los antecedentes de salud de al menos tres generaciones.",
+     "explanation": "El genograma es un instrumento técnico esencial en enfermería comunitaria para visualizar la dinámica familiar y los riesgos hereditarios o sociales a lo largo del tiempo.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q3",
+     "topic": "u2-t2",
+     "topicName": "Plan de cuidados en el domicilio",
+     "question": "Ante una visita domiciliaria, la prioridad absoluta del enfermero es realizar procedimientos técnicos invasivos antes de establecer el vínculo terapéutico con la familia.",
+     "explanation": "La prioridad en la visita domiciliaria es la construcción de una alianza terapéutica y la valoración integral, ya que realizar procedimientos sin este vínculo vulnera la ética del cuidado comunitario.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q4",
+     "topic": "u3-t1",
+     "topicName": "Inmunizaciones",
+     "question": "La cadena de frío es un procedimiento crítico que debe mantenerse ininterrumpidamente desde la fabricación de la vacuna hasta su administración al usuario.",
+     "explanation": "La eficacia inmunológica depende estrictamente de la conservación de la temperatura adecuada, siendo la ruptura de la cadena de frío un riesgo inaceptable para la seguridad del paciente.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q5",
+     "topic": "u2-t1",
+     "topicName": "Valoración familiar",
+     "question": "La valoración familiar mediante el APGAR familiar evalúa únicamente la funcionalidad económica de los integrantes del hogar.",
+     "explanation": "El APGAR familiar es un instrumento que mide la funcionalidad sistémica y el apoyo percibido por los miembros de la familia, no su situación financiera.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q6",
+     "topic": "u2-t2",
+     "topicName": "Plan de cuidados en el domicilio",
+     "question": "En el plan de cuidados domiciliarios, la educación sanitaria al cuidador principal es una intervención secundaria que puede omitirse si el paciente es autónomo.",
+     "explanation": "La educación al cuidador es una intervención primaria fundamental para garantizar la continuidad del cuidado y la seguridad del paciente en su entorno habitual.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q7",
+     "topic": "u2-t1",
+     "topicName": "Valoración familiar",
+     "question": "Uní cada concepto de valoración familiar con su finalidad clínica.",
+     "explanation": "La valoración familiar integral permite al enfermero comunitario comprender la estructura y dinámica del entorno del paciente. Estas herramientas son esenciales para planificar intervenciones domiciliarias efectivas.",
+     "type": "matching",
+     "pairs": [
+      {
+       "left": "Ciclo vital familiar",
+       "right": "Etapas de desarrollo del grupo"
+      },
+      {
+       "left": "Índice de Barthel",
+       "right": "Evaluación de actividades básicas"
+      },
+      {
+       "left": "Escala de Zarit",
+       "right": "Medición de sobrecarga del cuidador"
+      },
+      {
+       "left": "Círculo familiar",
+       "right": "Representación de relaciones afectivas"
+      }
+     ],
+     "distractors": [
+      "Cálculo de riesgo epidemiológico"
+     ]
+    },
+    {
+     "id": "q8",
+     "topic": "u3-t1",
+     "topicName": "Inmunizaciones",
+     "question": "Completá el texto sobre la gestión de inmunizaciones en el primer nivel de atención.",
+     "explanation": "La gestión de biológicos requiere un control riguroso para evitar la pérdida de potencia inmunogénica. El monitoreo constante de la temperatura es un pilar fundamental en la enfermería comunitaria.",
+     "type": "gapselect",
+     "text": "Para asegurar la eficacia de las vacunas, el enfermero debe verificar diariamente que el termómetro del refrigerador se encuentre entre [[1]] y [[2]]. Ante una falla eléctrica prolongada, es imperativo no abrir la puerta del equipo y notificar inmediatamente al [[3]] de inmunizaciones.",
+     "choices": [
+      "2 °C",
+      "8 °C",
+      "responsable",
+      "paciente",
+      "10 °C",
+      "auxiliar"
+     ]
+    }
+   ]
+  },
+  {
+   "programa": "matematica-didactica",
+   "corrida": 2,
+   "modo": "practico",
+   "pedidos": [
+    "gapselect",
+    "ddwtos",
+    "matching",
+    "calculated",
+    "true_false"
+   ],
+   "ok": true,
+   "avisos": [
+    {
+     "tipo": "ddwtos",
+     "motivo": "no-salio"
+    },
+    {
+     "tipo": "matching",
+     "motivo": "no-salio"
+    },
+    {
+     "tipo": "calculated",
+     "motivo": "no-salio"
+    }
+   ],
+   "crudas": {
+    "true_false": 17,
+    "short_answer": 1,
+    "gapselect": 1,
+    "calculated": 1
+   },
+   "descartes": [
+    {
+     "tipo": "true_false",
+     "motivo": "area:latex-en-conceptual",
+     "pregunta": "El error de un alumno al considerar que $\\frac{1}{4}$ es mayor que $\\frac{1}{2}$ porque 4 es mayor que 2 debe ser ignorado por el docente para no desmotivar al estudiante."
+    },
+    {
+     "tipo": "calculated",
+     "motivo": "calidad:calculada-comodines",
+     "pregunta": "Un estudiante propone que {a}/{b} es equivalente a {c}/{d} mediante la amplificación por un factor k. ¿Cuál es el valor de k si a=2, b=5, c=8 y d=20?"
+    }
+   ],
+   "preguntas": [
+    {
+     "id": "q1",
+     "topic": "u2-t1",
+     "topicName": "Transposición didáctica",
+     "question": "La transposición didáctica consiste exclusivamente en la simplificación de conceptos científicos para que sean accesibles al nivel cognitivo de los alumnos.",
+     "explanation": "La transposición didáctica no es una mera simplificación, sino una transformación compleja del saber sabio al saber enseñado, mediada por el contrato didáctico y las finalidades educativas.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q2",
+     "topic": "u1-t2",
+     "topicName": "Divisibilidad: múltiplos y divisores",
+     "question": "Un alumno afirma que 12 es divisor de 4 porque 12 dividido 4 es 3, evidenciando una confusión entre la relación de divisibilidad y el orden de los términos.",
+     "explanation": "El error del alumno radica en invertir la relación de divisibilidad $a$ es divisor de $b$ si $b = a \\cdot k$, confundiendo el dividendo con el divisor en la operación.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q3",
+     "topic": "u2-t2",
+     "topicName": "El error como oportunidad de aprendizaje",
+     "question": "El tratamiento del error como oportunidad de aprendizaje implica que el docente debe corregir inmediatamente la producción del alumno para evitar la fijación de conceptos erróneos.",
+     "explanation": "La didáctica actual propone que el error sea una fuente de información para el alumno y el docente, permitiendo la reflexión sobre los procedimientos y la construcción de nuevos conocimientos.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q4",
+     "topic": "u3-t1",
+     "topicName": "Fracciones equivalentes",
+     "question": "Dos fracciones son equivalentes si y solo si representan la misma cantidad dentro de la unidad, independientemente de los números que las componen.",
+     "explanation": "La equivalencia de fracciones se define por la igualdad de su valor numérico, lo cual se verifica mediante la propiedad de los productos cruzados $a \\cdot d = b \\cdot c$.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q5",
+     "topic": "u1-t2",
+     "topicName": "Divisibilidad: múltiplos y divisores",
+     "question": "La noción de múltiplo de un número natural $n$ se restringe únicamente a los números obtenidos al multiplicar $n$ por los primeros diez números naturales.",
+     "explanation": "El conjunto de los múltiplos de un número natural es infinito, ya que se obtiene multiplicando dicho número por cualquier elemento del conjunto de los números naturales.",
+     "type": "true_false",
+     "correctAnswer": false
+    },
+    {
+     "id": "q6",
+     "topic": "u2-t1",
+     "topicName": "Transposición didáctica",
+     "question": "El saber sabio es el objeto de conocimiento tal como es producido y validado por la comunidad científica, diferenciándose del saber enseñado en el aula.",
+     "explanation": "Esta distinción es fundamental en la teoría de la transposición didáctica para comprender cómo el conocimiento matemático se adapta a las restricciones del sistema educativo.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q7",
+     "topic": "u3-t1",
+     "topicName": "Fracciones equivalentes",
+     "question": "Un estudiante sostiene que $\\frac{2}{3}$ es equivalente a $\\frac{4}{5}$ porque sumó 2 al numerador y 2 al denominador, aplicando erróneamente una propiedad aditiva en lugar de multiplicativa.",
+     "explanation": "El error del alumno es una sobregeneralización de la adición, ignorando que la equivalencia de fracciones se preserva mediante la multiplicación o división del numerador y denominador por un mismo factor.",
+     "type": "true_false",
+     "correctAnswer": true
+    },
+    {
+     "id": "q8",
+     "topic": "u2-t1",
+     "topicName": "Transposición didáctica",
+     "question": "Completá el texto con las palabras que faltan.",
+     "explanation": "La transposición didáctica es el proceso de transformación del saber sabio al saber enseñado. Es crucial que el docente comprenda esta mediación para diseñar secuencias didácticas coherentes.",
+     "type": "gapselect",
+     "text": "El proceso de [[1]] implica una transformación necesaria del [[2]] para convertirlo en [[3]] apto para el aula.",
+     "choices": [
+      "transposición",
+      "saber sabio",
+      "saber enseñado",
+      "evaluación",
+      "didáctica",
+      "aprendizaje"
+     ]
+    }
+   ]
+  }
+ ]
+}
