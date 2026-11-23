@@ -2081,3 +2081,36 @@ export const INFORME_FAMILIA = {
     noExisteDetalle: 'Pedile al docente uno nuevo.',
   },
 } as const
+
+/** Ronda V · V5: la portada pública para los tres públicos. */
+export const PORTADA = {
+  titular: 'Tu alumno llega a la mesa sabiendo qué le falta',
+  bajada: 'Cargás tu programa, MaestrIA arma las tareas de tu materia, sea cual sea, y te muestra tema por tema qué tiene que reforzar cada alumno. Ellos practican con explicaciones que les dicen en qué se equivocaron.',
+  empezar: 'Empezar gratis',
+  tengoCodigo: 'Tengo un código de mi profe',
+  caminosTitulo: '¿Cuál es tu caso?',
+  caminos: {
+    particulares: {
+      titulo: 'Doy clases particulares',
+      detalle: 'Cada alumno con su ficha: qué practicó, qué domina y qué le falta. Le mandás tareas en un minuto y le compartís a la familia un informe de cómo viene.',
+      boton: 'Empezar con mis alumnos',
+      captura: 'La ficha de un alumno, con lo que domina y lo que tiene que reforzar',
+    },
+    curso: {
+      titulo: 'Doy clases en un curso',
+      detalle: 'Un grupo por curso, un diagnóstico para saber de dónde parte cada uno y la planilla con quién hizo qué. Exportás a Moodle cuando quieras.',
+      boton: 'Empezar con mi curso',
+      captura: 'El diagnóstico de un grupo, tema por tema',
+    },
+    examen: {
+      titulo: 'Me preparo solo para un examen',
+      detalle: 'Subís el programa de tu materia, ponés la fecha del examen y te armamos un plan con la práctica de cada día y simulacros cronometrados.',
+      boton: 'Armar mi plan',
+      captura: 'El plan hasta el examen, con la práctica del día',
+    },
+  },
+  video: 'Mirá cómo funciona',
+  testimonios: 'Lo que dicen los docentes',
+  datosDeEjemplo: 'Las capturas son de una materia de ejemplo: los alumnos son ficticios.',
+  entrar: 'Entrar',
+} as const

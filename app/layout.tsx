@@ -1,3 +1,4 @@
+import { urlDelSitio } from '@/lib/sitio'
 import type { Metadata, Viewport } from 'next'
 import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
@@ -36,10 +37,24 @@ const inter = localFont({
   display: 'swap',
 })
 
+const DESCRIPCION =
+  'Cargás tu programa y MaestrIA arma las tareas de tu materia y te muestra tema por tema qué tiene que reforzar cada alumno. Para clases particulares, cursos y para prepararse solo para un examen.'
+
+/** V5: las URLs absolutas (Open Graph, canónica) salen de NEXT_PUBLIC_SITE_URL (lib/sitio.ts). */
 export const metadata: Metadata = {
-  title: 'MaestrIA: tareas y práctica con IA',
-  description:
-    'El docente arma el temario y manda tareas. La IA le muestra a cada alumno en qué se equivoca antes de darle la respuesta.',
+  metadataBase: new URL(urlDelSitio()),
+  title: 'MaestrIA: tu alumno llega a la mesa sabiendo qué le falta',
+  description: DESCRIPCION,
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    locale: 'es_AR',
+    siteName: 'MaestrIA',
+    title: 'MaestrIA: tu alumno llega a la mesa sabiendo qué le falta',
+    description: DESCRIPCION,
+    url: '/',
+  },
+  twitter: { card: 'summary_large_image', title: 'MaestrIA: tu alumno llega a la mesa sabiendo qué le falta', description: DESCRIPCION },
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },

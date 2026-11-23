@@ -28,6 +28,9 @@ export const RUTAS_PUBLICAS = [
   '/monitoring',          // Túnel de Sentry (tunnelRoute en next.config.mjs)
   '/api/pagos/mercadopago', // C2: el webhook de Mercado Pago (valida la firma él mismo)
   '/informe',             // V4: el informe del alumno para la familia (sólo lectura, con el token del link)
+  '/sitemap.xml',         // V5: para los buscadores
+  '/robots.txt',
+  '/opengraph-image',     // V5: la imagen para compartir el link
 ] as const
 
 export function esRutaPublica(pathname: string): boolean {

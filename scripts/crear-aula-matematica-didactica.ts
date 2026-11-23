@@ -1,3 +1,4 @@
+import { urlDelSitio } from '../lib/sitio'
 import { resolveDbTarget } from './lib/db-target'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -50,7 +51,7 @@ import {
  */
 
 const BACKUP_DIR = join(process.cwd(), 'scripts', 'backups')
-const URL_APP = 'https://maestria-edu.vercel.app'
+const URL_APP = urlDelSitio()
 
 function readFlag(name: string): string | null {
   const flag = process.argv.find((arg) => arg.startsWith(`--${name}=`))
