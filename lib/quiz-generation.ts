@@ -15,6 +15,7 @@
  */
 import { instanciarCalculada } from '@/lib/calculada'
 import { problemaDeTipoMoodle } from '@/lib/tipos-moodle'
+import { MOTIVO_DE_CALIDAD, problemaDeCalidad } from '@/lib/validar-tipos-moodle'
 import { generateObject, generateText, type RepairTextFunction } from 'ai'
 import { anclarTema } from '@/lib/a-reforzar'
 import { seccionEvitar, type PreguntaAEvitar } from '@/lib/valoraciones'
@@ -1306,6 +1307,14 @@ situaciones diferentes.${rejectionBlock}${evitarBlock}`
     const deTipo = problemaDeTipoMoodle(question as Record<string, unknown>)
     if (deTipo) {
       console.log(`[generate-quiz] Dropped (${deTipo}):`, question.question)
+      return true
+    }
+    // U3: que sirva, no sólo que se pueda mostrar (pares que no se confunden,
+    // un orden único, distractores que no son la misma palabra, una calculada
+    // con números razonables). Se descarta y el bucle pide otra, como M2.
+    const deCalidad = problemaDeCalidad(question as Record<string, unknown>)
+    if (deCalidad) {
+      console.log(`[generate-quiz] Dropped (${MOTIVO_DE_CALIDAD[deCalidad]}):`, question.question)
       return true
     }
     // Ronda T · A5: en una unidad conceptual, ni LaTeX, ni numérica, ni cuentas.
