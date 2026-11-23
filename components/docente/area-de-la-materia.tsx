@@ -1,5 +1,6 @@
 'use client'
 
+import { ComoFunciona } from '@/components/sistema/como-funciona'
 import { ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -56,6 +57,7 @@ export function AreaDeLaMateria({
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+      <ComoFunciona guia="el-area-de-la-materia" soloIcono className="shrink-0" />
     </div>
   )
 }

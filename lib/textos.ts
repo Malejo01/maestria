@@ -2114,3 +2114,13 @@ export const PORTADA = {
   datosDeEjemplo: 'Las capturas son de una materia de ejemplo: los alumnos son ficticios.',
   entrar: 'Entrar',
 } as const
+
+/** Ronda V · V6: el centro de ayuda. */
+export const AYUDA = {
+  titulo: 'Ayuda',
+  detalle: 'Guías cortas para usar MaestrIA. Las capturas son de una materia de ejemplo: los alumnos son ficticios.',
+  volver: 'Todas las guías',
+  comoFunciona: '¿Cómo funciona esto?',
+  noEncontrada: 'Esa guía no existe.',
+  otras: 'Otras guías',
+} as const

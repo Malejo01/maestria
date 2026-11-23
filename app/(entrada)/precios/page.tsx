@@ -1,3 +1,4 @@
+import { ComoFunciona } from '@/components/sistema/como-funciona'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ExternalLink } from 'lucide-react'
@@ -82,6 +83,7 @@ export default async function PreciosPage({ searchParams }: { searchParams?: Pro
         <Logo className="mx-auto" />
         <h1 className="titulo-l text-texto">{T.titulo}</h1>
         <p className="cuerpo-l font-bold text-texto">{T.frase}</p>
+        <ComoFunciona guia="planes-y-pagos" />
         <p className="cuerpo text-texto-suave">{bajada()}</p>
         <Boton asChild>
           <Link href="/sign-in?rol=docente">{T.empezar(DIAS_PRUEBA)}</Link>

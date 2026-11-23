@@ -1,5 +1,6 @@
 'use client'
 
+import { ComoFunciona } from '@/components/sistema/como-funciona'
 import { ExportarMoodle } from '@/components/docente/exportar-moodle'
 import { useState } from 'react'
 import { MIS_TAREAS as T } from '@/lib/textos'
@@ -101,7 +102,10 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
         {teacherSection === 'cuestionarios' && (
           <section className="space-y-4 rounded-lg border border-borde bg-superficie-tarjeta p-4">
             <div className="space-y-3">
-              <h1 className="titulo-l text-texto">{T.titulo}</h1>
+              <div className="flex items-center gap-1">
+                <h1 className="titulo-l text-texto">{T.titulo}</h1>
+                <ComoFunciona guia="armar-una-tarea" soloIcono />
+              </div>
               {teacherPrograms.length > 1 && (
                 <div role="group" aria-label={T.filtro} className="flex flex-wrap gap-2">
                   <Boton

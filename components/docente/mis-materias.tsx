@@ -1,5 +1,6 @@
 'use client'
 
+import { ComoFunciona } from '@/components/sistema/como-funciona'
 import { SubjectContent } from '@/components/subject-content'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -272,7 +273,10 @@ export function MisMaterias({ panel }: { panel: PanelDocente }) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 {/* P8: el título de la sección es el h1 de la página (axe, page-has-heading-one). */}
-                <h1 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Mis materias</h1>
+                <div className="flex items-center gap-1">
+                  <h1 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Mis materias</h1>
+                  <ComoFunciona guia="cargar-el-programa" soloIcono />
+                </div>
                 <Button variant="ghost" size="sm" onClick={() => setShowOnboardingModal(true)} className="text-xs h-7 text-primary hover:text-primary hover:bg-primary/10">
                   <Sparkles className="w-3.5 h-3.5 mr-1" />
                   Ayuda para crear

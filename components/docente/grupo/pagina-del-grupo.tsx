@@ -1,5 +1,6 @@
 'use client'
 
+import { ComoFunciona } from '@/components/sistema/como-funciona'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -152,7 +153,10 @@ export function PaginaDelGrupo({
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <p className="nota text-texto-suave">{grupo.materia}</p>
-            <h1 className="titulo-l break-words text-texto">{grupo.nombre}</h1>
+            <div className="flex items-center gap-1">
+              <h1 className="titulo-l break-words text-texto">{grupo.nombre}</h1>
+              <ComoFunciona guia="grupos-y-alumnos" soloIcono />
+            </div>
             <p className="nota mt-1 text-texto-suave">
               {T.codigo(grupo.codigo)} · {T.alumnos(alumnos.length)}
             </p>

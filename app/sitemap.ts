@@ -1,8 +1,9 @@
 import type { MetadataRoute } from 'next'
 import { urlDelSitio } from '@/lib/sitio'
+import { GUIAS } from '@/lib/ayuda'
 
 /** Ronda V · V5 — Las páginas públicas, para los buscadores. Las URLs salen de NEXT_PUBLIC_SITE_URL. */
-const PAGINAS_PUBLICAS = ['/', '/precios', '/terminos', '/privacidad'] as const
+const PAGINAS_PUBLICAS = ['/', '/precios', '/ayuda', ...GUIAS.map((g) => `/ayuda/${g}`), '/terminos', '/privacidad']
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = urlDelSitio()
