@@ -6,7 +6,6 @@ import { Logo } from '@/components/sistema/logo'
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import {
-  DIAS_PRUEBA,
   NIVELES,
   cuestionariosGratisPorMes,
   cupoDeNivel,
@@ -33,7 +32,7 @@ import { getViewer } from '@/lib/auth-session'
 import { resumenDelPlan } from '@/lib/planes-server'
 import { cn } from '@/lib/utils'
 
-const bajada = () => T.bajada(DIAS_PRUEBA, cupoDeNivel(0), cupoGratis())
+const bajada = () => T.bajada(cupoGratis())
 
 export function generateMetadata(): Metadata {
   const description = `${T.frase} ${bajada()}`
@@ -44,7 +43,7 @@ export function generateMetadata(): Metadata {
   }
 }
 
-/** Los niveles que se pagan: de 1 bloque al tope. La prueba y el gratis van aparte. */
+/** Los niveles que se pagan: de 1 bloque al tope. El gratis va aparte. */
 const NIVELES_PAGOS = NIVELES.filter((nivel) => nivel > 0)
 
 /**
@@ -52,9 +51,9 @@ const NIVELES_PAGOS = NIVELES.filter((nivel) => nivel > 0)
  * WhatsApp, así que se piensa primero en celular: una tarjeta por nivel, y
  * recién desde 640 px una tabla.
  *
- * Arriba, aparte de la tabla, lo que no se paga: el plan gratis y la prueba.
- * Antes la prueba era una fila más, y "Gratis, 30 días" caía en la columna
- * del pase: quien leía rápido entendía que la prueba era un pase.
+ * Arriba, aparte de la tabla, lo que no se paga: el plan gratis. AA1
+ * (27/11/2026): la prueba se apagó (`MAESTRIA_PRUEBA_DIAS`, por defecto 0) y
+ * salió de esta página; quien ya la tiene la ve en su panel.
  *
  * Los montos salen de las mismas variables de entorno que el resto del cobro
  * (lib/planes.ts); ninguno está escrito acá. Si falta uno, se muestra "—".
@@ -86,7 +85,7 @@ export default async function PreciosPage({ searchParams }: { searchParams?: Pro
         <ComoFunciona guia="planes-y-pagos" />
         <p className="cuerpo text-texto-suave">{bajada()}</p>
         <Boton asChild>
-          <Link href="/sign-in?rol=docente">{T.empezar(DIAS_PRUEBA)}</Link>
+          <Link href="/sign-in?rol=docente">{T.empezar}</Link>
         </Boton>
       </header>
 
@@ -115,7 +114,7 @@ export default async function PreciosPage({ searchParams }: { searchParams?: Pro
       </nav>
 
       {camino && (
-        <ul className="grid gap-3 sm:grid-cols-2" aria-label={T.sinPagar}>
+        <ul className="grid gap-3" aria-label={T.sinPagar}>
           <li className={cn('rounded-lg border bg-superficie-tarjeta p-4', miPlan?.estado === 'gratis' ? 'border-accion' : 'border-borde')}>
             <h2 className="cuerpo font-bold text-texto">
               {T.gratisTitulo}
@@ -125,13 +124,6 @@ export default async function PreciosPage({ searchParams }: { searchParams?: Pro
             <p className="nota mt-1 text-texto-suave">
               {T.gratisTope(cuestionariosGratisPorMes())} {T.gratisSinExtras}
             </p>
-          </li>
-          <li className={cn('rounded-lg border bg-superficie-tarjeta p-4', miPlan?.estado === 'prueba' ? 'border-accion' : 'border-borde')}>
-            <h2 className="cuerpo font-bold text-texto">
-              {T.pruebaTitulo}
-              {miPlan?.estado === 'prueba' && <TuPlan />}
-            </h2>
-            <p className="cuerpo-s mt-1 text-texto">{T.pruebaDetalle(DIAS_PRUEBA, cupoDeNivel(0))}</p>
           </li>
         </ul>
       )}

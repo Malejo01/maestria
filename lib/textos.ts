@@ -1408,7 +1408,7 @@ export const PLAN = {
     mirarPrecios: 'Mirá los precios.',
     verPlanes: 'Ver planes',
     planesTitulo: 'Elegí cómo seguir',
-    tituloPrueba: 'Terminó tu prueba de 30 días',
+    tituloPrueba: 'Terminó tu prueba',
     tituloPlan: 'Tu plan venció',
     detalle: (fecha: string) => `Venció el ${fecha}. Nada se borró.`,
     /** H7: por qué está en solo lectura y cómo volver al gratis sin pagar. */
@@ -1446,16 +1446,15 @@ function nombreDeNivel(nivel: number): string {
 export const PRECIOS = {
   titulo: 'Precios',
   frase: 'Pagás una clase por cada cinco alumnos que seguís.',
-  bajada: (dias: number, cupoPrueba: number, cupoGratis: number) =>
-    `Empezás con ${dias} días gratis, con hasta ${cupoPrueba} alumnos. Después seguís gratis con hasta ${cupoGratis} alumnos particulares y un curso, o elegís un plan.`,
-  empezar: (dias: number) => `Probar ${dias} días gratis`,
+  /** AA1: sin prueba. El gratis es para siempre; para más alumnos, un plan. */
+  bajada: (cupoGratis: number) =>
+    `Gratis con ${cupoGratis} alumnos particulares y 1 curso, para siempre. ¿Más alumnos? Elegí un plan.`,
+  empezar: 'Empezar gratis',
   /** H5: lo que no se paga va arriba, aparte de la tabla. */
   sinPagar: 'Sin pagar',
   gratisTitulo: 'Gratis',
   gratisDetalle: (cupo: number) => `Hasta ${cupo} alumnos, para siempre.`,
-  gratisTope: (cuestionarios: number) => `Hasta ${cuestionarios} cuestionarios cada 30 días.`,
-  pruebaTitulo: 'Prueba',
-  pruebaDetalle: (dias: number, cupo: number) => `${dias} días con hasta ${cupo} alumnos, todo incluido. Sin tarjeta.`,
+  gratisTope: (cuestionarios: number) => `Hasta ${cuestionarios} cuestionarios por mes.`,
   planes: 'Planes',
   plan: 'Plan',
   columnaAlumnos: 'Alumnos',
@@ -1466,7 +1465,7 @@ export const PRECIOS = {
   pagar: (tipo: 'mensual' | 'pase', nivel: string, monto: string) =>
     `Pagar ${tipo === 'mensual' ? 'un mes' : 'el pase de 90 días'} de ${nivel}, ${monto}`,
   notas: (cupoGratis: number, cupoBloque: number) => [
-    'Por mes son 30 días desde que se acredita el pago; el pase, 90 días. No es por mes calendario.',
+    'El mes corre desde el día en que se acredita el pago, no por mes calendario; el pase dura 90 días.',
     'Cuentan todos los alumnos de tus grupos, también los que entran sin cuenta. Un alumno en dos grupos tuyos cuenta una vez.',
     `Los ${cupoGratis} alumnos gratis no se suman a un plan: 1 bloque son ${cupoBloque} alumnos en total.`,
     `Si tu plan vence no se borra nada. Con ${cupoGratis} alumnos o menos seguís gratis; con más, seguís viendo todo y tus alumnos siguen respondiendo las tareas que ya les mandaste.`,
@@ -1488,7 +1487,7 @@ export const PRECIOS = {
   porAlumnoPorMes: (monto: string) => `Son ${monto} por alumno por mes.`,
   aulaTitulo: 'Plan Aula',
   aulaCurso: (porCurso: number) => `Un curso de hasta ${porCurso} alumnos`,
-  aulaCursoDetalle: 'Tareas y diagnósticos del curso, el informe para imprimir y la exportación a Moodle. 60 cuestionarios cada 30 días.',
+  aulaCursoDetalle: 'Tareas y diagnósticos del curso, el informe para imprimir y la exportación a Moodle. 60 cuestionarios por mes.',
   aulaAdicional: 'Cada curso adicional',
   pagarAula: 'Pagar un curso',
   aulaSinIndividual: 'Sin fichas ni diagnósticos de cada alumno: eso es del plan Particular.',
