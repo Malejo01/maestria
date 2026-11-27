@@ -35,3 +35,27 @@ export function alternarAprobada(aprobadas: ReadonlySet<string>, clave: string):
   else nuevas.add(clave)
   return nuevas
 }
+
+// ─── AC2: ninguna tarea se manda sin aprobar ─────────────────────────────────
+
+/**
+ * Una tarea está aprobada cuando pasó por «Revisá y aprobá» o se guardó a
+ * propósito (`status: 'saved'`). La que salió de «Compartir» sin revisar queda
+ * `pending_share`: ésa no se manda hasta aprobarla.
+ */
+export function necesitaRevision(tarea: { status?: string | null } | null | undefined): boolean {
+  return tarea?.status === 'pending_share'
+}
+
+/** Qué abre «Mandar»: la revisión (si falta aprobarla) o el diálogo de mandar. */
+export function caminoAlMandar(tarea: { status?: string | null }): 'revision' | 'mandar' {
+  return necesitaRevision(tarea) ? 'revision' : 'mandar'
+}
+
+/** Después de generar: «Compartir» pasa por la revisión; «Guardar» y «Realizar», como siempre. */
+export function despuesDeGenerar(accion: 'realizar' | 'guardar' | 'compartir'): 'revision' | 'lista' | 'cuestionario' {
+  return accion === 'compartir' ? 'revision' : accion === 'guardar' ? 'lista' : 'cuestionario'
+}
+
+/** La ruta que abre «Revisá y aprobá» de una tarea en *Mis tareas*. */
+export const rutaDeRevisarYAprobar = (id: number) => `/teacher?seccion=tareas&revisar=${id}`

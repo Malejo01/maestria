@@ -1,4 +1,7 @@
 'use client'
+import { TeacherQuizReview } from '@/components/teacher-quiz-review'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { REVISA_Y_APROBA } from '@/lib/textos'
 import { inferirArea } from '@/lib/inferir-area'
 import { sinPrefijoDeUnidad } from '@/lib/nombre-de-unidad'
 import { useRef, useState } from 'react'
@@ -90,6 +93,8 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
   // O3: en un grupo, los tipos se mandan sólo si el alumno tocó el selector.
   const [tocoLosTipos, setTocoLosTipos] = useState(false)
   const [pendingSharedQuiz, setPendingSharedQuiz] = useState<TeacherQuiz | null>(null)
+  /** AC2: la tarea que salió de «Compartir», en «Revisá y aprobá» antes de mandarse. */
+  const [revisandoParaMandar, setRevisandoParaMandar] = useState<TeacherQuiz | null>(null)
   const [isExportingMoodle, setIsExportingMoodle] = useState(false)
   const [expandedUnits, setExpandedUnits] = useState<Record<string, boolean>>({})
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
@@ -464,8 +469,9 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
       }
 
       if (action === 'compartir') {
-        setPendingSharedQuiz(savedQuiz)
-        setShowShareDialog(true)
+        // AC2: «Compartir» pasa siempre por «Revisá y aprobá»; el diálogo de
+        // mandar se abre recién con «Aprobar todas y mandar».
+        setRevisandoParaMandar(savedQuiz)
       }
 
       if (useLoadingScreen) {
@@ -793,6 +799,23 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
             onSelectAction={handleActionSelection}
             isLoading={isLoading}
           />
+          <Dialog open={revisandoParaMandar !== null} onOpenChange={(abierto) => !abierto && setRevisandoParaMandar(null)}>
+            <DialogContent className="max-h-[92dvh] overflow-y-auto rounded-lg border-borde sm:max-w-3xl" data-revision-al-compartir>
+              <DialogTitle className="sr-only">{REVISA_Y_APROBA.titulo}</DialogTitle>
+              {revisandoParaMandar && (
+                <TeacherQuizReview
+                  quiz={revisandoParaMandar}
+                  onClose={() => setRevisandoParaMandar(null)}
+                  onSaved={(guardado) => setRevisandoParaMandar(guardado)}
+                  onAprobarYMandar={(aprobado) => {
+                    setRevisandoParaMandar(null)
+                    setPendingSharedQuiz(aprobado)
+                    setShowShareDialog(true)
+                  }}
+                />
+              )}
+            </DialogContent>
+          </Dialog>
           <ShareQuizDialog
             open={showShareDialog}
             onOpenChange={setShowShareDialog}

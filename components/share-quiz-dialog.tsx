@@ -9,6 +9,9 @@ import { Cargando } from '@/components/sistema/cargando'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { Check, Copy, MessageCircle } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import Link from 'next/link'
+import { necesitaRevision, rutaDeRevisarYAprobar } from '@/lib/revisa-y-aproba'
+import { REVISA_Y_APROBA } from '@/lib/textos'
 import { Aparecer } from '@/components/sistema/aparecer'
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
@@ -203,6 +206,23 @@ export function ShareQuizDialog({
     } catch {
       setCopiado('fallo')
     }
+  }
+
+  // AC2: una tarea sin aprobar no se manda desde ningún camino: primero «Revisá y aprobá».
+  if (open && necesitaRevision(quiz)) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="rounded-lg border-borde sm:max-w-[480px]" data-falta-aprobar>
+          <DialogTitle className="titulo-m text-texto">{REVISA_Y_APROBA.faltaAprobar.titulo}</DialogTitle>
+          <DialogDescription className="cuerpo-s text-texto-suave">{REVISA_Y_APROBA.faltaAprobar.detalle}</DialogDescription>
+          <Boton asChild ancho>
+            <Link href={rutaDeRevisarYAprobar(quiz!.id)} onClick={() => onOpenChange(false)}>
+              {REVISA_Y_APROBA.titulo}
+            </Link>
+          </Boton>
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   return (
