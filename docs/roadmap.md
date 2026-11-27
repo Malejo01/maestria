@@ -1,6 +1,6 @@
 # MaestrIA — Roadmap
 
-Documento vivo. Última actualización: **27 de noviembre de 2026**.
+Documento vivo. Última actualización: **28 de noviembre de 2026**.
 
 ## Tesis de producto
 
@@ -423,6 +423,19 @@ Después de leer 16 programas reales de seis institutos (en `C:\Programacion\Mat
 - [ ] **AA4 · El registro de punta a punta** (PR [#170](https://github.com/Malejo01/maestria/pull/170), y el arreglo «Unidad 1: Unidad 1:» en [#169](https://github.com/Malejo01/maestria/pull/169)). No se traba; grabado en `docs/capturas/aa4-registro/`.
 
 **Para decidir (Mauro), salido de AA4:** con la regla de B1 (gratis = 2 particulares + 1 curso de hasta 35), **los alumnos que entran por el link cuentan como curso**: el 3.er alumno que llega por WhatsApp entra gratis y el muro no aparece por ese camino. También: «Compartir» manda sin pasar por «Revisá y aprobá», y el contador puede decir «5 de 2 alumnos». Variables de Vercel y el link del anuncio, en el informe.
+
+## 🧩 Tanda AC — cerrar los huecos de AB (28/11/2026)
+
+> **Cierre (28/11/2026):** 8 PR (#172–#178), todas con el CI en verde, **ninguna mergeada**; AC7 **[BLOQUEADO]** (staging no tiene credenciales de prueba de Mercado Pago: la lista de lo que falta está en el informe). **Migración 050**, sólo en staging. **`CRON_SECRET`** para Vercel. Gemini: USD 0,0585 de 0,10. Informe: [docs/informes/tanda-ac-2026-11-28.md](informes/tanda-ac-2026-11-28.md). Como las PR de AA + AB no estaban en `main`, las de AC salen de `tanda-ab/integracion`; **`tanda-ac/integracion` junta AB + AC en una sola PR contra `main`** para revisar todo junto. (AB1–AA4 quedan sin tildar arriba hasta que estén en `main`.)
+
+- [ ] **AC1 · La modalidad del docente** (PR [#172](https://github.com/Malejo01/maestria/pull/172), **migración 050**: `users.modalidad` y `avisos_guardados`, con válvula). Hoy la elección de la portada no se guardaba. `particular` (portada y `/profes`) o `curso`; sin dato, la regla B1 de siempre; la bienvenida pregunta una vez; «Cómo das clases» en el menú. Particular: los del link cuentan como particulares (gratis 2), el 3.º nuevo ve «sin lugar» y el docente recibe el muro en la campanita; «Crear grupo» deshabilitado con su ayuda; los que ya tiene no se sacan. Producción (lectura): 1 docente con alumnos por link (2), ninguno pasaría de 2.
+- [ ] **AC2 · «Compartir» pasa por «Revisá y aprobá»** (PR [#173](https://github.com/Malejo01/maestria/pull/173)). La compuerta está adentro del diálogo de mandar: ninguna tarea `pending_share` se manda; «Aprobar todas y mandar» la deja `saved`.
+- [ ] **AC3 · El contador** (PR [#174](https://github.com/Malejo01/maestria/pull/174), sobre AC1). «2 de 2 alumnos · plan gratis» / «Particulares 1 de 2 · Curso 18 de 35»; nunca «5 de 2»; naranja sólo en el tope.
+- [ ] **AC4 · Escaneos** (PR [#175](https://github.com/Malejo01/maestria/pull/175)). `REGLA_PARA_ESCANEOS`, medida: el Güemes escaneado pasa de 26 a 53/51 temas y conserva «valor absoluto»; los PDF de texto, igual. `scripts/qa/rasterizar-pdf.mjs` para generar escaneos de prueba.
+- [ ] **AC5 · El aviso de los lunes** (PR [#176](https://github.com/Malejo01/maestria/pull/176), sobre AC1). Cron de Vercel lunes 12:00 UTC con `CRON_SECRET` (sin ella, 401); idempotente por lunes; fuera ejemplo y prueba.
+- [ ] **AC6 · `.env.local.example`** (PR [#177](https://github.com/Malejo01/maestria/pull/177)).
+- [ ] **AC7 · Webhook con credenciales de prueba — [BLOQUEADO]**.
+- [ ] **AC8 · El recorrido de nuevo** (PR [#178](https://github.com/Malejo01/maestria/pull/178)): particular (3.º por el link no entra, muro en la campanita), curso (3.º entra, «Particulares 0 de 2 · Curso 3 de 35») y «Compartir» → revisión.
 
 ## 🌙 Cadena nocturna U → Y (23/11/2026)
 
