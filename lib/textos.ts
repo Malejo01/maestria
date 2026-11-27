@@ -2002,6 +2002,24 @@ export const ORIGEN = {
   },
 } as const
 
+/** Tanda AA · AA2: el anuncio de Meta y el criterio de verificación del análisis Founder, en /admin/embudo. */
+export const CRITERIO_DE_VERIFICACION = {
+  meta: {
+    titulo: 'Anuncio de Meta',
+    detalle: 'Los docentes que llegaron por el link del anuncio (origen=meta), y debajo uno por anuncio (ref=AD-…).',
+    columnas: { anuncio: 'Anuncio', visitas: 'Visitas', registros: 'Registros', conAlumno: 'Con 1 alumno o más', pagando: 'Pagando' },
+    total: 'Total Meta',
+    sinAnuncio: 'Sin nombre de anuncio',
+    visitasSinDato: 'La app no registra visitas: se miran en el administrador de anuncios de Meta.',
+    vacio: 'Todavía nadie se registró desde el anuncio.',
+  },
+  titulo: 'Criterio de verificación',
+  detalle: (activados: number, pagando: number) =>
+    `Meta al 31/1: ${activados} profes activados y ${pagando} pagando, 3 de ellos fuera de tu red (eso lo sabés vos). Hasta entonces, la pauta de MaestrIA queda en $0.`,
+  columnas: { docentes: 'Docentes', activados: 'Activados', conTercerAlumno: 'Con 3.er alumno', pagando: 'Pagando' },
+  activadoEs: 'Activado: una materia propia y 2 alumnos que practicaron en sus primeros 7 días.',
+} as const
+
 /** Ronda V · V2: la materia de ejemplo. */
 export const MATERIA_DE_EJEMPLO = {
   probar: 'Probar con una materia de ejemplo',

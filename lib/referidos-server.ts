@@ -2,7 +2,7 @@ import { sql } from '@/lib/db'
 import { nuevoVencimiento } from '@/lib/pagos'
 import { codigoParaDocente, DIAS_DEL_PREMIO, premioDelReferente, referidosActivo, validarReferido } from '@/lib/referidos'
 import type { QueSePaga, ResultadoDelCodigo } from '@/lib/codigos-descuento'
-import { normalizarRef } from '@/lib/origen'
+import { esCampana, normalizarRef } from '@/lib/origen'
 import { captureRouteFailure } from '@/lib/observability'
 
 /**
@@ -53,7 +53,8 @@ export async function registrarReferido(userId: string): Promise<void> {
   try {
     const [u] = (await sql`SELECT to_jsonb(users) ->> 'origen_ref' AS ref FROM users WHERE id = ${userId}`) as { ref: string | null }[]
     const codigo = normalizarRef(u?.ref)
-    if (!codigo) return
+    // AA2: `AD-…` es el nombre de un anuncio de Meta, nunca el código de un docente.
+    if (!codigo || esCampana(codigo)) return
     const referente = await duenoDelCodigo(codigo)
     if (!referente || referente === userId) return
     await sql`

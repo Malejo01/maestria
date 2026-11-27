@@ -48,6 +48,13 @@ describe('registrarReferido', () => {
     await registrarReferido('nuevo')
     expect(consultas.some((q) => q.includes('INSERT INTO referidos'))).toBe(true)
   })
+  it('AA2 · un anuncio de Meta (ref=AD-…) no es un referido: ni busca dueño ni anota', async () => {
+    responder("->> 'origen_ref'", [{ ref: 'AD-PRUEBA' }])
+    responder('WHERE codigo_referido =', [{ id: 'alguien' }])
+    await registrarReferido('nuevo')
+    expect(consultas.some((q) => q.includes('WHERE codigo_referido ='))).toBe(false)
+    expect(consultas.some((q) => q.includes('INSERT INTO referidos'))).toBe(false)
+  })
   it('no se anota a sí mismo ni sin código', async () => {
     responder("->> 'origen_ref'", [{ ref: 'IRINA-K7Q2' }])
     responder('WHERE codigo_referido =', [{ id: 'nuevo' }])

@@ -47,7 +47,8 @@ export function codigoParaDocente(nombre: string | null | undefined, aleatorio: 
       ?.replace(/[^A-Z]/g, '')
       .slice(0, 10) || 'DOCENTE'
   const sufijo = Array.from({ length: 4 }, () => LETRAS[Math.floor(aleatorio() * LETRAS.length) % LETRAS.length]).join('')
-  return `${base.length >= 2 ? base : 'DOCENTE'}-${sufijo}`
+  // AA2: `AD-` queda reservado para los anuncios (lib/origen.ts, `esCampana`).
+  return `${base.length >= 2 && base !== 'AD' ? base : 'DOCENTE'}-${sufijo}`
 }
 
 /** El código del referido como uno de C1: 10 %, planes docentes, una vez. */

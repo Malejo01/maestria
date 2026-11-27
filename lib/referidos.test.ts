@@ -23,6 +23,11 @@ describe('referidos (V3)', () => {
     expect(codigoParaDocente('X')).toMatch(/^DOCENTE-/)
   })
 
+  it('AA2 · ningún código de docente empieza con «AD-» (es el prefijo de los anuncios)', () => {
+    expect(codigoParaDocente('Ad Pérez')).toMatch(/^DOCENTE-/)
+    expect(codigoParaDocente('Adriana')).toMatch(/^ADRIANA-/)
+  })
+
   it('10 % en el primer pago de un plan docente, nunca del propio código', () => {
     const base = { activo: true, codigo: 'IRINA-K7Q2', referenteId: 'irina', quienPaga: 'nuevo', yaPago: false, que: docente }
     expect(validarReferido(base)).toMatchObject({ ok: true, porcentaje: 10 })
