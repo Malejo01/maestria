@@ -1938,6 +1938,16 @@ export const EXPORTAR_MOODLE = {
 } as const
 
 /** Ronda T · C2: pagar desde la app (Mercado Pago Checkout Pro). */
+/** Tanda AB · AB8: la garantía de 14 días, en /admin/planes (sólo lectura; el reintegro es a mano en Mercado Pago). */
+export const GARANTIA = {
+  titulo: 'Candidatos a la garantía',
+  detalle: 'Pagaron hace 14 días o menos y ningún alumno practicó desde el pago. El reintegro se hace a mano desde Mercado Pago.',
+  ninguno: 'Ningún pago de los últimos 14 días está en esa situación.',
+  sinDato: 'Sin dato: la tabla de pagos (migración 039) no está en esta base.',
+  quedan: (dias: number) => (dias === 0 ? 'último día' : dias === 1 ? 'queda 1 día' : `quedan ${dias} días`),
+  pagoMp: (id: string) => `pago MP ${id}`,
+} as const
+
 export const PAGAR = {
   titulo: 'Pagar',
   resumen: 'Resumen',
