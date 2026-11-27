@@ -17,8 +17,8 @@ import {
   tipoDePlan,
   type LugaresPorTipo,
   type TipoDePlan,
-  DIAS_PRUEBA,
   DIAS_VENTANA_GRATIS,
+  diasDePrueba,
   cuerpoDeBloqueo,
   cuestionariosGratisPorMes,
   cupoGratis,
@@ -162,7 +162,8 @@ function armarResumen(
     venceEl: vence ? vence.toISOString() : null,
     diasRestantes: diasRestantes(datos),
     avisoDePruebaPendiente:
-      columnasPresentes && estado === 'prueba' && nivel === 0 && !datos.pruebaIniciadaEl && !datos.venceEl,
+      columnasPresentes && diasDePrueba() > 0 && estado === 'prueba' && nivel === 0 && !datos.pruebaIniciadaEl && !datos.venceEl,
+    diasDePrueba: diasDePrueba(),
     cupoGratis: cupoGratis(),
     topeCuestionarios: cuestionariosDelMes(tipoDePlan(datos.tipo), estado) ?? cuestionariosGratisPorMes(),
     cuestionarios,
@@ -325,16 +326,19 @@ export async function emailDeUsuario(userId: string): Promise<string | null> {
 }
 
 /**
- * G2: el docente aceptó el aviso. Arranca la prueba de 30 días, una sola vez:
+ * G2: el docente aceptó el aviso. Arranca la prueba (`diasDePrueba`), una sola vez:
  * si ya arrancó (o tiene un plan pago) no toca nada. Devuelve si la arrancó.
  */
 export async function iniciarPrueba(teacherId: string, email: string | null): Promise<boolean> {
   if (isAdminEmail(email)) return false
+  // AA1: con `MAESTRIA_PRUEBA_DIAS` en 0 (el valor por defecto) no hay prueba que arrancar.
+  const dias = diasDePrueba()
+  if (dias <= 0) return false
   try {
     const filas = (await sql`
       UPDATE users
       SET prueba_iniciada_el = NOW(),
-          plan_vence_el = NOW() + make_interval(days => ${DIAS_PRUEBA}),
+          plan_vence_el = NOW() + make_interval(days => ${dias}),
           updated_at = NOW()
       WHERE id = ${teacherId}
         AND prueba_iniciada_el IS NULL

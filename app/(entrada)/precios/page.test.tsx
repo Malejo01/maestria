@@ -32,21 +32,33 @@ afterEach(() => {
 })
 
 describe('/precios', () => {
-  it('la bajada nueva, con los números del plan', async () => {
+  it('AA1 · la bajada: gratis para siempre y, para más alumnos, un plan', async () => {
     await particular()
-    expect(
-      screen.getByText('Empezás con 30 días gratis, con hasta 10 alumnos. Después seguís gratis con hasta 2 alumnos particulares y un curso, o elegís un plan.'),
-    ).toBeTruthy()
-    expect(generateMetadata().description).toMatch(/Después seguís gratis con hasta 2 alumnos particulares y un curso/)
+    expect(screen.getByText('Gratis con 2 alumnos particulares y 1 curso, para siempre. ¿Más alumnos? Elegí un plan.')).toBeTruthy()
+    expect(generateMetadata().description).toMatch(/Gratis con 2 alumnos particulares y 1 curso, para siempre/)
   })
 
-  it('gratis y prueba van arriba, como tarjetas propias', async () => {
+  it('AA1 · el botón dice «Empezar gratis» y lleva al ingreso del docente', async () => {
+    await particular()
+    expect(screen.getByRole('link', { name: 'Empezar gratis' }).getAttribute('href')).toBe('/sign-in?rol=docente')
+  })
+
+  it('AA1 · ya no hay prueba ni «30 días» en la página, en ningún camino', async () => {
+    for (const camino of [undefined, 'particular', 'aula']) {
+      const { container } = render(await PreciosPage({ searchParams: Promise.resolve(camino ? { camino } : {}) }))
+      expect(container.textContent).not.toMatch(/30 días/)
+      expect(container.textContent).not.toMatch(/Prueba/)
+      cleanup()
+    }
+    expect(generateMetadata().description).not.toMatch(/30 días/)
+  })
+
+  it('el gratis va arriba, como tarjeta propia', async () => {
     await particular()
     const arriba = screen.getByRole('list', { name: 'Sin pagar' })
     expect(within(arriba).getByText('Gratis')).toBeTruthy()
     expect(within(arriba).getByText('Hasta 2 alumnos particulares y 1 curso de hasta 35, para siempre.')).toBeTruthy()
-    expect(within(arriba).getByText('Prueba')).toBeTruthy()
-    expect(within(arriba).getByText('30 días con hasta 10 alumnos, todo incluido. Sin tarjeta.')).toBeTruthy()
+    expect(within(arriba).getAllByRole('listitem')).toHaveLength(1)
   })
 
   it('la tabla y las tarjetas de celular tienen sólo los niveles pagos', async () => {
