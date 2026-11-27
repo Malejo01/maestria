@@ -9,7 +9,10 @@ import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { etiquetaDeMateria, materiaDePrograma } from '@/lib/etiqueta-materia'
 import { pedirJson } from '@/lib/pedir-json'
-import { CREAR_GRUPO as T } from '@/lib/textos'
+import { CREAR_GRUPO as T, MODALIDAD } from '@/lib/textos'
+import Link from 'next/link'
+import { RUTA_COMO_DAS_CLASES } from '@/components/docente/como-das-clases'
+import type { Modalidad } from '@/lib/modalidad'
 import type { TeacherProgram } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -22,7 +25,7 @@ export const rutaDelGrupoNuevo = (id: number) => `/teacher/grupos/${id}?nuevo=1`
  * encontró. El mismo formulario de siempre (materia + nombre); al crear, lleva
  * a la página del grupo nuevo.
  */
-export function CrearGrupo({ materias }: { materias: TeacherProgram[] }) {
+export function CrearGrupo({ materias, modalidad = null }: { materias: TeacherProgram[]; modalidad?: Modalidad | null }) {
   const router = useRouter()
   const idNombre = useId()
   const [abierto, setAbierto] = useState(false)
@@ -48,6 +51,25 @@ export function CrearGrupo({ materias }: { materias: TeacherProgram[] }) {
       return
     }
     router.push(rutaDelGrupoNuevo(Number(respuesta.data.classroom.id)))
+  }
+
+  // AC1: el docente particular no abre cursos. El botón se ve, deshabilitado, con la ayuda.
+  if (modalidad === 'particular') {
+    return (
+      <div className="flex max-w-sm flex-col items-end gap-2" data-crear-grupo-deshabilitado>
+        <Boton disabled aria-describedby={`${idNombre}-ayuda`}>
+          <Plus aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+          {T.boton}
+        </Boton>
+        <p id={`${idNombre}-ayuda`} className="nota text-right text-texto-suave">
+          {MODALIDAD.crearCursoDeshabilitado}{' '}
+          <Link href={RUTA_COMO_DAS_CLASES} className="font-semibold text-accion underline-offset-4 hover:underline">
+            {MODALIDAD.enlaceComoDasClases}
+          </Link>
+          .
+        </p>
+      </div>
+    )
   }
 
   return (

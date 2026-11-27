@@ -12,7 +12,8 @@ export const DESTINO_DEL_DOCENTE = '/teacher'
 
 /** `/sign-in?rol=docente&callbackUrl=/teacher` más el `origen` y el `ref` que traía la página, ya limpios. */
 export function linkParaEmpezar(params: URLSearchParams | null | undefined): string {
-  const destino = new URLSearchParams({ rol: 'docente', callbackUrl: DESTINO_DEL_DOCENTE })
+  // AC1: quien llega por /profes da clases particulares.
+  const destino = new URLSearchParams({ rol: 'docente', callbackUrl: DESTINO_DEL_DOCENTE, modalidad: 'particular' })
   // El canal se pasa tal cual si tiene forma de canal (`meta`, `ig`…): quien lo
   // valida contra la lista es el middleware al guardar la cookie (lib/origen.ts).
   const origen = params?.get('origen')?.trim().toLowerCase() ?? ''

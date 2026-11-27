@@ -5,8 +5,8 @@ const q = (s: string) => new URLSearchParams(s)
 const leer = (href: string) => new URL(href, 'https://x.test').searchParams
 
 describe('linkParaEmpezar (AA3)', () => {
-  it('va al ingreso del docente y vuelve al panel', () => {
-    expect(linkParaEmpezar(null)).toBe('/sign-in?rol=docente&callbackUrl=%2Fteacher')
+  it('va al ingreso del docente y vuelve al panel, como docente particular (AC1)', () => {
+    expect(linkParaEmpezar(null)).toBe('/sign-in?rol=docente&callbackUrl=%2Fteacher&modalidad=particular')
   })
 
   it('conserva origen y ref del anuncio', () => {

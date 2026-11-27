@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState, type ReactNode } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Check, ShieldCheck } from 'lucide-react'
 import { DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Boton } from '@/components/sistema/boton'
@@ -101,5 +103,23 @@ export function MuroDelTercerAlumno({
       onVolver={onVolver}
       pago={<ResumenDePago pedido={{ plan: 'particular', forma: 'mensual', cantidad: 1 }} />}
     />
+  )
+}
+
+/**
+ * AC1 · El muro abierto desde el aviso de la campanita («Un alumno nuevo quiso
+ * entrar…», `href: /teacher?muro=1`). El mismo de AB6, en su diálogo.
+ */
+export function MuroDesdeElAviso({ cupoGratis, precioBloque }: { cupoGratis: number; precioBloque: number | null }) {
+  const router = useRouter()
+  const params = useSearchParams()
+  const abierto = params?.get('muro') === '1'
+  const cerrar = () => router.replace('/teacher')
+  return (
+    <Dialog open={abierto} onOpenChange={(a) => !a && cerrar()}>
+      <DialogContent className="rounded-lg border-borde sm:max-w-[560px]">
+        {abierto && <MuroDelTercerAlumno cupoGratis={cupoGratis} precioBloque={precioBloque} onVolver={cerrar} />}
+      </DialogContent>
+    </Dialog>
   )
 }
