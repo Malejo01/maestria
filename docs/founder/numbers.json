@@ -1,0 +1,23 @@
+{
+  "business": "MaestrIA · plan Particular (bloque de 5 alumnos, mensual)",
+  "unit": "bloque-mes (5 alumnos, 1 mes)",
+  "price": 15000,
+  "variable": [
+    {"label": "IA Gemini por bloque-mes (estimado con costos medidos: 10 cuestionarios + 200 correcciones + 100 devoluciones + 100 pistas ≈ USD 0,24 × 1.950)", "cost": 470},
+    {"label": "Comisión Mercado Pago con IVA (estimado 7,6 %)", "cost": 1140},
+    {"label": "Reserva garantía 14 días (estimado: 5 % de reintegros)", "cost": 750}
+  ],
+  "fixed_monthly": [
+    {"label": "Vercel (USD 20, 50 % atribuido a MaestrIA)", "cost": 19500},
+    {"label": "Anuncios Meta MaestrIA ($2.000/día)", "cost": 60000},
+    {"label": "Neon Postgres (plan gratis)", "cost": 0}
+  ],
+  "startup": [
+    {"label": "Prueba de 14 días de anuncios antes de escalar", "cost": 28000},
+    {"label": "Desarrollo (ya hecho por el fundador, sin costo de caja)", "cost": 0}
+  ],
+  "days_per_month": 30,
+  "capacity_per_day": 3,
+  "plan_per_day": 0.833,
+  "ramp_per_day": [0.067, 0.167, 0.5, 0.667, 0.267, 0.333, 0.333, 0.4, 0.4, 0.4, 0.467, 0.6]
+}
