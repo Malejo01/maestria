@@ -5,6 +5,9 @@ import { AvisoDeEjemplo } from '@/components/docente/materia-de-ejemplo'
 import Link from 'next/link'
 import { HitosOnboarding } from '@/components/docente/hitos-onboarding'
 import { ArranqueGuiado } from '@/components/docente/arranque-guiado'
+import { ComoDasClases } from '@/components/docente/como-das-clases'
+import { MuroDesdeElAviso } from '@/components/docente/muro-del-tercer-alumno'
+import { cupoGratis as cupoGratisPorDefecto } from '@/lib/planes'
 import { MisAlumnos } from '@/components/docente/mis-alumnos'
 import { EstaSemana } from '@/components/docente/esta-semana'
 import { MIS_GRUPOS } from '@/lib/textos'
@@ -70,6 +73,12 @@ export default function TeacherPage() {
       <ContadorDelPlan datos={planDatos} />
       <EstadoDelPlan datos={planDatos} />
       <AvisoDeEjemplo />
+      {/* AC1: «Cómo das clases» (?comoDasClases=1) y el muro desde la campanita (?muro=1). */}
+      <ComoDasClases actual={planDatos?.plan.modalidad ?? null} alGuardar={recargarPlan} />
+      <MuroDesdeElAviso
+        cupoGratis={planDatos?.plan.cupoGratis ?? cupoGratisPorDefecto()}
+        precioBloque={planDatos?.renovar?.nivel === 1 ? (planDatos.renovar.mensual?.monto ?? null) : null}
+      />
 
       {/* AB4: mientras 2 alumnos no practicaron, el arranque guiado reemplaza a los primeros pasos. */}
       <ArranqueGuiado
@@ -128,7 +137,7 @@ export default function TeacherPage() {
                 alCambiarAlumnos={() => panel.setVersion((v) => v + 1)}
               />
             ) : (
-              <MisGrupos materias={teacherPrograms} alCambiar={() => panel.setVersion((v) => v + 1)} />
+              <MisGrupos materias={teacherPrograms} alCambiar={() => panel.setVersion((v) => v + 1)} modalidad={planDatos?.plan.modalidad ?? null} />
             )}
           </div>
         )}

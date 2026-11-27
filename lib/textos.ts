@@ -1290,6 +1290,32 @@ export const PAGINA_DEL_GRUPO = {
 } as const
 
 /** M3: crear un grupo nuevo (antes "Crear aula", escondido en la gestión). */
+/** Tanda AC · AC1: la modalidad del docente (lib/modalidad.ts). */
+export const MODALIDAD = {
+  pregunta: '¿Cómo das clases?',
+  preguntaDetalle: 'Así te mostramos el plan que te sirve. Lo podés cambiar cuando quieras.',
+  opciones: {
+    particular: { titulo: 'Doy clases particulares', detalle: 'Seguís a cada alumno: su ficha, su diagnóstico, sus tareas.' },
+    curso: { titulo: 'Doy clases en un curso', detalle: 'En una escuela o un instituto: tareas y diagnósticos para todo el curso.' },
+  },
+  menu: 'Cómo das clases',
+  menuDetalle: { particular: 'Clases particulares', curso: 'En un curso', sinDato: 'Sin elegir' },
+  dialogo: {
+    titulo: 'Cómo das clases',
+    detalle: 'Esto cambia cómo cuentan los alumnos en tu plan gratis.',
+    queCambia: {
+      particular: 'Clases particulares: todos tus alumnos cuentan como particulares, también los que entran por el link. El plan gratis llega a 2. Los que ya tenés no se sacan; se frena el siguiente.',
+      curso: 'En un curso: el plan gratis es 2 alumnos particulares y 1 curso de hasta 35 (los que entran por el link del curso).',
+    },
+    confirmar: 'Guardar',
+    cancelar: 'Cancelar',
+    guardado: 'Listo, quedó guardado.',
+    noSeGuardo: 'No se pudo guardar. Probá de nuevo.',
+  },
+  crearCursoDeshabilitado: 'Los cursos son para clases en una escuela o instituto. ¿Das clases en un curso? Cambialo en',
+  enlaceComoDasClases: 'Cómo das clases',
+} as const
+
 export const CREAR_GRUPO = {
   boton: 'Crear grupo',
   titulo: 'Crear un grupo',
@@ -1946,6 +1972,14 @@ export const GARANTIA = {
   sinDato: 'Sin dato: la tabla de pagos (migración 039) no está en esta base.',
   quedan: (dias: number) => (dias === 0 ? 'último día' : dias === 1 ? 'queda 1 día' : `quedan ${dias} días`),
   pagoMp: (id: string) => `pago MP ${id}`,
+} as const
+
+/** Tanda AC · AC1/AC5: los avisos guardados de la campanita (lib/avisos-guardados-server.ts). */
+export const AVISOS_GUARDADOS = {
+  muro: {
+    titulo: 'Un alumno nuevo quiso entrar y tu plan gratis está completo',
+    detalle: (evidencia: string) => `${evidencia} Sumá hasta 5 alumnos con el plan Particular.`,
+  },
 } as const
 
 export const PAGAR = {

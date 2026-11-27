@@ -5,10 +5,12 @@ import { contarAlumnosDelDocente } from '@/lib/alumnos-docente-server'
 import { normalizarNombre } from '@/lib/alumnos-docente'
 import { captureRouteFailure } from '@/lib/observability'
 import { lugaresDelDocente } from '@/lib/alumnos-docente-server'
+import { normalizarModalidad, usaCursos } from '@/lib/modalidad'
+import { avisarMuroAlDocente } from '@/lib/avisos-guardados-server'
 import {
   alumnosMaximosPorCurso,
   cuestionariosDelMes,
-  cursoTieneLugar,
+  decidirIngresoPorCodigo,
   practicasExtraPorAlumnoMes,
   puedeCrearCurso,
   cupoDeCursosAula,
@@ -65,7 +67,9 @@ interface PlanLeido {
 async function leerFilaDelPlan(userId: string): Promise<Fila | undefined> {
   try {
     const filas = (await sql`
-      SELECT plan_nivel, plan_vence_el, prueba_iniciada_el, created_at, plan_tipo, aula_cursos, fundadora_desde
+      SELECT plan_nivel, plan_vence_el, prueba_iniciada_el, created_at, plan_tipo, aula_cursos, fundadora_desde,
+             -- AC1: la 050. Con to_jsonb, sin la columna viene NULL (la válvula).
+             to_jsonb(users) ->> 'modalidad' AS modalidad
       FROM users WHERE id = ${userId} LIMIT 1
     `) as Fila[]
     return filas[0]
@@ -110,6 +114,7 @@ async function leerPlan(
       alumnosActuales: 0,
       tipo: fila.plan_tipo,
       aulaCursos: fila.aula_cursos,
+      modalidad: normalizarModalidad(fila.modalidad),
     }
     if (normalizarNivel(datos.nivel) !== null && (contarSiempre || terminoElPeriodo(datos))) {
       const lugares = await lugaresSinRomper(userId)
@@ -174,6 +179,7 @@ function armarResumen(
     permiteIndividual: permiteIndividual(tipoDePlan(datos.tipo), estado),
     permiteImprimirYMoodle: permiteImprimirYMoodle(estado),
     fundadoraDesde: fechaIso(fundadoraDesde),
+    modalidad: datos.modalidad ?? null,
   }
 }
 
@@ -261,7 +267,8 @@ export async function bloqueoParaSumarAlumno(teacherId: string, email: string | 
   if (estado === 'exento') return null
   const resumen = await resumenDelPlan(teacherId, email)
   if (!resumen.permiteIndividual) return NextResponse.json(cuerpoDeBloqueo(resumen, 'solo_particular'), { status: 402 })
-  const ocupados = estado === 'gratis' && datos.lugares ? datos.lugares.particulares : resumen.alumnos
+  // AC1: con modalidad particular, en el gratis cuentan TODOS (también los del link).
+  const ocupados = estado === 'gratis' && datos.lugares && usaCursos(datos.modalidad ?? null) ? datos.lugares.particulares : resumen.alumnos
   if (puedeSumarAlumno(resumen.estado, ocupados, resumen.nivel)) return null
   return NextResponse.json(cuerpoDeBloqueo(resumen, resumen.estado === 'vencido' ? 'vencido' : 'sin_cupo'), {
     status: 402,
@@ -584,15 +591,22 @@ async function grupoTieneLugarParaInterno(params: {
     const plan = await leerPlan(params.teacherId, email, new Date(), { contarSiempre: true })
     const estado = estadoDelPlan(plan.datos)
     const tipo = tipoDePlan(plan.datos.tipo)
-    if (estado === 'gratis' || (tipo === 'aula' && estado === 'activo')) {
-      const { porGrupo } = await lugaresDelDocente(params.teacherId)
-      const enEsteCurso = porGrupo.get(params.classroomId) ?? 0
-      const otrosCursosConAlumnos = [...porGrupo.entries()].filter(([id, n]) => id !== params.classroomId && n > 0).length
-      return cursoTieneLugar({ estado, tipo, enEsteCurso, otrosCursosConAlumnos }) ? true : 'curso_completo'
-    }
-
-    const resumen = await resumenDelPlan(params.teacherId, email)
-    return puedeSumarAlumno(resumen.estado, resumen.alumnos, resumen.nivel) ? true : 'sin_lugar'
+    // AC1: la modalidad decide si quien entra por el link ocupa un lugar de
+    // curso (B1) o uno particular (cupo gratis de 2). Ver decidirIngresoPorCodigo.
+    const modalidad = plan.datos.modalidad ?? null
+    const { porGrupo, total } = await lugaresDelDocente(params.teacherId)
+    const decision = decidirIngresoPorCodigo({
+      estado,
+      tipo,
+      modalidad,
+      nivel: plan.datos.nivel,
+      alumnos: total,
+      enEsteCurso: porGrupo.get(params.classroomId) ?? 0,
+      otrosCursosConAlumnos: [...porGrupo.entries()].filter(([id, n]) => id !== params.classroomId && n > 0).length,
+    })
+    // AC1: al particular del gratis que se quedó sin lugar, el aviso del muro en la campanita (uno por día).
+    if (decision === 'sin_lugar' && estado === 'gratis' && modalidad === 'particular') await avisarMuroAlDocente(params.teacherId)
+    return decision
   } catch (error) {
     // La válvula, también acá: si no se puede decidir, el alumno entra.
     captureRouteFailure(error, { endpoint: 'lib/planes-server', operation: 'grupoTieneLugarPara' })

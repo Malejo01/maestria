@@ -7,6 +7,7 @@ import { armarAvisos, type FilaDeAviso } from '@/lib/avisos-docente'
 import { leerLectura, marcarTodoLeido } from '@/lib/avisos/lectura-server'
 import { crearAviso, type RespuestaDeAvisos } from '@/lib/avisos/tipos'
 import { pagosAcreditadosDe } from '@/lib/pagos-server'
+import { avisosGuardadosDe } from '@/lib/avisos-guardados-server'
 import { NOVEDADES, PAGAR, REFERIDOS, SALUD } from '@/lib/textos'
 
 /**
@@ -118,7 +119,9 @@ export async function avisosDelDocente(docenteId: string, { esAdmin = false }: {
   const deLasNovedades = novedadesParaAvisar(novedades, 'docente', new Date()).map((n) =>
     crearAviso('novedad', { clave: `novedad|${n.slug}`, titulo: NOVEDADES.aviso(n.titulo), detalle: n.resumen, href: `/novedades/${n.slug}`, fecha: fechaDeAviso(n) }, leida),
   )
-  const avisos = [...armarAvisos(filas, leida), ...deLosPagos, ...deLosReferidos, ...delSistema, ...deLasNovedades].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
+  // AC1/AC5: los guardados (el muro, el resumen de los lunes). Sin la 050, ninguno.
+  const guardados = await avisosGuardadosDe(docenteId, leida)
+  const avisos = [...armarAvisos(filas, leida), ...deLosPagos, ...deLosReferidos, ...delSistema, ...deLasNovedades, ...guardados].sort((a, b) => (a.fecha < b.fecha ? 1 : -1))
   return { avisos, vistoEl: leida.vistoEl, puedeMarcar: leida.puedeMarcar }
 }
 
