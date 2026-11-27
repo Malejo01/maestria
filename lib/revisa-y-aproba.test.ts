@@ -32,3 +32,20 @@ describe('el contador de «Revisá y aprobá» (AB7)', () => {
     expect(contarRevisadas([{}, {}], aprobarTodas([{}, {}]))).toBe(2)
   })
 })
+
+describe('AC2 · ninguna tarea se manda sin aprobar', () => {
+  it('la que salió de «Compartir» sin revisar (pending_share) va a la revisión; la guardada, a mandar', async () => {
+    const { caminoAlMandar, necesitaRevision } = await import('./revisa-y-aproba')
+    expect(necesitaRevision({ status: 'pending_share' })).toBe(true)
+    expect(caminoAlMandar({ status: 'pending_share' })).toBe('revision')
+    expect(caminoAlMandar({ status: 'saved' })).toBe('mandar')
+    expect(necesitaRevision(null)).toBe(false)
+  })
+  it('después de generar: «Compartir» → revisión; «Guardar» → la lista; «Realizar» → el cuestionario', async () => {
+    const { despuesDeGenerar, rutaDeRevisarYAprobar } = await import('./revisa-y-aproba')
+    expect(despuesDeGenerar('compartir')).toBe('revision')
+    expect(despuesDeGenerar('guardar')).toBe('lista')
+    expect(despuesDeGenerar('realizar')).toBe('cuestionario')
+    expect(rutaDeRevisarYAprobar(7)).toBe('/teacher?seccion=tareas&revisar=7')
+  })
+})

@@ -1,5 +1,8 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
+import { caminoAlMandar, necesitaRevision } from '@/lib/revisa-y-aproba'
+import { REVISA_Y_APROBA } from '@/lib/textos'
 import { AbrirCorrecciones } from '@/components/docente/correcciones'
 import { tareaDesdeFila } from '@/lib/tarea-docente'
 import { pedirJson } from '@/lib/pedir-json'
@@ -8,7 +11,7 @@ import { BANCO, EXAMEN_IMPRESO, IMPORTAR_MOODLE } from '@/lib/textos'
 import Link from 'next/link'
 import { ComoFunciona } from '@/components/sistema/como-funciona'
 import { ExportarMoodle } from '@/components/docente/exportar-moodle'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MIS_TAREAS as T } from '@/lib/textos'
 
 import { Boton } from '@/components/sistema/boton'
@@ -81,8 +84,35 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
     }
     const copia = tareaDesdeFila(res.data.quiz)
     setTeacherQuizzes([copia, ...teacherQuizzes])
-    setSharingQuiz(copia)
+    mandarOAprobar(copia)
   }
+
+  // AC2: «Mandar» abre la revisión si la tarea está sin aprobar.
+  function mandarOAprobar(quiz: (typeof teacherQuizzes)[number]) {
+    if (caminoAlMandar(quiz) === 'revision') setRevisandoQuiz(quiz)
+    else setSharingQuiz(quiz)
+  }
+
+  // AC2: `?revisar=<id>` (desde el diálogo de mandar o desde «Compartir») abre su revisión.
+  const parametros = useSearchParams()
+  const revisarId = Number(parametros?.get('revisar') ?? '')
+  useEffect(() => {
+    if (!revisarId) return
+    const tarea = teacherQuizzes.find((q) => q.id === revisarId)
+    if (tarea) {
+      setRevisandoQuiz(tarea)
+      return
+    }
+    // Recién guardada (todavía no está en la lista del panel): se pide.
+    let vigente = true
+    void pedirJson<{ quiz: Record<string, unknown> }>(`/api/teacher/quizzes/${revisarId}`).then((res) => {
+      if (vigente && !('error' in res)) setRevisandoQuiz(tareaDesdeFila(res.data.quiz))
+    })
+    return () => {
+      vigente = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revisarId])
 
   // N2: corregir en lote las preguntas cuyo tipo no encaja con la consigna.
   const { toast } = useToast()
@@ -246,8 +276,8 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                       )}
 
                       {/* Una sola acción principal por tarea: mandarla. */}
-                      <Boton className="self-start" onClick={() => setSharingQuiz(quiz)}>
-                        {T.mandar}
+                      <Boton className="self-start" onClick={() => mandarOAprobar(quiz)}>
+                        {necesitaRevision(quiz) ? REVISA_Y_APROBA.revisarParaMandar : T.mandar}
                       </Boton>
 
                       <div className="flex flex-wrap gap-2">

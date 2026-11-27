@@ -403,3 +403,30 @@ describe('TeacherQuizReview · AB7, «Revisá y aprobá»', () => {
     expect(onAprobarYMandar).not.toHaveBeenCalled()
   })
 })
+
+describe('TeacherQuizReview · AC2, la tarea que salió de «Compartir»', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('«Aprobar todas y mandar» la deja aprobada (status saved) aunque no haya cambios, y manda la aprobada', async () => {
+    const user = userEvent.setup()
+    const onAprobarYMandar = vi.fn()
+    vi.mocked(fetch).mockImplementation(async (_url, init) =>
+      (init as RequestInit | undefined)?.method === 'PATCH'
+        ? new Response(JSON.stringify({ quiz: { id: 42, question_count: 1, status: 'saved', questions: [comoLoDevuelvePostgres('El grado de p(x) es:')] } }), { status: 200 })
+        : new Response(JSON.stringify({}), { status: 200 }),
+    )
+    render(<TeacherQuizReview quiz={{ ...quiz, status: 'pending_share' }} onClose={() => {}} onSaved={() => {}} onAprobarYMandar={onAprobarYMandar} />)
+    await user.click(screen.getByRole('button', { name: /Aprobar todas y mandar/ }))
+    await waitFor(() => expect(onAprobarYMandar).toHaveBeenCalled())
+    const patch = vi.mocked(fetch).mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'PATCH')
+    expect(JSON.parse(String((patch?.[1] as RequestInit).body))).toMatchObject({ status: 'saved' })
+    expect(onAprobarYMandar.mock.calls[0][0].status).toBe('saved')
+  })
+})
