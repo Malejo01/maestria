@@ -4,6 +4,7 @@ import { Recomendar } from '@/components/docente/recomendar'
 import { AvisoDeEjemplo } from '@/components/docente/materia-de-ejemplo'
 import Link from 'next/link'
 import { HitosOnboarding } from '@/components/docente/hitos-onboarding'
+import { ArranqueGuiado } from '@/components/docente/arranque-guiado'
 import { MisAlumnos } from '@/components/docente/mis-alumnos'
 import { MIS_GRUPOS } from '@/lib/textos'
 import { MisGrupos } from '@/components/docente/mis-grupos'
@@ -69,13 +70,21 @@ export default function TeacherPage() {
       <EstadoDelPlan datos={planDatos} />
       <AvisoDeEjemplo />
 
-      <HitosOnboarding
-        onCrearMateria={() => setShowOnboardingModal(true)}
-        onCargarTemario={() => router.push('/teacher?seccion=materias')}
-        onArmarTarea={() => router.push('/teacher?seccion=tareas&armar=1')}
-        onMandarTarea={() => router.push('/teacher?seccion=tareas')}
+      {/* AB4: mientras 2 alumnos no practicaron, el arranque guiado reemplaza a los primeros pasos. */}
+      <ArranqueGuiado
+        tareas={teacherQuizzes}
+        onSubirPrograma={() => setShowOnboardingModal(true)}
+        onArmar={() => router.push('/teacher?seccion=tareas&armar=1')}
         refrescarCon={`${teacherPrograms.length}-${teacherQuizzes.length}-${teacherSection}-${version}`}
-      />
+      >
+        <HitosOnboarding
+          onCrearMateria={() => setShowOnboardingModal(true)}
+          onCargarTemario={() => router.push('/teacher?seccion=materias')}
+          onArmarTarea={() => router.push('/teacher?seccion=tareas&armar=1')}
+          onMandarTarea={() => router.push('/teacher?seccion=tareas')}
+          refrescarCon={`${teacherPrograms.length}-${teacherQuizzes.length}-${teacherSection}-${version}`}
+        />
+      </ArranqueGuiado>
 
       <MisTareas panel={panel} />
       <MisMaterias panel={panel} />
