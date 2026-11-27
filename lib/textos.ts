@@ -791,6 +791,14 @@ export const REVISA_Y_APROBA = {
   desaprobar: 'Sacarle la aprobación',
   aprobarEtiqueta: (n: number) => `Aprobar la pregunta ${n}`,
   aprobarTodasYMandar: 'Aprobar todas y mandar',
+  /** AC2: el diálogo de mandar con una tarea sin aprobar. */
+  faltaAprobar: {
+    titulo: 'Antes de mandarla, revisala',
+    detalle: 'Nada le llega a tu alumno sin tu OK. Revisá las preguntas y aprobalas; después la mandás.',
+  },
+  /** AC2: en *Mis tareas*, una tarea que salió de «Compartir» sin revisar. */
+  sinAprobar: 'Sin aprobar',
+  revisarParaMandar: 'Revisá y aprobá para mandar',
   editadas: (n: number) => (n === 1 ? '1 editada' : `${n} editadas`),
 } as const
 

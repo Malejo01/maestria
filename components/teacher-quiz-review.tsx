@@ -51,7 +51,7 @@ import { ValorarPregunta } from '@/components/docente/valorar-pregunta'
 import { pedirJson } from '@/lib/pedir-json'
 import type { Motivo, Valoracion } from '@/lib/valoraciones'
 import { VALORACIONES, REVISA_Y_APROBA } from '@/lib/textos'
-import { alternarAprobada, aprobarTodas, claveDePregunta, contarRevisadas, textoDelContador } from '@/lib/revisa-y-aproba'
+import { alternarAprobada, aprobarTodas, claveDePregunta, contarRevisadas, necesitaRevision, textoDelContador } from '@/lib/revisa-y-aproba'
 
 /**
  * Revisión y edición de un cuestionario guardado, pregunta por pregunta.
@@ -302,13 +302,14 @@ export function TeacherQuizReview({ quiz, onClose, onSaved, onAprobarYMandar }: 
   // ─── Guardado ──────────────────────────────────────────────────────────────
 
   const guardar = useCallback(
-    async (strategy: 'in_place' | 'copy'): Promise<TeacherQuiz | null> => {
+    async (strategy: 'in_place' | 'copy', status?: 'saved'): Promise<TeacherQuiz | null> => {
       setGuardando(true)
       try {
         const res = await fetch(`/api/teacher/quizzes/${quiz.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questions, strategy }),
+          // AC2: aprobar todas deja la tarea aprobada (`saved`): ya se puede mandar.
+          body: JSON.stringify(status ? { questions, strategy, status } : { questions, strategy }),
         })
         const data = await res.json().catch(() => ({}))
 
@@ -332,6 +333,7 @@ export function TeacherQuizReview({ quiz, onClose, onSaved, onAprobarYMandar }: 
         const delServidor = (guardado.questions as Question[]) ?? questions
         const normalizado: TeacherQuiz = {
           ...quiz,
+          status: (guardado.status as TeacherQuiz['status']) ?? quiz.status,
           id: Number(guardado.id),
           questionCount: Number(guardado.question_count),
           questions: delServidor,
@@ -422,7 +424,8 @@ export function TeacherQuizReview({ quiz, onClose, onSaved, onAprobarYMandar }: 
             onClick={async () => {
               setAprobadas(aprobarTodas(questions))
               // Con cambios sin guardar, primero se guardan: lo que se manda es lo que se ve.
-              const listo = sucio ? await guardar('in_place') : { ...quiz, questions }
+              // AC2: y si la tarea estaba sin aprobar, queda aprobada.
+              const listo = sucio || necesitaRevision(quiz) ? await guardar('in_place', 'saved') : { ...quiz, questions }
               if (listo) onAprobarYMandar(listo)
             }}
           >
