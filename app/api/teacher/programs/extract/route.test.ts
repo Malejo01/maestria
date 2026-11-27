@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { REGLA_PARA_ESCANEOS } from '@/lib/temas-granulares'
 
 /**
  * I1: la foto y el escaneo los lee el modelo. Fixtures sintéticos chicos
@@ -125,6 +126,14 @@ describe('/api/teacher/programs/extract — escaneos y fotos (I1)', () => {
     expect(archivo).toMatchObject({ mediaType: 'application/pdf' })
   })
 
+  it('AC4 · lo que va entero al modelo lleva la regla de no agrupar temas (y conservar valor absoluto)', async () => {
+    await POST(pedido('escaneo.pdf', 'application/pdf', pdfMinimo()))
+    const texto = generateObject.mock.calls[0][0].messages[0].content.find((parte: { type: string }) => parte.type === 'text').text
+    expect(texto).toContain(REGLA_PARA_ESCANEOS)
+    expect(REGLA_PARA_ESCANEOS).toMatch(/no juntes dos contenidos/)
+    expect(REGLA_PARA_ESCANEOS).toMatch(/valor absoluto, módulo, casos especiales/)
+  })
+
   it('el progreso del escaneo explica la espera más larga', async () => {
     const etapas = (await eventos('escaneo.pdf', 'application/pdf', pdfMinimo())).map((e) => e.etapa)
     expect(etapas).toEqual(['leyendo', 'leyendo-con-ia', 'ordenando', 'listo'])
@@ -137,6 +146,8 @@ describe('/api/teacher/programs/extract — escaneos y fotos (I1)', () => {
     const llamada = generateObject.mock.calls[0][0]
     expect(llamada.messages).toBeUndefined()
     expect(llamada.prompt).toContain('Matrices')
+    // AC4: el PDF de texto no cambia: la regla de escaneos no va.
+    expect(llamada.prompt).not.toContain(REGLA_PARA_ESCANEOS)
   })
 
   it('si el modelo no contesta a tiempo: 422 con qué hacer, sin esperar 300 s', async () => {

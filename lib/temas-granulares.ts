@@ -17,6 +17,14 @@ export const LARGO_MAXIMO_DE_TEMA = 90
 /** Lo que se le pide al modelo sobre los temas (va dentro del prompt de extracción). */
 export const REGLAS_DE_TEMAS = `Cada tema es un concepto que se puede enseñar y evaluar por separado. Si un parrafo u oracion enumera varios conceptos separados por punto, punto y coma o coma, separalos en temas distintos. Un tema no supera los ${LARGO_MAXIMO_DE_TEMA} caracteres. Si una unidad tendria mas de 12 temas, agrupa los que esten muy cerca. No inventes conceptos que no esten en el documento.`
 
+/**
+ * AC4 · Para lo que va entero al modelo (un escaneo o una foto): medido en AB9
+ * y AC4, ahí el modelo agrupaba temas (5–6 por unidad contra 7–9 del PDF de
+ * texto) y perdía los casos especiales («ecuaciones con valor absoluto»). Esta
+ * regla va DESPUÉS de REGLAS_DE_TEMAS y la corrige para ese caso: no agrupar.
+ */
+export const REGLA_PARA_ESCANEOS = `El programa es una imagen o un escaneo: leelo renglón por renglón. Listá CADA tema por separado, en el orden del documento, uno por cada contenido que el documento nombra: no juntes dos contenidos en un tema ni resumas una enumeración, aunque la unidad quede con más de 12 temas. Conservá siempre, como temas propios, los que traen valor absoluto, módulo, casos especiales, casos particulares o excepciones.`
+
 function limpiar(pedazo: string): string {
   return pedazo
     .replace(/\s+/g, ' ')
