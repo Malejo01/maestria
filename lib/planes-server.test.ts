@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { sqlMock, contarAlumnosDelDocente, captureRouteFailure } = vi.hoisted(() => ({
   sqlMock: vi.fn(),
@@ -54,10 +54,28 @@ describe('la cuenta exenta', () => {
 })
 
 describe('con la 026 corrida', () => {
-  it('prueba sin arrancar: pide el aviso', async () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('con MAESTRIA_PRUEBA_DIAS en 30, prueba sin arrancar: pide el aviso', async () => {
+    vi.stubEnv('MAESTRIA_PRUEBA_DIAS', '30')
     sqlMock.mockResolvedValue([{ plan_nivel: 0, plan_vence_el: null, prueba_iniciada_el: null }])
     const resumen = await resumenDelPlan('d1', 'd@x.com')
-    expect(resumen).toMatchObject({ estado: 'prueba', cupo: 10, alumnos: 7, avisoDePruebaPendiente: true })
+    expect(resumen).toMatchObject({ estado: 'prueba', cupo: 10, alumnos: 7, avisoDePruebaPendiente: true, diasDePrueba: 30 })
+  })
+
+  it('AA1 · sin la variable, el docente nuevo está en el gratis y no ve el aviso', async () => {
+    contarAlumnosDelDocente.mockResolvedValue(0)
+    sqlMock.mockResolvedValue([{ plan_nivel: 0, plan_vence_el: null, prueba_iniciada_el: null }])
+    const resumen = await resumenDelPlan('d1', 'd@x.com')
+    expect(resumen).toMatchObject({ estado: 'gratis', cupo: 2, avisoDePruebaPendiente: false, diasDePrueba: 0, venceEl: null })
+  })
+
+  it('AA1 · un docente en prueba hoy no cambia: misma fecha y mismo cupo', async () => {
+    sqlMock.mockResolvedValue([{ plan_nivel: 0, plan_vence_el: '2099-01-01T00:00:00Z', prueba_iniciada_el: '2098-12-02T00:00:00Z' }])
+    const resumen = await resumenDelPlan('d1', 'd@x.com')
+    expect(resumen).toMatchObject({ estado: 'prueba', cupo: 10, venceEl: '2099-01-01T00:00:00.000Z', avisoDePruebaPendiente: false })
   })
 
   it('vencido: 402 al generar, con el cuerpo que la UI lee', async () => {
@@ -196,12 +214,33 @@ describe('iniciarPrueba (G2)', () => {
     expect(sqlMock).not.toHaveBeenCalled()
   })
 
+  it('AA1 · con MAESTRIA_PRUEBA_DIAS en 0 (o sin la variable) no arranca nada ni toca la base', async () => {
+    const { iniciarPrueba } = await import('./planes-server')
+    sqlMock.mockResolvedValue([{ id: 'd1' }])
+    expect(await iniciarPrueba('d1', 'd@x.com')).toBe(false)
+    vi.stubEnv('MAESTRIA_PRUEBA_DIAS', '0')
+    expect(await iniciarPrueba('d1', 'd@x.com')).toBe(false)
+    expect(sqlMock).not.toHaveBeenCalled()
+    vi.unstubAllEnvs()
+  })
+
+  it('AA1 · con MAESTRIA_PRUEBA_DIAS en 30, arranca 30 días', async () => {
+    vi.stubEnv('MAESTRIA_PRUEBA_DIAS', '30')
+    const { iniciarPrueba } = await import('./planes-server')
+    sqlMock.mockResolvedValue([{ id: 'd1' }])
+    expect(await iniciarPrueba('d1', 'd@x.com')).toBe(true)
+    expect(sqlMock.mock.calls[0].slice(1)).toContain(30)
+    vi.unstubAllEnvs()
+  })
+
   it('sólo escribe si la prueba no arrancó: el UPDATE lleva la guarda', async () => {
+    vi.stubEnv('MAESTRIA_PRUEBA_DIAS', '30')
     const { iniciarPrueba } = await import('./planes-server')
     sqlMock.mockResolvedValue([])
     expect(await iniciarPrueba('d1', 'd@x.com')).toBe(false)
     const consulta = (sqlMock.mock.calls[0][0] as TemplateStringsArray).join('?')
     expect(consulta).toMatch(/prueba_iniciada_el IS NULL/)
     expect(consulta).toMatch(/plan_vence_el IS NULL/)
+    vi.unstubAllEnvs()
   })
 })

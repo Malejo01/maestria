@@ -25,18 +25,24 @@ export function textosDelAviso(
 ): { titulo: string; detalle: string; lista: string } | null {
   if (!plan || !debeMostrarAvisoDePrueba(plan)) return null
   const cupoPrueba = cupoDeNivel(0)
+  // AA1: los días vienen del servidor (`MAESTRIA_PRUEBA_DIAS`); un resumen viejo sin el dato, los de G2.
+  const dias = diasDelAviso(plan)
   if (plan.docenteNuevo) {
     return {
-      titulo: T.nuevo.titulo(DIAS_PRUEBA, cupoPrueba),
+      titulo: T.nuevo.titulo(dias, cupoPrueba),
       detalle: T.nuevo.detalle(plan.cupoGratis),
       lista: T.nuevo.lista,
     }
   }
   return {
     titulo: T.existente.titulo,
-    detalle: T.existente.detalle(DIAS_PRUEBA, cupoPrueba, plan.cupoGratis),
+    detalle: T.existente.detalle(dias, cupoPrueba, plan.cupoGratis),
     lista: T.existente.lista,
   }
+}
+
+function diasDelAviso(plan: ResumenDelPlan): number {
+  return plan.diasDePrueba && plan.diasDePrueba > 0 ? plan.diasDePrueba : DIAS_PRUEBA
 }
 
 interface Props {
@@ -48,7 +54,8 @@ interface Props {
 /**
  * G2 y H3: el aviso que ven los docentes la primera vez que entran después del
  * rediseño (y los nuevos, en su primer panel). Dice qué cambió y que la
- * prueba de 30 días empieza hoy.
+ * prueba empieza hoy. AA1: con `MAESTRIA_PRUEBA_DIAS` en 0 (por defecto) no
+ * hay prueba y el servidor nunca lo pide.
  *
  * Se muestra una sola vez: cerrarlo, de cualquier forma, es aceptarlo. La
  * prueba arranca en el servidor (POST /api/teacher/plan), que no la vuelve a
@@ -96,7 +103,7 @@ export function AvisoDePrueba({ plan, onArranco }: Props) {
           </ul>
         </div>
         <Boton ancho onClick={() => void aceptar()} disabled={mandando}>
-          {T.boton(DIAS_PRUEBA)}
+          {T.boton(plan ? diasDelAviso(plan) : DIAS_PRUEBA)}
         </Boton>
       </DialogContent>
     </Dialog>

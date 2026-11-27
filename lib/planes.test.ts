@@ -8,6 +8,7 @@ import {
   cupoGratis,
   cupoDeNivel,
   diasRestantes,
+  diasDePrueba,
   estadoDelPlan,
   formatearPesos,
   leerBloqueo,
@@ -107,10 +108,39 @@ describe('estadoDelPlan', () => {
     expect(estadoDelPlan(datos({ nivel: 'basura' }))).toBe('exento')
   })
 
-  it('prueba que todavía no arrancó (no vio el aviso): prueba, sin vencimiento', () => {
+  it('con MAESTRIA_PRUEBA_DIAS en 30, la prueba que todavía no arrancó (no vio el aviso): prueba, sin vencimiento', () => {
     const d = datos({ nivel: 0 })
-    expect(estadoDelPlan(d)).toBe('prueba')
-    expect(diasRestantes(d)).toBeNull()
+    const conPrueba = { MAESTRIA_PRUEBA_DIAS: '30' }
+    expect(estadoDelPlan(d, conPrueba)).toBe('prueba')
+    expect(diasRestantes(d, conPrueba)).toBeNull()
+  })
+
+  it('AA1 · sin la variable (0): el docente que nunca arrancó la prueba está en el gratis, sin vencimiento', () => {
+    expect(diasDePrueba({})).toBe(0)
+    const nuevo = datos({ nivel: 0, alumnosActuales: 0 })
+    expect(estadoDelPlan(nuevo, {})).toBe('gratis')
+    expect(diasRestantes(nuevo, {})).toBeNull()
+    expect(estadoDelPlan(datos({ nivel: 0, alumnosActuales: 2 }), {})).toBe('gratis')
+    // Con más alumnos que el gratis (un docente viejo que nunca vio el aviso): solo lectura.
+    expect(estadoDelPlan(datos({ nivel: 0, alumnosActuales: 3 }), {})).toBe('vencido')
+    expect(estadoDelPlan(datos({ nivel: 0, alumnosActuales: 0 }), { MAESTRIA_PRUEBA_DIAS: '0' })).toBe('gratis')
+  })
+
+  it('AA1 · el docente que ya está en prueba la termina como estaba prevista, con la variable en 0', () => {
+    const enPrueba = datos({ nivel: 0, pruebaIniciadaEl: sumarDias(AHORA, -10), venceEl: sumarDias(AHORA, 20), alumnosActuales: 8 })
+    expect(estadoDelPlan(enPrueba, {})).toBe('prueba')
+    expect(diasRestantes(enPrueba, {})).toBe(20)
+    expect(estadoDelPlan(enPrueba, { MAESTRIA_PRUEBA_DIAS: '30' })).toBe('prueba')
+    // Y al vencer pasa al gratis (o a solo lectura) como hasta hoy.
+    const vencida = { ...enPrueba, ahora: sumarDias(AHORA, 21) }
+    expect(estadoDelPlan({ ...vencida, alumnosActuales: 2 }, {})).toBe('gratis')
+    expect(estadoDelPlan(vencida, {})).toBe('vencido')
+  })
+
+  it('AA1 · diasDePrueba lee la variable y descarta basura', () => {
+    expect(diasDePrueba({ MAESTRIA_PRUEBA_DIAS: '30' })).toBe(30)
+    expect(diasDePrueba({ MAESTRIA_PRUEBA_DIAS: 'treinta' })).toBe(0)
+    expect(diasDePrueba({ MAESTRIA_PRUEBA_DIAS: '' })).toBe(0)
   })
 
   it('prueba en curso: 30 días desde que arrancó', () => {

@@ -5,7 +5,7 @@ orden: 7
 accion: /precios
 accionTexto: Ver los planes
 ---
-Empezás con una **prueba**. Después podés seguir con el plan gratis o elegir uno pago.
+Empezás **gratis con 2 alumnos particulares y 1 curso**, para siempre. Para sumar más alumnos, elegís un plan pago.
 
 - **Particular:** para clases particulares, por cantidad de alumnos.
 - **Aula:** para cursos, por cantidad de cursos.

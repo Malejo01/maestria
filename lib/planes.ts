@@ -45,6 +45,11 @@ export type TipoDePago = 'mensual' | 'pase'
 export const NIVELES: readonly NivelPlan[] = [0, 1, 2, 3, 4, 5]
 export const NIVEL_TOPE: NivelPlan = 5
 
+/**
+ * Lo que duraba la prueba de G2. AA1 (27/11/2026) la apagó para los que llegan
+ * desde ahora (`diasDePrueba`, por defecto 0); esta constante queda sólo para
+ * el docente que la arrancó antes y no tiene `plan_vence_el` escrito.
+ */
 export const DIAS_PRUEBA = 30
 export const DIAS_MENSUAL = 30
 export const DIAS_PASE = 90
@@ -168,6 +173,16 @@ export function cupoGratis(env: Entorno = process.env): number {
   return enteroDe(env, 'MAESTRIA_CUPO_GRATIS', CUPO_GRATIS_POR_DEFECTO)
 }
 
+/**
+ * AA1: cuántos días de prueba tiene el docente que todavía no la arrancó
+ * (`MAESTRIA_PRUEBA_DIAS`). Por defecto 0: no hay prueba, el docente nuevo
+ * arranca en el plan gratis. Quien ya la arrancó la termina como estaba
+ * prevista: su fecha de vencimiento está escrita y esto no la toca.
+ */
+export function diasDePrueba(env: Entorno = process.env): number {
+  return enteroDe(env, 'MAESTRIA_PRUEBA_DIAS', 0)
+}
+
 /** Cuántos cuestionarios genera el plan gratis cada 30 días (`MAESTRIA_GRATIS_CUESTIONARIOS_MES`, si no 10). */
 export function cuestionariosGratisPorMes(env: Entorno = process.env): number {
   return enteroDe(env, 'MAESTRIA_GRATIS_CUESTIONARIOS_MES', CUESTIONARIOS_GRATIS_POR_DEFECTO)
@@ -262,10 +277,17 @@ export function venceElEfectivo(datos: DatosDelPlan): Date | null {
  * Si la prueba o el plan pago ya terminaron (y entonces lo que decide es el
  * plan gratis). Falso para el exento, con la válvula, o sin fecha.
  */
-export function terminoElPeriodo(datos: DatosDelPlan): boolean {
+export function terminoElPeriodo(datos: DatosDelPlan, env: Entorno = process.env): boolean {
   if (datos.esExento || normalizarNivel(datos.nivel) === null) return false
+  // AA1: sin prueba, la que nunca arrancó ya terminó: decide el gratis.
+  if (pruebaSinArrancar(datos) && diasDePrueba(env) === 0) return true
   const vence = venceElEfectivo(datos)
   return vence !== null && datos.ahora.getTime() >= vence.getTime()
+}
+
+/** Nivel 0 sin ninguna fecha: el docente nunca arrancó la prueba (no vio el aviso de G2). */
+export function pruebaSinArrancar(datos: Pick<DatosDelPlan, 'nivel' | 'venceEl' | 'pruebaIniciadaEl'>): boolean {
+  return normalizarNivel(datos.nivel) === 0 && aFecha(datos.venceEl) === null && aFecha(datos.pruebaIniciadaEl) === null
 }
 
 /**
@@ -280,7 +302,8 @@ export function estadoDelPlan(datos: DatosDelPlan, env: Entorno = process.env): 
 
   // Un plan sin fecha no vence: una prueba que todavía no arrancó (el docente
   // no vio el aviso), o un nivel pago que se acreditó sin vencimiento.
-  if (!terminoElPeriodo(datos)) return nivel === 0 ? 'prueba' : 'activo'
+  // AA1: con `MAESTRIA_PRUEBA_DIAS` en 0, la que no arrancó cuenta como terminada.
+  if (!terminoElPeriodo(datos, env)) return nivel === 0 ? 'prueba' : 'activo'
   // B1: con los lugares por tipo, el gratis es "2 particulares + 1 curso de
   // hasta 35". Sin ellos, la regla de antes. Las dos aceptan a quien ya cabía.
   if (datos.lugares) return cabeEnElGratis(datos.lugares, env) ? 'gratis' : 'vencido'
@@ -383,8 +406,10 @@ export interface ResumenDelPlan {
   /** null en `gratis`: no vence. */
   venceEl: string | null
   diasRestantes: number | null
-  /** El aviso de G2: todavía no arrancó la prueba. */
+  /** El aviso de G2: todavía no arrancó la prueba. Con `MAESTRIA_PRUEBA_DIAS` en 0 (AA1), siempre false. */
   avisoDePruebaPendiente: boolean
+  /** AA1: los días de prueba que ofrece el aviso (`MAESTRIA_PRUEBA_DIAS`). Opcional para los resúmenes viejos. */
+  diasDePrueba?: number
   /** El cupo del plan gratis, para los textos de "después seguís gratis con hasta N". */
   cupoGratis: number
   /** El tope de cuestionarios del gratis cada 30 días. */
