@@ -192,6 +192,11 @@ export function MisTareas({ panel }: { panel: PanelDocente }) {
                   )
                   setRevisandoQuiz(guardado)
                 }}
+                // AB7: «Aprobar todas y mandar» abre el diálogo de mandar de siempre.
+                onAprobarYMandar={(aprobado) => {
+                  setRevisandoQuiz(null)
+                  setSharingQuiz(aprobado)
+                }}
               />
             ) : (
             <Tabs defaultValue="guardados">

@@ -328,3 +328,78 @@ describe('TeacherQuizReview · consigna que no encaja con su tipo (M2)', () => {
     expect(screen.queryByText('Esta consigna no encaja con su tipo')).toBeNull()
   })
 })
+
+describe('TeacherQuizReview · AB7, «Revisá y aprobá»', () => {
+  const dos: TeacherQuiz = { ...quiz, questions: [pregunta(), pregunta({ id: 'q2', question: '¿Cuántas raíces tiene?' })], questionCount: 2 }
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it('el paso se llama «Revisá y aprobá» y el contador sube al aprobar una', async () => {
+    const user = userEvent.setup()
+    render(<TeacherQuizReview quiz={dos} onClose={() => {}} onSaved={() => {}} />)
+    expect(screen.getByText('Revisá y aprobá')).toBeTruthy()
+    expect(document.querySelector('[data-contador-revisadas]')?.textContent).toBe('0 de 2 revisadas')
+    await user.click(screen.getByRole('button', { name: 'Aprobar la pregunta 1' }))
+    expect(document.querySelector('[data-contador-revisadas]')?.textContent).toBe('1 de 2 revisadas')
+    expect(screen.getByRole('button', { name: 'Aprobar la pregunta 1' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('sin onAprobarYMandar no aparece el botón de mandar', () => {
+    render(<TeacherQuizReview quiz={dos} onClose={() => {}} onSaved={() => {}} />)
+    expect(screen.queryByRole('button', { name: /Aprobar todas y mandar/ })).toBeNull()
+  })
+
+  it('«Aprobar todas y mandar» sin cambios: aprueba todas y manda sin guardar', async () => {
+    const user = userEvent.setup()
+    const onAprobarYMandar = vi.fn()
+    render(<TeacherQuizReview quiz={dos} onClose={() => {}} onSaved={() => {}} onAprobarYMandar={onAprobarYMandar} />)
+    await user.click(screen.getByRole('button', { name: /Aprobar todas y mandar/ }))
+    expect(document.querySelector('[data-contador-revisadas]')?.textContent).toBe('2 de 2 revisadas')
+    // Al abrir se leen las valoraciones; lo que no tiene que haber es un PATCH.
+    expect(vi.mocked(fetch).mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'PATCH')).toBe(false)
+    expect(onAprobarYMandar).toHaveBeenCalledWith(expect.objectContaining({ id: 42, questions: dos.questions }))
+  })
+
+  it('«Aprobar todas y mandar» con cambios: primero guarda y manda lo guardado', async () => {
+    const user = userEvent.setup()
+    const onAprobarYMandar = vi.fn()
+    // Una respuesta nueva por llamada (el cuerpo se lee una sola vez); el PATCH devuelve lo guardado.
+    vi.mocked(fetch).mockImplementation(async (_url, init) =>
+      (init as RequestInit | undefined)?.method === 'PATCH'
+        ? new Response(JSON.stringify({ quiz: { id: 42, question_count: 1, questions: [comoLoDevuelvePostgres('Editada')] } }), { status: 200 })
+        : new Response(JSON.stringify({}), { status: 200 }),
+    )
+    render(<TeacherQuizReview quiz={quiz} onClose={() => {}} onSaved={() => {}} onAprobarYMandar={onAprobarYMandar} />)
+    await user.click(screen.getByRole('button', { name: 'Editar pregunta' }))
+    const enunciado = screen.getByDisplayValue('El grado de p(x) es:')
+    await user.clear(enunciado)
+    await user.type(enunciado, 'Editada')
+    await user.click(screen.getByRole('button', { name: /Aprobar todas y mandar/ }))
+    await waitFor(() => expect(onAprobarYMandar).toHaveBeenCalled())
+    expect(fetch).toHaveBeenCalledWith('/api/teacher/quizzes/42', expect.objectContaining({ method: 'PATCH' }))
+    expect(onAprobarYMandar.mock.calls[0][0].questions[0].question).toBe('Editada')
+  })
+
+  it('si el servidor pide decidir (ya hay intentos), no manda', async () => {
+    const user = userEvent.setup()
+    const onAprobarYMandar = vi.fn()
+    vi.mocked(fetch).mockImplementation(async (_url, init) =>
+      (init as RequestInit | undefined)?.method === 'PATCH'
+        ? new Response(JSON.stringify({ requiresDecision: true, impact: { assignments: [], totalAttempts: 3, totalStudents: 2, requiresDecision: true } }), { status: 409 })
+        : new Response(JSON.stringify({}), { status: 200 }),
+    )
+    render(<TeacherQuizReview quiz={quiz} onClose={() => {}} onSaved={() => {}} onAprobarYMandar={onAprobarYMandar} />)
+    await user.click(screen.getByRole('button', { name: 'Editar pregunta' }))
+    await user.type(screen.getByDisplayValue('El grado de p(x) es:'), ' x')
+    await user.click(screen.getByRole('button', { name: /Aprobar todas y mandar/ }))
+    await waitFor(() => expect(vi.mocked(fetch).mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'PATCH')).toBe(true))
+    expect(onAprobarYMandar).not.toHaveBeenCalled()
+  })
+})

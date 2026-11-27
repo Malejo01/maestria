@@ -672,7 +672,8 @@ export const MIS_TAREAS = {
   preguntas: (n: number) => (n === 1 ? '1 pregunta' : `${n} preguntas`),
   modo: { teorico: 'Teórica', practico: 'Práctica', mixto: 'Teórica y práctica' },
   mandar: 'Mandar a mi grupo',
-  revisar: 'Revisar y editar',
+  /** AB7: el paso de revisión se llama como lo que hace. */
+  revisar: 'Revisá y aprobá',
   verComoAlumno: 'Ver como alumno',
   probar: 'Probarla yo',
   borrar: 'Borrar tarea',
@@ -713,6 +714,18 @@ export const REVISAR_TAREA = {
 
 /** L5: cuántas preguntas y cuánto tiempo lleva una tarea. Los minutos salen de minutosEstimados (lib/diagnostico.ts). */
 /** M2: en *Revisar y editar*, una consigna que no encaja con su tipo. */
+/** Tanda AB · AB7: «Revisá y aprobá» en la revisión del cuestionario (lib/revisa-y-aproba.ts). */
+export const REVISA_Y_APROBA = {
+  titulo: 'Revisá y aprobá',
+  aprobar: 'Aprobar',
+  aprobada: 'Aprobada',
+  aprobarTitulo: 'Aprobar esta pregunta: la leíste y está bien',
+  desaprobar: 'Sacarle la aprobación',
+  aprobarEtiqueta: (n: number) => `Aprobar la pregunta ${n}`,
+  aprobarTodasYMandar: 'Aprobar todas y mandar',
+  editadas: (n: number) => (n === 1 ? '1 editada' : `${n} editadas`),
+} as const
+
 export const TIPO_INCOHERENTE = {
   aviso: 'Esta consigna no encaja con su tipo',
   detalle: {
