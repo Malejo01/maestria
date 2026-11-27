@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/respaldo",
       "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/cron/aviso-semanal",
+      "schedule": "0 12 * * 1"
     }
   ]
 }
