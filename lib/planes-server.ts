@@ -180,7 +180,15 @@ function armarResumen(
     permiteImprimirYMoodle: permiteImprimirYMoodle(estado),
     fundadoraDesde: fechaIso(fundadoraDesde),
     modalidad: datos.modalidad ?? null,
+    lugares: lugaresParaElContador(datos),
   }
+}
+
+/** AC3: particulares y el curso, como los cuenta la modalidad. */
+function lugaresParaElContador(datos: DatosDelPlan): { particulares: number; curso: number } | null {
+  if (datos.modalidad === 'particular') return { particulares: datos.alumnosActuales, curso: 0 }
+  if (!datos.lugares) return null
+  return { particulares: datos.lugares.particulares, curso: Math.max(0, ...datos.lugares.cursos) }
 }
 
 function fechaIso(valor: unknown): string | null {
