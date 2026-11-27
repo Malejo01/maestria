@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation'
 import { AcreditarPlan } from '@/components/admin/acreditar-plan'
 import { MarcarFundadora } from '@/components/admin/marcar-fundadora'
 import { pagosRecientes } from '@/lib/pagos-server'
+import { candidatosALaGarantia } from '@/lib/garantia-server'
+import { diasQueQuedan, type PagoParaLaGarantia } from '@/lib/garantia'
+import { GARANTIA } from '@/lib/textos'
 import { PAGAR } from '@/lib/textos'
 import { formatearPesos } from '@/lib/planes'
 import { DISTINTIVO_DEL_PLAN } from '@/lib/textos'
@@ -34,6 +37,8 @@ export default async function PlanesAdminPage() {
   if (!admin) notFound()
   // C2: los pagos desde la app, arriba (también los pendientes y rechazados).
   const pagos = await pagosRecientes().catch(() => [])
+  // AB8: los candidatos a la garantía de 14 días. Sin la 039, «sin dato».
+  const garantia = await candidatosALaGarantia().catch(() => null as PagoParaLaGarantia[] | null)
 
   let docentes: DocenteEnPlanes[] | null = null
   let error: string | null = null
@@ -56,6 +61,33 @@ export default async function PlanesAdminPage() {
           Acreditá a mano lo que pagó cada docente. Cada acreditación agrega una línea a sus notas con quién y cuándo.
         </p>
       </header>
+
+      <section className="space-y-2" aria-labelledby="garantia" data-garantia>
+        <h2 id="garantia" className="titulo-m text-texto">
+          {GARANTIA.titulo}
+        </h2>
+        <p className="cuerpo-s text-texto-suave">{GARANTIA.detalle}</p>
+        {garantia === null ? (
+          <p className="cuerpo-s text-texto-suave">{GARANTIA.sinDato}</p>
+        ) : garantia.length === 0 ? (
+          <p className="cuerpo-s text-texto-suave">{GARANTIA.ninguno}</p>
+        ) : (
+          <ul className="divide-y divide-borde rounded-lg border border-borde bg-superficie-tarjeta">
+            {garantia.map((p) => (
+              <li key={p.pagoId} className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-2" data-candidato={p.pagoId}>
+                <span className="cuerpo-s text-texto">
+                  <span className="font-semibold">{p.docente || '—'}</span>
+                  {p.email ? ` · ${p.email}` : ''}
+                </span>
+                <span className="nota text-texto-suave">
+                  {formatearPesos(p.monto)} · {fecha(p.acreditadoEl)} · {GARANTIA.quedan(diasQueQuedan(p.acreditadoEl, new Date()))}
+                  {p.mpPaymentId ? ` · ${GARANTIA.pagoMp(p.mpPaymentId)}` : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="space-y-2" aria-labelledby="pagos-recientes">
         <h2 id="pagos-recientes" className="titulo-m text-texto">

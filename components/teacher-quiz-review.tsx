@@ -50,7 +50,8 @@ import { CorregirTiposDialog } from '@/components/docente/corregir-tipos-dialog'
 import { ValorarPregunta } from '@/components/docente/valorar-pregunta'
 import { pedirJson } from '@/lib/pedir-json'
 import type { Motivo, Valoracion } from '@/lib/valoraciones'
-import { VALORACIONES } from '@/lib/textos'
+import { VALORACIONES, REVISA_Y_APROBA } from '@/lib/textos'
+import { alternarAprobada, aprobarTodas, claveDePregunta, contarRevisadas, necesitaRevision, textoDelContador } from '@/lib/revisa-y-aproba'
 
 /**
  * Revisión y edición de un cuestionario guardado, pregunta por pregunta.
@@ -90,6 +91,12 @@ interface TeacherQuizReviewProps {
   onClose: () => void
   /** Se llama con el cuestionario que devolvió el servidor: puede ser una copia. */
   onSaved: (quiz: TeacherQuiz, info: { copiado: boolean; reasignadas: number }) => void
+  /**
+   * AB7: «Aprobar todas y mandar». Con cambios sin guardar, primero guarda (y
+   * si el servidor pide decidir por intentos ya hechos, no manda). Sin esto,
+   * el botón no aparece.
+   */
+  onAprobarYMandar?: (quiz: TeacherQuiz) => void
 }
 
 /** Etiqueta legible del tipo, para el badge de cada pregunta. */
@@ -99,7 +106,7 @@ function origenDe(question: Question): 'ai' | 'ai_regenerada' | 'editada' {
   return question.origin ?? 'ai'
 }
 
-export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewProps) {
+export function TeacherQuizReview({ quiz, onClose, onSaved, onAprobarYMandar }: TeacherQuizReviewProps) {
   const { toast } = useToast()
 
   /**
@@ -119,6 +126,8 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
   const [questions, setQuestions] = useState<Question[]>(() => structuredClone(quiz.questions))
   const [editando, setEditando] = useState<number | null>(null)
   const [guardando, setGuardando] = useState(false)
+  /** AB7: las preguntas que el docente aprobó en esta revisión (lib/revisa-y-aproba.ts). */
+  const [aprobadas, setAprobadas] = useState<Set<string>>(() => new Set())
 
   /** Índice que se está regenerando, para el spinner de esa fila. */
   const [regenerando, setRegenerando] = useState<number | null>(null)
@@ -188,6 +197,7 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
     () => questions.filter((q) => origenDe(q) !== 'ai').length,
     [questions],
   )
+  const revisadas = contarRevisadas(questions, aprobadas)
 
   // ─── Guardas de salida ─────────────────────────────────────────────────────
   //
@@ -292,13 +302,14 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
   // ─── Guardado ──────────────────────────────────────────────────────────────
 
   const guardar = useCallback(
-    async (strategy: 'in_place' | 'copy') => {
+    async (strategy: 'in_place' | 'copy', status?: 'saved'): Promise<TeacherQuiz | null> => {
       setGuardando(true)
       try {
         const res = await fetch(`/api/teacher/quizzes/${quiz.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questions, strategy }),
+          // AC2: aprobar todas deja la tarea aprobada (`saved`): ya se puede mandar.
+          body: JSON.stringify(status ? { questions, strategy, status } : { questions, strategy }),
         })
         const data = await res.json().catch(() => ({}))
 
@@ -306,7 +317,7 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
         // error — es la pregunta que el servidor devuelve en vez de pisar algo.
         if (res.status === 409 && data?.requiresDecision) {
           setConflicto(data.impact as QuizImpact)
-          return
+          return null
         }
 
         if (!res.ok || !data?.quiz) {
@@ -315,13 +326,14 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
             title: 'No se pudo guardar',
             description: data?.error || `HTTP ${res.status}`,
           })
-          return
+          return null
         }
 
         const guardado = data.quiz as Record<string, unknown>
         const delServidor = (guardado.questions as Question[]) ?? questions
         const normalizado: TeacherQuiz = {
           ...quiz,
+          status: (guardado.status as TeacherQuiz['status']) ?? quiz.status,
           id: Number(guardado.id),
           questionCount: Number(guardado.question_count),
           questions: delServidor,
@@ -351,12 +363,14 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
             ? `El original quedó intacto con los intentos ya rendidos. ${data.reasignadas} asignación(es) ahora usan la versión nueva.`
             : `${normalizado.questions.length} preguntas.`,
         })
+        return normalizado
       } catch (err) {
         toast({
           variant: 'destructive',
           title: 'No se pudo guardar',
           description: err instanceof Error ? err.message : 'Error de red',
         })
+        return null
       } finally {
         setGuardando(false)
       }
@@ -377,10 +391,12 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
         </Button>
 
         <div className="min-w-0 flex-1">
+          {/* AB7: el paso se llama «Revisá y aprobá»: nada le llega al alumno sin tu OK. */}
+          <p className="etiqueta uppercase text-texto-suave">{REVISA_Y_APROBA.titulo}</p>
           <p className="truncate text-sm font-semibold">{quiz.title}</p>
           <p className="text-xs text-muted-foreground">
-            {questions.length} preguntas
-            {editadas > 0 && ` · ${editadas} revisada${editadas === 1 ? '' : 's'}`}
+            <span data-contador-revisadas>{textoDelContador(revisadas, questions.length)}</span>
+            {editadas > 0 && ` · ${REVISA_Y_APROBA.editadas(editadas)}`}
           </p>
         </div>
 
@@ -396,10 +412,27 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
           </Badge>
         )}
 
-        <Button size="sm" disabled={!sucio || guardando} onClick={() => guardar('in_place')}>
+        <Button size="sm" variant={onAprobarYMandar ? 'outline' : 'default'} disabled={!sucio || guardando} onClick={() => guardar('in_place')}>
           {guardando ? <Cargando className="mr-1 h-4 w-4" /> : <Save className="mr-1 h-4 w-4" />}
           Guardar
         </Button>
+
+        {onAprobarYMandar && (
+          <Button
+            size="sm"
+            disabled={guardando || questions.length === 0}
+            onClick={async () => {
+              setAprobadas(aprobarTodas(questions))
+              // Con cambios sin guardar, primero se guardan: lo que se manda es lo que se ve.
+              // AC2: y si la tarea estaba sin aprobar, queda aprobada.
+              const listo = sucio || necesitaRevision(quiz) ? await guardar('in_place', 'saved') : { ...quiz, questions }
+              if (listo) onAprobarYMandar(listo)
+            }}
+          >
+            <Check className="mr-1 h-4 w-4" />
+            {REVISA_Y_APROBA.aprobarTodasYMandar}
+          </Button>
+        )}
       </div>
 
       {/* N2: lo marcado, de una vez y con antes → después. Lo aplicado queda
@@ -439,9 +472,12 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
           // M2: la consigna no encaja con su tipo (lib/validar-tipo-de-pregunta.ts).
           const problema = problemaDeTipo(q)
 
+          const clave = claveDePregunta(q, index)
+          const aprobada = aprobadas.has(clave)
+
           return (
             <li key={`${q.id}-${index}`}>
-              <Card className={cn('space-y-3 p-4', enEdicion && 'border-primary')}>
+              <Card className={cn('space-y-3 p-4', enEdicion && 'border-primary', aprobada && !enEdicion && 'border-logrado')}>
                 <div className="flex flex-wrap items-start gap-2">
                   <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold">
                     {index + 1}
@@ -475,6 +511,18 @@ export function TeacherQuizReview({ quiz, onClose, onSaved }: TeacherQuizReviewP
                       texto no cuesta nada. En pantallas chicas queda sólo el
                       ícono, y ahí el aria-label y el title siguen puestos. */}
                   <div className="flex shrink-0 gap-1">
+                    {/* AB7: aprobar en un clic. */}
+                    <Button
+                      size="sm"
+                      variant={aprobada ? 'default' : 'outline'}
+                      aria-pressed={aprobada}
+                      onClick={() => setAprobadas((actuales) => alternarAprobada(actuales, clave))}
+                      title={aprobada ? REVISA_Y_APROBA.desaprobar : REVISA_Y_APROBA.aprobarTitulo}
+                      aria-label={REVISA_Y_APROBA.aprobarEtiqueta(index + 1)}
+                    >
+                      <Check className="h-4 w-4" />
+                      <span className="ml-1 hidden sm:inline">{aprobada ? REVISA_Y_APROBA.aprobada : REVISA_Y_APROBA.aprobar}</span>
+                    </Button>
                     <Button
                       size="sm"
                       variant={enEdicion ? 'default' : 'outline'}

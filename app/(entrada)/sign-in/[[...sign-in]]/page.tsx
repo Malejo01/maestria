@@ -18,6 +18,7 @@ import {
 } from '@/components/entrada/tarjeta-entrada'
 import { Boton } from '@/components/sistema/boton'
 import { esRolElegido, guardarRolElegido, type RolElegido } from '@/lib/rol-elegido'
+import { guardarModalidadElegida, normalizarModalidad } from '@/lib/modalidad'
 import { safeCallbackUrl } from '@/lib/safe-callback-url'
 import { ENTRADA, INGRESO } from '@/lib/textos'
 
@@ -44,6 +45,12 @@ export default function SignInPage() {
 function IngresoDesdeLaUrl() {
   const params = useSearchParams()
   const rol = params.get('rol')
+  // AC1: la modalidad que trae el link (portada, /profes) sobrevive al ingreso
+  // en localStorage, como el rol; la bienvenida la guarda con la cuenta.
+  const modalidad = normalizarModalidad(params.get('modalidad'))
+  useEffect(() => {
+    if (modalidad) guardarModalidadElegida(modalidad)
+  }, [modalidad])
   return (
     <Ingreso rol={esRolElegido(rol) ? rol : null} callbackUrl={safeCallbackUrl(params.get('callbackUrl'))} />
   )

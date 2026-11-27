@@ -1,0 +1,39 @@
+{
+  "business": "MaestrIA, app web para profes particulares (Argentina)",
+  "target": "Profes particulares de matemática (y física/química) en Argentina, de 22 a 55 años, que preparan alumnos de secundaria, terciario o ingreso universitario para mesas y exámenes, con 3 a 20 alumnos y que cobran entre ARS 15.000 y 25.000 la clase",
+  "where": "Toda la Argentina: CABA y GBA, Córdoba, Rosario, Mendoza, Tucumán, Salta y ciudades del interior; clases presenciales y por videollamada",
+  "age": [22, 55],
+  "segments": [
+    {"name": "Estudiante avanzado o profe recién recibido que da particulares para vivir", "share": 0.35, "income": [4000000, 9000000]},
+    {"name": "Docente de escuela con cargos que suma particulares en temporada de mesas", "share": 0.35, "income": [9000000, 18000000]},
+    {"name": "Profe particular consolidado de ingreso universitario o terciario, con agenda llena", "share": 0.20, "income": [15000000, 30000000]},
+    {"name": "Dueño o coordinador de un centro de apoyo escolar con 4 a 8 profes", "share": 0.10, "income": [20000000, 45000000]}
+  ],
+  "behaviours": [
+    {"name": "Lo resuelve con PDF y WhatsApp", "share": 0.25, "how": "Arma sus guías en Word o PDF, las manda por WhatsApp y corrige en clase; no paga software."},
+    {"name": "Ya usa ChatGPT gratis", "share": 0.20, "how": "Le pide ejercicios a ChatGPT o Gemini gratis cuando necesita material nuevo."},
+    {"name": "Desconfía de la IA en matemática", "share": 0.12, "how": "Vio errores de IA en ejercicios y prefiere sus propios materiales revisados."},
+    {"name": "Busca ahorrar tiempo en temporada", "share": 0.15, "how": "En diciembre y febrero tiene la agenda explotada y paga por lo que le ahorre horas."},
+    {"name": "Cuida cada peso", "share": 0.13, "how": "Ingresos irregulares por la inflación; compara todo con lo que cobra una clase."},
+    {"name": "Early adopter tecnológico", "share": 0.08, "how": "Prueba apps nuevas, usa Classroom o Moodle y le gusta mostrar herramientas a los alumnos."},
+    {"name": "Compra por recomendación de colegas", "share": 0.07, "how": "Solo prueba algo si otro profe de su grupo de WhatsApp lo usa."}
+  ],
+  "objections": [
+    "Esto lo hago gratis con ChatGPT y un PDF",
+    "Mis alumnos no van a practicar en casa aunque les mande el link",
+    "¿La IA va a corregir bien matemática y respetar cómo lo explico yo?",
+    "$20.000 por mes es lo que cobro una clase, no sé si me lo devuelve",
+    "En marzo se me van los alumnos y no lo voy a usar",
+    "No tengo tiempo de aprender otra plataforma en plena temporada",
+    "¿Y si mañana sale de Google o de Khan Academy gratis?"
+  ],
+  "habits": [
+    "tenés un grupo de WhatsApp con tus alumnos y les mandás fotos de ejercicios",
+    "das clases en tu casa a la tarde y por Meet a la noche",
+    "en diciembre tenés el doble de alumnos por las mesas",
+    "cobrás por transferencia o Mercado Pago después de cada clase",
+    "trabajás también en una escuela a la mañana",
+    "tus alumnos te escriben a la noche antes del examen con dudas"
+  ],
+  "notes": "Perfil armado con datos del fundador (profe particular y docente terciario en Salta) y precios públicos de cuantomecuesta.com (abril 2026). Las proporciones de segmentos y comportamientos son supuestos, no datos medidos."
+}

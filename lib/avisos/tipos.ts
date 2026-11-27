@@ -28,6 +28,10 @@ export type TipoDeAviso =
   | 'alertaSistema'
   // Docente y alumno (ronda Y · Y3): una novedad de MaestrIA
   | 'novedad'
+  // Docente (tanda AC · AC1): un alumno nuevo no entró por el cupo del plan gratis
+  | 'muroDelPlan'
+  // Docente (tanda AC · AC5): el resumen de «Esta semana» de los lunes
+  | 'resumenSemanal'
   // Alumno (P3)
   | 'tareaNueva'
   | 'vencePronto'
@@ -46,6 +50,8 @@ export const ESTILO_DEL_AVISO: Record<TipoDeAviso, { rol: RolDeAviso; icono: Ico
   referidoPremio: { rol: 'exito', icono: 'trofeo' },
   alertaSistema: { rol: 'atencion', icono: 'bandera' },
   novedad: { rol: 'informacion', icono: 'novedad' },
+  muroDelPlan: { rol: 'atencion', icono: 'personaMas' },
+  resumenSemanal: { rol: 'informacion', icono: 'checkLista' },
   tareaNueva: { rol: 'informacion', icono: 'tareaNueva' },
   vencePronto: { rol: 'atencion', icono: 'reloj' },
   diagnosticoNuevo: { rol: 'informacion', icono: 'diagnostico' },

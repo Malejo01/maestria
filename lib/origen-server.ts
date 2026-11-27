@@ -13,9 +13,11 @@ export async function registrarOrigen(userId: string): Promise<void> {
   try {
     const origen = leerCookieDeOrigen((await cookies()).get(COOKIE_DE_ORIGEN)?.value)
     if (!origen) return
+    // AA2: la campaña de un anuncio (`AD-…`) va en `origen_ref`, sin migración;
+    // al leerla, `separarRef` la distingue de un referido.
     await sql`
       UPDATE users
-      SET origen = ${origen.origen}, origen_ref = ${origen.ref}, origen_el = ${origen.el ?? null}::date
+      SET origen = ${origen.origen}, origen_ref = ${origen.campana ?? origen.ref}, origen_el = ${origen.el ?? null}::date
       WHERE id = ${userId} AND origen IS NULL AND origen_ref IS NULL
     `
   } catch (error) {

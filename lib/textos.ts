@@ -183,6 +183,45 @@ export const PANEL_DOCENTE = {
   },
 } as const
 
+/**
+ * Tanda AB · AB4: el arranque guiado del docente nuevo. Tres pasos que se
+ * tildan solos hasta que 2 alumnos practican (lib/arranque-docente.ts).
+ */
+export const ARRANQUE = {
+  etiqueta: 'Tu arranque',
+  titulo: 'Tres pasos para que 2 alumnos practiquen esta semana',
+  progreso: (hechos: number) => `${hechos} de 3`,
+  pasos: {
+    programa: {
+      titulo: 'Subí tu programa',
+      detalle: 'MaestrIA arma la práctica por tema con lo que vos das.',
+      boton: 'Subir mi programa',
+      cargamelo: 'Pedime que te lo cargue',
+      mensajeCargamelo: 'Hola Mauro, quiero que me ayudes a cargar mi programa en MaestrIA',
+    },
+    aprobado: {
+      titulo: 'Revisá y aprobá tu primer cuestionario',
+      detalle: 'Nada le llega a tu alumno sin tu OK.',
+      boton: 'Armar el cuestionario',
+    },
+    mandado: {
+      titulo: 'Mandáselo a 2 alumnos',
+      detalle: 'Entran desde el link, con su nombre, sin crear cuenta.',
+      boton: 'Mandarlo',
+      esperando: (practicaron: number) =>
+        practicaron === 0 ? 'Todavía no practicó ninguno. ¿Se lo reenviás?' : `Ya practicó ${practicaron}. Falta uno: ¿se lo reenviás?`,
+    },
+  },
+  copiar: 'Copiar para WhatsApp',
+  copiado: 'Copiado',
+  noSeCopio: 'No se pudo copiar. Seleccioná el texto y copialo a mano.',
+  abrirWhatsApp: 'Abrir WhatsApp',
+  hecho: 'Hecho',
+  listo: 'Listo. El lunes te mostramos quién practicó.',
+  cerrar: 'Cerrar',
+  queCargamos: 'tu arranque',
+} as const
+
 export const ONBOARDING_DOCENTE = {
   etiqueta: 'Primeros pasos',
   progreso: (hechos: number, total: number) => `${hechos} de ${total} pasos`,
@@ -282,6 +321,24 @@ export const CHIP_TEMA = {
   sin_datos: 'Sin datos',
 } as const
 
+/** Tanda AB · AB5: «Esta semana», quién practicó y qué le falta (lib/esta-semana.ts). */
+export const ESTA_SEMANA = {
+  titulo: 'Esta semana',
+  detalle: 'Los últimos 7 días en tus grupos.',
+  practico: 'Practicó',
+  noPractico: 'No practicó',
+  ejercicios: (n: number) => (n === 1 ? '1 ejercicio' : `${n} ejercicios`),
+  bien: (pct: number) => `${pct} % bien`,
+  leFalta: 'Le falta',
+  copiar: 'Copiar resumen',
+  copiado: 'Copiado',
+  noSeCopio: 'No se pudo copiar. Probá de nuevo.',
+  reenviar: 'Copiar el link para WhatsApp',
+  abrirWhatsApp: 'Abrir WhatsApp',
+  irATareas: 'Ir a mis tareas',
+  queCargamos: 'la semana de tus alumnos',
+} as const
+
 export const MIS_ALUMNOS = {
   /** P5: en la barra, mientras el docente no tenga una materia. */
   crearMateriaPrimero: 'Primero creá una materia',
@@ -370,6 +427,17 @@ export const MIS_ALUMNOS = {
     sinLugar: 'No tenés lugar en tu plan para sumarlo de nuevo.',
     fallo: 'No se pudo volver a sumar. Probá de nuevo.',
   },
+} as const
+
+/** Tanda AB · AB6: el muro del 3.er alumno, con la evidencia primero (lib/evidencia-del-muro.ts). */
+export const MURO = {
+  titulo: (cupoGratis: number) => `Tu plan gratis llega hasta ${cupoGratis} alumnos`,
+  evidencia: 'Lo que ya pasó',
+  oferta: (monto: string | null, alumnosPorBloque: number) =>
+    monto ? `Sumá hasta ${alumnosPorBloque} alumnos por ${monto} al mes.` : `Sumá hasta ${alumnosPorBloque} alumnos con el plan Particular.`,
+  garantia: 'Si en 14 días ninguno de tus alumnos practicó, te devuelvo el pago.',
+  sinDebito: 'Sin débito automático: si no renovás, tus fichas quedan guardadas.',
+  cargando: 'Mirando lo que practicaron…',
 } as const
 
 export const AGREGAR_ALUMNO = {
@@ -672,7 +740,8 @@ export const MIS_TAREAS = {
   preguntas: (n: number) => (n === 1 ? '1 pregunta' : `${n} preguntas`),
   modo: { teorico: 'Teórica', practico: 'Práctica', mixto: 'Teórica y práctica' },
   mandar: 'Mandar a mi grupo',
-  revisar: 'Revisar y editar',
+  /** AB7: el paso de revisión se llama como lo que hace. */
+  revisar: 'Revisá y aprobá',
   verComoAlumno: 'Ver como alumno',
   probar: 'Probarla yo',
   borrar: 'Borrar tarea',
@@ -713,6 +782,26 @@ export const REVISAR_TAREA = {
 
 /** L5: cuántas preguntas y cuánto tiempo lleva una tarea. Los minutos salen de minutosEstimados (lib/diagnostico.ts). */
 /** M2: en *Revisar y editar*, una consigna que no encaja con su tipo. */
+/** Tanda AB · AB7: «Revisá y aprobá» en la revisión del cuestionario (lib/revisa-y-aproba.ts). */
+export const REVISA_Y_APROBA = {
+  titulo: 'Revisá y aprobá',
+  aprobar: 'Aprobar',
+  aprobada: 'Aprobada',
+  aprobarTitulo: 'Aprobar esta pregunta: la leíste y está bien',
+  desaprobar: 'Sacarle la aprobación',
+  aprobarEtiqueta: (n: number) => `Aprobar la pregunta ${n}`,
+  aprobarTodasYMandar: 'Aprobar todas y mandar',
+  /** AC2: el diálogo de mandar con una tarea sin aprobar. */
+  faltaAprobar: {
+    titulo: 'Antes de mandarla, revisala',
+    detalle: 'Nada le llega a tu alumno sin tu OK. Revisá las preguntas y aprobalas; después la mandás.',
+  },
+  /** AC2: en *Mis tareas*, una tarea que salió de «Compartir» sin revisar. */
+  sinAprobar: 'Sin aprobar',
+  revisarParaMandar: 'Revisá y aprobá para mandar',
+  editadas: (n: number) => (n === 1 ? '1 editada' : `${n} editadas`),
+} as const
+
 export const TIPO_INCOHERENTE = {
   aviso: 'Esta consigna no encaja con su tipo',
   detalle: {
@@ -1209,6 +1298,32 @@ export const PAGINA_DEL_GRUPO = {
 } as const
 
 /** M3: crear un grupo nuevo (antes "Crear aula", escondido en la gestión). */
+/** Tanda AC · AC1: la modalidad del docente (lib/modalidad.ts). */
+export const MODALIDAD = {
+  pregunta: '¿Cómo das clases?',
+  preguntaDetalle: 'Así te mostramos el plan que te sirve. Lo podés cambiar cuando quieras.',
+  opciones: {
+    particular: { titulo: 'Doy clases particulares', detalle: 'Seguís a cada alumno: su ficha, su diagnóstico, sus tareas.' },
+    curso: { titulo: 'Doy clases en un curso', detalle: 'En una escuela o un instituto: tareas y diagnósticos para todo el curso.' },
+  },
+  menu: 'Cómo das clases',
+  menuDetalle: { particular: 'Clases particulares', curso: 'En un curso', sinDato: 'Sin elegir' },
+  dialogo: {
+    titulo: 'Cómo das clases',
+    detalle: 'Esto cambia cómo cuentan los alumnos en tu plan gratis.',
+    queCambia: {
+      particular: 'Clases particulares: todos tus alumnos cuentan como particulares, también los que entran por el link. El plan gratis llega a 2. Los que ya tenés no se sacan; se frena el siguiente.',
+      curso: 'En un curso: el plan gratis es 2 alumnos particulares y 1 curso de hasta 35 (los que entran por el link del curso).',
+    },
+    confirmar: 'Guardar',
+    cancelar: 'Cancelar',
+    guardado: 'Listo, quedó guardado.',
+    noSeGuardo: 'No se pudo guardar. Probá de nuevo.',
+  },
+  crearCursoDeshabilitado: 'Los cursos son para clases en una escuela o instituto. ¿Das clases en un curso? Cambialo en',
+  enlaceComoDasClases: 'Cómo das clases',
+} as const
+
 export const CREAR_GRUPO = {
   boton: 'Crear grupo',
   titulo: 'Crear un grupo',
@@ -1337,6 +1452,34 @@ export function contar(n: number, singular: string, plural: string): string {
 }
 
 /**
+ * Tanda AB · AB3: /precios con una sola oferta adelante (el plan Particular).
+ * Lo demás (Aula, Institución, Autodidacta) queda detrás de «¿Sos escuela,
+ * instituto o estudiás por tu cuenta?». Los montos salen de las variables.
+ */
+export const OFERTA_PARTICULAR = {
+  titulo: 'Plan Particular',
+  bajada: 'Para el profe de clases particulares.',
+  gratis: (cupo: number) => `Gratis con ${cupo} alumnos, para siempre`,
+  bloque: (alumnos: number) => `Bloque de ${alumnos} alumnos`,
+  porMes: 'por mes',
+  sinPrecio: 'Precio a confirmar',
+  pagarMes: 'Pagar el mes',
+  pase: (dias: number) => `O un pase de ${dias} días`,
+  pagarPase: 'Pagar el pase',
+  empezar: 'Empezar gratis',
+  /** Debajo del precio: los dos renglones de confianza. */
+  garantia: 'Si en 14 días ninguno de tus alumnos practicó, te devuelvo el pago.',
+  marzo: 'No hay débito automático: si no renovás, tus fichas quedan guardadas y volvés cuando quieras.',
+  masBloques: '¿Más de 5 alumnos? Todos los bloques',
+  otros: '¿Sos escuela, instituto o estudiás por tu cuenta?',
+  otrosCerrar: 'Ocultar los otros planes',
+  autodidactaTitulo: 'Me preparo solo para un examen',
+  autodidactaDetalle:
+    'Para el alumno que estudia por su cuenta: subís el programa y la fecha del examen. Gratis, el diagnóstico y dos prácticas; con el pase, el plan completo y los simulacros hasta el examen.',
+  autodidactaPase: (monto: string) => `Pase por materia: ${monto}, hasta 7 días después del examen.`,
+} as const
+
+/**
  * Planes y cobro (tanda G). Sin signos de admiración, sin "¡Bienvenido!": la
  * voz de design-reference/sistema/voz-y-textos.md.
  */
@@ -1408,7 +1551,7 @@ export const PLAN = {
     mirarPrecios: 'Mirá los precios.',
     verPlanes: 'Ver planes',
     planesTitulo: 'Elegí cómo seguir',
-    tituloPrueba: 'Terminó tu prueba de 30 días',
+    tituloPrueba: 'Terminó tu prueba',
     tituloPlan: 'Tu plan venció',
     detalle: (fecha: string) => `Venció el ${fecha}. Nada se borró.`,
     /** H7: por qué está en solo lectura y cómo volver al gratis sin pagar. */
@@ -1434,6 +1577,9 @@ export const PLAN = {
     vencio: (fecha: string) => `tu plan venció el ${fecha}`,
     pruebaTermino: (fecha: string) => `tu prueba terminó el ${fecha}`,
     soloAlumnos: (alumnos: number) => (alumnos === 1 ? '1 alumno' : `${alumnos} alumnos`),
+    /** AC3: el gratis con curso (regla B1), cada cupo por separado. */
+    porTipo: (particulares: number, cupo: number, curso: number, porCurso: number) =>
+      `Particulares ${particulares} de ${cupo} · Curso ${curso} de ${porCurso}`,
   },
 } as const
 
@@ -1446,16 +1592,15 @@ function nombreDeNivel(nivel: number): string {
 export const PRECIOS = {
   titulo: 'Precios',
   frase: 'Pagás una clase por cada cinco alumnos que seguís.',
-  bajada: (dias: number, cupoPrueba: number, cupoGratis: number) =>
-    `Empezás con ${dias} días gratis, con hasta ${cupoPrueba} alumnos. Después seguís gratis con hasta ${cupoGratis} alumnos particulares y un curso, o elegís un plan.`,
-  empezar: (dias: number) => `Probar ${dias} días gratis`,
+  /** AA1: sin prueba. El gratis es para siempre; para más alumnos, un plan. */
+  bajada: (cupoGratis: number) =>
+    `Gratis con ${cupoGratis} alumnos particulares y 1 curso, para siempre. ¿Más alumnos? Elegí un plan.`,
+  empezar: 'Empezar gratis',
   /** H5: lo que no se paga va arriba, aparte de la tabla. */
   sinPagar: 'Sin pagar',
   gratisTitulo: 'Gratis',
   gratisDetalle: (cupo: number) => `Hasta ${cupo} alumnos, para siempre.`,
-  gratisTope: (cuestionarios: number) => `Hasta ${cuestionarios} cuestionarios cada 30 días.`,
-  pruebaTitulo: 'Prueba',
-  pruebaDetalle: (dias: number, cupo: number) => `${dias} días con hasta ${cupo} alumnos, todo incluido. Sin tarjeta.`,
+  gratisTope: (cuestionarios: number) => `Hasta ${cuestionarios} cuestionarios por mes.`,
   planes: 'Planes',
   plan: 'Plan',
   columnaAlumnos: 'Alumnos',
@@ -1466,7 +1611,7 @@ export const PRECIOS = {
   pagar: (tipo: 'mensual' | 'pase', nivel: string, monto: string) =>
     `Pagar ${tipo === 'mensual' ? 'un mes' : 'el pase de 90 días'} de ${nivel}, ${monto}`,
   notas: (cupoGratis: number, cupoBloque: number) => [
-    'Por mes son 30 días desde que se acredita el pago; el pase, 90 días. No es por mes calendario.',
+    'El mes corre desde el día en que se acredita el pago, no por mes calendario; el pase dura 90 días.',
     'Cuentan todos los alumnos de tus grupos, también los que entran sin cuenta. Un alumno en dos grupos tuyos cuenta una vez.',
     `Los ${cupoGratis} alumnos gratis no se suman a un plan: 1 bloque son ${cupoBloque} alumnos en total.`,
     `Si tu plan vence no se borra nada. Con ${cupoGratis} alumnos o menos seguís gratis; con más, seguís viendo todo y tus alumnos siguen respondiendo las tareas que ya les mandaste.`,
@@ -1488,7 +1633,7 @@ export const PRECIOS = {
   porAlumnoPorMes: (monto: string) => `Son ${monto} por alumno por mes.`,
   aulaTitulo: 'Plan Aula',
   aulaCurso: (porCurso: number) => `Un curso de hasta ${porCurso} alumnos`,
-  aulaCursoDetalle: 'Tareas y diagnósticos del curso, el informe para imprimir y la exportación a Moodle. 60 cuestionarios cada 30 días.',
+  aulaCursoDetalle: 'Tareas y diagnósticos del curso, el informe para imprimir y la exportación a Moodle. 60 cuestionarios por mes.',
   aulaAdicional: 'Cada curso adicional',
   pagarAula: 'Pagar un curso',
   aulaSinIndividual: 'Sin fichas ni diagnósticos de cada alumno: eso es del plan Particular.',
@@ -1830,6 +1975,30 @@ export const EXPORTAR_MOODLE = {
 } as const
 
 /** Ronda T · C2: pagar desde la app (Mercado Pago Checkout Pro). */
+/** Tanda AB · AB8: la garantía de 14 días, en /admin/planes (sólo lectura; el reintegro es a mano en Mercado Pago). */
+export const GARANTIA = {
+  titulo: 'Candidatos a la garantía',
+  detalle: 'Pagaron hace 14 días o menos y ningún alumno practicó desde el pago. El reintegro se hace a mano desde Mercado Pago.',
+  ninguno: 'Ningún pago de los últimos 14 días está en esa situación.',
+  sinDato: 'Sin dato: la tabla de pagos (migración 039) no está en esta base.',
+  quedan: (dias: number) => (dias === 0 ? 'último día' : dias === 1 ? 'queda 1 día' : `quedan ${dias} días`),
+  pagoMp: (id: string) => `pago MP ${id}`,
+} as const
+
+/** Tanda AC · AC5: el aviso de los lunes (lib/aviso-semanal.ts). */
+export const AVISO_SEMANAL = {
+  titulo: 'Tu resumen de la semana',
+  ver: 'Ver Esta semana',
+} as const
+
+/** Tanda AC · AC1/AC5: los avisos guardados de la campanita (lib/avisos-guardados-server.ts). */
+export const AVISOS_GUARDADOS = {
+  muro: {
+    titulo: 'Un alumno nuevo quiso entrar y tu plan gratis está completo',
+    detalle: (evidencia: string) => `${evidencia} Sumá hasta 5 alumnos con el plan Particular.`,
+  },
+} as const
+
 export const PAGAR = {
   titulo: 'Pagar',
   resumen: 'Resumen',
@@ -2002,6 +2171,24 @@ export const ORIGEN = {
   },
 } as const
 
+/** Tanda AA · AA2: el anuncio de Meta y el criterio de verificación del análisis Founder, en /admin/embudo. */
+export const CRITERIO_DE_VERIFICACION = {
+  meta: {
+    titulo: 'Anuncio de Meta',
+    detalle: 'Los docentes que llegaron por el link del anuncio (origen=meta), y debajo uno por anuncio (ref=AD-…).',
+    columnas: { anuncio: 'Anuncio', visitas: 'Visitas', registros: 'Registros', conAlumno: 'Con 1 alumno o más', pagando: 'Pagando' },
+    total: 'Total Meta',
+    sinAnuncio: 'Sin nombre de anuncio',
+    visitasSinDato: 'La app no registra visitas: se miran en el administrador de anuncios de Meta.',
+    vacio: 'Todavía nadie se registró desde el anuncio.',
+  },
+  titulo: 'Criterio de verificación',
+  detalle: (activados: number, pagando: number) =>
+    `Meta al 31/1: ${activados} profes activados y ${pagando} pagando, 3 de ellos fuera de tu red (eso lo sabés vos). Hasta entonces, la pauta de MaestrIA queda en $0.`,
+  columnas: { docentes: 'Docentes', activados: 'Activados', conTercerAlumno: 'Con 3.er alumno', pagando: 'Pagando' },
+  activadoEs: 'Activado: una materia propia y 2 alumnos que practicaron en sus primeros 7 días.',
+} as const
+
 /** Ronda V · V2: la materia de ejemplo. */
 export const MATERIA_DE_EJEMPLO = {
   probar: 'Probar con una materia de ejemplo',
@@ -2116,6 +2303,35 @@ export const PORTADA = {
   testimonios: 'Lo que dicen los docentes',
   datosDeEjemplo: 'Las capturas son de una materia de ejemplo: los alumnos son ficticios.',
   entrar: 'Entrar',
+} as const
+
+/**
+ * Tandas AA3 + AB2: /profes, la página a la que llega el anuncio de Meta.
+ * Oferta v3 del análisis Founder (docs/founder/offer.md): empezar gratis con 2
+ * alumnos; la venta pasa adentro, cuando el docente ve que practican.
+ * Prohibido acá (tests): «30 días», «revisando», «IA que corrige todo».
+ */
+export const PROFES = {
+  titulo: (cupoGratis: number) => `Empezá gratis con ${cupoGratis} alumnos.`,
+  bajada: 'Nada le llega a tu alumno sin tu OK.',
+  puntos: [
+    'Subís el programa (o te lo cargo yo en una videollamada de 15 minutos) y MaestrIA arma la práctica por tema.',
+    'Revisás cada pregunta y la aprobás en un clic. Si se traba, el alumno recibe una pista, nunca la respuesta.',
+    'Cada lunes ves quién practicó y qué tema le falta a cada uno.',
+  ],
+  empezar: (cupoGratis: number) => `Empezar gratis con ${cupoGratis} alumnos`,
+  cargamelo: 'Prefiero que me lo cargues vos',
+  mensajeCargamelo: 'Hola Mauro, quiero que me ayudes a cargar mi programa en MaestrIA',
+  verPrecios: 'Ver precios',
+  /** El ancla, chica y abajo. Con el precio del bloque si está cargado; sin la variable, sin número. */
+  ancla: (monto: string | null, cupoGratis: number, alumnosPorBloque: number) =>
+    monto
+      ? `¿Más de ${cupoGratis} alumnos? ${monto} por mes, para ${alumnosPorBloque}. Menos que una clase.`
+      : `¿Más de ${cupoGratis} alumnos? Menos que una clase por mes, para ${alumnosPorBloque}.`,
+  video: 'Mirá cómo funciona',
+  captura: 'La ficha de un alumno en MaestrIA: lo que domina y lo que tiene que reforzar',
+  datosDeEjemplo: 'Alumnos ficticios, de una materia de ejemplo.',
+  descripcion: 'Empezá gratis con 2 alumnos. Subís tu programa, MaestrIA arma la práctica y nada le llega a tu alumno sin tu OK. Cada lunes ves quién practicó y qué le falta.',
 } as const
 
 /** Ronda V · V6: el centro de ayuda. */

@@ -1,5 +1,6 @@
 'use client'
 
+import type { Modalidad } from '@/lib/modalidad'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ChevronDown, ChevronRight } from 'lucide-react'
@@ -40,7 +41,16 @@ export interface GrupoDelDocente {
  * vive todo el seguimiento —alumnos, tareas, temas, diagnósticos— y se arma
  * un diagnóstico o se manda una tarea. "+ Crear grupo" va arriba.
  */
-export function MisGrupos({ materias, alCambiar }: { materias: TeacherProgram[]; alCambiar?: () => void }) {
+export function MisGrupos({
+  materias,
+  alCambiar,
+  modalidad = null,
+}: {
+  materias: TeacherProgram[]
+  alCambiar?: () => void
+  /** AC1: el particular ve «Crear grupo» deshabilitado. */
+  modalidad?: Modalidad | null
+}) {
   const [grupos, setGrupos] = useState<GrupoDelDocente[] | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [cerradosAbiertos, setCerradosAbiertos] = useState(false)
@@ -110,7 +120,7 @@ export function MisGrupos({ materias, alCambiar }: { materias: TeacherProgram[];
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end">
-        <CrearGrupo materias={materias} />
+        <CrearGrupo materias={materias} modalidad={modalidad} />
       </div>
 
       {error && (

@@ -4,7 +4,12 @@ import { Recomendar } from '@/components/docente/recomendar'
 import { AvisoDeEjemplo } from '@/components/docente/materia-de-ejemplo'
 import Link from 'next/link'
 import { HitosOnboarding } from '@/components/docente/hitos-onboarding'
+import { ArranqueGuiado } from '@/components/docente/arranque-guiado'
+import { ComoDasClases } from '@/components/docente/como-das-clases'
+import { MuroDesdeElAviso } from '@/components/docente/muro-del-tercer-alumno'
+import { cupoGratis as cupoGratisPorDefecto } from '@/lib/planes'
 import { MisAlumnos } from '@/components/docente/mis-alumnos'
+import { EstaSemana } from '@/components/docente/esta-semana'
 import { MIS_GRUPOS } from '@/lib/textos'
 import { MisGrupos } from '@/components/docente/mis-grupos'
 import { cn } from '@/lib/utils'
@@ -68,14 +73,28 @@ export default function TeacherPage() {
       <ContadorDelPlan datos={planDatos} />
       <EstadoDelPlan datos={planDatos} />
       <AvisoDeEjemplo />
-
-      <HitosOnboarding
-        onCrearMateria={() => setShowOnboardingModal(true)}
-        onCargarTemario={() => router.push('/teacher?seccion=materias')}
-        onArmarTarea={() => router.push('/teacher?seccion=tareas&armar=1')}
-        onMandarTarea={() => router.push('/teacher?seccion=tareas')}
-        refrescarCon={`${teacherPrograms.length}-${teacherQuizzes.length}-${teacherSection}-${version}`}
+      {/* AC1: «Cómo das clases» (?comoDasClases=1) y el muro desde la campanita (?muro=1). */}
+      <ComoDasClases actual={planDatos?.plan.modalidad ?? null} alGuardar={recargarPlan} />
+      <MuroDesdeElAviso
+        cupoGratis={planDatos?.plan.cupoGratis ?? cupoGratisPorDefecto()}
+        precioBloque={planDatos?.renovar?.nivel === 1 ? (planDatos.renovar.mensual?.monto ?? null) : null}
       />
+
+      {/* AB4: mientras 2 alumnos no practicaron, el arranque guiado reemplaza a los primeros pasos. */}
+      <ArranqueGuiado
+        tareas={teacherQuizzes}
+        onSubirPrograma={() => setShowOnboardingModal(true)}
+        onArmar={() => router.push('/teacher?seccion=tareas&armar=1')}
+        refrescarCon={`${teacherPrograms.length}-${teacherQuizzes.length}-${teacherSection}-${version}`}
+      >
+        <HitosOnboarding
+          onCrearMateria={() => setShowOnboardingModal(true)}
+          onCargarTemario={() => router.push('/teacher?seccion=materias')}
+          onArmarTarea={() => router.push('/teacher?seccion=tareas&armar=1')}
+          onMandarTarea={() => router.push('/teacher?seccion=tareas')}
+          refrescarCon={`${teacherPrograms.length}-${teacherQuizzes.length}-${teacherSection}-${version}`}
+        />
+      </ArranqueGuiado>
 
       <MisTareas panel={panel} />
       <MisMaterias panel={panel} />
@@ -83,6 +102,8 @@ export default function TeacherPage() {
 
         {teacherSection === 'aulas' && (
           <div className="space-y-4">
+            {/* AB5: quién practicó esta semana y qué le falta a cada uno. */}
+            <EstaSemana refrescarCon={version} />
             {/* L4: Mis alumnos | Mis grupos, al mismo nivel. La pestaña va en la URL. */}
             <nav aria-label={MIS_GRUPOS.pestanas.etiqueta} className="flex gap-1 border-b border-borde">
               {(['alumnos', 'grupos'] as const).map((pestana) => (
@@ -116,7 +137,7 @@ export default function TeacherPage() {
                 alCambiarAlumnos={() => panel.setVersion((v) => v + 1)}
               />
             ) : (
-              <MisGrupos materias={teacherPrograms} alCambiar={() => panel.setVersion((v) => v + 1)} />
+              <MisGrupos materias={teacherPrograms} alCambiar={() => panel.setVersion((v) => v + 1)} modalidad={planDatos?.plan.modalidad ?? null} />
             )}
           </div>
         )}

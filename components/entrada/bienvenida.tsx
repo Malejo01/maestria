@@ -15,10 +15,12 @@ import { Boton } from '@/components/sistema/boton'
 import { Cargando } from '@/components/sistema/cargando'
 import { JOIN_CODE_LENGTH, isValidJoinCode, normalizeJoinCode } from '@/lib/classrooms'
 import { aUserRole, leerRolElegido, olvidarRolElegido, type RolElegido } from '@/lib/rol-elegido'
-import { BIENVENIDA, ENTRADA, ONBOARDING_ALUMNO as A } from '@/lib/textos'
+import { BIENVENIDA, ENTRADA, MODALIDAD, ONBOARDING_ALUMNO as A } from '@/lib/textos'
+import { leerModalidadElegida, olvidarModalidadElegida, type Modalidad } from '@/lib/modalidad'
+import { TarjetasDeModalidad } from '@/components/docente/como-das-clases'
 
-/** `rol`: falta elegirlo. `alumno-N`: las tres pantallas del alumno. */
-type Paso = 'leyendo' | 'rol' | 'alumno-1' | 'alumno-2' | 'alumno-3' | 'guardando'
+/** `rol`: falta elegirlo. `modalidad`: el docente elige cómo da clases (AC1). `alumno-N`: las tres pantallas del alumno. */
+type Paso = 'leyendo' | 'rol' | 'modalidad' | 'alumno-1' | 'alumno-2' | 'alumno-3' | 'guardando'
 
 const PASOS_ALUMNO = 3
 
@@ -54,18 +56,20 @@ export function Bienvenida({ onComplete }: { onComplete?: () => void }) {
   const arranco = useRef(false)
 
   const guardar = useCallback(
-    async (rol: RolElegido, despues?: string) => {
+    async (rol: RolElegido, despues?: string, modalidad?: Modalidad) => {
       setPaso('guardando')
       setError(null)
       try {
         const res = await fetch('/api/user/profile', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ role: aUserRole(rol) }),
+          // AC1: el docente guarda también cómo da clases (sin la 050 se ignora).
+          body: JSON.stringify(modalidad ? { role: aUserRole(rol), modalidad } : { role: aUserRole(rol) }),
         })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
 
         olvidarRolElegido()
+        olvidarModalidadElegida()
         // Refresca el JWT: rol e isOnboarded viajan cacheados ahí.
         await actualizarSesion()
         if (despues) {
@@ -84,8 +88,12 @@ export function Bienvenida({ onComplete }: { onComplete?: () => void }) {
 
   const elegirRol = useCallback(
     (rol: RolElegido) => {
-      if (rol === 'docente') void guardar(rol)
-      else setPaso('alumno-1')
+      if (rol === 'docente') {
+        // AC1: si la modalidad vino del link (portada, /profes) no se pregunta.
+        const modalidad = leerModalidadElegida()
+        if (modalidad) void guardar(rol, undefined, modalidad)
+        else setPaso('modalidad')
+      } else setPaso('alumno-1')
     },
     [guardar],
   )
@@ -154,6 +162,19 @@ export function Bienvenida({ onComplete }: { onComplete?: () => void }) {
           <TituloEntrada>{ENTRADA.titulo}</TituloEntrada>
           <BajadaEntrada>{ENTRADA.bajada}</BajadaEntrada>
           <ElegirRol onElegir={elegirRol} />
+          {error && (
+            <p className="nota mt-3 text-flojo" role="alert">
+              {error}
+            </p>
+          )}
+        </Aparecer>
+      )}
+
+      {paso === 'modalidad' && (
+        <Aparecer key="modalidad">
+          <TituloEntrada>{MODALIDAD.pregunta}</TituloEntrada>
+          <BajadaEntrada className="cuerpo-s">{MODALIDAD.preguntaDetalle}</BajadaEntrada>
+          <TarjetasDeModalidad elegida={null} onElegir={(m) => void guardar('docente', undefined, m)} />
           {error && (
             <p className="nota mt-3 text-flojo" role="alert">
               {error}

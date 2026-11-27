@@ -10,6 +10,7 @@ export const RUTAS_PUBLICAS = [
   '/sign-in',
   '/sign-up',
   '/precios',             // G5: lo que Mauro le manda a un cliente por WhatsApp
+  '/profes',              // AA3: la página del anuncio de Meta
   '/terminos',            // Legales: los linkea la pantalla de ingreso, y Google
   '/privacidad',          //   pide la política de privacidad pública
   '/api/auth',            // NextAuth's own routes

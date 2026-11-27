@@ -5,10 +5,12 @@ import { contarAlumnosDelDocente } from '@/lib/alumnos-docente-server'
 import { normalizarNombre } from '@/lib/alumnos-docente'
 import { captureRouteFailure } from '@/lib/observability'
 import { lugaresDelDocente } from '@/lib/alumnos-docente-server'
+import { normalizarModalidad, usaCursos } from '@/lib/modalidad'
+import { avisarMuroAlDocente } from '@/lib/avisos-guardados-server'
 import {
   alumnosMaximosPorCurso,
   cuestionariosDelMes,
-  cursoTieneLugar,
+  decidirIngresoPorCodigo,
   practicasExtraPorAlumnoMes,
   puedeCrearCurso,
   cupoDeCursosAula,
@@ -17,8 +19,8 @@ import {
   tipoDePlan,
   type LugaresPorTipo,
   type TipoDePlan,
-  DIAS_PRUEBA,
   DIAS_VENTANA_GRATIS,
+  diasDePrueba,
   cuerpoDeBloqueo,
   cuestionariosGratisPorMes,
   cupoGratis,
@@ -65,7 +67,9 @@ interface PlanLeido {
 async function leerFilaDelPlan(userId: string): Promise<Fila | undefined> {
   try {
     const filas = (await sql`
-      SELECT plan_nivel, plan_vence_el, prueba_iniciada_el, created_at, plan_tipo, aula_cursos, fundadora_desde
+      SELECT plan_nivel, plan_vence_el, prueba_iniciada_el, created_at, plan_tipo, aula_cursos, fundadora_desde,
+             -- AC1: la 050. Con to_jsonb, sin la columna viene NULL (la válvula).
+             to_jsonb(users) ->> 'modalidad' AS modalidad
       FROM users WHERE id = ${userId} LIMIT 1
     `) as Fila[]
     return filas[0]
@@ -110,6 +114,7 @@ async function leerPlan(
       alumnosActuales: 0,
       tipo: fila.plan_tipo,
       aulaCursos: fila.aula_cursos,
+      modalidad: normalizarModalidad(fila.modalidad),
     }
     if (normalizarNivel(datos.nivel) !== null && (contarSiempre || terminoElPeriodo(datos))) {
       const lugares = await lugaresSinRomper(userId)
@@ -162,7 +167,8 @@ function armarResumen(
     venceEl: vence ? vence.toISOString() : null,
     diasRestantes: diasRestantes(datos),
     avisoDePruebaPendiente:
-      columnasPresentes && estado === 'prueba' && nivel === 0 && !datos.pruebaIniciadaEl && !datos.venceEl,
+      columnasPresentes && diasDePrueba() > 0 && estado === 'prueba' && nivel === 0 && !datos.pruebaIniciadaEl && !datos.venceEl,
+    diasDePrueba: diasDePrueba(),
     cupoGratis: cupoGratis(),
     topeCuestionarios: cuestionariosDelMes(tipoDePlan(datos.tipo), estado) ?? cuestionariosGratisPorMes(),
     cuestionarios,
@@ -173,7 +179,16 @@ function armarResumen(
     permiteIndividual: permiteIndividual(tipoDePlan(datos.tipo), estado),
     permiteImprimirYMoodle: permiteImprimirYMoodle(estado),
     fundadoraDesde: fechaIso(fundadoraDesde),
+    modalidad: datos.modalidad ?? null,
+    lugares: lugaresParaElContador(datos),
   }
+}
+
+/** AC3: particulares y el curso, como los cuenta la modalidad. */
+function lugaresParaElContador(datos: DatosDelPlan): { particulares: number; curso: number } | null {
+  if (datos.modalidad === 'particular') return { particulares: datos.alumnosActuales, curso: 0 }
+  if (!datos.lugares) return null
+  return { particulares: datos.lugares.particulares, curso: Math.max(0, ...datos.lugares.cursos) }
 }
 
 function fechaIso(valor: unknown): string | null {
@@ -260,7 +275,8 @@ export async function bloqueoParaSumarAlumno(teacherId: string, email: string | 
   if (estado === 'exento') return null
   const resumen = await resumenDelPlan(teacherId, email)
   if (!resumen.permiteIndividual) return NextResponse.json(cuerpoDeBloqueo(resumen, 'solo_particular'), { status: 402 })
-  const ocupados = estado === 'gratis' && datos.lugares ? datos.lugares.particulares : resumen.alumnos
+  // AC1: con modalidad particular, en el gratis cuentan TODOS (también los del link).
+  const ocupados = estado === 'gratis' && datos.lugares && usaCursos(datos.modalidad ?? null) ? datos.lugares.particulares : resumen.alumnos
   if (puedeSumarAlumno(resumen.estado, ocupados, resumen.nivel)) return null
   return NextResponse.json(cuerpoDeBloqueo(resumen, resumen.estado === 'vencido' ? 'vencido' : 'sin_cupo'), {
     status: 402,
@@ -325,16 +341,19 @@ export async function emailDeUsuario(userId: string): Promise<string | null> {
 }
 
 /**
- * G2: el docente aceptó el aviso. Arranca la prueba de 30 días, una sola vez:
+ * G2: el docente aceptó el aviso. Arranca la prueba (`diasDePrueba`), una sola vez:
  * si ya arrancó (o tiene un plan pago) no toca nada. Devuelve si la arrancó.
  */
 export async function iniciarPrueba(teacherId: string, email: string | null): Promise<boolean> {
   if (isAdminEmail(email)) return false
+  // AA1: con `MAESTRIA_PRUEBA_DIAS` en 0 (el valor por defecto) no hay prueba que arrancar.
+  const dias = diasDePrueba()
+  if (dias <= 0) return false
   try {
     const filas = (await sql`
       UPDATE users
       SET prueba_iniciada_el = NOW(),
-          plan_vence_el = NOW() + make_interval(days => ${DIAS_PRUEBA}),
+          plan_vence_el = NOW() + make_interval(days => ${dias}),
           updated_at = NOW()
       WHERE id = ${teacherId}
         AND prueba_iniciada_el IS NULL
@@ -580,15 +599,22 @@ async function grupoTieneLugarParaInterno(params: {
     const plan = await leerPlan(params.teacherId, email, new Date(), { contarSiempre: true })
     const estado = estadoDelPlan(plan.datos)
     const tipo = tipoDePlan(plan.datos.tipo)
-    if (estado === 'gratis' || (tipo === 'aula' && estado === 'activo')) {
-      const { porGrupo } = await lugaresDelDocente(params.teacherId)
-      const enEsteCurso = porGrupo.get(params.classroomId) ?? 0
-      const otrosCursosConAlumnos = [...porGrupo.entries()].filter(([id, n]) => id !== params.classroomId && n > 0).length
-      return cursoTieneLugar({ estado, tipo, enEsteCurso, otrosCursosConAlumnos }) ? true : 'curso_completo'
-    }
-
-    const resumen = await resumenDelPlan(params.teacherId, email)
-    return puedeSumarAlumno(resumen.estado, resumen.alumnos, resumen.nivel) ? true : 'sin_lugar'
+    // AC1: la modalidad decide si quien entra por el link ocupa un lugar de
+    // curso (B1) o uno particular (cupo gratis de 2). Ver decidirIngresoPorCodigo.
+    const modalidad = plan.datos.modalidad ?? null
+    const { porGrupo, total } = await lugaresDelDocente(params.teacherId)
+    const decision = decidirIngresoPorCodigo({
+      estado,
+      tipo,
+      modalidad,
+      nivel: plan.datos.nivel,
+      alumnos: total,
+      enEsteCurso: porGrupo.get(params.classroomId) ?? 0,
+      otrosCursosConAlumnos: [...porGrupo.entries()].filter(([id, n]) => id !== params.classroomId && n > 0).length,
+    })
+    // AC1: al particular del gratis que se quedó sin lugar, el aviso del muro en la campanita (uno por día).
+    if (decision === 'sin_lugar' && estado === 'gratis' && modalidad === 'particular') await avisarMuroAlDocente(params.teacherId)
+    return decision
   } catch (error) {
     // La válvula, también acá: si no se puede decidir, el alumno entra.
     captureRouteFailure(error, { endpoint: 'lib/planes-server', operation: 'grupoTieneLugarPara' })
