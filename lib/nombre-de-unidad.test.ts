@@ -113,3 +113,19 @@ describe('O11 · el título de la unidad y los temas en la misma línea', () => 
     expect(separarTituloDeUnidad('Introducción. Repaso', []).nombre).toBe('Introducción. Repaso')
   })
 })
+
+describe('sinPrefijoDeUnidad (AA4)', () => {
+  it('saca el «Unidad N:» de adelante, con números o romanos', async () => {
+    const { sinPrefijoDeUnidad } = await import('./nombre-de-unidad')
+    expect(sinPrefijoDeUnidad('Unidad 1: Sistema de numeración y aritmética')).toBe('Sistema de numeración y aritmética')
+    expect(sinPrefijoDeUnidad('Unidad II: Ecuaciones')).toBe('Ecuaciones')
+    expect(sinPrefijoDeUnidad('UNIDAD Nº 3 – Geometría')).toBe('Geometría')
+    expect(sinPrefijoDeUnidad('Unidad 4. Vectores')).toBe('Vectores')
+  })
+  it('sin prefijo, o con sólo el prefijo, queda como estaba', async () => {
+    const { sinPrefijoDeUnidad } = await import('./nombre-de-unidad')
+    expect(sinPrefijoDeUnidad('Lógica proposicional')).toBe('Lógica proposicional')
+    expect(sinPrefijoDeUnidad('Unidad 1')).toBe('Unidad 1')
+    expect(sinPrefijoDeUnidad('Unidades de medida')).toBe('Unidades de medida')
+  })
+})
