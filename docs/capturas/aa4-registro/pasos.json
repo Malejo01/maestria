@@ -1,0 +1,72 @@
+[
+ {
+  "numero": 1,
+  "nombre": "profes",
+  "clics": 0,
+  "segundos": 1,
+  "nota": "cookie maestria_origen = meta|AD-PRUEBA|2026-11-27"
+ },
+ {
+  "numero": 2,
+  "nombre": "ingreso",
+  "clics": 1,
+  "segundos": 0,
+  "nota": "URL: /sign-in?rol=docente&callbackUrl=%2Fteacher&origen=meta&ref=AD-PRUEBA"
+ },
+ {
+  "numero": 3,
+  "nombre": "entro",
+  "clics": 1,
+  "segundos": 3,
+  "nota": "llegó a /teacher"
+ },
+ {
+  "numero": 4,
+  "nombre": "arranque",
+  "clics": 0,
+  "segundos": 2,
+  "nota": "TU ARRANQUE 0 de 3 Tres pasos para que 2 alumnos practiquen esta semana 1 Subí tu programa MaestrIA arma la práctica por tema con lo que vos das. Subir mi programa 2 Revisá y aprobá tu primer cuestion"
+ },
+ {
+  "numero": 5,
+  "nombre": "materia-desde-pdf",
+  "clics": 7,
+  "segundos": 10,
+  "nota": "Listo: 3 unidades y 25 temas. Revisalos abajo."
+ },
+ {
+  "numero": 6,
+  "nombre": "revisa-y-aproba",
+  "clics": 8,
+  "segundos": 15,
+  "nota": "IA real"
+ },
+ {
+  "numero": 7,
+  "nombre": "mensaje-whatsapp",
+  "clics": 2,
+  "segundos": 5,
+  "nota": "Hola, te dejo la tarea de AA4 · Materia 27/11 13:57:39. / http://localhost:3000/aula/QS2S85 / Entrás con tu nombre, no necesitás cuenta."
+ },
+ {
+  "numero": 8,
+  "nombre": "practicaron",
+  "clics": 0,
+  "segundos": 21,
+  "nota": ""
+ },
+ {
+  "numero": 9,
+  "nombre": "esta-semana-y-ficha",
+  "clics": 1,
+  "segundos": 4,
+  "nota": "Tus 2 alumnos practicaron esta semana. A AA4 le falta criterios de divisibilidad por 2, 3, 4, 5 y 6."
+ },
+ {
+  "numero": 10,
+  "nombre": "tercer-alumno",
+  "clics": 6,
+  "segundos": 18,
+  "nota": "por el link: entró · con «+ Alumno»: 1: entró, 2: entró, 3: muro · Tus 2 alumnos hicieron 10 ejercicios en 1 día. El tema más flojo: criterios de divisibilidad por 2, 3, 4, 5 y 6."
+ }
+]
