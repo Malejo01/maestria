@@ -1974,6 +1974,12 @@ export const GARANTIA = {
   pagoMp: (id: string) => `pago MP ${id}`,
 } as const
 
+/** Tanda AC · AC5: el aviso de los lunes (lib/aviso-semanal.ts). */
+export const AVISO_SEMANAL = {
+  titulo: 'Tu resumen de la semana',
+  ver: 'Ver Esta semana',
+} as const
+
 /** Tanda AC · AC1/AC5: los avisos guardados de la campanita (lib/avisos-guardados-server.ts). */
 export const AVISOS_GUARDADOS = {
   muro: {
