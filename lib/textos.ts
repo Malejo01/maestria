@@ -183,6 +183,45 @@ export const PANEL_DOCENTE = {
   },
 } as const
 
+/**
+ * Tanda AB · AB4: el arranque guiado del docente nuevo. Tres pasos que se
+ * tildan solos hasta que 2 alumnos practican (lib/arranque-docente.ts).
+ */
+export const ARRANQUE = {
+  etiqueta: 'Tu arranque',
+  titulo: 'Tres pasos para que 2 alumnos practiquen esta semana',
+  progreso: (hechos: number) => `${hechos} de 3`,
+  pasos: {
+    programa: {
+      titulo: 'Subí tu programa',
+      detalle: 'MaestrIA arma la práctica por tema con lo que vos das.',
+      boton: 'Subir mi programa',
+      cargamelo: 'Pedime que te lo cargue',
+      mensajeCargamelo: 'Hola Mauro, quiero que me ayudes a cargar mi programa en MaestrIA',
+    },
+    aprobado: {
+      titulo: 'Revisá y aprobá tu primer cuestionario',
+      detalle: 'Nada le llega a tu alumno sin tu OK.',
+      boton: 'Armar el cuestionario',
+    },
+    mandado: {
+      titulo: 'Mandáselo a 2 alumnos',
+      detalle: 'Entran desde el link, con su nombre, sin crear cuenta.',
+      boton: 'Mandarlo',
+      esperando: (practicaron: number) =>
+        practicaron === 0 ? 'Todavía no practicó ninguno. ¿Se lo reenviás?' : `Ya practicó ${practicaron}. Falta uno: ¿se lo reenviás?`,
+    },
+  },
+  copiar: 'Copiar para WhatsApp',
+  copiado: 'Copiado',
+  noSeCopio: 'No se pudo copiar. Seleccioná el texto y copialo a mano.',
+  abrirWhatsApp: 'Abrir WhatsApp',
+  hecho: 'Hecho',
+  listo: 'Listo. El lunes te mostramos quién practicó.',
+  cerrar: 'Cerrar',
+  queCargamos: 'tu arranque',
+} as const
+
 export const ONBOARDING_DOCENTE = {
   etiqueta: 'Primeros pasos',
   progreso: (hechos: number, total: number) => `${hechos} de ${total} pasos`,
