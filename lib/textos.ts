@@ -1569,6 +1569,9 @@ export const PLAN = {
     vencio: (fecha: string) => `tu plan venció el ${fecha}`,
     pruebaTermino: (fecha: string) => `tu prueba terminó el ${fecha}`,
     soloAlumnos: (alumnos: number) => (alumnos === 1 ? '1 alumno' : `${alumnos} alumnos`),
+    /** AC3: el gratis con curso (regla B1), cada cupo por separado. */
+    porTipo: (particulares: number, cupo: number, curso: number, porCurso: number) =>
+      `Particulares ${particulares} de ${cupo} · Curso ${curso} de ${porCurso}`,
   },
 } as const
 

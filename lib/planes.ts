@@ -436,6 +436,12 @@ export interface ResumenDelPlan {
   fundadoraDesde: string | null
   /** AC1: cómo da clases (particular, curso o null = B1). Opcional para los resúmenes viejos. */
   modalidad?: Modalidad | null
+  /**
+   * AC3: los lugares por tipo, para el contador del gratis. Con modalidad
+   * particular, todos son particulares; con curso o sin dato (B1), los que
+   * sumó el docente y los del curso (el que más tiene). null si no se contaron.
+   */
+  lugares?: { particulares: number; curso: number } | null
 }
 
 export interface CuerpoDeBloqueo {
