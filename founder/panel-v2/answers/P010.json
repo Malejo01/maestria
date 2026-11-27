@@ -1,0 +1,13 @@
+{
+  "id": "P010",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Me suena bien para ordenar la práctica, pero mis alumnos no hacen los ejercicios en casa aunque les mande el material, y no veo por qué iban a abrir un link de WhatsApp distinto. Sin probarlo con mis propios alumnos no pago $35.000 por algo que no sé si usan.",
+  "objection": "Que mis alumnos no practiquen aunque les llegue el link. Si nadie practica, el reporte del lunes no me sirve de nada.",
+  "would_change_my_mind": "Que con los 2 alumnos de la prueba gratis al menos uno practique durante una semana sin que yo se lo pida.",
+  "price_too_cheap": 3000,
+  "price_cheap": 5000,
+  "price_expensive": 15000,
+  "price_too_expensive": 25000
+}

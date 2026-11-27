@@ -1,0 +1,13 @@
+{
+  "id": "P015",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Me interesa porque en diciembre y febrero no me alcanza el tiempo, pero no pago algo que corrija matemática sin haber visto antes cómo lo hace con un tema mío. Primero lo probaría con los 2 alumnos gratis.",
+  "objection": "¿La IA va a corregir bien matemática y respetar cómo lo explico yo? Si me genera preguntas con un enfoque distinto al mío, editarlas me puede llevar más tiempo del que me ahorra.",
+  "would_change_my_mind": "Ver una tanda de preguntas de mi propio programa, en la que pueda cambiar muy poco y sienta que mi forma de explicar se mantiene.",
+  "price_too_cheap": 2000,
+  "price_cheap": 9000,
+  "price_expensive": 18000,
+  "price_too_expensive": 30000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P014",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "La idea me interesa porque en mesas tengo alumnos que necesitan practicar, pero no sé si mis chicos van a usar un link de WhatsApp de verdad, y 5 alumnos no me alcanzan si tengo 12. Prefiero probarlo gratis con 2 antes de pagar.",
+  "objection": "Que no sea más que un cuestionario que después se va a poder conseguir gratis en Google o Khan Academy, y que yo termine revisando cada pregunta a mano para nada.",
+  "would_change_my_mind": "Que con los 2 alumnos de prueba vea que practican solos durante la semana y que el lunes el reporte me dice algo que no sabía de ellos.",
+  "price_too_cheap": 2000,
+  "price_cheap": 5000,
+  "price_expensive": 12000,
+  "price_too_expensive": 20000
+}

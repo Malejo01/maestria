@@ -1,0 +1,13 @@
+{
+  "id": "P012",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "price",
+  "reason": "Son 35.000 pesos en un solo pago, que es casi dos clases mías, y mis ingresos van y vienen con la inflación. Mientras pueda usarlo gratis con dos alumnos, no hay razón para pagar por algo que todavía no sé si me saca alumnos.",
+  "objection": "¿Y si mañana sale algo parecido de Google o de Khan Academy gratis? No quiero atarme a una plataforma paga que se puede volver innecesaria, y además tengo que revisar cada pregunta antes de mandarla, así que parte del tiempo que quiero ahorrar se me va igual.",
+  "would_change_my_mind": "Que con los dos alumnos de prueba vea que mis alumnos practican de verdad, que lleguen a la clase con el tema trabajado, y que el precio mensual quede cerca de lo que cobro por una clase al mes.",
+  "price_too_cheap": 2000,
+  "price_cheap": 8000,
+  "price_expensive": 18000,
+  "price_too_expensive": 25000
+}

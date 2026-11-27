@@ -1,0 +1,13 @@
+{
+  "id": "P008",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Hoy resuelvo las guías con Word, PDF y WhatsApp, y corrijo en clase sin pagar nada. No veo qué me cambia pagar $20.000 por mes para algo que ya me sale gratis.",
+  "objection": "Esto lo hago gratis con ChatGPT y un PDF; no me queda claro qué hace esta app que yo no pueda armar yo en diez minutos.",
+  "would_change_my_mind": "Que la ficha por alumno me muestre con precisión qué temas le faltan y me ahorre tiempo de corrección real, probado con mis propios alumnos durante un mes sin pagar.",
+  "price_too_cheap": 2000,
+  "price_cheap": 6000,
+  "price_expensive": 12000,
+  "price_too_expensive": 15000
+}

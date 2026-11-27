@@ -1,0 +1,13 @@
+{
+  "id": "P008",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Yo ya resuelvo las guías con Word, PDF y WhatsApp, y no pago software para eso. Un pase de 5 alumnos con garantía suena bien, pero no veo qué me da que no me dé ChatGPT gratis.",
+  "objection": "¿Qué hace esto que yo no pueda armar en diez minutos con ChatGPT y un PDF? Me suena a la misma cosa con otro nombre y otro precio.",
+  "would_change_my_mind": "Que una prueba gratis con mis propios alumnos me muestre de verdad quién practicó y qué tema le falta a cada uno, sin tener que armarlo yo cada lunes.",
+  "price_too_cheap": 1000,
+  "price_cheap": 4000,
+  "price_expensive": 8000,
+  "price_too_expensive": 12000
+}

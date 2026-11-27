@@ -1,0 +1,13 @@
+{
+  "id": "P004",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "timing",
+  "reason": "Estoy en plena temporada de mesas y cada semana tengo alumnos escribiendo a la noche antes del examen. No tengo ganas de aprender otra plataforma ahora ni de cargar programas en PDF; si la pruebo, sería con los 2 alumnos gratis y recién después de que pase la época de exámenes.",
+  "objection": "No sé si mis alumnos van a usar el link de WhatsApp de verdad o si voy a terminar explicándoles igual lo mismo a la noche antes del examen. Si la ficha no me ahorra tiempo real en la clase, no me sirve.",
+  "would_change_my_mind": "Que con los 2 alumnos gratis vea que hacen los ejercicios solos, que la ficha me dice algo que no sabía de ellos, y que me deje un par de clases más libres en la semana.",
+  "price_too_cheap": 5000,
+  "price_cheap": 12000,
+  "price_expensive": 25000,
+  "price_too_expensive": 35000
+}

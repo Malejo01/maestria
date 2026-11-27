@@ -1,0 +1,13 @@
+{
+  "id": "P001",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "convenience",
+  "reason": "En diciembre y febrero no me alcanzan las horas para preparar a cada alumno, y si una app me marca qué le falta a cada uno antes de la mesa, me ahorra varias tardes. Lo pagaría sólo en temporada, cuando de verdad tengo el doble de alumnos.",
+  "objection": "¿Y si mañana sale de Google o de Khan Academy gratis? No quiero pagar por algo que después tenga que dejar, y tampoco sé si la ficha que arma va a acertar con el programa que da mi colegio o mi instituto.",
+  "would_change_my_mind": "Que la ficha de temas flojos me resulte precisa con el programa real de mis alumnos después de probarla con dos o tres, sin que yo tenga que corregir nada a mano.",
+  "price_too_cheap": 5000,
+  "price_cheap": 12000,
+  "price_expensive": 28000,
+  "price_too_expensive": 35000
+}

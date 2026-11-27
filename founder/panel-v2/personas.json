@@ -1,0 +1,222 @@
+[
+ {
+  "id": "P001",
+  "name": "Ada",
+  "age": 27,
+  "segment": "Docente de escuela con cargos que suma particulares en temporada de mesas",
+  "income": 15635000,
+  "behaviour": "Busca ahorrar tiempo en temporada",
+  "behaviour_how": "En diciembre y febrero tiene la agenda explotada y paga por lo que le ahorre horas.",
+  "objection": "¿Y si mañana sale de Google o de Khan Academy gratis?",
+  "habit": "en diciembre tenés el doble de alumnos por las mesas"
+ },
+ {
+  "id": "P002",
+  "name": "Olivia",
+  "age": 37,
+  "segment": "Estudiante avanzado o profe recién recibido que da particulares para vivir",
+  "income": 8660000,
+  "behaviour": "Ya usa ChatGPT gratis",
+  "behaviour_how": "Le pide ejercicios a ChatGPT o Gemini gratis cuando necesita material nuevo.",
+  "objection": "Mis alumnos no van a practicar en casa aunque les mande el link",
+  "habit": "en diciembre tenés el doble de alumnos por las mesas"
+ },
+ {
+  "id": "P003",
+  "name": "Sol",
+  "age": 38,
+  "segment": "Estudiante avanzado o profe recién recibido que da particulares para vivir",
+  "income": 7312000,
+  "behaviour": "Ya usa ChatGPT gratis",
+  "behaviour_how": "Le pide ejercicios a ChatGPT o Gemini gratis cuando necesita material nuevo.",
+  "objection": "Esto lo hago gratis con ChatGPT y un PDF",
+  "habit": "trabajás también en una escuela a la mañana"
+ },
+ {
+  "id": "P004",
+  "name": "Farah",
+  "age": 29,
+  "segment": "Estudiante avanzado o profe recién recibido que da particulares para vivir",
+  "income": 6515000,
+  "behaviour": "Early adopter tecnológico",
+  "behaviour_how": "Prueba apps nuevas, usa Classroom o Moodle y le gusta mostrar herramientas a los alumnos.",
+  "objection": "No tengo tiempo de aprender otra plataforma en plena temporada",
+  "habit": "tus alumnos te escriben a la noche antes del examen con dudas"
+ },
+ {
+  "id": "P005",
+  "name": "Clara",
+  "age": 53,
+  "segment": "Dueño o coordinador de un centro de apoyo escolar con 4 a 8 profes",
+  "income": 26862000,
+  "behaviour": "Lo resuelve con PDF y WhatsApp",
+  "behaviour_how": "Arma sus guías en Word o PDF, las manda por WhatsApp y corrige en clase; no paga software.",
+  "objection": "No tengo tiempo de aprender otra plataforma en plena temporada",
+  "habit": "tus alumnos te escriben a la noche antes del examen con dudas"
+ },
+ {
+  "id": "P006",
+  "name": "Marcus",
+  "age": 29,
+  "segment": "Profe particular consolidado de ingreso universitario o terciario, con agenda llena",
+  "income": 19088000,
+  "behaviour": "Ya usa ChatGPT gratis",
+  "behaviour_how": "Le pide ejercicios a ChatGPT o Gemini gratis cuando necesita material nuevo.",
+  "objection": "No tengo tiempo de aprender otra plataforma en plena temporada",
+  "habit": "tenés un grupo de WhatsApp con tus alumnos y les mandás fotos de ejercicios"
+ },
+ {
+  "id": "P007",
+  "name": "Tomas",
+  "age": 30,
+  "segment": "Profe particular consolidado de ingreso universitario o terciario, con agenda llena",
+  "income": 15863000,
+  "behaviour": "Desconfía de la IA en matemática",
+  "behaviour_how": "Vio errores de IA en ejercicios y prefiere sus propios materiales revisados.",
+  "objection": "¿La IA va a corregir bien matemática y respetar cómo lo explico yo?",
+  "habit": "cobrás por transferencia o Mercado Pago después de cada clase"
+ },
+ {
+  "id": "P008",
+  "name": "Tess",
+  "age": 48,
+  "segment": "Docente de escuela con cargos que suma particulares en temporada de mesas",
+  "income": 17023000,
+  "behaviour": "Lo resuelve con PDF y WhatsApp",
+  "behaviour_how": "Arma sus guías en Word o PDF, las manda por WhatsApp y corrige en clase; no paga software.",
+  "objection": "Esto lo hago gratis con ChatGPT y un PDF",
+  "habit": "trabajás también en una escuela a la mañana"
+ },
+ {
+  "id": "P009",
+  "name": "Mason",
+  "age": 53,
+  "segment": "Docente de escuela con cargos que suma particulares en temporada de mesas",
+  "income": 13452000,
+  "behaviour": "Desconfía de la IA en matemática",
+  "behaviour_how": "Vio errores de IA en ejercicios y prefiere sus propios materiales revisados.",
+  "objection": "En marzo se me van los alumnos y no lo voy a usar",
+  "habit": "tus alumnos te escriben a la noche antes del examen con dudas"
+ },
+ {
+  "id": "P010",
+  "name": "Jade",
+  "age": 32,
+  "segment": "Estudiante avanzado o profe recién recibido que da particulares para vivir",
+  "income": 7264000,
+  "behaviour": "Cuida cada peso",
+  "behaviour_how": "Ingresos irregulares por la inflación; compara todo con lo que cobra una clase.",
+  "objection": "Mis alumnos no van a practicar en casa aunque les mande el link",
+  "habit": "tenés un grupo de WhatsApp con tus alumnos y les mandás fotos de ejercicios"
+ },
+ {
+  "id": "P011",
+  "name": "Aria",
+  "age": 25,
+  "segment": "Profe particular consolidado de ingreso universitario o terciario, con agenda llena",
+  "income": 23498000,
+  "behaviour": "Ya usa ChatGPT gratis",
+  "behaviour_how": "Le pide ejercicios a ChatGPT o Gemini gratis cuando necesita material nuevo.",
+  "objection": "Mis alumnos no van a practicar en casa aunque les mande el link",
+  "habit": "trabajás también en una escuela a la mañana"
+ },
+ {
+  "id": "P012",
+  "name": "Kofi",
+  "age": 34,
+  "segment": "Estudiante avanzado o profe recién recibido que da particulares para vivir",
+  "income": 6234000,
+  "behaviour": "Cuida cada peso",
+  "behaviour_how": "Ingresos irregulares por la inflación; compara todo con lo que cobra una clase.",
+  "objection": "¿Y si mañana sale de Google o de Khan Academy gratis?",
+  "habit": "das clases en tu casa a la tarde y por Meet a la noche"
+ },
+ {
+  "id": "P013",
+  "name": "Anya",
+  "age": 29,
+  "segment": "Docente de escuela con cargos que suma particulares en temporada de mesas",
+  "income": 12278000,
+  "behaviour": "Desconfía de la IA en matemática",
+  "behaviour_how": "Vio errores de IA en ejercicios y prefiere sus propios materiales revisados.",
+  "objection": "¿Y si mañana sale de Google o de Khan Academy gratis?",
+  "habit": "das clases en tu casa a la tarde y por Meet a la noche"
+ },
+ {
+  "id": "P014",
+  "name": "Daniel",
+  "age": 36,
+  "segment": "Docente de escuela con cargos que suma particulares en temporada de mesas",
+  "income": 15208000,
+  "behaviour": "Early adopter tecnológico",
+  "behaviour_how": "Prueba apps nuevas, usa Classroom o Moodle y le gusta mostrar herramientas a los alumnos.",
+  "objection": "¿Y si mañana sale de Google o de Khan Academy gratis?",
+  "habit": "tenés un grupo de WhatsApp con tus alumnos y les mandás fotos de ejercicios"
+ },
+ {
+  "id": "P015",
+  "name": "Fatima",
+  "age": 26,
+  "segment": "Estudiante avanzado o profe recién recibido que da particulares para vivir",
+  "income": 4700000,
+  "behaviour": "Busca ahorrar tiempo en temporada",
+  "behaviour_how": "En diciembre y febrero tiene la agenda explotada y paga por lo que le ahorre horas.",
+  "objection": "¿La IA va a corregir bien matemática y respetar cómo lo explico yo?",
+  "habit": "tus alumnos te escriben a la noche antes del examen con dudas"
+ },
+ {
+  "id": "P016",
+  "name": "Noor",
+  "age": 24,
+  "segment": "Dueño o coordinador de un centro de apoyo escolar con 4 a 8 profes",
+  "income": 38652000,
+  "behaviour": "Lo resuelve con PDF y WhatsApp",
+  "behaviour_how": "Arma sus guías en Word o PDF, las manda por WhatsApp y corrige en clase; no paga software.",
+  "objection": "En marzo se me van los alumnos y no lo voy a usar",
+  "habit": "tus alumnos te escriben a la noche antes del examen con dudas"
+ },
+ {
+  "id": "P017",
+  "name": "Idris",
+  "age": 30,
+  "segment": "Profe particular consolidado de ingreso universitario o terciario, con agenda llena",
+  "income": 15636000,
+  "behaviour": "Lo resuelve con PDF y WhatsApp",
+  "behaviour_how": "Arma sus guías en Word o PDF, las manda por WhatsApp y corrige en clase; no paga software.",
+  "objection": "¿La IA va a corregir bien matemática y respetar cómo lo explico yo?",
+  "habit": "trabajás también en una escuela a la mañana"
+ },
+ {
+  "id": "P018",
+  "name": "Declan",
+  "age": 44,
+  "segment": "Docente de escuela con cargos que suma particulares en temporada de mesas",
+  "income": 11684000,
+  "behaviour": "Desconfía de la IA en matemática",
+  "behaviour_how": "Vio errores de IA en ejercicios y prefiere sus propios materiales revisados.",
+  "objection": "Mis alumnos no van a practicar en casa aunque les mande el link",
+  "habit": "en diciembre tenés el doble de alumnos por las mesas"
+ },
+ {
+  "id": "P019",
+  "name": "Elle",
+  "age": 49,
+  "segment": "Docente de escuela con cargos que suma particulares en temporada de mesas",
+  "income": 10774000,
+  "behaviour": "Busca ahorrar tiempo en temporada",
+  "behaviour_how": "En diciembre y febrero tiene la agenda explotada y paga por lo que le ahorre horas.",
+  "objection": "Mis alumnos no van a practicar en casa aunque les mande el link",
+  "habit": "trabajás también en una escuela a la mañana"
+ },
+ {
+  "id": "P020",
+  "name": "Darius",
+  "age": 25,
+  "segment": "Docente de escuela con cargos que suma particulares en temporada de mesas",
+  "income": 16287000,
+  "behaviour": "Ya usa ChatGPT gratis",
+  "behaviour_how": "Le pide ejercicios a ChatGPT o Gemini gratis cuando necesita material nuevo.",
+  "objection": "¿Y si mañana sale de Google o de Khan Academy gratis?",
+  "habit": "cobrás por transferencia o Mercado Pago después de cada clase"
+ }
+]

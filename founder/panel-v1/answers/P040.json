@@ -1,0 +1,13 @@
+{
+  "id": "P040",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Yo ya armo mis guías en Word o PDF y las mando por WhatsApp sin pagar nada. Lo que me hace falta es que los alumnos practiquen, y esta app no cambia eso: si no lo hacen con un PDF, no lo van a hacer con un link.",
+  "objection": "Mis alumnos no van a practicar en casa aunque les mande el link. Ya lo intenté con guías y listas, y la mayoría llega a la clase sin haberlas hecho.",
+  "would_change_my_mind": "Que me demuestre que mis alumnos de verdad practican solos desde el link y que la ficha me llega antes de la clase sin que yo tenga que pedirla.",
+  "price_too_cheap": 3000,
+  "price_cheap": 8000,
+  "price_expensive": 15000,
+  "price_too_expensive": 25000
+}

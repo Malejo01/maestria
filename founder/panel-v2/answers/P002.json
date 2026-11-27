@@ -1,0 +1,13 @@
+{
+  "id": "P002",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Ya le pido ejercicios a ChatGPT o Gemini gratis y me alcanzan para armar una práctica. Lo que me falta no son ejercicios, es que mis alumnos los hagan en casa, y eso el pase no lo resuelve.",
+  "objection": "Mis alumnos no van a practicar en casa aunque les mande el link. Con 35.000 pagados por adelantado, si no lo usan, es plata tirada aunque me devuelvan el dinero a los 14 días.",
+  "would_change_my_mind": "Ver que dos o tres alumnos reales practicaron solos desde el link durante una semana, con el lunes mostrándome quién y qué tema le falta.",
+  "price_too_cheap": 2000,
+  "price_cheap": 5000,
+  "price_expensive": 12000,
+  "price_too_expensive": 18000
+}

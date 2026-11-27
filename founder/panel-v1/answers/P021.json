@@ -1,0 +1,13 @@
+{
+  "id": "P021",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Ya tengo mi forma de trabajar: armo las guías en Word, las mando por WhatsApp y corrijo en clase, y no pago nada por eso. Con 20.000 por mes por 5 alumnos me parece que tengo que cobrarle a mis alumnos para pagar la herramienta, y no veo que el tablero me ahorre tanto como para justificarlo.",
+  "objection": "¿Mis alumnos van a usar un link en lugar de pedirme la duda a la noche? Si no lo usan, pago por nada, y encima tengo que cargar el programa en PDF y revisar las preguntas que arma la app, que seguro me lleva más tiempo que hacerlas yo.",
+  "would_change_my_mind": "Que en la prueba gratis (2 alumnos) mis alumnos lo usen solos un mes entero y yo vea en la ficha qué les falta antes de la clase, con menos mensajes a la noche.",
+  "price_too_cheap": 2000,
+  "price_cheap": 6000,
+  "price_expensive": 12000,
+  "price_too_expensive": 15000
+}

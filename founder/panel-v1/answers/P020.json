@@ -1,0 +1,13 @@
+{
+  "id": "P020",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Ya le pido ejercicios a ChatGPT o Gemini gratis cuando necesito material, y me sirven. No veo qué me daría esta app que no pueda armar yo en diez minutos, y pagar 20.000 por mes por algo que me reemplaza trabajo que hoy hago gratis no tiene sentido para mí.",
+  "objection": "¿Y si mañana sale de Google o de Khan Academy gratis? Y además, ¿los cuestionarios de la app son mejores que los que yo armo, o solo están bien presentados?",
+  "would_change_my_mind": "Que la ficha de cada alumno me mostrara de verdad, con datos de sus errores, qué temas le faltan antes de la mesa, y que lo viera funcionar con dos o tres de mis alumnos durante un mes sin pagar nada.",
+  "price_too_cheap": 2000,
+  "price_cheap": 7000,
+  "price_expensive": 20000,
+  "price_too_expensive": 35000
+}

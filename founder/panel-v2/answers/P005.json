@@ -1,0 +1,13 @@
+{
+  "id": "P005",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "timing",
+  "reason": "Estoy en plena temporada de exámenes y mis alumnos me escriben de noche con dudas; no tengo cabeza para aprender una plataforma nueva. Lo que hago con PDF y WhatsApp me funciona y no pago software.",
+  "objection": "Cuánto tiempo me va a llevar cargar el programa, revisar cada pregunta y enseñarles a mis alumnos a usar el link, justo ahora que no me alcanza el día.",
+  "would_change_my_mind": "Que alguien me lo deje armado en media hora, sin que tenga que cambiar cómo les mando las guías, y que mis alumnos lo usen sin que yo tenga que insistirles.",
+  "price_too_cheap": 2000,
+  "price_cheap": 5000,
+  "price_expensive": 15000,
+  "price_too_expensive": 30000
+}

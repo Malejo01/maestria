@@ -1,0 +1,13 @@
+{
+  "id": "P004",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "timing",
+  "reason": "Estoy en plena temporada de mesas y ya no me alcanza el día para mis alumnos. Si me ofrecen algo para ellos me lo probaría con dos alumnos gratis, pero no voy a pagar 35.000 por aprender una plataforma nueva justo ahora.",
+  "objection": "No tengo tiempo de aprender otra plataforma en plena temporada, y no sé si mis alumnos realmente van a usar el link de WhatsApp o si lo voy a terminar cargando yo.",
+  "would_change_my_mind": "Que con los dos alumnos gratis practiquen de verdad durante una semana y yo vea en el lunes qué temas les faltan, sin tener que armar nada a mano.",
+  "price_too_cheap": 3000,
+  "price_cheap": 6000,
+  "price_expensive": 12000,
+  "price_too_expensive": 15000
+}

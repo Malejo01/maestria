@@ -1,0 +1,13 @@
+{
+  "id": "P011",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Ya tengo ChatGPT y Gemini gratis para sacar ejercicios en un minuto, así que no veo qué me suma pagar. Y mis alumnos casi nunca practican en casa, con o sin link de WhatsApp.",
+  "objection": "Que mis alumnos no completen las fichas: si no practican, el pase no me sirve de nada, y no hay forma de saberlo antes de pagar.",
+  "would_change_my_mind": "Ver con mis propios alumnos que al menos la mitad practica en la semana y que eso mejora lo que hacen en la clase.",
+  "price_too_cheap": 2000,
+  "price_cheap": 5000,
+  "price_expensive": 12000,
+  "price_too_expensive": 18000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P019",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Lo que más me pesa es que mis alumnos no van a practicar en casa aunque les mande el link, y en temporada no tengo tiempo para pelearme con nadie. Probaría la versión gratis con 2 alumnos antes de poner plata.",
+  "objection": "Que mis alumnos no entren al link ni practiquen, y que yo termine armando cuestionarios que nadie usa.",
+  "would_change_my_mind": "Ver en la versión gratis que mis 2 alumnos practicaron solos durante una semana, con el reporte del lunes mostrando qué les falta.",
+  "price_too_cheap": 3000,
+  "price_cheap": 9000,
+  "price_expensive": 20000,
+  "price_too_expensive": 30000
+}

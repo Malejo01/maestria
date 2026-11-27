@@ -1,0 +1,13 @@
+{
+  "id": "P017",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Lo que me interesa es la ficha por alumno para llegar a la clase sabiendo qué le falta, pero no pago por una app que corrige matemática sin antes ver que hace bien lo que hago yo. Con 2 alumnos gratis lo pruebo, y si anda lo sigo viendo, pero no compro este mes por fe.",
+  "objection": "¿Y si la IA le da una pista mala o explica distinto a como enseño yo? Si un alumno se confunde con una cosa que yo le enseñé de otra manera, el sistema me va a marcar un problema que no es el que tiene.",
+  "would_change_my_mind": "Probarlo con los PDF de mi programa y ver que los cuestionarios y las pistas de mis alumnos reales salen bien y respetan mi método, en una semana de prueba gratis.",
+  "price_too_cheap": 5000,
+  "price_cheap": 12000,
+  "price_expensive": 30000,
+  "price_too_expensive": 45000
+}

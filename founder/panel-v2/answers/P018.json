@@ -1,0 +1,13 @@
+{
+  "id": "P018",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Mi problema no es el precio, es que no me fío: vi errores de la IA en ejercicios de matemática y prefiero mis propios materiales revisados. Aunque yo apruebe cada pregunta antes de mandarla, tendría que revisar todo el programa para confiarle algo, y en diciembre no tengo tiempo para eso.",
+  "objection": "Mis alumnos no van a practicar en casa aunque les mande el link. Ya me pasó con otras cosas: lo abren una vez y después no vuelven.",
+  "would_change_my_mind": "Ver que alumnos reales de otro profe de mates practicaron de verdad y que las preguntas salieron bien resueltas sin que yo tenga que corregirlas.",
+  "price_too_cheap": 3000,
+  "price_cheap": 6000,
+  "price_expensive": 15000,
+  "price_too_expensive": 25000
+}

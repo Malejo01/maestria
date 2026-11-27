@@ -1,0 +1,13 @@
+{
+  "id": "P006",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "timing",
+  "reason": "Estoy en plena temporada de mesas y no tengo cabeza para aprender otra plataforma ni para subir programas en PDF y revisar preguntas una por una. Ya me resuelve los ejercicios ChatGPT gratis, y lo que me ofrecen (seguimiento por tema) no lo veo como algo que me cambie la clase lo suficiente para pagar 35 mil.",
+  "objection": "Qué me da esto que no me dé ChatGPT gratis, y cuánto tiempo me va a sacar armarlo y revisar cada pregunta antes de que llegue a mis alumnos.",
+  "would_change_my_mind": "Ver en la primera semana que mis alumnos practican de verdad desde el link de WhatsApp y que el reporte del lunes me muestra algo que yo no sabía de cada uno, sin tener que armar nada yo.",
+  "price_too_cheap": 1500,
+  "price_cheap": 4000,
+  "price_expensive": 8000,
+  "price_too_expensive": 9000
+}

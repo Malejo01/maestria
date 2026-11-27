@@ -1,0 +1,13 @@
+{
+  "id": "P001",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Me interesa en diciembre porque tengo la agenda explotada, pero no le pago 35 mil a algo que no conozco. Primero lo pruebo gratis con dos alumnos y si de verdad me ahorra horas, después veo.",
+  "objection": "Si tengo que revisar y editar cada pregunta antes de mandarla, ¿cuánto tiempo me ahorra realmente? Me preocupa que termine armando cuestionarios a mano igual, solo que con una pantalla más.",
+  "would_change_my_mind": "Que con los dos alumnos gratis vea que en una semana me ahorró horas reales de preparación y que los alumnos efectivamente practicaron.",
+  "price_too_cheap": 3000,
+  "price_cheap": 6000,
+  "price_expensive": 12000,
+  "price_too_expensive": 20000
+}

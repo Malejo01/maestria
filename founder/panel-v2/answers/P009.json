@@ -1,0 +1,13 @@
+{
+  "id": "P009",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Me gusta que yo revise cada pregunta antes de que llegue al alumno, pero no me fío de la IA en matemática: ya vi errores en ejercicios y no quiero depender de eso. Además, en marzo se me van los alumnos, así que pagar por algo que no uso en esa época no me cierra.",
+  "objection": "Que la IA me arme preguntas con errores que yo no llegue a detectar, y que mis alumnos las tomen como válidas antes de un examen.",
+  "would_change_my_mind": "Probarlo con los 2 alumnos gratis y ver que las preguntas salen sin errores y que mis alumnos las practican de verdad antes de una mesa.",
+  "price_too_cheap": 2000,
+  "price_cheap": 5000,
+  "price_expensive": 12000,
+  "price_too_expensive": 20000
+}

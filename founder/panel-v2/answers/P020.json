@@ -1,0 +1,13 @@
+{
+  "id": "P020",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Ya saco ejercicios de ChatGPT gratis cuando necesito material y me sirve bastante. Lo de ver qué practicó cada alumno me interesa, pero no veo por qué pagar ARS 35.000 por algo que puedo armar yo en media hora sin ningún costo.",
+  "objection": "¿Y si mañana Google o Khan Academy sacan lo mismo gratis? Además, no sé si me conviene subir el programa en PDF y revisar cada pregunta; eso me come tiempo que no tengo entre clases.",
+  "would_change_my_mind": "Que me demuestren que mis propios alumnos practican más con el link de WhatsApp de lo que practican con lo que les doy yo, y que el seguimiento semanal me ahorre preparar la clase.",
+  "price_too_cheap": 2500,
+  "price_cheap": 5000,
+  "price_expensive": 12000,
+  "price_too_expensive": 18000
+}

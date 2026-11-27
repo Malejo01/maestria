@@ -1,0 +1,13 @@
+{
+  "id": "P016",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Yo no soy profe particular, soy la que coordina el centro, y lo que necesito lo saco con PDF y WhatsApp sin pagar nada. Pagar por cuestionarios para mesas me suena a algo que sirve un mes y después no uso.",
+  "objection": "En marzo se me van los alumnos y no lo voy a usar. Además no entiendo bien si esto es para mis profes o para cada uno por separado.",
+  "would_change_my_mind": "Que me muestren que mis profes lo usan con sus alumnos y que se ve el resultado de práctica sin tener que cargar nada yo.",
+  "price_too_cheap": 3000,
+  "price_cheap": 6000,
+  "price_expensive": 12000,
+  "price_too_expensive": 20000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P003",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Ya le pido ejercicios a ChatGPT o Gemini gratis cuando necesito material nuevo, y con un PDF del programa hago lo mismo en diez minutos. Pagar por algo que ya resuelvo gratis, para que además yo tenga que revisar cada pregunta antes de mandarla, no me cierra.",
+  "objection": "Si tengo que subir el programa, revisar y editar cada cuestionario y después esperar que mis alumnos entren al link de WhatsApp, ¿cuánto tiempo me ahorra de verdad? Y no tengo claro que mis alumnos vayan a practicar solos.",
+  "would_change_my_mind": "Ver que con los dos alumnos de prueba gratis practican de verdad durante una semana y que el lunes me llega un resumen que me cambia la clase, sin tener que armar nada yo.",
+  "price_too_cheap": 2000,
+  "price_cheap": 5000,
+  "price_expensive": 15000,
+  "price_too_expensive": 25000
+}
