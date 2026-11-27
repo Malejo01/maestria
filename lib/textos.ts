@@ -1337,6 +1337,34 @@ export function contar(n: number, singular: string, plural: string): string {
 }
 
 /**
+ * Tanda AB · AB3: /precios con una sola oferta adelante (el plan Particular).
+ * Lo demás (Aula, Institución, Autodidacta) queda detrás de «¿Sos escuela,
+ * instituto o estudiás por tu cuenta?». Los montos salen de las variables.
+ */
+export const OFERTA_PARTICULAR = {
+  titulo: 'Plan Particular',
+  bajada: 'Para el profe de clases particulares.',
+  gratis: (cupo: number) => `Gratis con ${cupo} alumnos, para siempre`,
+  bloque: (alumnos: number) => `Bloque de ${alumnos} alumnos`,
+  porMes: 'por mes',
+  sinPrecio: 'Precio a confirmar',
+  pagarMes: 'Pagar el mes',
+  pase: (dias: number) => `O un pase de ${dias} días`,
+  pagarPase: 'Pagar el pase',
+  empezar: 'Empezar gratis',
+  /** Debajo del precio: los dos renglones de confianza. */
+  garantia: 'Si en 14 días ninguno de tus alumnos practicó, te devuelvo el pago.',
+  marzo: 'No hay débito automático: si no renovás, tus fichas quedan guardadas y volvés cuando quieras.',
+  masBloques: '¿Más de 5 alumnos? Todos los bloques',
+  otros: '¿Sos escuela, instituto o estudiás por tu cuenta?',
+  otrosCerrar: 'Ocultar los otros planes',
+  autodidactaTitulo: 'Me preparo solo para un examen',
+  autodidactaDetalle:
+    'Para el alumno que estudia por su cuenta: subís el programa y la fecha del examen. Gratis, el diagnóstico y dos prácticas; con el pase, el plan completo y los simulacros hasta el examen.',
+  autodidactaPase: (monto: string) => `Pase por materia: ${monto}, hasta 7 días después del examen.`,
+} as const
+
+/**
  * Planes y cobro (tanda G). Sin signos de admiración, sin "¡Bienvenido!": la
  * voz de design-reference/sistema/voz-y-textos.md.
  */
