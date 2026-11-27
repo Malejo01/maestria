@@ -2118,6 +2118,35 @@ export const PORTADA = {
   entrar: 'Entrar',
 } as const
 
+/**
+ * Tandas AA3 + AB2: /profes, la página a la que llega el anuncio de Meta.
+ * Oferta v3 del análisis Founder (docs/founder/offer.md): empezar gratis con 2
+ * alumnos; la venta pasa adentro, cuando el docente ve que practican.
+ * Prohibido acá (tests): «30 días», «revisando», «IA que corrige todo».
+ */
+export const PROFES = {
+  titulo: (cupoGratis: number) => `Empezá gratis con ${cupoGratis} alumnos.`,
+  bajada: 'Nada le llega a tu alumno sin tu OK.',
+  puntos: [
+    'Subís el programa (o te lo cargo yo en una videollamada de 15 minutos) y MaestrIA arma la práctica por tema.',
+    'Revisás cada pregunta y la aprobás en un clic. Si se traba, el alumno recibe una pista, nunca la respuesta.',
+    'Cada lunes ves quién practicó y qué tema le falta a cada uno.',
+  ],
+  empezar: (cupoGratis: number) => `Empezar gratis con ${cupoGratis} alumnos`,
+  cargamelo: 'Prefiero que me lo cargues vos',
+  mensajeCargamelo: 'Hola Mauro, quiero que me ayudes a cargar mi programa en MaestrIA',
+  verPrecios: 'Ver precios',
+  /** El ancla, chica y abajo. Con el precio del bloque si está cargado; sin la variable, sin número. */
+  ancla: (monto: string | null, cupoGratis: number, alumnosPorBloque: number) =>
+    monto
+      ? `¿Más de ${cupoGratis} alumnos? ${monto} por mes, para ${alumnosPorBloque}. Menos que una clase.`
+      : `¿Más de ${cupoGratis} alumnos? Menos que una clase por mes, para ${alumnosPorBloque}.`,
+  video: 'Mirá cómo funciona',
+  captura: 'La ficha de un alumno en MaestrIA: lo que domina y lo que tiene que reforzar',
+  datosDeEjemplo: 'Alumnos ficticios, de una materia de ejemplo.',
+  descripcion: 'Empezá gratis con 2 alumnos. Subís tu programa, MaestrIA arma la práctica y nada le llega a tu alumno sin tu OK. Cada lunes ves quién practicó y qué le falta.',
+} as const
+
 /** Ronda V · V6: el centro de ayuda. */
 export const AYUDA = {
   titulo: 'Ayuda',
