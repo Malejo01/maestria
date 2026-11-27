@@ -1,6 +1,6 @@
 # MaestrIA — Roadmap
 
-Documento vivo. Última actualización: **23 de noviembre de 2026**.
+Documento vivo. Última actualización: **27 de noviembre de 2026**.
 
 ## Tesis de producto
 
@@ -404,6 +404,25 @@ Después de leer 16 programas reales de seis institutos (en `C:\Programacion\Mat
 - [x] **Tanda I, los 16 en producción** (deploy `a8f3d57`, con todo I1–I5). Con la sesión de docente de Mauro en su Chrome, cada archivo mandado a `/api/teacher/programs/extract` desde una página del sitio, sin crear materias: **16 de 16 dan 200 por IA**, entre 1,7 y 6,9 s. 01: 5 u/44 t · 02: 5/42 · 03: 7/32 · 04: 7/36 · 05: 5/48 · 06: 4/30 · 07: 4/37 · 08: 4/40 · 09: 3/35 · 10: 4/12 ("Unidad 1"…) · 11: 4/18 ("Unidad 1"…) · 12: 1/5 · 13: 3/36 · 14: 5/47 · **15 (escaneo): 4/41 en 4,8 s** · **16 (foto): 4/10 en 2,0 s**. Ningún tema pasa de 89 caracteres. Cada subida deja su copia temporal de 24 h en `teacher_program_uploads`.
 
 ---
+
+## 🧲 Tandas AA + AB — de «comprá el plan» a «empezá gratis con 2 alumnos» (27/11/2026)
+
+> **Cierre (27/11/2026):** 13 PR abiertas (#158–#170), todas con el CI en verde, **ninguna mergeada** (las mergea Mauro, en el orden del informe; un solo conflicto, AB3 con AA1 en `/precios`, resuelto en la rama `tanda-ab/integracion`). **Sin migraciones.** Gemini: USD 0,039 de 0,20. Informe: [docs/informes/tanda-ab-2026-11-27.md](informes/tanda-ab-2026-11-27.md). Sale del análisis Founder (`docs/founder/`): el profe no compra en frío, quiere ver practicar a sus 2 alumnos gratis.
+
+- [ ] **AB1 · El análisis al repo** (PR [#158](https://github.com/Malejo01/maestria/pull/158)): `docs/founder/` y `docs/tandas/`.
+- [ ] **AA1 · Sin prueba de 30 días** (PR [#159](https://github.com/Malejo01/maestria/pull/159)). `MAESTRIA_PRUEBA_DIAS` (nueva, por defecto 0): el docente que nunca arrancó la prueba está en el gratis; quien la tiene la termina. Antes, uno que nunca aceptó el aviso quedaba en prueba **sin vencimiento y con cupo 10**. `/precios` sin «30 días». En producción (lectura): 1 en prueba, 5 sin arrancar con 0 alumnos.
+- [ ] **AA2 · Canal Meta y criterio de verificación** (PR [#160](https://github.com/Malejo01/maestria/pull/160)). `origen=meta`; `ref=AD-…` es campaña, no referido (sin migración, en `origen_ref`). `/admin/embudo`: «Anuncio de Meta» por anuncio y «Criterio de verificación» (activados: materia + 2 alumnos que practicaron en 7 días; con 3.er alumno; pagando). Visitas: sin dato.
+- [ ] **AB2 · `/profes` v3, con AA3** (PR [#161](https://github.com/Malejo01/maestria/pull/161)). «Empezá gratis con 2 alumnos.», estática, el botón conserva `origen`/`ref`. Rendimiento en celular ≈ 93 (aproximado con Playwright: Lighthouse no está instalado). Falta `public/profes/reel.mp4`.
+- [ ] **AB3 · `/precios` con una sola oferta** (PR [#162](https://github.com/Malejo01/maestria/pull/162)). Arriba sólo Particular (gratis con 2, bloque de 5 por mes, pase más chico), garantía de 14 días y «sin débito automático»; Aula, Institución y Autodidacta detrás de un botón.
+- [ ] **AB4 · Arranque guiado** (PR [#163](https://github.com/Malejo01/maestria/pull/163)). 3 pasos que se tildan solos hasta que practican 2 alumnos (`lib/arranque-docente.ts`, sin migración).
+- [ ] **AB5 · «Esta semana»** (PR [#164](https://github.com/Malejo01/maestria/pull/164)). Quién practicó, cuánto, % y tema más flojo, con «Copiar resumen». El aviso semanal queda diseñado, sin hacer (no hay email).
+- [ ] **AB6 · El muro del 3.er alumno con evidencia** (PR [#165](https://github.com/Malejo01/maestria/pull/165)). Evidencia, oferta del bloque, garantía y el pago de siempre con «¿Tenés un código?».
+- [ ] **AB7 · «Revisá y aprobá»** (PR [#166](https://github.com/Malejo01/maestria/pull/166)). Contador «7 de 10 revisadas» y «Aprobar todas y mandar». La edición en el lugar de V/F y respuesta corta **ya existía**.
+- [ ] **AB8 · Al vencer el plan no se pierde nada** (PR [#167](https://github.com/Malejo01/maestria/pull/167)), verificado en staging; no hay débito automático. Candidatos a la garantía en `/admin/planes`. Webhook sin probar real: staging no tiene credenciales de Mercado Pago.
+- [ ] **AB9 · Extracción con los PDF reales** (PR [#168](https://github.com/Malejo01/maestria/pull/168)). `scripts/probar-extraccion.ts`: 9 de 9 se leen; el escaneado agrupa temas y pierde uno.
+- [ ] **AA4 · El registro de punta a punta** (PR [#170](https://github.com/Malejo01/maestria/pull/170), y el arreglo «Unidad 1: Unidad 1:» en [#169](https://github.com/Malejo01/maestria/pull/169)). No se traba; grabado en `docs/capturas/aa4-registro/`.
+
+**Para decidir (Mauro), salido de AA4:** con la regla de B1 (gratis = 2 particulares + 1 curso de hasta 35), **los alumnos que entran por el link cuentan como curso**: el 3.er alumno que llega por WhatsApp entra gratis y el muro no aparece por ese camino. También: «Compartir» manda sin pasar por «Revisá y aprobá», y el contador puede decir «5 de 2 alumnos». Variables de Vercel y el link del anuncio, en el informe.
 
 ## 🌙 Cadena nocturna U → Y (23/11/2026)
 
