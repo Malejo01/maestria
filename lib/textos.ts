@@ -321,6 +321,24 @@ export const CHIP_TEMA = {
   sin_datos: 'Sin datos',
 } as const
 
+/** Tanda AB · AB5: «Esta semana», quién practicó y qué le falta (lib/esta-semana.ts). */
+export const ESTA_SEMANA = {
+  titulo: 'Esta semana',
+  detalle: 'Los últimos 7 días en tus grupos.',
+  practico: 'Practicó',
+  noPractico: 'No practicó',
+  ejercicios: (n: number) => (n === 1 ? '1 ejercicio' : `${n} ejercicios`),
+  bien: (pct: number) => `${pct} % bien`,
+  leFalta: 'Le falta',
+  copiar: 'Copiar resumen',
+  copiado: 'Copiado',
+  noSeCopio: 'No se pudo copiar. Probá de nuevo.',
+  reenviar: 'Copiar el link para WhatsApp',
+  abrirWhatsApp: 'Abrir WhatsApp',
+  irATareas: 'Ir a mis tareas',
+  queCargamos: 'la semana de tus alumnos',
+} as const
+
 export const MIS_ALUMNOS = {
   /** P5: en la barra, mientras el docente no tenga una materia. */
   crearMateriaPrimero: 'Primero creá una materia',
