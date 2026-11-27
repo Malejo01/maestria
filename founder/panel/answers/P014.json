@@ -1,0 +1,13 @@
+{
+  "id": "P014",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "need",
+  "reason": "Tengo unos 8 alumnos y antes de cada mesa me cuesta saber qué tema le falta a cada uno. Si la ficha me lo dice sin que yo arme nada, la pago, porque el tiempo que me ahorra vale más que 20.000 por mes.",
+  "objection": "¿Y si mañana sale de Google o de Khan Academy gratis? No quiero pagar mensualmente por algo que después tengo gratis.",
+  "would_change_my_mind": "Que mis alumnos lo usen de verdad durante una semana sin que yo les insista cada día por WhatsApp.",
+  "price_too_cheap": 3000,
+  "price_cheap": 8000,
+  "price_expensive": 25000,
+  "price_too_expensive": 40000
+}

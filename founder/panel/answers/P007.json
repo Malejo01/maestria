@@ -1,0 +1,13 @@
+{
+  "id": "P007",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Enseño matemática hace años y mis materiales están revisados uno por uno; no me alcanza con que la IA diga que corrige bien, ya vi errores en ejercicios. Con 2 alumnos gratis lo pruebo, pero no pago hasta ver que respeta mi forma de explicar.",
+  "objection": "¿La IA va a corregir bien matemática y respetar cómo lo explico yo?",
+  "would_change_my_mind": "Poder revisar y editar cada cuestionario antes de que llegue al alumno, y comprobar con mis propios ejercicios que las respuestas y las pistas están bien.",
+  "price_too_cheap": 5000,
+  "price_cheap": 12000,
+  "price_expensive": 25000,
+  "price_too_expensive": 35000
+}

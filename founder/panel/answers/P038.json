@@ -1,0 +1,13 @@
+{
+  "id": "P038",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Lo que promete ya lo puedo armar yo: le paso el programa a ChatGPT, le pido ejercicios por tema y los mando por WhatsApp. Mi problema no es tener práctica, es tener tiempo para revisarla, y esto no me saca esa parte de la cabeza.",
+  "objection": "No sé si las pistas y los ejercicios que arma de un PDF van a estar bien alineados con lo que mi profe de cada materia le pide al alumno. Si se equivoca en un tema, quedo yo como responsable frente al alumno.",
+  "would_change_my_mind": "Que me muestre con mi propio programa y un par de alumnos reales que la ficha me ahorra media hora por clase de verdad, con ejemplos que no tenga que revisar yo.",
+  "price_too_cheap": 5000,
+  "price_cheap": 10000,
+  "price_expensive": 25000,
+  "price_too_expensive": 35000
+}

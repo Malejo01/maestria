@@ -1,0 +1,13 @@
+{
+  "id": "P015",
+  "buys": true,
+  "purchases_first_month": 1,
+  "reason_code": "convenience",
+  "reason": "En diciembre y febrero no doy abasto: si mis alumnos pueden practicar solos desde un link de WhatsApp la noche antes del examen y yo veo qué les falta, me ahorra horas de mensajes. Veinte mil pesos por cinco alumnos me parece poco para eso.",
+  "objection": "Que la IA corrija mal un ejercicio o explique distinto a como lo hago yo, y el alumno se confunda más. Si las pistas no van con mi forma de enseñar, no sirve.",
+  "would_change_my_mind": "Probarla con mis propios ejercicios y ver que corrige bien y que las pistas van en mi línea, no genéricas.",
+  "price_too_cheap": 6000,
+  "price_cheap": 12000,
+  "price_expensive": 35000,
+  "price_too_expensive": 60000
+}

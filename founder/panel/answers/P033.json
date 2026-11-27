@@ -1,0 +1,13 @@
+{
+  "id": "P033",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Lo que me vende es que el alumno practique solo desde el link, y justamente ese es el problema: mis alumnos no practican en casa aunque se los mande por WhatsApp. Si el uso depende de ellos, no lo pago.",
+  "objection": "Que mis alumnos no lo abran. Ya les mando guías y ejercicios y los devuelven en blanco; no me convence que una app los haga practicar.",
+  "would_change_my_mind": "Que me muestren que alumnos reales de otros profes lo usan todas las semanas, con una prueba gratis que me deje comprobarlo con los míos antes de pagar.",
+  "price_too_cheap": 2000,
+  "price_cheap": 5000,
+  "price_expensive": 12000,
+  "price_too_expensive": 15000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P026",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "need",
+  "reason": "Yo les armo las prácticas a mis alumnos a mano y me sale gratis con ChatGPT y un PDF del programa; no veo qué me agrega pagar 20 mil por mes para algo que ya hago. Y además el alumno tiene que estar mandando links por WhatsApp a una app que no conozco.",
+  "objection": "Que sea una app nueva que no conozco, y que no me queda claro si las preguntas que genera son buenas o si tengo que revisarlas igual.",
+  "would_change_my_mind": "Que un profe de mi grupo de WhatsApp me cuente que lo usó con sus alumnos y que le subieron las notas en las mesas.",
+  "price_too_cheap": 5000,
+  "price_cheap": 10000,
+  "price_expensive": 25000,
+  "price_too_expensive": 35000
+}

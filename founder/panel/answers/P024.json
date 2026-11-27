@@ -1,0 +1,13 @@
+{
+  "id": "P024",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Me interesa lo de la ficha por alumno, pero no pago 20.000 por mes por una herramienta que no conozco. Solo la pruebo si otro profe de mi grupo de WhatsApp la usa y me dice que funciona.",
+  "objection": "Que la IA corrija mal un ejercicio de matemática o explique distinto a como lo explico yo, y que el alumno reciba una respuesta que me compromete delante de los padres.",
+  "would_change_my_mind": "Que un colega de mi grupo de WhatsApp la use con sus propios alumnos y me cuente que los pistas y correcciones son como las que yo daría.",
+  "price_too_cheap": 4000,
+  "price_cheap": 12000,
+  "price_expensive": 28000,
+  "price_too_expensive": 40000
+}

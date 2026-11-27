@@ -1,0 +1,13 @@
+{
+  "id": "P013",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Desconfío de la IA en matemática: ya vi errores en ejercicios que generó y no quiero que mis alumnos practiquen con algo mal resuelto. Probaría lo gratis con 2 alumnos, pero no pago hasta ver que las preguntas salen de mi programa y que están bien.",
+  "objection": "¿Y si la IA se equivoca en un ejercicio y el alumno aprende mal? Y encima, ¿y si mañana sale algo parecido gratis de Google o Khan Academy?",
+  "would_change_my_mind": "Poder revisar y corregir cada cuestionario antes de que lo reciba el alumno, o cargar mis propios ejercicios.",
+  "price_too_cheap": 5000,
+  "price_cheap": 12000,
+  "price_expensive": 25000,
+  "price_too_expensive": 40000
+}

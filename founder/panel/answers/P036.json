@@ -1,0 +1,13 @@
+{
+  "id": "P036",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "timing",
+  "reason": "Estoy en plena temporada de mesas y no tengo tiempo de aprender otra plataforma ni de pedirles a mis alumnos que la usen. Lo que me ofrece ya lo hago con mis clases y mis mensajes de la noche antes del examen.",
+  "objection": "No sé si mis alumnos van a practicar de verdad desde el link de WhatsApp o si lo van a abrir una vez y olvidar. Si no lo usan, pago 20.000 por algo que no me da nada.",
+  "would_change_my_mind": "Que la carga inicial sea de menos de 10 minutos, que pueda probarlo con mis alumnos actuales sin pedirles nada extra, y que la ficha me muestre algo que hoy no sé y me ahorre preguntar tema por tema antes de cada mesa.",
+  "price_too_cheap": 4000,
+  "price_cheap": 10000,
+  "price_expensive": 25000,
+  "price_too_expensive": 40000
+}

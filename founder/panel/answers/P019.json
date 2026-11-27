@@ -1,0 +1,13 @@
+{
+  "id": "P019",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Mis alumnos no van a practicar en casa aunque les mande el link, y eso es lo que justifica pagar. Ya tengo a los que hacen la tarea y a los que no, y ninguna herramienta cambia eso sin que el alumno quiera hacerlo. Probaría el plan gratis con dos alumnos, pero no pagaría por la ficha si no veo que la usan.",
+  "objection": "Que el alumno no abra el link ni una vez. Si después de la mesa no se nota diferencia, la ficha no me sirve de nada.",
+  "would_change_my_mind": "Ver con mis propios alumnos que al menos la mitad practica sola desde el link durante una semana y que la ficha me muestra temas concretos para la clase siguiente.",
+  "price_too_cheap": 4000,
+  "price_cheap": 10000,
+  "price_expensive": 30000,
+  "price_too_expensive": 45000
+}

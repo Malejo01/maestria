@@ -1,0 +1,13 @@
+{
+  "id": "P011",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Ya tengo ChatGPT y Gemini gratis para sacar ejercicios, así que el material no es mi problema. Lo que me frena es que mis alumnos practiquen en casa, y esta app no lo resuelve solo con mandar un link.",
+  "objection": "Mis alumnos no van a practicar en casa aunque les mande el link. Si no lo hacen, la ficha de temas flojos no sirve de nada.",
+  "would_change_my_mind": "Que con un par de alumnos reales de prueba, gratis, vea que lo usan sola de forma regular durante dos o tres semanas y que la ficha me ahorra tiempo de preparación en clase.",
+  "price_too_cheap": 5000,
+  "price_cheap": 10000,
+  "price_expensive": 25000,
+  "price_too_expensive": 35000
+}

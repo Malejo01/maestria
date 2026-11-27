@@ -1,0 +1,13 @@
+{
+  "id": "P030",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "price",
+  "reason": "Por $20.000 al mes por cada 5 alumnos me sale casi una clase por mes, y no tengo claro que mis alumnos lo vayan a usar. Ya tengo Khan Academy y ejercicios gratis, así que primero probaría el plan gratis con 2 alumnos antes de pagar.",
+  "objection": "¿Mis alumnos van a abrir el link de WhatsApp y hacer los ejercicios solos, o termino pagando yo algo que después no usa nadie?",
+  "would_change_my_mind": "Ver que con los 2 alumnos gratis practican de verdad, llegan a la mesa mejor preparados y la ficha me ahorra tiempo de preparar la clase.",
+  "price_too_cheap": 2000,
+  "price_cheap": 6000,
+  "price_expensive": 15000,
+  "price_too_expensive": 25000
+}

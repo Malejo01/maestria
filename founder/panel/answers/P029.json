@@ -1,0 +1,13 @@
+{
+  "id": "P029",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "habit",
+  "reason": "Ya le pido ejercicios gratis a ChatGPT o Gemini cuando necesito material, y me sale cero. No veo qué me agrega pagar 20.000 por mes si el cuestionario sale igual de una consulta; y en marzo se me van alumnos, así que pagar por un mes fijo de 5 no me cierra.",
+  "objection": "No me queda claro qué tiene que no pueda sacar yo con ChatGPT: si la ficha por alumno no me muestra nada que no sepa ya viendo sus errores en la clase, no la necesito.",
+  "would_change_my_mind": "Que me demuestren que mis alumnos llegan mejor a la mesa usándolo, con una prueba gratis de un mes con mis propios alumnos.",
+  "price_too_cheap": 5000,
+  "price_cheap": 10000,
+  "price_expensive": 25000,
+  "price_too_expensive": 30000
+}

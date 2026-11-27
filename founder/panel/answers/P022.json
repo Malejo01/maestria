@@ -1,0 +1,13 @@
+{
+  "id": "P022",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Me interesa que los chicos practiquen sin que yo esté al lado, pero no me banco que una IA corrija matemática con su propia lógica y me diga qué hacer. Si se equivoca en un ejercicio de mesa, quien queda mal soy yo con el alumno y con la familia.",
+  "objection": "Que la IA corrija un procedimiento de forma distinta a como lo enseño yo, o que la pista confunda al alumno en vez de ayudarlo.",
+  "would_change_my_mind": "Probarlo gratis con dos alumnos y ver que las correcciones y pistas coinciden con cómo resuelvo yo los temas de mi programa.",
+  "price_too_cheap": 5000,
+  "price_cheap": 12000,
+  "price_expensive": 30000,
+  "price_too_expensive": 60000
+}

@@ -1,0 +1,13 @@
+{
+  "id": "P023",
+  "buys": false,
+  "purchases_first_month": 0,
+  "reason_code": "trust",
+  "reason": "Compro cuando me lo recomienda otro profe de mi grupo de WhatsApp, y hasta ahora nadie lo usa. Probaría la versión gratis con dos alumnos, pero no pago un bloque sin ver que a sus alumnos les sirve.",
+  "objection": "Mis alumnos no van a practicar en casa aunque les mande el link. Ya me cuesta que hagan los ejercicios que les dejo para la clase.",
+  "would_change_my_mind": "Que un profe de mi grupo me muestre que sus alumnos practican solos desde el link y llegan mejor preparados a la mesa.",
+  "price_too_cheap": 4000,
+  "price_cheap": 12000,
+  "price_expensive": 25000,
+  "price_too_expensive": 35000
+}
