@@ -76,3 +76,48 @@ describe('ContadorDelPlan', () => {
     expect(container.textContent).toBe('12 de 15 alumnos · tu plan vence el 15/12')
   })
 })
+
+describe('AC3 · el contador del gratis según la modalidad', () => {
+  const gratis = { ...plan, estado: 'gratis' as const, nivel: 0 as const, cupo: 2, venceEl: null, diasRestantes: null }
+  const texto = (p: Partial<ResumenDelPlan>) => textoDelContador({ plan: { ...gratis, ...p }, renovar: null })
+
+  it('particular: «2 de 2 alumnos · plan gratis» (los del link cuentan como particulares)', () => {
+    expect(texto({ modalidad: 'particular', alumnos: 2, lugares: { particulares: 2, curso: 0 } })).toBe('2 de 2 alumnos · plan gratis')
+    expect(texto({ modalidad: 'particular', alumnos: 1, lugares: { particulares: 1, curso: 0 } })).toBe('1 de 2 alumnos · plan gratis')
+  })
+
+  it('curso: «Particulares 1 de 2 · Curso 18 de 35»', () => {
+    expect(texto({ modalidad: 'curso', alumnos: 19, lugares: { particulares: 1, curso: 18 } })).toBe('Particulares 1 de 2 · Curso 18 de 35')
+  })
+
+  it('sin dato (null), la regla B1: igual que curso; sin alumnos de curso, como antes', () => {
+    expect(texto({ modalidad: null, alumnos: 5, lugares: { particulares: 2, curso: 3 } })).toBe('Particulares 2 de 2 · Curso 3 de 35')
+    expect(texto({ modalidad: null, alumnos: 1, lugares: { particulares: 1, curso: 0 } })).toBe('1 de 2 alumnos · plan gratis')
+    // Un resumen viejo, sin lugares: lo de siempre.
+    expect(texto({ alumnos: 2 })).toBe('2 de 2 alumnos · plan gratis')
+  })
+
+  it('nunca «5 de 2»: el particular que conserva más de 2 ve cuántos tiene, sin el cupo', () => {
+    const t = texto({ modalidad: 'particular', alumnos: 5, lugares: { particulares: 5, curso: 0 } })
+    expect(t).toBe('5 alumnos · plan gratis')
+    for (const caso of [
+      { modalidad: null, alumnos: 5, lugares: { particulares: 2, curso: 3 } },
+      { modalidad: 'curso' as const, alumnos: 5, lugares: { particulares: 2, curso: 3 } },
+    ]) {
+      expect(texto(caso)).not.toMatch(/5 de 2/)
+    }
+  })
+
+  it('naranja sólo en el tope', () => {
+    const lleno = (p: Partial<ResumenDelPlan>) => {
+      render(<ContadorDelPlan datos={{ plan: { ...gratis, ...p }, renovar: null }} />)
+      const v = document.querySelector('[data-lleno]')?.getAttribute('data-lleno')
+      cleanup()
+      return v
+    }
+    expect(lleno({ modalidad: 'particular', alumnos: 1, lugares: { particulares: 1, curso: 0 } })).toBe('no')
+    expect(lleno({ modalidad: 'particular', alumnos: 2, lugares: { particulares: 2, curso: 0 } })).toBe('si')
+    expect(lleno({ modalidad: 'curso', alumnos: 19, lugares: { particulares: 1, curso: 18 } })).toBe('no')
+    expect(lleno({ modalidad: 'curso', alumnos: 37, lugares: { particulares: 2, curso: 35 } })).toBe('si')
+  })
+})
