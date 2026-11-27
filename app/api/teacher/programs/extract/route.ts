@@ -26,7 +26,7 @@ import {
   parserPara,
   parteDelArchivo,
 } from '@/lib/lectura-programa-server'
-import { REGLAS_DE_TEMAS, granularizarUnidades, temasPorDividir } from '@/lib/temas-granulares'
+import { REGLAS_DE_TEMAS, REGLA_PARA_ESCANEOS, granularizarUnidades, temasPorDividir } from '@/lib/temas-granulares'
 import { dividirParrafosConIA } from '@/lib/dividir-parrafo-server'
 import { sumUsage, type AiSdkUsage } from '@/lib/ai-usage'
 import { normalizarNombreDeUnidad, separarTituloDeUnidad } from '@/lib/nombre-de-unidad'
@@ -356,7 +356,8 @@ async function procesarArchivo({
               {
                 role: 'user' as const,
                 content: [
-                  { type: 'text' as const, text: `${instrucciones}\n\nEl programa va adjunto (es una imagen o un escaneo).` },
+                  // AC4: lo que va entero al modelo lleva una regla más (no agrupar temas).
+                  { type: 'text' as const, text: `${instrucciones}\n\n${REGLA_PARA_ESCANEOS}\n\nEl programa va adjunto (es una imagen o un escaneo).` },
                   parteDelArchivo(fileBuffer, normalizedMimeType),
                 ],
               },
