@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { signOut } from 'next-auth/react'
 import { useRefrescarSesion } from '@/hooks/use-refrescar-sesion'
-import { ArrowLeftRight, ExternalLink, LogOut, ShieldCheck, Undo2 } from 'lucide-react'
+import { ArrowLeftRight, ExternalLink, GraduationCap, LogOut, ShieldCheck, Undo2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -27,7 +27,8 @@ import {
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { inicioDe } from '@/lib/navegacion'
-import { ADMIN, BUZON, CUENTA, DISTINTIVO_DEL_PLAN } from '@/lib/textos'
+import { ADMIN, BUZON, CUENTA, DISTINTIVO_DEL_PLAN, MODALIDAD } from '@/lib/textos'
+import { RUTA_COMO_DAS_CLASES } from '@/components/docente/como-das-clases'
 import { DistintivoPlan } from '@/components/sistema/distintivo-plan'
 import { estadoEnElAvatar, etiquetaDelAvatar, huellaDelPlan, seAcreditoUnPlan } from '@/lib/distintivo-del-plan'
 import type { ResumenDelPlan } from '@/lib/planes'
@@ -140,6 +141,23 @@ export function MenuUsuario({
                   <span className="nota block text-texto-suave">{CUENTA.verComoAlumnoDetalle}</span>
                 </span>
               </a>
+            </DropdownMenuItem>
+          )}
+
+          {/* AC1: cómo da clases (cambia cómo cuentan los alumnos en el gratis). */}
+          {rol === 'DOCENTE' && !vistaPrevia && (
+            <DropdownMenuItem asChild className={ITEM}>
+              <Link href={RUTA_COMO_DAS_CLASES} data-menu-como-das-clases>
+                <GraduationCap aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+                <span>
+                  {MODALIDAD.menu}
+                  {plan && (
+                    <span className="nota block text-texto-suave">
+                      {MODALIDAD.menuDetalle[plan.modalidad ?? 'sinDato']}
+                    </span>
+                  )}
+                </span>
+              </Link>
             </DropdownMenuItem>
           )}
 

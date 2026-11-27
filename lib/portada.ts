@@ -14,8 +14,9 @@ export type CaminoDeLaPortada = (typeof CAMINOS_DE_LA_PORTADA)[number]
 
 /** Adónde lleva el botón de cada camino. */
 export const DESTINO_DEL_CAMINO: Record<CaminoDeLaPortada, string> = {
-  particulares: '/sign-in?rol=docente',
-  curso: '/sign-in?rol=docente',
+  // AC1: el camino elegido es la modalidad del docente (se guarda al registrarse).
+  particulares: '/sign-in?rol=docente&modalidad=particular',
+  curso: '/sign-in?rol=docente&modalidad=curso',
   // El modo autodidacta se elige desde Practicar, ya con cuenta.
   examen: '/sign-in?rol=alumno&callbackUrl=%2Fautodidacta',
 }

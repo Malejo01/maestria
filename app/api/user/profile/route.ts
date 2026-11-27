@@ -1,6 +1,8 @@
 import { auth } from '@/auth'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { MODALIDADES } from '@/lib/modalidad'
+import { guardarModalidad } from '@/lib/modalidad-server'
 import { sql } from '@/lib/db'
 import type { UserRole } from '@/lib/types'
 import { captureRouteFailure } from '@/lib/observability'
@@ -51,9 +53,11 @@ const patchSchema = z
     role: z.enum(['ALUMNO', 'DOCENTE']).optional(),
     nivel: z.enum(['Primario', 'Secundario', 'Superior']).optional(),
     grado: z.string().min(1).max(50).optional(),
+    /** AC1: cómo da clases el docente (050). */
+    modalidad: z.enum(MODALIDADES).optional(),
   })
-  .refine((data) => data.role !== undefined || data.nivel !== undefined || data.grado !== undefined, {
-    message: 'Falta al menos un campo (role, nivel o grado).',
+  .refine((data) => data.role !== undefined || data.nivel !== undefined || data.grado !== undefined || data.modalidad !== undefined, {
+    message: 'Falta al menos un campo (role, nivel, grado o modalidad).',
   })
 
 export async function PATCH(req: Request) {
@@ -75,7 +79,14 @@ export async function PATCH(req: Request) {
       )
     }
 
-    const { role, nivel, grado } = parsed.data
+    const { role, nivel, grado, modalidad } = parsed.data
+
+    // AC1: la modalidad va aparte, con su válvula: sin la 050 no se guarda y el
+    // resto del perfil sigue. Si es lo único que vino, se contesta acá.
+    const modalidadGuardada = modalidad ? await guardarModalidad(userId, modalidad) : null
+    if (modalidad && !role && nivel === undefined && grado === undefined) {
+      return NextResponse.json({ modalidad: modalidadGuardada })
+    }
 
     // role is still required to complete onboarding — nivel/grado are optional
     // extras collected right after (only meaningful for ALUMNO).
