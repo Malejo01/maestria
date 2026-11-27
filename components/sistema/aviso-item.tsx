@@ -19,7 +19,7 @@ import {
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import { horaRelativa } from '@/lib/avisos/armar'
 import type { Aviso, IconoDeAviso, RolDeAviso } from '@/lib/avisos/tipos'
-import { AVISOS } from '@/lib/textos'
+import { AVISOS, AVISO_SEMANAL } from '@/lib/textos'
 import { cn } from '@/lib/utils'
 
 const ICONO: Record<IconoDeAviso, LucideIcon> = {
@@ -82,7 +82,19 @@ export function AvisoItem({
         </span>
         <span className="min-w-0 flex-1">
           <span className="cuerpo-s block font-bold text-texto">{aviso.titulo}</span>
-          <span className="nota block truncate text-texto-suave">{aviso.detalle}</span>
+          {aviso.tipo === 'resumenSemanal' ? (
+            // AC5: el resumen de los lunes se lee entero (varias líneas) y lleva su botón.
+            <>
+              <span className="nota line-clamp-6 block whitespace-pre-line text-texto-suave" data-resumen-semanal>
+                {aviso.detalle}
+              </span>
+              <span className="nota mt-1 inline-flex min-h-8 items-center rounded-md border border-borde px-2 font-semibold text-accion">
+                {AVISO_SEMANAL.ver}
+              </span>
+            </>
+          ) : (
+            <span className="nota block truncate text-texto-suave">{aviso.detalle}</span>
+          )}
           <span className="nota block text-texto-suave">{horaRelativa(aviso.fecha, ahora)}</span>
         </span>
         {aviso.noLeido && (
