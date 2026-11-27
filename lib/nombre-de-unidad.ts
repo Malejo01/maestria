@@ -127,3 +127,15 @@ export function separarTituloDeUnidad(nombre: string, temas: readonly string[]):
   if (!corto(titulo) || delTema.length === 0) return { nombre: limpio, temas: [...temas] }
   return { nombre: `${encabezado}: ${titulo}`, temas: [...delTema, ...demas] }
 }
+
+/**
+ * AA4: lo que queda del nombre de una unidad sin su «Unidad N:» de adelante,
+ * para pantallas que ya ponen «Unidad {n}:». Antes sólo se sacaba con romanos
+ * («Unidad II:»), y un programa leído como «Unidad 1: Sistema de numeración»
+ * se veía «Unidad 1: Unidad 1: Sistema de numeración». Si no hay nada después
+ * del prefijo, el nombre queda como estaba.
+ */
+export function sinPrefijoDeUnidad(nombre: string): string {
+  const resto = nombre.replace(/^\s*unidad\s+(?:n[º°o]\.?\s*)?(?:[IVX]+|\d+)\s*[:.\-–—]?\s*/i, '')
+  return resto.trim() ? resto : nombre
+}

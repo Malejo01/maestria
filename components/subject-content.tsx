@@ -1,5 +1,6 @@
 'use client'
 import { inferirArea } from '@/lib/inferir-area'
+import { sinPrefijoDeUnidad } from '@/lib/nombre-de-unidad'
 import { useRef, useState } from 'react'
 import { parametrosDeLaPractica } from '@/lib/practica-del-grupo'
 import { Button } from '@/components/ui/button'
@@ -600,7 +601,7 @@ export function SubjectContent({ subject, classroomId }: SubjectContentProps) {
                     {unitIndex + 1}
                   </div>
                   <h3 className="font-bold text-foreground text-base">
-                    Unidad {unitIndex + 1}: {unit.name.replace(/^Unidad\s+[IVX]+:\s*/i, '')}
+                    Unidad {unitIndex + 1}: {sinPrefijoDeUnidad(unit.name)}
                   </h3>
                 </button>
                 <button
