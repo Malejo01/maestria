@@ -429,6 +429,17 @@ export const MIS_ALUMNOS = {
   },
 } as const
 
+/** Tanda AB · AB6: el muro del 3.er alumno, con la evidencia primero (lib/evidencia-del-muro.ts). */
+export const MURO = {
+  titulo: (cupoGratis: number) => `Tu plan gratis llega hasta ${cupoGratis} alumnos`,
+  evidencia: 'Lo que ya pasó',
+  oferta: (monto: string | null, alumnosPorBloque: number) =>
+    monto ? `Sumá hasta ${alumnosPorBloque} alumnos por ${monto} al mes.` : `Sumá hasta ${alumnosPorBloque} alumnos con el plan Particular.`,
+  garantia: 'Si en 14 días ninguno de tus alumnos practicó, te devuelvo el pago.',
+  sinDebito: 'Sin débito automático: si no renovás, tus fichas quedan guardadas.',
+  cargando: 'Mirando lo que practicaron…',
+} as const
+
 export const AGREGAR_ALUMNO = {
   titulo: 'Agregar alumno',
   detalle: 'Escribí su nombre y te damos el link para pasarle. Entra con su nombre, sin crear una cuenta.',

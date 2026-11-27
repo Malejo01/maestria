@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { EstadoDelPlan, queMostrar } from './estado-del-plan'
@@ -7,6 +7,9 @@ import { OpcionesDePago } from './opciones-de-pago'
 import { PantallaDeLimite } from './pantalla-de-limite'
 import { cuerpoDeBloqueo, opcionDePago, type ResumenDelPlan } from '@/lib/planes'
 import { PLAN } from '@/lib/textos'
+
+// AB6: el muro lee la evidencia y el resumen de pago; acá no hace falta que respondan.
+vi.mock('@/lib/pedir-json', () => ({ pedirJson: () => new Promise(() => {}) }))
 
 /** G3: la pantalla de límite y la de vencimiento. */
 const ENV = {
@@ -99,11 +102,11 @@ describe('PantallaDeLimite', () => {
     )
   const gratis: ResumenDelPlan = { ...base, estado: 'gratis', nivel: 0, cupo: 2, alumnos: 2, venceEl: null, diasRestantes: null }
 
-  it('H7, gratis lleno: el tope gratis, 1 bloque en total y el botón de pago', () => {
+  it('AB6, gratis lleno: el muro del 3.er alumno, con la oferta del bloque de 5 (antes, la pantalla de límite)', () => {
     enDialogo(cuerpoDeBloqueo(gratis, 'sin_cupo', ENV))
-    expect(screen.getByText('Tenés 2 de 2 alumnos')).toBeTruthy()
-    expect(screen.getByText(/plan gratis llega hasta 2 alumnos.*1 bloque: son 5 alumnos en total/)).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Pagar el mes/ }).getAttribute('href')).toBe('https://mp.example/m1')
+    expect(screen.getByText('Tu plan gratis llega hasta 2 alumnos')).toBeTruthy()
+    expect(screen.getByText(/Sumá hasta 5 alumnos por \$\s?20\.000 al mes\./)).toBeTruthy()
+    expect(screen.getByText('Mirando lo que practicaron…')).toBeTruthy()
   })
 
   it('H7, tope de cuestionarios: cuántos generó, el tope y lo que cuesta seguir', () => {
