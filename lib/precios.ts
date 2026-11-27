@@ -43,6 +43,13 @@ export function linkDeWhatsApp(mensaje: string, env: Entorno = process.env): str
   return `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`
 }
 
+/** AB3: el pase por materia del autodidacta (`MAESTRIA_PRECIO_PASE_ALUMNO`), o null sin la variable. */
+export function precioPaseAlumno(env: Entorno = process.env): number | null {
+  const crudo = env.MAESTRIA_PRECIO_PASE_ALUMNO?.trim()
+  const monto = crudo ? Number(crudo) : NaN
+  return Number.isFinite(monto) && monto > 0 ? monto : null
+}
+
 /**
  * "Son $4.000 por alumno por mes": el pase de 1 bloque, dividido por sus 5
  * alumnos y por los meses que dura (90 días = 3 meses de 30). Redondeado al
