@@ -1,14 +1,14 @@
 import { ComoFunciona } from '@/components/sistema/como-funciona'
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ExternalLink } from 'lucide-react'
+import { Check, ExternalLink, ShieldCheck } from 'lucide-react'
 import { Logo } from '@/components/sistema/logo'
 import { Boton } from '@/components/sistema/boton'
 import { TRAZO_ICONO } from '@/components/sistema/iconos'
 import {
-  DIAS_PRUEBA,
+  ALUMNOS_POR_BLOQUE,
+  DIAS_PASE,
   NIVELES,
-  cuestionariosGratisPorMes,
   cupoDeNivel,
   cupoGratis,
   formatearPesos,
@@ -18,7 +18,8 @@ import {
   type NivelPlan,
   type TipoDePago,
 } from '@/lib/planes'
-import { PRECIOS as T } from '@/lib/textos'
+import { OFERTA_PARTICULAR as O, PRECIOS as T } from '@/lib/textos'
+import { OtrosPlanes } from '@/components/pagos/otros-planes'
 import { alumnosMaximosPorCurso, type ResumenDelPlan } from '@/lib/planes'
 import {
   caminoDelDocente,
@@ -27,16 +28,21 @@ import {
   pasePorAlumnoPorMes,
   precioAulaCurso,
   precioAulaCursoAdicional,
+  precioPaseAlumno,
   type Camino,
 } from '@/lib/precios'
 import { getViewer } from '@/lib/auth-session'
 import { resumenDelPlan } from '@/lib/planes-server'
 import { cn } from '@/lib/utils'
 
-const bajada = () => T.bajada(DIAS_PRUEBA, cupoDeNivel(0), cupoGratis())
+/** AB3: lo que dice la vista previa de WhatsApp: la oferta Particular, sin la prueba. */
+const descripcion = () => {
+  const bloque = precioMensual(1)
+  return `${O.gratis(cupoGratis())}. ${O.bloque(ALUMNOS_POR_BLOQUE)}${bloque === null ? '' : `: ${formatearPesos(bloque)} ${O.porMes}`}.`
+}
 
 export function generateMetadata(): Metadata {
-  const description = `${T.frase} ${bajada()}`
+  const description = `${T.frase} ${descripcion()}`
   return {
     title: 'Precios | MaestrIA',
     description,
@@ -44,7 +50,7 @@ export function generateMetadata(): Metadata {
   }
 }
 
-/** Los niveles que se pagan: de 1 bloque al tope. La prueba y el gratis van aparte. */
+/** Los niveles que se pagan: de 1 bloque al tope. El gratis va en la oferta de arriba. */
 const NIVELES_PAGOS = NIVELES.filter((nivel) => nivel > 0)
 
 /**
@@ -52,9 +58,11 @@ const NIVELES_PAGOS = NIVELES.filter((nivel) => nivel > 0)
  * WhatsApp, así que se piensa primero en celular: una tarjeta por nivel, y
  * recién desde 640 px una tabla.
  *
- * Arriba, aparte de la tabla, lo que no se paga: el plan gratis y la prueba.
- * Antes la prueba era una fila más, y "Gratis, 30 días" caía en la columna
- * del pase: quien leía rápido entendía que la prueba era un pase.
+ * AB3 (27/11/2026): una sola oferta adelante, el plan Particular («Gratis con
+ * 2 alumnos, para siempre» y el bloque de 5 por mes, con el pase de 90 días
+ * más chico), con la garantía de 14 días y «sin débito automático» debajo.
+ * Los demás bloques van plegados; Aula, Institución y Autodidacta, detrás de
+ * «¿Sos escuela, instituto o estudiás por tu cuenta?». No se borró nada.
  *
  * Los montos salen de las mismas variables de entorno que el resto del cobro
  * (lib/planes.ts); ninguno está escrito acá. Si falta uno, se muestra "—".
@@ -62,12 +70,11 @@ const NIVELES_PAGOS = NIVELES.filter((nivel) => nivel > 0)
  */
 export default async function PreciosPage({ searchParams }: { searchParams?: Promise<Record<string, string | string[] | undefined>> } = {}) {
   const gratis = cupoGratis()
-  // B3: "¿Cómo das clases?". Con sesión de docente, el camino arranca elegido
-  // según lo que ya usa y su plan queda marcado. Si algo falla, sin elegir.
+  // B3 y AB3: con sesión de docente, su plan queda marcado y, si usa el Aula,
+  // los otros planes arrancan abiertos. `?camino=aula` también los abre.
   const pedido = leerCamino((await searchParams)?.camino)
-  const plan = pedido ? null : await planDelDocente()
-  const miPlan = pedido ? await planDelDocente() : plan
-  const camino: Camino | null = pedido ?? caminoDelDocente(plan)
+  const miPlan = await planDelDocente()
+  const camino: Camino | null = pedido ?? caminoDelDocente(miPlan)
   const porCurso = alumnosMaximosPorCurso()
   const filas = NIVELES_PAGOS.map((nivel) => ({
     nivel,
@@ -84,141 +91,192 @@ export default async function PreciosPage({ searchParams }: { searchParams?: Pro
         <h1 className="titulo-l text-texto">{T.titulo}</h1>
         <p className="cuerpo-l font-bold text-texto">{T.frase}</p>
         <ComoFunciona guia="planes-y-pagos" />
-        <p className="cuerpo text-texto-suave">{bajada()}</p>
-        <Boton asChild>
-          <Link href="/sign-in?rol=docente">{T.empezar(DIAS_PRUEBA)}</Link>
-        </Boton>
       </header>
 
-      {/* B3: dos caminos. Cada uno muestra sólo sus planes. */}
-      <nav aria-label={T.comoDasClases} className="space-y-3">
-        <h2 className="titulo-m text-center text-texto">{T.comoDasClases}</h2>
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {(['particular', 'aula'] as const).map((opcion) => (
-            <li key={opcion}>
-              <Link
-                href={`/precios?camino=${opcion}`}
-                aria-current={camino === opcion ? 'page' : undefined}
-                data-camino={opcion}
-                className={cn(
-                  'flex min-h-24 flex-col justify-center rounded-lg border-2 p-4 text-left hover:border-accion',
-                  camino === opcion ? 'border-accion bg-accion-tenue' : 'border-borde bg-superficie-tarjeta',
-                )}
-              >
-                <span className="cuerpo font-bold text-texto">{T.caminos[opcion].titulo}</span>
-                <span className="cuerpo-s mt-1 text-texto-suave">{T.caminos[opcion].detalle}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        {!camino && <p className="cuerpo-s text-center text-texto-suave">{T.elegiUnCamino}</p>}
-      </nav>
+      {/* AB3: una sola oferta adelante, el plan Particular. */}
+      <OfertaParticular gratis={gratis} miPlan={miPlan} />
 
-      {camino && (
-        <ul className="grid gap-3 sm:grid-cols-2" aria-label={T.sinPagar}>
-          <li className={cn('rounded-lg border bg-superficie-tarjeta p-4', miPlan?.estado === 'gratis' ? 'border-accion' : 'border-borde')}>
-            <h2 className="cuerpo font-bold text-texto">
-              {T.gratisTitulo}
-              {miPlan?.estado === 'gratis' && <TuPlan />}
+      {/* Los bloques de más de 5 alumnos, el pase de temporada y la letra chica, plegados. */}
+      <details className="rounded-lg border border-borde bg-superficie-tarjeta p-4" data-todos-los-bloques>
+        <summary className="cuerpo-s min-h-11 cursor-pointer font-semibold text-texto">{O.masBloques}</summary>
+        <div className="mt-4 space-y-6">
+          <section className="space-y-3" aria-labelledby="precios-planes">
+            <h2 id="precios-planes" className="titulo-m text-texto">
+              {T.planes}
             </h2>
-            <p className="cuerpo-s mt-1 text-texto">{T.gratisCaminoDetalle(gratis, porCurso)}</p>
-            <p className="nota mt-1 text-texto-suave">
-              {T.gratisTope(cuestionariosGratisPorMes())} {T.gratisSinExtras}
-            </p>
-          </li>
-          <li className={cn('rounded-lg border bg-superficie-tarjeta p-4', miPlan?.estado === 'prueba' ? 'border-accion' : 'border-borde')}>
-            <h2 className="cuerpo font-bold text-texto">
-              {T.pruebaTitulo}
-              {miPlan?.estado === 'prueba' && <TuPlan />}
-            </h2>
-            <p className="cuerpo-s mt-1 text-texto">{T.pruebaDetalle(DIAS_PRUEBA, cupoDeNivel(0))}</p>
-          </li>
-        </ul>
-      )}
 
-      {camino === 'particular' && (
-        <>
-        <section className="space-y-3" aria-labelledby="precios-planes">
-          <h2 id="precios-planes" className="titulo-m text-texto">
-            {T.planes}
-          </h2>
+            {/* Celular: una tarjeta por nivel pago. */}
+            <ul className="space-y-3 sm:hidden" aria-label={T.planes}>
+              {filas.map((fila) => (
+                <li key={fila.nivel} className="rounded-lg border border-borde bg-superficie-base p-4">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h3 className="cuerpo font-bold text-texto">{fila.nombre}</h3>
+                    <p className="nota text-texto-suave">{T.alumnos(fila.cupo)}</p>
+                  </div>
+                  <dl className="mt-3 grid grid-cols-2 gap-3">
+                    <div>
+                      <dt className="etiqueta text-texto-suave">{T.porMes}</dt>
+                      <dd className="mt-1">
+                        <Monto monto={fila.mensual} tipo="mensual" nivel={fila.nivel} />
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="etiqueta text-texto-suave">{T.pase}</dt>
+                      <dd className="mt-1">
+                        <Monto monto={fila.pase} tipo="pase" nivel={fila.nivel} />
+                      </dd>
+                    </div>
+                  </dl>
+                </li>
+              ))}
+            </ul>
 
-          {/* Celular: una tarjeta por nivel pago. */}
-          <ul className="space-y-3 sm:hidden" aria-label={T.planes}>
-            {filas.map((fila) => (
-              <li key={fila.nivel} className="rounded-lg border border-borde bg-superficie-tarjeta p-4">
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="cuerpo font-bold text-texto">{fila.nombre}</h3>
-                  <p className="nota text-texto-suave">{T.alumnos(fila.cupo)}</p>
-                </div>
-                <dl className="mt-3 grid grid-cols-2 gap-3">
-                  <div>
-                    <dt className="etiqueta text-texto-suave">{T.porMes}</dt>
-                    <dd className="mt-1">
-                      <Monto monto={fila.mensual} tipo="mensual" nivel={fila.nivel} />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="etiqueta text-texto-suave">{T.pase}</dt>
-                    <dd className="mt-1">
-                      <Monto monto={fila.pase} tipo="pase" nivel={fila.nivel} />
-                    </dd>
-                  </div>
-                </dl>
+            {/* Desde 640 px: la tabla. */}
+            <div className="hidden overflow-hidden rounded-lg border border-borde bg-superficie-base sm:block">
+              <table className="w-full text-left">
+                <caption className="sr-only">{T.planes}</caption>
+                <thead className="bg-superficie-suave">
+                  <tr>
+                    <th scope="col" className="etiqueta px-4 py-3 text-texto-suave">{T.plan}</th>
+                    <th scope="col" className="etiqueta px-4 py-3 text-texto-suave">{T.columnaAlumnos}</th>
+                    <th scope="col" className="etiqueta px-4 py-3 text-right text-texto-suave">{T.porMes}</th>
+                    <th scope="col" className="etiqueta px-4 py-3 text-right text-texto-suave">{T.pase}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filas.map((fila) => (
+                    <tr key={fila.nivel} className="border-t border-borde">
+                      <th scope="row" className="cuerpo px-4 py-3 font-bold text-texto">{fila.nombre}</th>
+                      <td className="cuerpo-s px-4 py-3 text-texto">{T.alumnos(fila.cupo)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <Monto monto={fila.mensual} tipo="mensual" nivel={fila.nivel} />
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Monto monto={fila.pase} tipo="pase" nivel={fila.nivel} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+          <PaseTemporada />
+          <ul className="space-y-2">
+            {T.notas(gratis, cupoDeNivel(1)).map((nota) => (
+              <li key={nota} className="cuerpo-s text-texto-suave">
+                {nota}
               </li>
             ))}
           </ul>
+        </div>
+      </details>
 
-          {/* Desde 640 px: la tabla. */}
-          <div className="hidden overflow-hidden rounded-lg border border-borde bg-superficie-tarjeta sm:block">
-            <table className="w-full text-left">
-              <caption className="sr-only">{T.planes}</caption>
-              <thead className="bg-superficie-suave">
-                <tr>
-                  <th scope="col" className="etiqueta px-4 py-3 text-texto-suave">{T.plan}</th>
-                  <th scope="col" className="etiqueta px-4 py-3 text-texto-suave">{T.columnaAlumnos}</th>
-                  <th scope="col" className="etiqueta px-4 py-3 text-right text-texto-suave">{T.porMes}</th>
-                  <th scope="col" className="etiqueta px-4 py-3 text-right text-texto-suave">{T.pase}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filas.map((fila) => (
-                  <tr key={fila.nivel} className="border-t border-borde">
-                    <th scope="row" className="cuerpo px-4 py-3 font-bold text-texto">{fila.nombre}</th>
-                    <td className="cuerpo-s px-4 py-3 text-texto">{T.alumnos(fila.cupo)}</td>
-                    <td className="px-4 py-3 text-right">
-                      <Monto monto={fila.mensual} tipo="mensual" nivel={fila.nivel} />
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Monto monto={fila.pase} tipo="pase" nivel={fila.nivel} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-          <PaseTemporada />
-        </>
-      )}
-
-      {camino === 'aula' && <CaminoAula porCurso={porCurso} miPlan={miPlan} />}
-
-      {camino && (
+      {/* AB3: Aula, Institución y Autodidacta, detrás de un botón. No se borró nada. */}
+      <OtrosPlanes etiqueta={O.otros} etiquetaCerrar={O.otrosCerrar} abiertoDeEntrada={camino === 'aula'}>
+        <CaminoAula porCurso={porCurso} miPlan={miPlan} />
+        <Autodidacta />
         <details className="rounded-lg border border-borde bg-superficie-tarjeta p-4">
           <summary className="cuerpo-s min-h-11 cursor-pointer font-semibold text-texto">{T.porQueTitulo}</summary>
           <p className="cuerpo-s mt-2 text-texto">{T.porQueTexto}</p>
         </details>
+      </OtrosPlanes>
+    </div>
+  )
+}
+
+/**
+ * AB3 · La oferta: gratis con 2 alumnos para siempre, el bloque de 5 por mes
+ * y, más chico, el pase de 90 días. Debajo, la garantía y lo de marzo.
+ */
+function OfertaParticular({ gratis, miPlan }: { gratis: number; miPlan: ResumenDelPlan | null }) {
+  const mensual = precioMensual(1)
+  const pase = precioPase(1)
+  const esMiPlan = miPlan !== null && miPlan.tipo !== 'aula' && (miPlan.estado === 'activo' || miPlan.estado === 'gratis')
+  const cobra = hayCobro()
+  return (
+    <section
+      aria-labelledby="oferta-particular"
+      className={cn('space-y-5 rounded-lg border-2 bg-superficie-tarjeta p-5', esMiPlan ? 'border-accion' : 'border-borde')}
+      data-oferta-particular
+    >
+      <div className="space-y-1">
+        <h2 id="oferta-particular" className="titulo-m text-texto">
+          {O.titulo}
+          {esMiPlan && <TuPlan />}
+        </h2>
+        <p className="cuerpo-s text-texto-suave">{O.bajada}</p>
+      </div>
+
+      <p className="cuerpo flex items-start gap-2 font-semibold text-texto">
+        <Check className="mt-1 h-4 w-4 shrink-0 text-logrado" aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+        {O.gratis(gratis)}
+      </p>
+
+      <div className="space-y-2" data-bloque>
+        <p className="cuerpo text-texto">{O.bloque(ALUMNOS_POR_BLOQUE)}</p>
+        <p className="titulo-l text-texto">
+          {mensual !== null ? formatearPesos(mensual) : O.sinPrecio}{' '}
+          {mensual !== null && <span className="cuerpo font-normal text-texto-suave">{O.porMes}</span>}
+        </p>
+        {mensual !== null && (cobra || linkDePago('mensual', 1)) && (
+          <Boton asChild>
+            <Link
+              href="/precios/pagar?plan=particular&forma=mensual&cantidad=1"
+              aria-label={T.pagar('mensual', T.nombreNivel(1), formatearPesos(mensual))}
+            >
+              {O.pagarMes}
+            </Link>
+          </Boton>
+        )}
+      </div>
+
+      {pase !== null && (
+        <p className="cuerpo-s text-texto-suave" data-pase>
+          {O.pase(DIAS_PASE)}: <span className="font-semibold text-texto">{formatearPesos(pase)}</span>
+          {(cobra || linkDePago('pase', 1)) && (
+            <>
+              {' · '}
+              <Link
+                href="/precios/pagar?plan=particular&forma=pase&cantidad=1"
+                aria-label={T.pagar('pase', T.nombreNivel(1), formatearPesos(pase))}
+                className="font-semibold text-accion underline-offset-4 hover:underline"
+              >
+                {O.pagarPase}
+              </Link>
+            </>
+          )}
+        </p>
       )}
 
-      {camino === 'particular' && <ul className="space-y-2">
-        {T.notas(gratis, cupoDeNivel(1)).map((nota) => (
-          <li key={nota} className="cuerpo-s text-texto-suave">
-            {nota}
-          </li>
-        ))}
-      </ul>}
-    </div>
+      <ul className="space-y-2 border-t border-borde pt-4">
+        <li className="cuerpo-s flex items-start gap-2 text-texto" data-garantia>
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-accion" aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+          {O.garantia}
+        </li>
+        <li className="cuerpo-s flex items-start gap-2 text-texto" data-marzo>
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-accion" aria-hidden="true" strokeWidth={TRAZO_ICONO} />
+          {O.marzo}
+        </li>
+      </ul>
+
+      <Boton asChild variante="secundario" ancho>
+        <Link href="/sign-in?rol=docente">{O.empezar}</Link>
+      </Boton>
+    </section>
+  )
+}
+
+/** AB3: el pase por materia del que se prepara solo (E2), que antes no estaba en /precios. */
+function Autodidacta() {
+  const pase = precioPaseAlumno()
+  return (
+    <section aria-labelledby="precios-autodidacta" className="space-y-2 rounded-lg border border-borde bg-superficie-tarjeta p-4">
+      <h2 id="precios-autodidacta" className="cuerpo font-bold text-texto">
+        {O.autodidactaTitulo}
+      </h2>
+      <p className="cuerpo-s text-texto">{O.autodidactaDetalle}</p>
+      {pase !== null && <p className="cuerpo-s font-semibold text-texto">{O.autodidactaPase(formatearPesos(pase))}</p>}
+    </section>
   )
 }
 
