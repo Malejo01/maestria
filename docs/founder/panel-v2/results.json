@@ -1,0 +1,164 @@
+{
+ "business": "MaestrIA, app web para profes particulares (Argentina)",
+ "seed": 2611,
+ "dealt": 20,
+ "answered": 20,
+ "skipped": [],
+ "buys": 0,
+ "passes": 20,
+ "buy_rate": 0.0,
+ "by_segment": [
+  [
+   "Docente de escuela con cargos que suma particulares en temporada de mesas",
+   8,
+   0.0
+  ],
+  [
+   "Estudiante avanzado o profe recién recibido que da particulares para vivir",
+   6,
+   0.0
+  ],
+  [
+   "Dueño o coordinador de un centro de apoyo escolar con 4 a 8 profes",
+   2,
+   0.0
+  ],
+  [
+   "Profe particular consolidado de ingreso universitario o terciario, con agenda llena",
+   4,
+   0.0
+  ]
+ ],
+ "by_behaviour": [
+  [
+   "Busca ahorrar tiempo en temporada",
+   3,
+   0.0
+  ],
+  [
+   "Ya usa ChatGPT gratis",
+   5,
+   0.0
+  ],
+  [
+   "Early adopter tecnológico",
+   2,
+   0.0
+  ],
+  [
+   "Lo resuelve con PDF y WhatsApp",
+   4,
+   0.0
+  ],
+  [
+   "Desconfía de la IA en matemática",
+   4,
+   0.0
+  ],
+  [
+   "Cuida cada peso",
+   2,
+   0.0
+  ]
+ ],
+ "by_income": [
+  [
+   "$10,774,000 to $15,863,000",
+   7,
+   0.0
+  ],
+  [
+   "under $10,774,000",
+   6,
+   0.0
+  ],
+  [
+   "$15,863,000 and up",
+   7,
+   0.0
+  ]
+ ],
+ "why_not": [
+  [
+   "trust",
+   9,
+   [
+    "Me interesa en diciembre porque tengo la agenda explotada, pero no le pago 35 mil a algo que no conozco. Primero lo pruebo gratis con dos alumnos y si de verdad me ahorra horas, después veo.",
+    "Ya desconfío de la IA con matemática: vi errores en ejercicios y no quiero que un sistema corrija algo que después mis alumnos llevan a la mesa. Aunque revise cada pregunta, prefiero seguir con mis materiales, que ya sé que están bien."
+   ],
+   [
+    "P001",
+    "P007"
+   ]
+  ],
+  [
+   "habit",
+   6,
+   [
+    "Ya le pido ejercicios a ChatGPT o Gemini gratis y me alcanzan para armar una práctica. Lo que me falta no son ejercicios, es que mis alumnos los hagan en casa, y eso el pase no lo resuelve.",
+    "Ya le pido ejercicios a ChatGPT o Gemini gratis cuando necesito material nuevo, y con un PDF del programa hago lo mismo en diez minutos. Pagar por algo que ya resuelvo gratis, para que además yo tenga que revisar cada pregunta antes de mandarla, no me cierra."
+   ],
+   [
+    "P002",
+    "P003"
+   ]
+  ],
+  [
+   "timing",
+   3,
+   [
+    "Estoy en plena temporada de mesas y ya no me alcanza el día para mis alumnos. Si me ofrecen algo para ellos me lo probaría con dos alumnos gratis, pero no voy a pagar 35.000 por aprender una plataforma nueva justo ahora.",
+    "Estoy en plena temporada de exámenes y mis alumnos me escriben de noche con dudas; no tengo cabeza para aprender una plataforma nueva. Lo que hago con PDF y WhatsApp me funciona y no pago software."
+   ],
+   [
+    "P004",
+    "P005"
+   ]
+  ],
+  [
+   "price",
+   1,
+   [
+    "Son 35.000 pesos en un solo pago, que es casi dos clases mías, y mis ingresos van y vienen con la inflación. Mientras pueda usarlo gratis con dos alumnos, no hay razón para pagar por algo que todavía no sé si me saca alumnos."
+   ],
+   [
+    "P012"
+   ]
+  ],
+  [
+   "need",
+   1,
+   [
+    "Yo no soy profe particular, soy la que coordina el centro, y lo que necesito lo saco con PDF y WhatsApp sin pagar nada. Pagar por cuestionarios para mesas me suena a algo que sirve un mes y después no uso."
+   ],
+   [
+    "P016"
+   ]
+  ]
+ ],
+ "why_yes": [],
+ "flip": [
+  "Que con los dos alumnos gratis vea que en una semana me ahorró horas reales de preparación y que los alumnos efectivamente practicaron.",
+  "Ver que dos o tres alumnos reales practicaron solos desde el link durante una semana, con el lunes mostrándome quién y qué tema le falta.",
+  "Ver que con los dos alumnos de prueba gratis practican de verdad durante una semana y que el lunes me llega un resumen que me cambia la clase, sin tener que armar nada yo.",
+  "Que con los dos alumnos gratis practiquen de verdad durante una semana y yo vea en el lunes qué temas les faltan, sin tener que armar nada a mano.",
+  "Que alguien me lo deje armado en media hora, sin que tenga que cambiar cómo les mando las guías, y que mis alumnos lo usen sin que yo tenga que insistirles.",
+  "Ver en la primera semana que mis alumnos practican de verdad desde el link de WhatsApp y que el reporte del lunes me muestra algo que yo no sabía de cada uno, sin tener que armar nada yo.",
+  "Probarlo gratis con mis dos alumnos y ver que las preguntas salen bien, con mi notación y siguiendo mi programa, sin errores que yo tenga que arreglar.",
+  "Que una prueba gratis con mis propios alumnos me muestre de verdad quién practicó y qué tema le falta a cada uno, sin tener que armarlo yo cada lunes.",
+  "Probarlo con los 2 alumnos gratis y ver que las preguntas salen sin errores y que mis alumnos las practican de verdad antes de una mesa.",
+  "Que con los 2 alumnos de la prueba gratis al menos uno practique durante una semana sin que yo se lo pida.",
+  "Ver con mis propios alumnos que al menos la mitad practica en la semana y que eso mejora lo que hacen en la clase.",
+  "Que con los dos alumnos de prueba vea que mis alumnos practican de verdad, que lleguen a la clase con el tema trabajado, y que el precio mensual quede cerca de lo que cobro por una clase al mes.",
+  "Que pruebe con mis propios PDFs de programa y con mis 2 alumnos gratis, y que las preguntas que genera salgan bien sin que yo tenga que reescribirlas.",
+  "Que con los 2 alumnos de prueba vea que practican solos durante la semana y que el lunes el reporte me dice algo que no sabía de ellos.",
+  "Ver una tanda de preguntas de mi propio programa, en la que pueda cambiar muy poco y sienta que mi forma de explicar se mantiene.",
+  "Que me muestren que mis profes lo usan con sus alumnos y que se ve el resultado de práctica sin tener que cargar nada yo.",
+  "Probarlo con el programa real de mi materia y ver que las preguntas salen bien, con el nivel y el estilo que uso, y que me ahorra tiempo de armar guías.",
+  "Ver que alumnos reales de otro profe de mates practicaron de verdad y que las preguntas salieron bien resueltas sin que yo tenga que corregirlas.",
+  "Ver en la versión gratis que mis 2 alumnos practicaron solos durante una semana, con el reporte del lunes mostrando qué les falta.",
+  "Que me demuestren que mis propios alumnos practican más con el link de WhatsApp de lo que practican con lo que les doy yo, y que el seguimiento semanal me ahorre preparar la clase."
+ ],
+ "purchases_first_month_per_buyer": null,
+ "price_answers": 20
+}
