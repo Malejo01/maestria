@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Boton } from '@/components/sistema/boton'
 import { OpcionesDePago } from '@/components/docente/opciones-de-pago'
+import { MuroDelTercerAlumno } from '@/components/docente/muro-del-tercer-alumno'
 import { cupoDeNivel, type CuerpoDeBloqueo } from '@/lib/planes'
 import { PLAN } from '@/lib/textos'
 
@@ -38,6 +39,12 @@ export function textosDelLimite(bloqueo: CuerpoDeBloqueo): { titulo: string; det
  */
 export function PantallaDeLimite({ bloqueo, onVolver }: { bloqueo: CuerpoDeBloqueo; onVolver: () => void }) {
   const { plan } = bloqueo
+  // AB6: el docente del plan gratis que quiere sumar al 3.er alumno ve primero
+  // lo que ya practicaron sus 2, y después la oferta del bloque de 5.
+  if (esMuroDelTercerAlumno(bloqueo)) {
+    const bloque = plan.siguiente?.nivel === 1 ? (plan.siguiente.mensual?.monto ?? null) : null
+    return <MuroDelTercerAlumno cupoGratis={plan.cupoGratis} precioBloque={bloque} onVolver={onVolver} />
+  }
   const { titulo, detalle } = textosDelLimite(bloqueo)
   const conBarra = plan.motivo === 'tope_cuestionarios' || (plan.motivo === 'sin_cupo' && plan.cupo !== null)
 
@@ -61,6 +68,11 @@ export function PantallaDeLimite({ bloqueo, onVolver }: { bloqueo: CuerpoDeBloqu
       </Boton>
     </div>
   )
+}
+
+/** AB6: el muro con evidencia es para el plan gratis sin cupo (sumar al alumno que no entra). */
+export function esMuroDelTercerAlumno(bloqueo: CuerpoDeBloqueo): boolean {
+  return bloqueo.plan.motivo === 'sin_cupo' && bloqueo.plan.estado === 'gratis' && bloqueo.plan.tipo !== 'aula'
 }
 
 /**
