@@ -31,7 +31,7 @@ if (!process.argv.includes('--env=staging')) {
   console.error('Sólo corre contra staging: agregá --env=staging.')
   process.exit(1)
 }
-const CARPETA = arg('carpeta')
+const CARPETA: string = arg('carpeta') ?? ''
 if (!CARPETA) {
   console.error('Falta --carpeta <ruta>.')
   process.exit(1)
