@@ -24,7 +24,7 @@ import { entrarConId, marca, responderUna, simularGeneracion } from './ayudas'
 const ID = process.env.AA4_ID ?? ''
 const PDF = process.env.AA4_PDF ?? ''
 const IA_REAL = process.env.AA4_IA_REAL === '1'
-const DIR = 'docs/capturas/aa4-registro'
+const DIR = process.env.AA4_DIR ?? 'docs/capturas/aa4-registro'
 const sello = marca()
 
 test.describe.configure({ mode: 'serial' })
@@ -61,7 +61,7 @@ async function alumnoEntraYPractica(browser: Browser, codigo: string, nombre: st
   const campo = pa.getByRole('textbox', { name: /Cómo te llamás|Nombre/ }).first()
   const hayCampo = await campo.waitFor({ state: 'visible', timeout: 30_000 }).then(() => true).catch(() => false)
   if (!hayCampo) {
-    await pa.screenshot({ path: `${DIR}/10-alumno-${nombre.split(' ').pop()}-sin-campo.png` })
+    await pa.screenshot({ path: `${DIR}/10-alumno-${nombre.split(' ').slice(1, 3).join('-').toLowerCase()}-sin-campo.png` })
     const texto = await textoDeLaPagina()
     await contexto.close()
     return { entro: false, texto }
@@ -74,7 +74,7 @@ async function alumnoEntraYPractica(browser: Browser, codigo: string, nombre: st
     .catch(() => false)
   if (!entro) {
     const texto = await textoDeLaPagina()
-    await pa.screenshot({ path: `${DIR}/10-alumno-${nombre.split(' ').pop()}-no-entra.png` })
+    await pa.screenshot({ path: `${DIR}/10-alumno-${nombre.split(' ').slice(1, 3).join('-').toLowerCase()}-no-entra.png` })
     await contexto.close()
     return { entro: false, texto }
   }
@@ -214,8 +214,24 @@ test('AA4 · el registro de un docente nuevo, de /profes al muro del 3.er alumno
   await cerrarPaso(page, 9, 'esta-semana-y-ficha', frase)
 
   // ── 10 · El 3.er alumno ─────────────────────────────────────────────────
-  // a) por el link del grupo, como lo propone el arranque
+  // a) por el link del grupo, como lo propone el arranque. AC1: quien llegó
+  //    por /profes es docente particular: el 3.º ve «sin lugar» y el docente
+  //    recibe el muro en la campanita.
   const a3 = await alumnoEntraYPractica(browser, codigo, `AA4 Alumno Tres ${sello}`, false)
+  await page.goto('/teacher')
+  let avisoDelMuro = ''
+  const campanita = page.getByRole('banner').getByRole('button', { name: /^Avisos/ })
+  if (await campanita.waitFor({ state: 'visible', timeout: 30_000 }).then(() => true).catch(() => false)) {
+    await clic(campanita)
+    const aviso = page.locator('[data-aviso="muroDelPlan"]').first()
+    if (await aviso.isVisible({ timeout: 10_000 }).catch(() => false)) {
+      avisoDelMuro = (await aviso.innerText()).replace(/\s+/g, ' ').slice(0, 160)
+      await page.screenshot({ path: `${DIR}/10a-campanita-con-el-muro.png` })
+      await clic(aviso.getByRole('link'))
+      await expect(page.locator('[data-muro]')).toBeVisible({ timeout: 20_000 })
+      await page.screenshot({ path: `${DIR}/10b-muro-desde-la-campanita.png` })
+    }
+  }
   // b) con «+ Alumno», hasta que aparezca el muro (AB6)
   await page.goto('/teacher')
   let muro = false
@@ -236,7 +252,7 @@ test('AA4 · el registro de un docente nuevo, de /profes al muro del 3.er alumno
     page,
     10,
     'tercer-alumno',
-    `por el link: ${a3.entro ? 'entró' : `no entró (${a3.texto.replace(/\s+/g, ' ').slice(0, 120)})`} · con «+ Alumno»: ${agregados.join(', ')} · ${evidencia}`,
+    `por el link: ${a3.entro ? 'entró' : `no entró (${a3.texto.replace(/\s+/g, ' ').slice(0, 120)})`} · campanita: ${avisoDelMuro || 'sin aviso del muro'} · con «+ Alumno»: ${agregados.join(', ')} · ${evidencia}`,
   )
 
   writeFileSync(`${DIR}/pasos.json`, JSON.stringify(pasos, null, 1))
