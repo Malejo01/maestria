@@ -5,6 +5,7 @@ import { AvisoDeEjemplo } from '@/components/docente/materia-de-ejemplo'
 import Link from 'next/link'
 import { HitosOnboarding } from '@/components/docente/hitos-onboarding'
 import { MisAlumnos } from '@/components/docente/mis-alumnos'
+import { EstaSemana } from '@/components/docente/esta-semana'
 import { MIS_GRUPOS } from '@/lib/textos'
 import { MisGrupos } from '@/components/docente/mis-grupos'
 import { cn } from '@/lib/utils'
@@ -83,6 +84,8 @@ export default function TeacherPage() {
 
         {teacherSection === 'aulas' && (
           <div className="space-y-4">
+            {/* AB5: quién practicó esta semana y qué le falta a cada uno. */}
+            <EstaSemana refrescarCon={version} />
             {/* L4: Mis alumnos | Mis grupos, al mismo nivel. La pestaña va en la URL. */}
             <nav aria-label={MIS_GRUPOS.pestanas.etiqueta} className="flex gap-1 border-b border-borde">
               {(['alumnos', 'grupos'] as const).map((pestana) => (
