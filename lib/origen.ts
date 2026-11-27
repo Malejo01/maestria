@@ -8,10 +8,18 @@
  * queda en `users.origen` (migración 044). Una visita posterior con otro link
  * no pisa la primera: cuenta el canal que la trajo.
  *
+ * Tanda AA · AA2: el canal `meta` (los anuncios de Meta) y las campañas. El
+ * link del anuncio es `/profes?origen=meta&ref=AD-<nombre>`: un `ref` que
+ * empieza con `AD-` es el nombre del anuncio, NO el código de referido de un
+ * docente. Viaja en el mismo lugar que el ref (cookie y `users.origen_ref`,
+ * sin migración) y se separa al leerlo con `separarRef`: nunca llega a
+ * `registrarReferido` como referido. Por eso ningún código de docente puede
+ * empezar con `AD-` (ver `codigoParaDocente`).
+ *
  * Todo esto es puro (lo usan el middleware, el registro y el panel).
  */
 
-export const CANALES = ['ig', 'wa', 'fb', 'tt', 'li', 'yt', 'otro'] as const
+export const CANALES = ['ig', 'wa', 'fb', 'tt', 'li', 'yt', 'meta', 'otro'] as const
 export type Canal = (typeof CANALES)[number]
 
 export const NOMBRE_DEL_CANAL: Record<Canal, string> = {
@@ -21,6 +29,7 @@ export const NOMBRE_DEL_CANAL: Record<Canal, string> = {
   tt: 'TikTok',
   li: 'LinkedIn',
   yt: 'YouTube',
+  meta: 'Anuncio de Meta',
   otro: 'Otro',
 }
 
@@ -31,8 +40,10 @@ export const esCanal = (v: unknown): v is Canal => typeof v === 'string' && (CAN
 
 export interface Origen {
   origen: Canal | null
-  /** El código de referido (V3), en mayúsculas. */
+  /** El código de referido (V3), en mayúsculas. Nunca uno que empiece con `AD-`. */
   ref: string | null
+  /** AA2: el anuncio (`AD-<nombre>`), en mayúsculas. Sólo está si vino uno. */
+  campana?: string
   /** El día de la primera visita (AAAA-MM-DD). */
   el?: string
 }
@@ -44,27 +55,47 @@ export function normalizarRef(valor: unknown): string | null {
   return /^[A-Z0-9][A-Z0-9-]{2,39}$/.test(limpio) ? limpio : null
 }
 
+/** AA2: el prefijo de los anuncios. `ref=AD-…` es una campaña, no un referido. */
+export const PREFIJO_DE_CAMPANA = 'AD-'
+
+/** AA2: si un ref (ya normalizado o no) es el nombre de un anuncio. */
+export function esCampana(ref: unknown): boolean {
+  const limpio = normalizarRef(ref)
+  return limpio !== null && limpio.startsWith(PREFIJO_DE_CAMPANA) && limpio.length > PREFIJO_DE_CAMPANA.length
+}
+
+/** AA2: separa lo que vino en `ref`: o es un código de referido, o es una campaña. Nunca las dos. */
+export function separarRef(valor: unknown): { ref: string | null; campana?: string } {
+  const limpio = normalizarRef(valor)
+  if (limpio === null) return { ref: null }
+  if (limpio.startsWith(PREFIJO_DE_CAMPANA)) return esCampana(limpio) ? { ref: null, campana: limpio } : { ref: null }
+  return { ref: limpio }
+}
+
 /**
  * Lo que trae la URL. Un `origen` desconocido cuenta como "otro" (alguien
  * armó un link a mano); sin `origen` pero con `ref`, el canal no se sabe.
  */
 export function origenDeLaUrl(params: URLSearchParams): Origen | null {
   const crudo = params.get('origen')?.trim().toLowerCase() ?? ''
-  const ref = normalizarRef(params.get('ref'))
+  const { ref, campana } = separarRef(params.get('ref'))
   const origen = crudo ? (esCanal(crudo) ? crudo : 'otro') : null
-  return origen || ref ? { origen, ref } : null
+  if (!origen && !ref && !campana) return null
+  return campana ? { origen, ref, campana } : { origen, ref }
 }
 
-/** El valor de la cookie: `ig|CODIGO|2026-11-23`. */
+/** El valor de la cookie: `ig|CODIGO|2026-11-23`. AA2: la campaña va en el lugar del ref (`meta|AD-X|…`). */
 export function cookieDeOrigen(o: Origen, ahora: Date): string {
-  return [o.origen ?? '', o.ref ?? '', ahora.toISOString().slice(0, 10)].join('|')
+  return [o.origen ?? '', o.campana ?? o.ref ?? '', ahora.toISOString().slice(0, 10)].join('|')
 }
 
 export function leerCookieDeOrigen(valor: string | null | undefined): Origen | null {
   if (!valor) return null
-  const [origen, ref, el] = decodeURIComponent(valor).split('|')
-  const o: Origen = { origen: esCanal(origen) ? origen : null, ref: normalizarRef(ref), el: /^\d{4}-\d{2}-\d{2}$/.test(el ?? '') ? el : undefined }
-  return o.origen || o.ref ? o : null
+  const [origen, crudo, el] = decodeURIComponent(valor).split('|')
+  const { ref, campana } = separarRef(crudo)
+  const o: Origen = { origen: esCanal(origen) ? origen : null, ref, el: /^\d{4}-\d{2}-\d{2}$/.test(el ?? '') ? el : undefined }
+  if (campana) o.campana = campana
+  return o.origen || o.ref || o.campana ? o : null
 }
 
 /** La primera visita manda: sólo se guarda si no hay una cookie válida. */

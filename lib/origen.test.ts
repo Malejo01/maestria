@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cookieAGuardar, cookieDeOrigen, leerCookieDeOrigen, linkDeCanal, normalizarRef, origenDeLaUrl, porcentaje, resumenPorCanal } from './origen'
+import { cookieAGuardar, cookieDeOrigen, esCampana, leerCookieDeOrigen, linkDeCanal, NOMBRE_DEL_CANAL, normalizarRef, origenDeLaUrl, porcentaje, resumenPorCanal, separarRef } from './origen'
 
 const hoy = new Date('2026-11-23T15:00:00Z')
 const q = (s: string) => new URLSearchParams(s)
@@ -57,5 +57,45 @@ describe('resumenPorCanal', () => {
     ])
     expect(porcentaje(1, 2)).toBe('50 %')
     expect(porcentaje(0, 0)).toBe('—')
+  })
+})
+
+describe('AA2 · el canal Meta y las campañas', () => {
+  it('origen=meta es un canal propio, «Anuncio de Meta»', () => {
+    expect(origenDeLaUrl(q('origen=meta'))).toEqual({ origen: 'meta', ref: null })
+    expect(origenDeLaUrl(q('origen=META'))?.origen).toBe('meta')
+    expect(NOMBRE_DEL_CANAL.meta).toBe('Anuncio de Meta')
+  })
+
+  it('ref=AD-… es la campaña, no un código de referido', () => {
+    const o = origenDeLaUrl(q('origen=meta&ref=AD-prueba'))
+    expect(o).toEqual({ origen: 'meta', ref: null, campana: 'AD-PRUEBA' })
+    expect(o?.ref).toBeNull()
+    expect(esCampana('AD-reel-1')).toBe(true)
+  })
+
+  it('un referido de verdad sigue siendo referido, también con origen=meta', () => {
+    expect(origenDeLaUrl(q('origen=meta&ref=SILVINA-AB12'))).toEqual({ origen: 'meta', ref: 'SILVINA-AB12' })
+    expect(separarRef('ADRIANA-K7PQ')).toEqual({ ref: 'ADRIANA-K7PQ' })
+    expect(esCampana('ADRIANA-K7PQ')).toBe(false)
+  })
+
+  it('«AD-» solo, sin nombre, no es ni campaña ni referido', () => {
+    expect(separarRef('AD-')).toEqual({ ref: null })
+    expect(origenDeLaUrl(q('ref=AD-'))).toBeNull()
+  })
+
+  it('la campaña viaja en la cookie y vuelve como campaña', () => {
+    const valor = cookieAGuardar(null, q('origen=meta&ref=AD-prueba'), hoy)
+    expect(valor).toBe('meta|AD-PRUEBA|2026-11-23')
+    expect(leerCookieDeOrigen(valor)).toEqual({ origen: 'meta', ref: null, campana: 'AD-PRUEBA', el: '2026-11-23' })
+    expect(cookieDeOrigen({ origen: 'meta', ref: null, campana: 'AD-X1' }, hoy)).toBe('meta|AD-X1|2026-11-23')
+  })
+
+  it('el link del canal Meta y la fila del resumen', () => {
+    expect(linkDeCanal('https://maestria-edu.vercel.app', 'meta')).toBe('https://maestria-edu.vercel.app/?origen=meta')
+    expect(resumenPorCanal([{ origen: 'meta', rol: 'DOCENTE', pasoDelEmbudo: 4 }])).toEqual([
+      { canal: 'meta', docentes: 1, alumnos: 0, conTarea: 1, conAlumnos: 1 },
+    ])
   })
 })
